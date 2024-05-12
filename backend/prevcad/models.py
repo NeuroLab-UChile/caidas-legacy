@@ -38,23 +38,6 @@ class Customer(User):
     
     
 
-
-class health_recomendation(models.Model):
-    id = models.AutoField(primary_key=True)
-    name = models.TextField(max_length=100)
-    image = models.TextField(max_length=100)
-    description = models.TextField(max_length=10000)
- 
-    
-    def __str__(self):
-        return self.card_number
-    
-    class Meta:
-        db_table = 'cards'
-        ordering = ['created_at']
-        abstract = True
-    
-
 class Card(models.Model):
     id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=100)
@@ -104,30 +87,27 @@ class HealthRecomedation(Card):
     result = models.TextField()
     view_info = models.TextField()
 
-
-    
     class Meta:
         db_table = 'health_recomendations'
+        abstract = True
     
     def get_result(self):
         return self.result
     
     def get_view_info(self):
         return self.view_info
-
-
-class WorkRecomendation(Card):
-    result = models.TextField()
+    
+class WorkRecomendation(HealthRecomedation):
     
     class Meta:
         db_table = 'work_recomendations'
+      
     
     def get_result(self):
         super().get_result()
 
-class EvaluationRecomendation(Card):
-    result = models.TextField()
-    
+class EvaluationRecomendation(HealthRecomedation):
+
     class Meta:
         db_table = 'evaluation_recomendations'
     

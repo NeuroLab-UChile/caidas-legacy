@@ -6,12 +6,10 @@ class PrevcadView(viewsets.ViewSet):
     queryset = User.objects.all()
     
     def list(self, request):
-        users = User.objects.all()
-        print(users)
-        return JsonResponse({'users': list(users.values())})
+        return JsonResponse({'message': 'Hello, world!'})
 
     def create(self, request):
-        return User.objects.create()
+        return JsonResponse({'message': 'Hello, world!'})
     
 
     def retrieve(self, request, pk=None):
