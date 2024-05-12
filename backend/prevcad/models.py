@@ -16,6 +16,7 @@ class User(models.Model):
     class Meta:
         db_table = 'users'
         ordering = ['created_at']
+        abstract = True
 
 
 class Admin(User):
