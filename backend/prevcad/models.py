@@ -1,44 +1,5 @@
 from django.db import models
-
-
-
-class User(models.Model):
-    id = models.AutoField(primary_key=True)
-    username = models.CharField(max_length=100)
-    email = models.EmailField()
-    password = models.CharField(max_length=100)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
     
-    def __str__(self):
-        return self.username
-    
-    class Meta:
-        db_table = 'users'
-        ordering = ['created_at']
-        abstract = True
-
-
-class Admin(User):
-    class Meta:
-        db_table = 'admins'
-    def create_user(self, username, email, password):
-        return User.objects.create(username=username, email=email, password=password)
-    def delete_user(self, user_id):
-        return User.objects.get(id=user_id).delete()
-    
-class Customer(User):
-    class Meta:
-        db_table = 'customers'
-    
-    def get_health_category(self):
-        return self.health_category
-    
-    def post_nosequewea(self):
-        return self.nosequewea
-    
-    
-
 class Card(models.Model):
     id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=100)
@@ -47,18 +8,15 @@ class Card(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
-    
     class Meta:
         db_table = 'cards'
         abstract = True
-    
 
 class HealthCategory(Card):
     icon = models.TextField(max_length=100) # Image
 
     class Meta:
         db_table = 'health_categories'
-
 
     def get_evaluation(self) -> str:
         return self.name
@@ -82,8 +40,6 @@ class HealthCategory(Card):
         card = Card.objects.get(id=card_id)
         card.save()
 
-    
-    
 class HealthRecomedation(Card):
     result = models.TextField()
     view_info = models.TextField()
@@ -114,9 +70,3 @@ class EvaluationRecomendation(HealthRecomedation):
     
     def get_result(self):
         super().get_result()
-
-
-   
-      
-    
-    

@@ -1,9 +1,9 @@
 from django.http import JsonResponse
 from rest_framework import viewsets
-from .models import Admin
+from django.contrib.auth.models import User
 
 class PrevcadView(viewsets.ViewSet):
-    queryset = Admin.objects.all()
+    queryset = User.objects.all()
     
     def list(self, request):
         return JsonResponse({'message': 'Hello, world!'})
@@ -11,7 +11,6 @@ class PrevcadView(viewsets.ViewSet):
     def create(self, request):
         return JsonResponse({'message': 'Hello, world!'})
     
-
     def retrieve(self, request, pk=None):
         pass
 
