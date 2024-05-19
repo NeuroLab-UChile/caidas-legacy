@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import '../models/category.dart';
 
 class CategoryService {
-  static const String _baseUrl = 'http://tu-direccion-backend/api/categorias';
+  static const String _baseUrl = "http://127.0.0.1:8000/api/prevcad";
 
   static Future<List<Category>> fetchCategories() async {
     final response = await http.get(Uri.parse(_baseUrl));

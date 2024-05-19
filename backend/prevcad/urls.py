@@ -1,10 +1,10 @@
 from django.urls import path, include
 
-from . import views
+from prevcad.views import HealthCategoryView
 from rest_framework import routers
 
 router = routers.DefaultRouter(trailing_slash=False)
-router.register('prevcad', views.PrevcadView)
+router.register('prevcad', HealthCategoryView)
 
 urlpatterns = [
     path('', include(router.urls))

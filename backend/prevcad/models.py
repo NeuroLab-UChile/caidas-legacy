@@ -15,7 +15,7 @@ class Card(models.Model):
 
 class HealthCategory(Card):
     icon = models.TextField(max_length=100) # Image
-    recomendations = models.ForeignKey('HealthRecomendation', on_delete=models.CASCADE)
+
 
     class Meta:
         db_table = 'health_categories'
@@ -45,6 +45,7 @@ class HealthCategory(Card):
 class HealthRecomedation(Card):
     result = models.TextField()
     view_info = models.TextField()
+
 
     class Meta:
         db_table = 'health_recomendations'
