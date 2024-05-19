@@ -1,21 +1,16 @@
 from django.http import JsonResponse
 from rest_framework import viewsets
-from django.contrib.auth.models import User
 
-class PrevcadView(viewsets.ViewSet):
-    queryset = User.objects.all()
+class HealthCategoryView(viewsets.ViewSet):
     
     def list(self, request):
-        return JsonResponse({'message': 'Hello, world!'})
+        categories = [
+            {'title': 'Historia de caídas', 'icon': 'account_balance'},
+            {'title': 'Actividad física', 'icon': 'run_circle'},
+            {'title': 'Alimentación saludable', 'icon': 'local_dining'},
+            {'title': 'Medicamentos', 'icon': 'medication'},
+            # Add more categories as needed
+        ]
+        return JsonResponse({'categories': categories})
 
-    def create(self, request):
-        return JsonResponse({'message': 'Hello, world!'})
-    
-    def retrieve(self, request, pk=None):
-        pass
-
-    def update(self, request, pk=None):
-        pass
-
-    def destroy(self, request, pk=None):
-        pass
+    # Other methods can remain unchanged if not used
