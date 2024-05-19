@@ -1,3 +1,4 @@
+from typing import Any
 from django.db import models
     
 class Card(models.Model):
@@ -9,11 +10,12 @@ class Card(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     
     class Meta:
-        db_table = 'cards'
+
         abstract = True
 
 class HealthCategory(Card):
     icon = models.TextField(max_length=100) # Image
+    recomendations = models.ForeignKey('HealthRecomendation', on_delete=models.CASCADE)
 
     class Meta:
         db_table = 'health_categories'
@@ -22,22 +24,22 @@ class HealthCategory(Card):
         return self.name
     
     def create_health_recomendation(self, user):
-        return self.objects.create(user=user)
+        return self.recomendations.create(user=user)
     
     def delete_health_recomendation(self, card_id):
-        return Card.objects.get(id=card_id).delete()
+        return self.recomendations.get(id=card_id).delete()
     
     def get_health_recomendation(self, card_id):
-        return Card.objects.get(id=card_id)
+        return self.objects.get(id=card_id)
     
     def get_health_recomendation_all(self):
-        return Card.objects.all()
+        return self.objects.all()
     
     def get_user_health_recomendation_all(self, user_id):
-        return Card.objects.filter(user=user_id)
+        return self.objects.filter(user=user_id)
     
     def update_health_recomendation(self, card_id):
-        card = Card.objects.get(id=card_id)
+        card = self.objects.get(id=card_id)
         card.save()
 
 class HealthRecomedation(Card):
