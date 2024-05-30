@@ -11,3 +11,4 @@ admin.site.unregister(User)
 admin.site.register(User, UserAdmin)
 admin.site.register(HealthCategory)
 admin.site.register(EvaluationRecomendation)
+# hola

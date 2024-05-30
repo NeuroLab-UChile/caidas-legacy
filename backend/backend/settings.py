@@ -37,7 +37,6 @@ ALLOWED_HOSTS = [
 #     "http://127.0.0.1:8000",
 # ]
 
-# TODO: Remove this line before production
 CORS_ALLOW_ALL_ORIGINS = True
 
 # Application definition
@@ -50,9 +49,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'corsheaders',
     'rest_framework',
     'prevcad',
-    
 ]
 
 MIDDLEWARE = [
