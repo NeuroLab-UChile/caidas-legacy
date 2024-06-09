@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/services/auth_services.dart';
+import 'package:frontend/views/login_screen.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
@@ -8,10 +10,31 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home: Scaffold(
-        appBar: AppBar(title: Text('Flutter Django Connection')),
-        body: CategoriesList(),
-      ),
+      routes: {
+        '/': (context) => AuthCheck(),
+        '/categories': (context) => CategoriesList(),
+      },
+      initialRoute: '/',
+    );
+  }
+}
+
+class AuthCheck extends StatelessWidget {
+  final AuthService _authService = AuthService();
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<String?>(
+      future: _authService.getAccessToken(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Center(child: CircularProgressIndicator());
+        } else if (snapshot.hasData) {
+          return CategoriesList();
+        } else {
+          return LoginScreen();
+        }
+      },
     );
   }
 }
@@ -22,18 +45,29 @@ class CategoriesList extends StatefulWidget {
 }
 
 class _CategoriesListState extends State<CategoriesList> {
+  final AuthService _authService = AuthService();
+
   Future<List<Category>> _fetchCategories() async {
+    final accessToken = await _authService.getAccessToken();
     try {
-      final response = await http.get(Uri.parse('http://127.0.0.1:8000/api/prevcad'));
+      final response = await http.get(
+        Uri.parse('http://127.0.0.1:8000/api/prevcad'),
+        headers: {
+          'Authorization': 'Bearer $accessToken',
+        },
+      );
       print('Request URL: ${response.request!.url}');
       print('Response status: ${response.statusCode}');
       print('Response body: ${response.body}');
       if (response.statusCode == 200) {
         final jsonResponse = json.decode(response.body);
         final categories = jsonResponse['categories'] as List;
-        return categories.map((category) => Category.fromJson(category)).toList();
+        return categories
+            .map((category) => Category.fromJson(category))
+            .toList();
       } else {
-        print('Failed to load categories with status code: ${response.statusCode}');
+        print(
+            'Failed to load categories with status code: ${response.statusCode}');
         throw Exception('Failed to load categories');
       }
     } catch (e) {
@@ -44,27 +78,41 @@ class _CategoriesListState extends State<CategoriesList> {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<List<Category>>(
-      future: _fetchCategories(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return Center(child: CircularProgressIndicator());
-        } else if (snapshot.hasError) {
-          return Center(child: Text('Error: ${snapshot.error}'));
-        } else {
-          final categories = snapshot.data!;
-          return ListView.builder(
-            itemCount: categories.length,
-            itemBuilder: (context, index) {
-              final category = categories[index];
-              return ListTile(
-                leading: Icon(Icons.category), // Puedes mapear los iconos aquí
-                title: Text(category.title),
-              );
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Categories'),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.logout),
+            onPressed: () async {
+              await _authService.logout();
+              Navigator.pushReplacementNamed(context, '/');
             },
-          );
-        }
-      },
+          ),
+        ],
+      ),
+      body: FutureBuilder<List<Category>>(
+        future: _fetchCategories(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(child: CircularProgressIndicator());
+          } else if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}'));
+          } else {
+            final categories = snapshot.data!;
+            return ListView.builder(
+              itemCount: categories.length,
+              itemBuilder: (context, index) {
+                final category = categories[index];
+                return ListTile(
+                  leading: Icon(Icons.category),
+                  title: Text(category.title),
+                );
+              },
+            );
+          }
+        },
+      ),
     );
   }
 }
