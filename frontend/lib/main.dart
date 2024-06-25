@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/models/category.dart';
 import 'package:frontend/services/auth_services.dart';
 import 'package:frontend/views/login_screen.dart';
 import 'package:http/http.dart' as http;
@@ -113,20 +114,6 @@ class _CategoriesListState extends State<CategoriesList> {
           }
         },
       ),
-    );
-  }
-}
-
-class Category {
-  final String title;
-  final String icon;
-
-  Category({required this.title, required this.icon});
-
-  factory Category.fromJson(Map<String, dynamic> json) {
-    return Category(
-      title: json['title'],
-      icon: json['icon'],
     );
   }
 }
