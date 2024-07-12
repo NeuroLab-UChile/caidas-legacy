@@ -10,11 +10,15 @@ class HealthCategoryView(viewsets.ViewSet):
     def list(self, request):
 
         categories = [
-            {'title': 'Historia de caídas', 'icon': 'account_balance'},
-            {'title': 'Actividad física', 'icon': 'run_circle'},
-            {'title': 'Alimentación saludable', 'icon': 'local_dining'},
-            {'title': 'Medicamentos', 'icon': 'medication'},
-            # Add more categories as needed
+            {'title': 'Historia de caídas', 'icon': 'local_hospital'},
+            {'title': 'Actividad física', 'icon': 'directions_run'},
+            {'title': 'Alimentación saludable', 'icon': 'restaurant'},
+            {'title': 'Medicamentos', 'icon': 'accessibility'},
+            {'title': 'Salud mental', 'icon': 'home'},
+            {'title': 'Salud sexual', 'icon': 'medication'},
+            {'title': 'Salud bucal', 'icon': 'psychology'},
+            {'title': 'Salud visual', 'icon': 'visibility'},
+            {'title': 'Salud auditiva', 'icon': 'fitness_center'},
         ]
         return JsonResponse({'categories': categories})
 

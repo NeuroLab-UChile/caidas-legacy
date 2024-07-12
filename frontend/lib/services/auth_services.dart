@@ -50,4 +50,20 @@ class AuthService {
   Future<String?> getAccessToken() async {
     return await _storage.read(key: 'access_token');
   }
+
+  Future<bool> isLoggedIn() async {
+    final token = await getAccessToken();
+    if (token == null) {
+      return false;
+    }
+
+    final response = await http.get(
+      Uri.parse('http://127.0.0.1:8000/api/prevcad'), // Cambia a un endpoint protegido real
+      headers: {
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    return response.statusCode == 200;
+  }
 }

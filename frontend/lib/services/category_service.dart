@@ -1,12 +1,20 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:frontend/services/auth_services.dart';
 import '../models/category.dart';
 
 class CategoryService {
   static const String _baseUrl = "http://127.0.0.1:8000/api/prevcad";
+  final AuthService _authService = AuthService();
 
-  static Future<List<Category>> fetchCategories() async {
-    final response = await http.get(Uri.parse(_baseUrl));
+  Future<List<Category>> fetchCategories() async {
+    final accessToken = await _authService.getAccessToken();
+    final response = await http.get(
+      Uri.parse(_baseUrl),
+      headers: {
+        'Authorization': 'Bearer $accessToken',
+      },
+    );
 
     if (response.statusCode == 200) {
       List jsonResponse = json.decode(response.body)['categories'];
