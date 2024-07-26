@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/models/category.dart';
 import 'package:frontend/services/auth_services.dart';
 import 'package:frontend/views/login_screen.dart';
 import 'package:frontend/views/categories_list.dart';
