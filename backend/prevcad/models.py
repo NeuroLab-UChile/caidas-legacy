@@ -10,7 +10,6 @@ class Card(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     
     class Meta:
-
         abstract = True
 
 class HealthCategory(Card):
@@ -68,8 +67,19 @@ class WorkRecomendation(HealthRecomedation):
 
 class EvaluationRecomendation(HealthRecomedation):
 
+
     class Meta:
         db_table = 'evaluation_recomendations'
     
     def get_result(self):
         super().get_result()
+
+
+class TextRecomendation(models.Model):
+    text= models.TextField(max_length=100)
+
+    inside_text =  models.TextField(max_length=200)
+        
+    class Meta:
+        db_table = 'text_recomendation'
+    
