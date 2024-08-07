@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:frontend/views/sections/categories_section.dart';
+import 'package:frontend/sections/categories_section.dart';
 import 'package:frontend/views/login_screen.dart';
 import 'package:frontend/services/auth_services.dart';
-import 'package:frontend/views/sections/scroll_section.dart';
+import 'package:frontend/sections/scroll_section.dart';
 
 class DashboardScreen extends StatefulWidget {
   @override

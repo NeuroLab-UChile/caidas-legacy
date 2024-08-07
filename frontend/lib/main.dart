@@ -3,7 +3,7 @@ import 'package:frontend/models/category.dart';
 import 'package:frontend/services/auth_services.dart';
 import 'package:frontend/views/dashboard_screen.dart';
 import 'package:frontend/views/login_screen.dart';
-import 'package:frontend/views/sections/categories_section.dart';
+import 'package:frontend/sections/categories_section.dart';
 
 void main() => runApp(MyApp());
 
