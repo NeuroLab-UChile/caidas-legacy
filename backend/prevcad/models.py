@@ -76,7 +76,7 @@ class EvaluationRecomendation(HealthRecomedation):
 
 
 class TextRecomendation(models.Model):
-    text= models.TextField(max_length=100)
+    title= models.TextField(max_length=100)
 
     inside_text =  models.TextField(max_length=200)
         

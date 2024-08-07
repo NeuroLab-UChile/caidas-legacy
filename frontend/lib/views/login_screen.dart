@@ -19,7 +19,7 @@ class _LoginScreenState extends State<LoginScreen> {
       await _authService.login(username, password);
 
       // Navegar a la pantalla principal si el login es exitoso
-      Navigator.pushReplacementNamed(context, '/categories');
+      Navigator.pushReplacementNamed(context, '/dashboard');
     } catch (e) {
       // Manejar error de inicio de sesión
       ScaffoldMessenger.of(context).showSnackBar(

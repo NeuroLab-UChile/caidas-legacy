@@ -1,7 +1,7 @@
 from django.contrib import admin # type: ignore
 from django.contrib.auth.models import User # type: ignore
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin # type: ignore
-from .models import HealthCategory, HealthRecomedation, EvaluationRecomendation
+from .models import HealthCategory, EvaluationRecomendation, TextRecomendation
 
 class UserAdmin(BaseUserAdmin):
     list_display = ('username', 'email', 'first_name', 'last_name', 'is_staff', 'is_superuser', 'is_active')
@@ -11,4 +11,5 @@ admin.site.unregister(User)
 admin.site.register(User, UserAdmin)
 admin.site.register(HealthCategory)
 admin.site.register(EvaluationRecomendation)
+admin.site.register(TextRecomendation)
 # hola

@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/models/category.dart';
 import 'package:frontend/services/auth_services.dart';
+import 'package:frontend/views/dashboard_screen.dart';
 import 'package:frontend/views/login_screen.dart';
-import 'package:frontend/views/categories_list.dart';
+import 'package:frontend/views/sections/categories_section.dart';
 
 void main() => runApp(MyApp());
 
@@ -12,7 +13,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       routes: {
         '/': (context) => AuthCheck(),
-        '/categories': (context) => CategoriesList(),
+        '/dashboard': (context) => DashboardScreen(),
       },
       initialRoute: '/',
     );
@@ -32,7 +33,7 @@ class AuthCheck extends StatelessWidget {
             body: Center(child: CircularProgressIndicator()),
           );
         } else if (snapshot.hasData && snapshot.data == true) {
-          return CategoriesList();
+          return DashboardScreen();
         } else {
           return LoginScreen();
         }

@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/models/category.dart';
-import 'package:frontend/services/auth_services.dart';
+
 import 'package:frontend/services/category_service.dart';
 
-class CategoriesList extends StatefulWidget {
+class CategoriesSection extends StatefulWidget {
   @override
-  _CategoriesListState createState() => _CategoriesListState();
+  _CategoriesSectionState createState() => _CategoriesSectionState();
 }
 
-class _CategoriesListState extends State<CategoriesList> {
-  final AuthService _authService = AuthService();
+class _CategoriesSectionState extends State<CategoriesSection> {
   final CategoryService _categoryService = CategoryService();
 
   Future<List<Category>> _fetchCategories() async {
@@ -53,15 +52,6 @@ class _CategoriesListState extends State<CategoriesList> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Selecciona una categoría'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () async {
-              await _authService.logout();
-              Navigator.pushReplacementNamed(context, '/');
-            },
-          ),
-        ],
       ),
       body: FutureBuilder<List<Category>>(
         future: _fetchCategories(),
@@ -89,7 +79,7 @@ class _CategoriesListState extends State<CategoriesList> {
                       children: [
                         Icon(getIconData(category.icon), size: 40.0),
                         const SizedBox(height: 20),
-                        Text(category.title, textAlign: TextAlign.center),
+                        Text(category.name, textAlign: TextAlign.center),
                       ],
                     ),
                   );
@@ -98,14 +88,6 @@ class _CategoriesListState extends State<CategoriesList> {
             );
           }
         },
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.calendar_today), label: 'Recordar'),
-          BottomNavigationBarItem(icon: Icon(Icons.check_circle), label: 'Evaluar'),
-          BottomNavigationBarItem(icon: Icon(Icons.fitness_center), label: 'Entrenar'),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Mis Datos'),
-        ],
       ),
     );
   }
