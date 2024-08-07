@@ -1,19 +1,21 @@
 import 'package:flutter/material.dart';
-import 'package:frontend/models/category.dart';
+import 'package:frontend/models/text_recomendation.dart';
+import 'package:frontend/services/text_recomendation_service.dart';
 
-import 'package:frontend/services/category_service.dart';
-
-class CategoriesSection extends StatefulWidget {
+class TextRecomendationSection extends StatefulWidget {
   @override
-  _CategoriesSectionState createState() => _CategoriesSectionState();
+  _TextRecomendationSectionState createState() =>
+      _TextRecomendationSectionState();
 }
 
-class _CategoriesSectionState extends State<CategoriesSection> {
-  final CategoryService _categoryService = CategoryService();
+class _TextRecomendationSectionState extends State<TextRecomendationSection> {
+  final TextRecommendationService _textRecomendationService =
+      TextRecommendationService();
 
-  Future<List<Category>> _fetchCategories() async {
+  Future<List<TextRecomendation>> _fetchTextRecomendations() async {
     try {
-      final categories = await _categoryService.fetchCategories();
+      final categories =
+          await _textRecomendationService.fetchTextRecommendations();
       return categories;
     } catch (e) {
       print('Connection failed with error: $e');
@@ -22,30 +24,6 @@ class _CategoriesSectionState extends State<CategoriesSection> {
   }
 
   // Función para mapear el nombre del icono a IconData
-  IconData getIconData(String iconName) {
-    switch (iconName) {
-      case 'local_hospital':
-        return Icons.local_hospital;
-      case 'directions_run':
-        return Icons.directions_run;
-      case 'restaurant':
-        return Icons.restaurant;
-      case 'accessibility':
-        return Icons.accessibility;
-      case 'home':
-        return Icons.home;
-      case 'medication':
-        return Icons.medication;
-      case 'psychology':
-        return Icons.psychology;
-      case 'visibility':
-        return Icons.visibility;
-      case 'fitness_center':
-        return Icons.fitness_center;
-      default:
-        return Icons.help;
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -53,8 +31,8 @@ class _CategoriesSectionState extends State<CategoriesSection> {
       appBar: AppBar(
         title: const Text('Selecciona una categoría'),
       ),
-      body: FutureBuilder<List<Category>>(
-        future: _fetchCategories(),
+      body: FutureBuilder<List<TextRecomendation>>(
+        future: _fetchTextRecomendations(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -77,9 +55,8 @@ class _CategoriesSectionState extends State<CategoriesSection> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(getIconData(category.icon), size: 40.0),
                         const SizedBox(height: 20),
-                        Text(category.name, textAlign: TextAlign.center),
+                        Text(category.title, textAlign: TextAlign.center),
                       ],
                     ),
                   );
