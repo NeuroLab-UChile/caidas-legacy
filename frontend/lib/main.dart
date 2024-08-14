@@ -3,7 +3,7 @@ import 'package:frontend/models/category.dart';
 import 'package:frontend/services/auth_services.dart';
 import 'package:frontend/views/dashboard_screen.dart';
 import 'package:frontend/views/login_screen.dart';
-import 'package:frontend/sections/categories_section.dart';
+import 'theme/app_theme.dart';
 
 void main() => runApp(MyApp());
 
@@ -16,6 +16,7 @@ class MyApp extends StatelessWidget {
         '/dashboard': (context) => DashboardScreen(),
       },
       initialRoute: '/',
+      theme: AppTheme.lightTheme,
     );
   }
 }

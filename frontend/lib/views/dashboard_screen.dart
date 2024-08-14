@@ -85,17 +85,29 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('PREIDAS'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () async {
-              await _authService.logout();
-              Navigator.pushReplacementNamed(context, '/');
-            },
-          ),
-        ],
+      appBar: PreferredSize(
+        preferredSize:
+            Size.fromHeight(150.0), // Ajusta la altura según sea necesario
+        child: Stack(
+          children: [
+            Container(
+              color: Colors.yellow, // Fondo amarillo
+              height: 150.0, // Altura del fondo amarillo
+            ),
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: ClipPath(
+                clipper:
+                    InvertedCircleClipper(), // Clipper personalizado para el círculo invertido
+                child: Container(
+                  color: Colors.white, // Color del círculo
+                  height: 75.0, // Altura del círculo
+                  width: MediaQuery.of(context).size.width, // Ancho del círculo
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
       body: Center(
         child: _widgetOptions.elementAt(_selectedIndex),
@@ -155,4 +167,25 @@ void main() => runApp(MaterialApp(
       },
     ));
 
-// Ejemplo de LoginScreen, reemplaza con tu implementación real.
+// Clipper personalizado para crear el círculo invertido
+class InvertedCircleClipper extends CustomClipper<Path> {
+  @override
+  Path getClip(Size size) {
+    var path = Path();
+    double radius = 50.0; // Radio del círculo invertido
+
+    path.lineTo(0, size.height - radius);
+    path.arcToPoint(
+      Offset(size.width, size.height - radius),
+      radius: Radius.circular(radius),
+      clockwise: false,
+    );
+    path.lineTo(size.width, 0);
+    path.close();
+
+    return path;
+  }
+
+  @override
+  bool shouldReclip(CustomClipper<Path> oldClipper) => false;
+}

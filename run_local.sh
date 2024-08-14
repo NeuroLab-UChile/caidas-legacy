@@ -10,16 +10,21 @@ REACT_PORT=3001
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
 # Navegar al directorio del backend y ejecutar los comandos
+
 cd "$SCRIPT_DIR/backend"
+python3 -m venv .venv
+
 source .venv/bin/activate
+poetry install
 python manage.py makemigrations
 python manage.py migrate
-python manage.py runserver 
-
-
+python manage.py runserver &
 cd "$SCRIPT_DIR/frontend"
 flutter pub get
-flutter run -d web-server --web-port $FLUTTER_PORT 
+flutter run -d chrome
+
+
+
 # Navegar al directorio de la aplicación Flutter y ejecutar los comandos
 
 # Descomentar las siguientes líneas si quieres ejecutar la aplicación React
