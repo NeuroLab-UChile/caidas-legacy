@@ -9,5 +9,5 @@ router.register('prevcad/health_categories/', HealthCategoryView)
 router.register('prevcad/text_recommendations/', TextRecomendationsView)
 
 urlpatterns = [
-    path('', include(router.urls)),
+  path('', include(router.urls)),
 ]
