@@ -22,12 +22,12 @@ class HealthCategory(Card):
 
 class HealthRecommendation(Card):
   health_category = models.ForeignKey('HealthCategory', on_delete=models.CASCADE)
-  user = models.ForeignKey('auth.User', on_delete=models.CASCADE)
   result = models.TextField()
   view_info = models.TextField()
   
   class Meta:
     abstract = True
+
 
 
 class WorkRecommendation(HealthRecommendation):

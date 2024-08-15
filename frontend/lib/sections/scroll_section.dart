@@ -23,13 +23,11 @@ class _TextRecomendationSectionState extends State<TextRecomendationSection> {
     }
   }
 
-  // Función para mapear el nombre del icono a IconData
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Selecciona una categoría'),
+        title: Text('Recomendaciones de Texto'),
       ),
       body: FutureBuilder<List<TextRecomendation>>(
         future: _fetchTextRecomendations(),
@@ -40,31 +38,74 @@ class _TextRecomendationSectionState extends State<TextRecomendationSection> {
             return Center(child: Text('Error: ${snapshot.error}'));
           } else {
             final categories = snapshot.data!;
-            return Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10.0),
-              child: GridView.builder(
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 3,
-                  crossAxisSpacing: 10.0,
-                  mainAxisSpacing: 10.0,
-                ),
-                itemCount: categories.length,
-                itemBuilder: (context, index) {
-                  final category = categories[index];
-                  return Card(
+
+            return ListView.builder(
+              itemCount: categories.length,
+              itemBuilder: (context, index) {
+                final category = categories[index];
+                return InkWell(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => TextRecommendationDetailPage(
+                          title: category.title,
+                          insideText: category.insideText,
+                        ),
+                      ),
+                    );
+                  },
+                  child: Card(
+                    elevation: 5,
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         const SizedBox(height: 20),
-                        Text(category.title, textAlign: TextAlign.center),
+                        Text(
+                          category.title,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontFamily: 'Roboto',
+                            fontSize: 16.0,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ],
                     ),
-                  );
-                },
-              ),
+                  ),
+                );
+              },
             );
           }
         },
+      ),
+    );
+  }
+}
+
+class TextRecommendationDetailPage extends StatelessWidget {
+  final String title;
+  final String insideText;
+
+  TextRecommendationDetailPage({
+    required this.title,
+    required this.insideText,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(title),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: SingleChildScrollView(
+          child: Text(
+            insideText,
+            style: TextStyle(fontSize: 18.0, fontFamily: 'Roboto'),
+          ),
+        ),
       ),
     );
   }
