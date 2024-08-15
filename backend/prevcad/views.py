@@ -3,44 +3,41 @@ from rest_framework.response import Response
 from prevcad.models import HealthCategory, TextRecomendation
 from prevcad.serializers import HealthCategorySerializer, TextRecomendationSerializer
 
-class HealthCategoryView(viewsets.ViewSet):
-  queryset = HealthCategory.objects.all()
-
-  def create(self, request):
-    serializer = HealthCategorySerializer(data=request.data)
-    if serializer.is_valid():
-      serializer.save()
-      return Response(serializer.data, status=status.HTTP_201_CREATED)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-  def list(self, request):
+class HealthCategoryView(viewsets.ModelViewSet):
     queryset = HealthCategory.objects.all()
-    serializer = HealthCategorySerializer(queryset, many=True)
-    return Response(serializer.data)
+    serializer_class = HealthCategorySerializer
 
-  # Other methods can remain unchanged if not used
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-class TextRecomendationsView(viewsets.ViewSet):
-  queryset = TextRecomendation.objects.all()
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
 
-  def create(self, request):
-    serializer = TextRecomendationSerializer(data=request.data)
-    if serializer.is_valid():
-      serializer.save()
-      return Response(serializer.data, status=status.HTTP_201_CREATED)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-  def retrieve(self, request, pk=None):
-    try:
-      text_recomendation = TextRecomendation.objects.get(pk=pk)
-    except TextRecomendation.DoesNotExist:
-      return Response(status=status.HTTP_404_NOT_FOUND)
-    serializer = TextRecomendationSerializer(text_recomendation)
-    return Response(serializer.data)
-
-  def list(self, request):
+class TextRecomendationsView(viewsets.ModelViewSet):
     queryset = TextRecomendation.objects.all()
-    serializer = TextRecomendationSerializer(queryset, many=True)
-    return Response(serializer.data)
+    serializer_class = TextRecomendationSerializer
 
-  # Other methods can remain unchanged if not used
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    def retrieve(self, request, pk=None, *args, **kwargs):
+        try:
+            instance = self.get_object()
+            serializer = self.get_serializer(instance)
+            return Response(serializer.data)
+        except TextRecomendation.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
