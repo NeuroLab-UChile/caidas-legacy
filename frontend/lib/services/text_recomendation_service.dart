@@ -21,7 +21,7 @@ class TextRecommendationService {
     print('Response body: ${response.body}');
 
     if (response.statusCode == 200) {
-      List jsonResponse = json.decode(response.body);
+      List<dynamic> jsonResponse = json.decode(utf8.decode(response.bodyBytes));
       print('Parsed JSON: $jsonResponse');
       return jsonResponse
           .map((textRecommendation) =>

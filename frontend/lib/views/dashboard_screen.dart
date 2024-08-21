@@ -139,7 +139,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
           Expanded(
             child: Padding(
               padding: const EdgeInsets.symmetric(
-                  horizontal: 8.0), // Margen horizontal
+                horizontal: 20.0,
+                vertical: 10.0,
+              ),
               child: Material(
                 elevation: 4.0,
                 borderRadius: BorderRadius.circular(10.0),
