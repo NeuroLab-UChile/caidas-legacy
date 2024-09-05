@@ -50,6 +50,7 @@ class _CategoriesSectionState extends State<CategoriesSection> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: Colors.white,
         title: const Text('Selecciona una categoría'),
       ),
       body: FutureBuilder<List<Category>>(
@@ -62,10 +63,11 @@ class _CategoriesSectionState extends State<CategoriesSection> {
           } else {
             final categories = snapshot.data!;
             return Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10.0),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 10.0, vertical: 20.0),
               child: GridView.builder(
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 3,
+                  crossAxisCount: 2,
                   crossAxisSpacing: 10.0,
                   mainAxisSpacing: 10.0,
                 ),

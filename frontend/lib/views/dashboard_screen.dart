@@ -56,6 +56,7 @@ class MyDataSection extends StatelessWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   int _selectedIndex = 0;
+  bool _isHomeSelected = false; // Estado adicional para la casita
   final AuthService _authService = AuthService();
 
   final List<Widget> _widgetOptions = <Widget>[
@@ -69,14 +70,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
+      _isHomeSelected =
+          false; // Cuando se selecciona un ítem, desactiva la casita
     });
   }
 
   Future<void> _logout() async {
-    // Lógica de cierre de sesión
     await _authService.logout();
-
-    // Navegar a la pantalla de inicio de sesión después del cierre de sesión
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(
         builder: (context) => LoginScreen(),
@@ -86,7 +86,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   void _onFabPressed() {
     setState(() {
-      _selectedIndex = 4; // Cambia al índice de la nueva sección
+      _isHomeSelected =
+          true; // Cambia al estado de la casita sin modificar el índice
     });
   }
 
@@ -95,18 +96,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Scaffold(
       body: Column(
         children: [
-          // Sección superior con fondo amarillo y círculo blanco
           Stack(
-            clipBehavior:
-                Clip.none, // Permite que el círculo sobresalga del contenedor
+            clipBehavior: Clip.none,
             children: [
               Container(
-                height: 140.0,
-                color: Colors.yellow, // Fondo amarillo
+                height: 120.0,
+                color: Colors.yellow,
               ),
               Positioned(
-                top:
-                    100.0, // Ajusta la posición superior para reducir el espacio
+                top: 80.0,
                 left: MediaQuery.of(context).size.width / 2 - 40,
                 child: Container(
                   width: 100.0,
@@ -124,10 +122,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                 ),
               ),
-              // Botón de cierre de sesión en la esquina superior derecha
               Positioned(
-                top: 40.0, // Ajusta según sea necesario
-                right: 20.0, // Ajusta según sea necesario
+                top: 40.0,
+                right: 20.0,
                 child: IconButton(
                   icon: Icon(Icons.logout, color: Colors.black),
                   onPressed: _logout,
@@ -135,7 +132,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
             ],
           ),
-          // Sección principal donde irán los widgets
           Expanded(
             child: Padding(
               padding: const EdgeInsets.symmetric(
@@ -149,10 +145,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 child: Container(
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius:
-                        BorderRadius.circular(10.0), // Bordes redondeados
+                    borderRadius: BorderRadius.circular(10.0),
                   ),
-                  child: _widgetOptions.elementAt(_selectedIndex),
+                  child: _isHomeSelected
+                      ? CategoriesWidget() // Muestra la vista de la casita
+                      : _widgetOptions.elementAt(
+                          _selectedIndex), // Muestra la vista seleccionada del BottomNavigationBar
                 ),
               ),
             ),
@@ -160,7 +158,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex < 4 ? _selectedIndex : 0,
+        currentIndex: _selectedIndex,
         onTap: _onItemTapped,
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(

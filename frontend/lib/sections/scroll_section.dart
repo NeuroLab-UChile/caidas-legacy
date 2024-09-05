@@ -27,6 +27,7 @@ class _TextRecomendationSectionState extends State<TextRecomendationSection> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: Colors.white,
         title: Text('Recomendaciones de Texto'),
       ),
       body: FutureBuilder<List<TextRecomendation>>(
