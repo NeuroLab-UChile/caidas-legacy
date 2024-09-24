@@ -57,6 +57,9 @@ class MyDataSection extends StatelessWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   int _selectedIndex = 0;
   bool _isHomeSelected = false; // Estado adicional para la casita
+
+  List<Color> _iconColors = List.generate(5, (index) => Colors.grey);
+
   final AuthService _authService = AuthService();
 
   final List<Widget> _widgetOptions = <Widget>[
@@ -70,8 +73,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
-      _isHomeSelected =
-          false; // Cuando se selecciona un ítem, desactiva la casita
+      _isHomeSelected = false;
+
+      // Actualizar colores: blanco si está seleccionado, gris si no
+      for (int i = 0; i < _iconColors.length; i++) {
+        _iconColors[i] = i == index + 1 ? Colors.black : Colors.grey;
+      }
     });
   }
 
@@ -86,8 +93,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   void _onFabPressed() {
     setState(() {
-      _isHomeSelected =
-          true; // Cambia al estado de la casita sin modificar el índice
+      _isHomeSelected = true;
+
+      _iconColors =
+          List.generate(5, (index) => index == 0 ? Colors.grey : Colors.grey);
     });
   }
 
@@ -160,21 +169,36 @@ class _DashboardScreenState extends State<DashboardScreen> {
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
-        items: const <BottomNavigationBarItem>[
+        selectedItemColor:
+            Colors.grey, // Esto colorea el texto del ítem seleccionado
+        unselectedItemColor:
+            Colors.grey, // Esto colorea el texto del ítem no seleccionado
+        selectedLabelStyle: TextStyle(
+          fontWeight:
+              FontWeight.normal, // Texto en negrita cuando está seleccionado
+          fontSize: 12, // Tamaño de fuente para el texto seleccionado
+        ),
+        unselectedLabelStyle: TextStyle(
+          fontWeight:
+              FontWeight.normal, // Texto normal cuando no está seleccionado
+          fontSize: 12, // Tamaño de fuente para el texto no seleccionado
+        ),
+
+        items: <BottomNavigationBarItem>[
           BottomNavigationBarItem(
-            icon: Icon(Icons.bookmark),
+            icon: Icon(Icons.bookmark, color: _iconColors[1]),
             label: 'Recordar',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.star),
+            icon: Icon(Icons.star, color: _iconColors[2]),
             label: 'Evaluar',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.fitness_center),
+            icon: Icon(Icons.fitness_center, color: _iconColors[3]),
             label: 'Entrenar',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.person),
+            icon: Icon(Icons.person, color: _iconColors[4]),
             label: 'Mis Datos',
           ),
         ],
@@ -182,7 +206,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _onFabPressed,
-        child: Icon(Icons.home),
+        child: Icon(Icons.home,
+            color: _isHomeSelected ? Colors.black : Colors.grey),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
