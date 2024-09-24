@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:frontend/providers/category_provider.dart';
 import 'package:provider/provider.dart';
 
-class EvaluatationSection extends StatefulWidget {
+class TrainingSection extends StatefulWidget {
   @override
-  _EvaluateSectionState createState() => _EvaluateSectionState();
+  _TrainSectionState createState() => _TrainSectionState();
 }
 
-class _EvaluateSectionState extends State<EvaluatationSection> {
+class _TrainSectionState extends State<TrainingSection> {
   @override
   Widget build(BuildContext context) {
     // Accediendo al provider que mantiene el estado de la categoría seleccionada
@@ -22,7 +22,7 @@ class _EvaluateSectionState extends State<EvaluatationSection> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          Text('Evaluación para la Categoría:'),
+          Text('Entrenamiento para la Categoría:'),
           Text(
               'ID: ${categoryProvider.selectedCategoryId}'), // Muestra el ID de la categoría
           Text(

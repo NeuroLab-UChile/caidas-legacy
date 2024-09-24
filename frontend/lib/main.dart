@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/models/category.dart';
+import 'package:frontend/providers/category_provider.dart';
 import 'package:frontend/services/auth_services.dart';
 import 'package:frontend/views/dashboard_screen.dart';
 import 'package:frontend/views/login_screen.dart';
+import 'package:provider/provider.dart';
 import 'theme/app_theme.dart';
 
 void main() => runApp(MyApp());
@@ -10,13 +12,16 @@ void main() => runApp(MyApp());
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      routes: {
-        '/': (context) => AuthCheck(),
-        '/dashboard': (context) => DashboardScreen(),
-      },
-      initialRoute: '/',
-      theme: AppTheme.lightTheme,
+    return ChangeNotifierProvider(
+      create: (context) => CategoryProvider(),
+      child: MaterialApp(
+        routes: {
+          '/': (context) => AuthCheck(),
+          '/dashboard': (context) => DashboardScreen(),
+        },
+        initialRoute: '/',
+        theme: AppTheme.lightTheme,
+      ),
     );
   }
 }

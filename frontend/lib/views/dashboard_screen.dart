@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/sections/categories_section.dart';
+import 'package:frontend/sections/evaluation_section.dart';
+import 'package:frontend/sections/train_section.dart';
 import 'package:frontend/views/login_screen.dart';
 import 'package:frontend/services/auth_services.dart';
 import 'package:frontend/sections/scroll_section.dart';
@@ -31,7 +33,7 @@ class EvaluateSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: Text('Evaluar Sección'),
+      child: EvaluatationSection(),
     );
   }
 }
@@ -40,7 +42,7 @@ class TrainSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: Text('Entrenar Sección'),
+      child: TrainingSection(),
     );
   }
 }
@@ -56,7 +58,7 @@ class MyDataSection extends StatelessWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   int _selectedIndex = 0;
-  bool _isHomeSelected = false; // Estado adicional para la casita
+  bool _isHomeSelected = true; // Estado adicional para la casita
 
   List<Color> _iconColors = List.generate(5, (index) => Colors.grey);
 
