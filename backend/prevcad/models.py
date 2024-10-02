@@ -5,7 +5,7 @@ from django.utils.encoding import smart_str
 class Card(models.Model):
     id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=100)
-    image = models.CharField(max_length=500)
+    image = models.ImageField(name='image', upload_to='health_categories_images/')  # Cambié a ImageField
     description = models.TextField(max_length=10000)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -13,20 +13,24 @@ class Card(models.Model):
     def save(self, *args: Any, **kwargs: Any) -> None:
         # Asegurar que los campos de texto están correctamente codificados
         self.name = smart_str(self.name)
-        self.image = smart_str(self.image)
+     
         self.description = smart_str(self.description)
         super().save(*args, **kwargs)
+
+    def upload_to(self, instance: Any, filename: str) -> str:
+        return f'{instance.__class__.__name__}/{filename}'
+    
 
     class Meta:
         abstract = True
 
 
 class HealthCategory(Card):
-    icon = models.CharField(max_length=500)
+    icon = models.ImageField(upload_to='health_categories_icons/')  # Cambié a ImageField
 
     def save(self, *args: Any, **kwargs: Any) -> None:
         # Asegurar que el campo 'icon' está correctamente codificado
-        self.icon = smart_str(self.icon)
+      
         super().save(*args, **kwargs)
 
     class Meta:

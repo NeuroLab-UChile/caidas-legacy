@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/providers/category_provider.dart';
 import 'package:provider/provider.dart';
+import 'dart:typed_data'; // Asegúrate de importar esta librería
 
 class CategoriesSection extends StatelessWidget {
   @override
@@ -30,7 +31,15 @@ class CategoriesSection extends StatelessWidget {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.category, size: 40.0),
+                      // Mostrar la imagen decodificada desde los bytes
+                      category.image.isNotEmpty
+                          ? Image.memory(
+                              category.image, // Mostrar la imagen
+                              width: 80,
+                              height: 80,
+                              fit: BoxFit.cover,
+                            )
+                          : const Icon(Icons.category, size: 80),
                       const SizedBox(height: 20),
                       Text(category.name, textAlign: TextAlign.center),
                     ],
