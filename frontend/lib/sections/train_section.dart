@@ -3,6 +3,8 @@ import 'package:frontend/providers/category_provider.dart';
 import 'package:provider/provider.dart';
 
 class TrainingSection extends StatefulWidget {
+  const TrainingSection({super.key});
+
   @override
   _TrainSectionState createState() => _TrainSectionState();
 }
@@ -15,18 +17,18 @@ class _TrainSectionState extends State<TrainingSection> {
 
     // Asegúrate de que el provider esté inicializado y tenga datos
     if (categoryProvider.selectedCategoryId == null) {
-      return Center(child: Text("No category has been selected."));
+      return const Center(child: Text("No category has been selected."));
     }
 
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          Text('Entrenamiento para la Categoría:'),
+          const Text('Entrenamiento para la Categoría:'),
           Text(
               'ID: ${categoryProvider.selectedCategoryId}'), // Muestra el ID de la categoría
           Text(
-              'Nombre: ${categoryProvider.categories!.firstWhere((element) => element.id == categoryProvider.selectedCategoryId).name}'), // Muestra el nombre de la categoría
+              'Nombre: ${categoryProvider.categories.firstWhere((element) => element.id == categoryProvider.selectedCategoryId).name}'), // Muestra el nombre de la categoría
         ],
       ),
     );

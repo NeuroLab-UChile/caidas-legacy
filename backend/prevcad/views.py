@@ -1,7 +1,14 @@
 from rest_framework import viewsets, status
 from rest_framework.response import Response
 from prevcad.models import HealthCategory, TextRecomendation
-from prevcad.serializers import HealthCategorySerializer, TextRecomendationSerializer
+from prevcad.serializers import HealthCategorySerializer, TextRecomendationSerializer, UserSerializer
+
+from rest_framework import generics
+from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.response import Response
+
+
 
 class HealthCategoryView(viewsets.ModelViewSet):
   queryset = HealthCategory.objects.all()
@@ -40,4 +47,19 @@ class TextRecomendationsView(viewsets.ModelViewSet):
   def list(self, request, *args, **kwargs):
     queryset = self.get_queryset()
     serializer = self.get_serializer(queryset, many=True)
+    return Response(serializer.data)
+
+
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def getProfile(request):
+    user = request.user  # El usuario se obtiene automáticamente del token
+    serializer = UserSerializer(user, many=False)
+    
+    # Imprimir la información del usuario en el servidor para depuración
+    print(f"Usuario autenticado: {user}")
+    print(f"Datos serializados del usuario: {serializer.data}")
+    
     return Response(serializer.data)

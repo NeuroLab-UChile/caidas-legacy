@@ -3,6 +3,8 @@ import 'package:frontend/models/text_recomendation.dart';
 import 'package:frontend/services/text_recomendation_service.dart';
 
 class TextRecomendationSection extends StatefulWidget {
+  const TextRecomendationSection({super.key});
+
   @override
   _TextRecomendationSectionState createState() =>
       _TextRecomendationSectionState();
@@ -28,7 +30,7 @@ class _TextRecomendationSectionState extends State<TextRecomendationSection> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.white,
-        title: Text('Recomendaciones de Texto'),
+        title: const Text('Recomendaciones de Texto'),
       ),
       body: FutureBuilder<List<TextRecomendation>>(
         future: _fetchTextRecomendations(),
@@ -88,7 +90,7 @@ class TextRecommendationDetailPage extends StatelessWidget {
   final String title;
   final String insideText;
 
-  TextRecommendationDetailPage({
+  const TextRecommendationDetailPage({super.key, 
     required this.title,
     required this.insideText,
   });
@@ -104,7 +106,7 @@ class TextRecommendationDetailPage extends StatelessWidget {
         child: SingleChildScrollView(
           child: Text(
             insideText,
-            style: TextStyle(fontSize: 18.0, fontFamily: 'Roboto'),
+            style: const TextStyle(fontSize: 18.0, fontFamily: 'Roboto'),
           ),
         ),
       ),

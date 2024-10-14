@@ -7,6 +7,9 @@ from rest_framework import serializers
 from django.utils.encoding import smart_str
 from prevcad.models import HealthCategory
 
+from django.contrib.auth.models import User
+
+
 class HealthCategorySerializer(serializers.ModelSerializer):
     name = serializers.CharField(max_length=255)
     description = serializers.CharField()
@@ -49,3 +52,8 @@ class TextRecomendationSerializer(serializers.ModelSerializer):
         instance.title = smart_str(instance.title)
         instance.inside_text = smart_str(instance.inside_text)
         return super().to_representation(instance)
+
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'is_active']  # Campos que quieras exponer

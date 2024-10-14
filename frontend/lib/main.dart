@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:frontend/models/category.dart';
 import 'package:frontend/providers/category_provider.dart';
 import 'package:frontend/services/auth_services.dart';
 import 'package:frontend/views/dashboard_screen.dart';
@@ -7,9 +6,11 @@ import 'package:frontend/views/login_screen.dart';
 import 'package:provider/provider.dart';
 import 'theme/app_theme.dart';
 
-void main() => runApp(MyApp());
+void main() => runApp(const MyApp());
 
 class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
@@ -17,7 +18,7 @@ class MyApp extends StatelessWidget {
       child: MaterialApp(
         routes: {
           '/': (context) => AuthCheck(),
-          '/dashboard': (context) => DashboardScreen(),
+          '/dashboard': (context) => const DashboardScreen(),
         },
         initialRoute: '/',
         theme: AppTheme.lightTheme,
@@ -29,19 +30,21 @@ class MyApp extends StatelessWidget {
 class AuthCheck extends StatelessWidget {
   final AuthService _authService = AuthService();
 
+  AuthCheck({super.key});
+
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<bool>(
       future: _authService.isLoggedIn(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return Scaffold(
+          return const Scaffold(
             body: Center(child: CircularProgressIndicator()),
           );
         } else if (snapshot.hasData && snapshot.data == true) {
-          return DashboardScreen();
+          return const DashboardScreen();
         } else {
-          return LoginScreen();
+          return const LoginScreen();
         }
       },
     );

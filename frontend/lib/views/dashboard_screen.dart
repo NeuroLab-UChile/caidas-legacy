@@ -1,57 +1,71 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/models/user.dart';
 import 'package:frontend/sections/categories_section.dart';
 import 'package:frontend/sections/evaluation_section.dart';
 import 'package:frontend/sections/train_section.dart';
+import 'package:frontend/sections/user_section.dart';
 import 'package:frontend/views/login_screen.dart';
 import 'package:frontend/services/auth_services.dart';
 import 'package:frontend/sections/scroll_section.dart';
 
 class DashboardScreen extends StatefulWidget {
+  const DashboardScreen({super.key});
+
   @override
   _DashboardScreenState createState() => _DashboardScreenState();
 }
 
 class ScrollWidget extends StatelessWidget {
+  const ScrollWidget({super.key});
+
   @override
   Widget build(BuildContext context) {
-    return Center(
+    return const Center(
       child: TextRecomendationSection(),
     );
   }
 }
 
 class CategoriesWidget extends StatelessWidget {
+  const CategoriesWidget({super.key});
+
   @override
   Widget build(BuildContext context) {
-    return Center(
+    return const Center(
       child: CategoriesSection(),
     );
   }
 }
 
 class EvaluateSection extends StatelessWidget {
+  const EvaluateSection({super.key});
+
   @override
   Widget build(BuildContext context) {
-    return Center(
+    return const Center(
       child: EvaluatationSection(),
     );
   }
 }
 
 class TrainSection extends StatelessWidget {
+  const TrainSection({super.key});
+
   @override
   Widget build(BuildContext context) {
-    return Center(
+    return const Center(
       child: TrainingSection(),
     );
   }
 }
 
 class MyDataSection extends StatelessWidget {
+  const MyDataSection({super.key});
+
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Text('Mis Datos Sección'),
+    return const Center(
+      child: UserDataSection(),
     );
   }
 }
@@ -65,11 +79,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
   final AuthService _authService = AuthService();
 
   final List<Widget> _widgetOptions = <Widget>[
-    ScrollWidget(),
-    EvaluateSection(),
-    TrainSection(),
-    MyDataSection(),
-    CategoriesWidget(),
+    const ScrollWidget(),
+    const EvaluateSection(),
+    const TrainSection(),
+    const MyDataSection(),
+    const CategoriesWidget(),
   ];
 
   void _onItemTapped(int index) {
@@ -79,7 +93,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
       // Actualizar colores: blanco si está seleccionado, gris si no
       for (int i = 0; i < _iconColors.length; i++) {
-        _iconColors[i] = i == index + 1 ? Colors.black : Colors.grey;
+        _iconColors[i] = i == index + 1 ? Colors.white : Colors.grey;
       }
     });
   }
@@ -88,7 +102,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     await _authService.logout();
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(
-        builder: (context) => LoginScreen(),
+        builder: (context) => const LoginScreen(),
       ),
     );
   }
@@ -137,7 +151,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 top: 40.0,
                 right: 20.0,
                 child: IconButton(
-                  icon: Icon(Icons.logout, color: Colors.black),
+                  icon: const Icon(Icons.logout, color: Colors.black),
                   onPressed: _logout,
                 ),
               ),
@@ -159,7 +173,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     borderRadius: BorderRadius.circular(10.0),
                   ),
                   child: _isHomeSelected
-                      ? CategoriesWidget() // Muestra la vista de la casita
+                      ? const CategoriesWidget() // Muestra la vista de la casita
                       : _widgetOptions.elementAt(
                           _selectedIndex), // Muestra la vista seleccionada del BottomNavigationBar
                 ),
@@ -171,21 +185,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
+        backgroundColor:
+            Colors.black, // Cambia el fondo del BottomNavigationBar a negro
         selectedItemColor:
-            Colors.grey, // Esto colorea el texto del ítem seleccionado
+            Colors.white, // Iconos y texto seleccionados en blanco
         unselectedItemColor:
-            Colors.grey, // Esto colorea el texto del ítem no seleccionado
-        selectedLabelStyle: TextStyle(
-          fontWeight:
-              FontWeight.normal, // Texto en negrita cuando está seleccionado
-          fontSize: 12, // Tamaño de fuente para el texto seleccionado
+            Colors.grey, // Iconos y texto no seleccionados en gris
+        selectedLabelStyle: const TextStyle(
+          fontWeight: FontWeight.normal,
+          fontSize: 12,
         ),
-        unselectedLabelStyle: TextStyle(
-          fontWeight:
-              FontWeight.normal, // Texto normal cuando no está seleccionado
-          fontSize: 12, // Tamaño de fuente para el texto no seleccionado
+        unselectedLabelStyle: const TextStyle(
+          fontWeight: FontWeight.normal,
+          fontSize: 12,
         ),
-
         items: <BottomNavigationBarItem>[
           BottomNavigationBarItem(
             icon: Icon(Icons.bookmark, color: _iconColors[1]),
@@ -207,9 +220,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
         type: BottomNavigationBarType.fixed,
       ),
       floatingActionButton: FloatingActionButton(
+        backgroundColor: _isHomeSelected
+            ? Colors.white
+            : Colors.black, // Cambia el color del FAB
         onPressed: _onFabPressed,
-        child: Icon(Icons.home,
-            color: _isHomeSelected ? Colors.black : Colors.grey),
+        child: Image.asset(
+          _isHomeSelected
+              ? 'assets/general/logo_dark.png' // Cambia el logo si _isHomeSelected es true
+              : 'assets/general/logo.png', // Muestra otro logo si es false
+          width: 24, // Ajusta el tamaño del PNG según sea necesario
+          height: 24,
+        ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
@@ -217,8 +238,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
 }
 
 void main() => runApp(MaterialApp(
-      home: DashboardScreen(),
+      home: const DashboardScreen(),
       routes: {
-        '/login': (context) => LoginScreen(),
+        '/login': (context) => const LoginScreen(),
       },
     ));

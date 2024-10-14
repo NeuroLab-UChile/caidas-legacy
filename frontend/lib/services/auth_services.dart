@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class AuthService {
-  final _storage = FlutterSecureStorage();
+  final _storage = const FlutterSecureStorage();
 
   Future<void> login(String username, String password) async {
     final response = await http.post(
@@ -58,7 +58,8 @@ class AuthService {
     }
 
     final response = await http.get(
-      Uri.parse('http://127.0.0.1:8000/api/prevcad'), // Cambia a un endpoint protegido real
+      Uri.parse(
+          'http://127.0.0.1:8000/api/prevcad'), // Cambia a un endpoint protegido real
       headers: {
         'Authorization': 'Bearer $token',
       },

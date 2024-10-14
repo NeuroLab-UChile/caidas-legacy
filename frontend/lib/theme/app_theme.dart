@@ -57,7 +57,7 @@ class AppTheme {
         style: ElevatedButton.styleFrom(
           foregroundColor: buttonColor,
           backgroundColor: backgroundColor,
-          side: BorderSide(color: accentColor),
+          side: const BorderSide(color: accentColor),
           textStyle: primaryFont.copyWith(fontWeight: FontWeight.bold),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
@@ -84,7 +84,7 @@ class AppTheme {
       ),
 
       // Estilo de los iconos
-      iconTheme: IconThemeData(
+      iconTheme: const IconThemeData(
         color: accentColor,
         size: 30,
       ),
@@ -93,7 +93,7 @@ class AppTheme {
       appBarTheme: AppBarTheme(
         backgroundColor: primaryColor,
         elevation: 0,
-        iconTheme: IconThemeData(color: accentColor),
+        iconTheme: const IconThemeData(color: accentColor),
         titleTextStyle: primaryFont.copyWith(
           fontSize: 24,
           fontWeight: FontWeight.bold,
