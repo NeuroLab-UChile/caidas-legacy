@@ -1,0 +1,17 @@
+{% extends "admin/base.html" %}
+
+{% block title %}{% if subtitle %}{{ subtitle }} | {% endif %}{{ title }} |
+    {{ site_title|default:_('Django site admin') }}{% endblock %}
+
+{% block branding %}
+    <a href="{% url 'admin:index' %}">
+        <picture>
+            <source srcset="{% static 'assets/logo.png' %}" media="(prefers-color-scheme: dark)">
+            <img class="h-12 w-12 items-center" 
+            src="{% static 'assets/logo.png' %}" 
+            alt="We Train">
+        </picture>
+    </a>
+{% endblock %}
+
+{% block nav-global %}{% endblock %}

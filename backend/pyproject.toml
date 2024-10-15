@@ -14,6 +14,9 @@ sqlparse = "^0.5.0"
 django-cors-headers = "^4.3.1"
 djangorestframework-simplejwt = "^5.3.1"
 pillow = "^10.4.0"
+django-admin-tailwind = "^0.0.31"
+python-decouple = "^3.8"
+model-bakery = "^1.20.0"
 
 
 [build-system]

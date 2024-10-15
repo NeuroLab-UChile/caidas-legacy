@@ -1,8 +1,22 @@
-{% extends "admin/base_site.html" %}
-{% load static %}
+{% extends "admin/base.html" %}
+{% load static %}  <!-- Cargamos la etiqueta static -->
 
-{% block extrahead %}
-{{ block.super }}
-<link rel="stylesheet" type="text/css" href="{% static 'css/custom_admin.css' %}">
+{% block title %}
+  {% if subtitle %}{{ subtitle }} | {% endif %}{{ title }} |
+  {{ site_title|default:_('Django site admin') }}
 {% endblock %}
 
+{% block branding %}
+  <a href="{% url 'admin:index' %}">
+    <picture>
+      <!-- Definimos el logo para el modo oscuro -->
+      <source srcset="{% static 'assets/logo.png' %}" media="(prefers-color-scheme: dark)">
+      <!-- Definimos el logo para el modo claro -->
+      <img class="h-12 w-12 items-center" 
+           src="{% static 'assets/logo.png' %}" 
+           alt="We Train">
+    </picture>
+  </a>
+{% endblock %}
+
+{% block nav-global %}{% endblock %}

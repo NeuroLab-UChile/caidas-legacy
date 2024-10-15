@@ -5,6 +5,7 @@ class User {
   final String firstName;
   final String lastName;
   final bool isActive;
+  final Map<String, dynamic> profile;
 
   User({
     required this.id,
@@ -13,6 +14,7 @@ class User {
     required this.firstName,
     required this.lastName,
     required this.isActive,
+    required this.profile,
   });
 
   // Método para crear una instancia de User desde un JSON
@@ -24,6 +26,7 @@ class User {
       firstName: json['first_name'] ?? '',
       lastName: json['last_name'] ?? '',
       isActive: json['is_active'] ?? false,
+      profile: json['profile'] ?? '',
     );
   }
 }

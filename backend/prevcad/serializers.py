@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.utils.encoding import smart_str
-from prevcad.models import HealthCategory, TextRecomendation
+from prevcad.models import HealthCategory, TextRecomendation, Profile
 
 import base64
 from rest_framework import serializers
@@ -53,7 +53,22 @@ class TextRecomendationSerializer(serializers.ModelSerializer):
         instance.inside_text = smart_str(instance.inside_text)
         return super().to_representation(instance)
 
+class ProfileSerializer(serializers.ModelSerializer):
+  profile_picture = serializers.SerializerMethodField()  # Procesar la imagen como base64
+
+  class Meta:
+    model = Profile
+    fields = ['profile_picture']  # Puedes agregar más campos si los tienes
+
+  def get_profile_picture(self, obj):
+    # Convertir la imagen de perfil a bytes base64
+    if obj.profile_picture and hasattr(obj.profile_picture, 'path'):
+      with open(obj.profile_picture.path, 'rb') as image_file:
+        return base64.b64encode(image_file.read()).decode('utf-8')
+    return None
 class UserSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'is_active']  # Campos que quieras exponer
+  profile = ProfileSerializer()  # Relacionamos el perfil con el usuario
+
+  class Meta:
+    model = User
+    fields = ['id', 'username', 'email', 'first_name', 'last_name', 'profile']  # Incluimos el perfil

@@ -58,8 +58,4 @@ def getProfile(request):
     user = request.user  # El usuario se obtiene automáticamente del token
     serializer = UserSerializer(user, many=False)
     
-    # Imprimir la información del usuario en el servidor para depuración
-    print(f"Usuario autenticado: {user}")
-    print(f"Datos serializados del usuario: {serializer.data}")
-    
     return Response(serializer.data)

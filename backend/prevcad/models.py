@@ -1,6 +1,7 @@
 from typing import Any
 from django.db import models
 from django.utils.encoding import smart_str
+from django.contrib.auth.models import User
 
 class Card(models.Model):
     id = models.AutoField(primary_key=True)
@@ -91,3 +92,13 @@ class TextRecomendation(models.Model):
 
     class Meta:
         db_table = 'text_recomendation'
+class Profile(models.Model):
+  user = models.OneToOneField(User, on_delete=models.CASCADE)
+  profile_picture = models.ImageField(upload_to='profile_pictures/', null=True, blank=True)
+
+  def save(self, *args: Any, **kwargs: Any) -> None:
+    # Guardar el perfil, no es necesario smart_str aquí ya que es una imagen
+    super().save(*args, **kwargs)
+
+  def __str__(self):
+    return self.user.username
