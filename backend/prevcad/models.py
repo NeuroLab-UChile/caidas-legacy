@@ -81,22 +81,44 @@ class EvaluationRecommendation(HealthRecommendation):
     db_table = 'evaluation_recommendations'
 
 
+from django.db import models
+
 class TextRecomendation(models.Model):
-  title = models.CharField(max_length=100)
-  inside_text = models.CharField(max_length=200)
+  theme = models.CharField(max_length=100, default='')  # theme (Templado)
+  category = models.CharField(max_length=100, default='')  # Categoría
+  sub_category = models.CharField(max_length=100, blank=True, null=True, default='')  # Sub-categoría
+  learn = models.TextField(blank=True, null=True, default='')  # ¿Sabía qué?
+  remember = models.TextField(blank=True, null=True, default='')  # remember!
+  data = models.TextField(blank=True, null=True, default='')  # data
+  practic_data = models.TextField(blank=True, null=True, default='')  # data práctico
+  context_explanation = models.TextField(blank=True, null=True, default='')  # Contexto/Explicación
+  quote_link = models.URLField(blank=True, null=True, default='')  # Link (zbib.org para citas APA)
+  keywords = models.CharField(max_length=255, blank=True, null=True, default='')  # Keywords
+  
 
   def save(self, *args: Any, **kwargs: Any) -> None:
-    self.title = smart_str(self.title)
-    self.inside_text = smart_str(self.inside_text)
+    # Asegurar que los campos de texto están correctamente codificados
+    self.theme = smart_str(self.theme)
+    self.category = smart_str(self.category)
+    self.sub_category = smart_str(self.sub_category)
+    self.learn = smart_str(self.learn)
+    self.remember = smart_str(self.remember)
+    self.data = smart_str(self.data)
+    self.practic_data = smart_str(self.practic_data)
+    self.context_explanation = smart_str(self.context_explanation)
+    self.quote_link = smart_str(self.quote_link)
+    self.keywords = smart_str(self.keywords)
     super().save(*args, **kwargs)
-
-  def __str__(self):
-    return self.title
 
   class Meta:
     db_table = 'text_recomendation'
-
-
+    indexes = [
+      models.Index(fields=['theme']),
+      models.Index(fields=['category']),
+      models.Index(fields=['sub_category']),
+    ]
+  
+ 
 class Profile(models.Model):
   user = models.OneToOneField(User, on_delete=models.CASCADE)
   profile_picture = models.ImageField(upload_to='profile_pictures/', null=True, blank=True)

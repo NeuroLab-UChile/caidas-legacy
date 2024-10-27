@@ -27,10 +27,6 @@ class TextRecomendationSectionState extends State<TextRecomendationSection> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        title: const Text('Recomendaciones de Texto'),
-      ),
       body: FutureBuilder<List<TextRecomendation>>(
         future: _fetchTextRecomendations(),
         builder: (context, snapshot) {
@@ -51,27 +47,60 @@ class TextRecomendationSectionState extends State<TextRecomendationSection> {
                       context,
                       MaterialPageRoute(
                         builder: (context) => TextRecommendationDetailPage(
-                          title: category.title,
-                          insideText: category.insideText,
+                          title: category.data,
+                          insideText: category.contextExplanation,
                         ),
                       ),
                     );
                   },
-                  child: Card(
-                    elevation: 5,
+                  child: Container(
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFFFEB3B), // Fondo amarillo
+                    ),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
+                        const SizedBox(height: 100),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                          child: Text(
+                            category.data,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              fontFamily: 'Roboto',
+                              fontSize: 24.0,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black, // Color negro para el texto
+                            ),
+                          ),
+                        ),
                         const SizedBox(height: 20),
                         Text(
-                          category.title,
+                          '//${category.category}/${category.subCategory}', // Mostrar categoría y subcategoría
                           textAlign: TextAlign.center,
                           style: const TextStyle(
                             fontFamily: 'Roboto',
                             fontSize: 16.0,
-                            fontWeight: FontWeight.bold,
+                            color: Colors.black,
                           ),
                         ),
+                        const SizedBox(height: 40),
+                        const Icon(
+                          Icons.abc_rounded,
+                          size: 40,
+                          color: Colors.black,
+                        ),
+                        const Text(
+                          'DESLIZAR HACIA LA DERECHA\nVOLVER POR MÁS INFORMACIÓN',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontFamily: 'Roboto',
+                            fontSize: 14.0,
+                            color: Colors.black,
+                          ),
+                        ),
+                        const SizedBox(height: 50),
                       ],
                     ),
                   ),
@@ -89,7 +118,8 @@ class TextRecommendationDetailPage extends StatelessWidget {
   final String title;
   final String insideText;
 
-  const TextRecommendationDetailPage({super.key, 
+  const TextRecommendationDetailPage({
+    super.key,
     required this.title,
     required this.insideText,
   });
@@ -99,13 +129,18 @@ class TextRecommendationDetailPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text(title),
+        backgroundColor: const Color(0xFFFFEB3B), // Fondo amarillo en la barra
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: SingleChildScrollView(
           child: Text(
             insideText,
-            style: const TextStyle(fontSize: 18.0, fontFamily: 'Roboto'),
+            style: const TextStyle(
+              fontSize: 18.0,
+              fontFamily: 'Roboto',
+              color: Colors.black, // Texto en color negro
+            ),
           ),
         ),
       ),

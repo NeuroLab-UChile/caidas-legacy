@@ -126,7 +126,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             children: [
               Container(
                 height: 120.0,
-                color: Colors.yellow,
+                color: Theme.of(context).colorScheme.primary,
               ),
               Positioned(
                 top: 80.0,

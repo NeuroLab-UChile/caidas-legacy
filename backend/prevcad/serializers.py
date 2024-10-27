@@ -42,18 +42,37 @@ class HealthCategorySerializer(serializers.ModelSerializer):
     return super().to_representation(instance)
 
 class TextRecomendationSerializer(serializers.ModelSerializer):
-  title = serializers.CharField(max_length=255)
-  inside_text = serializers.CharField()
-
   class Meta:
     model = TextRecomendation
-    fields = '__all__'
+    fields = [
+      'id', 
+      'theme',
+      'category',
+      'sub_category',
+      'learn',
+      'remember',
+      'data',
+      'practic_data',
+      'context_explanation',
+        'quote_link',
+      'keywords',
+   
+    ]
 
-  def to_representation(self, instance):
-    # Asegurarte de que los campos se codifiquen correctamente
-    instance.title = smart_str(instance.title)
-    instance.inside_text = smart_str(instance.inside_text)
-    return super().to_representation(instance)
+  # Sobrescribir el método to_representation para personalizar el JSON
+    def to_representation(self, instance):
+        # Asegurar que los campos de texto se codifiquen correctamente
+        instance.theme = smart_str(instance.theme)
+        instance.category = smart_str(instance.category)
+        instance.sub_category = smart_str(instance.sub_category)
+        instance.learn = smart_str(instance.learn)
+        instance.remember = smart_str(instance.remember)
+        instance.data = smart_str(instance.data)
+        instance.practic_data = smart_str(instance.practic_data)
+        instance.context_explanation = smart_str(instance.context_explanation)
+        instance.quote_link = smart_str(instance.quote_link)
+        instance.keywords = smart_str(instance.keywords)
+        return super().to_representation(instance)
 
 class ProfileSerializer(serializers.ModelSerializer):
   profile_picture = serializers.SerializerMethodField()  # Procesar la imagen como base64
