@@ -4,7 +4,8 @@ import 'package:google_fonts/google_fonts.dart';
 class AppTheme {
   static ThemeData get lightTheme {
     // Definir colores principales
-    const Color primaryColor = Color(0xFFFFEB3B); // Amarillo brillante
+    const Color primaryColor =
+        Color.fromARGB(255, 242, 255, 42); // Amarillo brillante
     const Color backgroundColor = Colors.white;
     const Color cardColor = Colors.white;
     const Color accentColor = Colors.black;
