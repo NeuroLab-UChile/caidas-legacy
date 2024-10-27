@@ -1,7 +1,17 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.models import User
-from .models import HealthCategory, EvaluationRecommendation, TextRecomendation, WorkRecommendation, Profile
+from .models import (
+  HealthCategory, 
+  EvaluationRecommendation, 
+  TextRecomendation, 
+  WorkRecommendation, 
+  Profile, 
+  Form,
+  FormQuestion,
+  FormResponse,
+  QuestionResponse
+)
 
 # Define an inline admin descriptor for Profile model
 class ProfileInline(admin.StackedInline):
@@ -30,3 +40,7 @@ admin.site.register(HealthCategory)
 admin.site.register(EvaluationRecommendation)
 admin.site.register(WorkRecommendation)
 admin.site.register(TextRecomendation)
+admin.site.register(Form)
+admin.site.register(FormQuestion)
+admin.site.register(FormResponse)
+admin.site.register(QuestionResponse)

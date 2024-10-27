@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:frontend/providers/category_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:frontend/providers/category_provider.dart';
+import 'package:frontend/views/category_detail_screen.dart';
 
 class CategoriesSection extends StatelessWidget {
   const CategoriesSection({super.key});
@@ -15,8 +16,7 @@ class CategoriesSection extends StatelessWidget {
             return const Center(child: CircularProgressIndicator());
           }
           return Padding(
-            padding:
-                const EdgeInsets.symmetric(vertical: 16.0, horizontal: 16.0),
+            padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 16.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -27,22 +27,27 @@ class CategoriesSection extends StatelessWidget {
                 const SizedBox(height: 16.0),
                 Expanded(
                   child: GridView.builder(
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 2,
                       crossAxisSpacing: 16.0,
                       mainAxisSpacing: 16.0,
-                      childAspectRatio:
-                          0.75, // Ajusta la relación de aspecto de las tarjetas
+                      childAspectRatio: 0.75, // Ajusta la relación de aspecto de las tarjetas
                     ),
                     itemCount: model.categories.length,
                     itemBuilder: (context, index) {
                       final category = model.categories[index];
-                      final isSelected =
-                          model.selectedCategoryId == category.id;
+                      final isSelected = model.selectedCategoryId == category.id;
 
                       return GestureDetector(
-                        onTap: () => model.selectCategory(category.id),
+                        onTap: () {
+                          // Navegar a la pantalla de detalle de la categoría
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => CategoryDetailScreen(category: category),
+                            ),
+                          );
+                        },
                         child: Stack(
                           children: [
                             Container(
@@ -71,8 +76,7 @@ class CategoriesSection extends StatelessWidget {
                                             height: 80,
                                             fit: BoxFit.contain,
                                           )
-                                        : const Icon(Icons.category,
-                                            size: 80, color: Colors.grey),
+                                        : const Icon(Icons.category, size: 80, color: Colors.grey),
                                     const SizedBox(height: 16),
                                     Text(
                                       category.name,

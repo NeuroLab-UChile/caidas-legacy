@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:frontend/models/user.dart';
 import 'package:frontend/sections/categories_section.dart';
 import 'package:frontend/sections/evaluation_section.dart';
 import 'package:frontend/sections/train_section.dart';
@@ -12,7 +11,7 @@ class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
 
   @override
-  _DashboardScreenState createState() => _DashboardScreenState();
+  State<DashboardScreen> createState() => _DashboardScreenState();
 }
 
 class ScrollWidget extends StatelessWidget {
@@ -43,7 +42,7 @@ class EvaluateSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const Center(
-      child: EvaluatationSection(),
+      child: EvaluationSection(),
     );
   }
 }
@@ -100,6 +99,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Future<void> _logout() async {
     await _authService.logout();
+    if (!mounted) return;
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(
         builder: (context) => const LoginScreen(),

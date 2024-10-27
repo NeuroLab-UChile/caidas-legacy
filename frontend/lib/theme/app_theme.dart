@@ -22,9 +22,8 @@ class AppTheme {
         brightness: Brightness.light,
         primary: primaryColor,
         secondary: accentColor,
-        onPrimary:
-            Colors.black, // Colores de texto en componentes de fondo primario
-        background: backgroundColor,
+        onPrimary: Colors.black,
+        surface: backgroundColor, // Changed from 'background' to 'surface'
       ),
       // Estilo del texto
       textTheme: TextTheme(
@@ -104,8 +103,8 @@ class AppTheme {
 
       // Estilo de Checkbox
       checkboxTheme: CheckboxThemeData(
-        fillColor: MaterialStateProperty.all(accentColor),
-        checkColor: MaterialStateProperty.all(Colors.white),
+        fillColor: WidgetStateProperty.all(accentColor),
+        checkColor: WidgetStateProperty.all(Colors.white),
       ),
 
       // Estilo de BottomNavigationBar

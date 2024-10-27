@@ -6,8 +6,6 @@ class Category {
   final String name;
   final Uint8List image; // Aquí guardaremos la imagen como bytes
   final String description;
-  final String createdAt;
-  final String updatedAt;
 
   final Uint8List icon; // Aquí guardaremos la imagen como bytes
 
@@ -16,8 +14,6 @@ class Category {
     required this.name,
     required this.image,
     required this.description,
-    required this.createdAt,
-    required this.updatedAt,
     required this.icon,
   });
 
@@ -27,8 +23,6 @@ class Category {
         name: json['name'],
         image: base64Decode(json['image']),
         description: json['description'],
-        createdAt: json['created_at'],
-        updatedAt: json['updated_at'],
         icon: base64Decode(json['icon']));
   }
 }

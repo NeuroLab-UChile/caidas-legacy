@@ -18,13 +18,9 @@ class UserService {
       },
     );
 
-    print('Response status: ${response.statusCode}');
-    print('Response body: ${response.body}');
-
     if (response.statusCode == 200) {
       Map<String, dynamic> jsonResponse =
           json.decode(utf8.decode(response.bodyBytes));
-      print('Parsed JSON: $jsonResponse');
       return User.fromJson(jsonResponse); // Convertir el JSON al modelo User
     } else {
       throw Exception('Failed to load user profile');

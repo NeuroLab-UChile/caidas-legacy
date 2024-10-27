@@ -3,13 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:frontend/services/user_service.dart';
 
 class UserDataSection extends StatefulWidget {
-  const UserDataSection({Key? key}) : super(key: key);
+  const UserDataSection({super.key});
 
   @override
-  _UserDataSectionState createState() => _UserDataSectionState();
+  UserDataSectionState createState() => UserDataSectionState();
 }
 
-class _UserDataSectionState extends State<UserDataSection> {
+class UserDataSectionState extends State<UserDataSection> {
   final UserService _userService = UserService();
   String username = '';
   String email = '';
@@ -26,19 +26,17 @@ class _UserDataSectionState extends State<UserDataSection> {
 
   Future<void> _loadUserData() async {
     try {
-      // Llama al servicio de autenticación para obtener los datos del usuario
       final user = await _userService.fetchUserProfile();
-
-      // Actualiza el estado para mostrar los datos en la UI
+      if (!mounted) return;
       setState(() {
         username = user.username;
         email = user.email;
         firstName = user.firstName;
         lastName = user.lastName;
-
         profile = user.profile;
       });
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error al cargar los datos del usuario: $e')),
       );
@@ -81,7 +79,7 @@ class _UserDataSectionState extends State<UserDataSection> {
             const SizedBox(height: 30),
             _buildInfoField('Nombre de usuario', username),
             _buildInfoField('Correo electrónico', email),
-            _buildInfoField('Nombre y Apellido', firstName + ' ' + lastName),
+            _buildInfoField('Nombre y Apellido', '$firstName $lastName'),
           ],
         ),
       ),
