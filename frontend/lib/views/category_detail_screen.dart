@@ -25,6 +25,7 @@ class CategoryDetailScreenState extends State<CategoryDetailScreen> {
           builder: (context) => FormScreen(
             form: form,
             categoryId: widget.category.id,
+            category: widget.category, // Pasa la categoría original al FormScreen
           ),
         ),
       );

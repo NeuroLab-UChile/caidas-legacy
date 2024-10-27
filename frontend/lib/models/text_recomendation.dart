@@ -28,14 +28,6 @@ class TextRecomendation {
 
   // Factory method para crear una instancia desde JSON
   factory TextRecomendation.fromJson(Map<String, dynamic> json) {
-    // Imprimir el JSON completo para depurar
-    print('Received JSON: $json');
-
-    // Imprimir campos individuales para ver si tienen valor o son null
-    print('theme: ${json['theme']}');
-    print('category: ${json['category']}');
-    print('sub_category: ${json['sub_category']}');
-
     return TextRecomendation(
       id: json['id'] ?? 0, // Valor por defecto 0 si es null
       theme: json['theme'] ?? 'Sin tema', // Valor por defecto 'Sin tema'

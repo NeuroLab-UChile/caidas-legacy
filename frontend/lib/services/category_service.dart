@@ -52,9 +52,6 @@ class CategoryService {
         'Authorization': 'Bearer $accessToken',
       },
     );
-    
-    print('Response status code: ${response.statusCode}');
-    print('Response body: ${response.body}');
 
     if (response.statusCode == 200) {
       return json.decode(utf8.decode(response.bodyBytes));

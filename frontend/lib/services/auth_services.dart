@@ -43,12 +43,21 @@ class AuthService {
       final data = json.decode(response.body);
       await _storage.write(key: 'access_token', value: data['access']);
     } else {
+      // Si falla el refresco, considera cerrar sesión automáticamente
+      await logout();
       throw Exception('Failed to refresh token');
     }
   }
 
   Future<String?> getAccessToken() async {
-    return await _storage.read(key: 'access_token');
+    String? accessToken = await _storage.read(key: 'access_token');
+    
+    if (accessToken != null && _isTokenExpired(accessToken)) {
+      await refreshToken();
+      accessToken = await _storage.read(key: 'access_token');
+    }
+
+    return accessToken;
   }
 
   Future<bool> isLoggedIn() async {
@@ -58,13 +67,25 @@ class AuthService {
     }
 
     final response = await http.get(
-      Uri.parse(
-          'http://127.0.0.1:8000/api/prevcad'), // Cambia a un endpoint protegido real
+      Uri.parse('http://127.0.0.1:8000/api/prevcad'), // Cambia a un endpoint protegido real
       headers: {
         'Authorization': 'Bearer $token',
       },
     );
 
     return response.statusCode == 200;
+  }
+
+  // Decodifica y verifica si el token ha expirado
+  bool _isTokenExpired(String token) {
+    final parts = token.split('.');
+    if (parts.length != 3) return true;
+
+    final payload = json.decode(utf8.decode(base64Url.decode(base64Url.normalize(parts[1]))));
+    final exp = payload['exp'] as int?;
+    if (exp == null) return true;
+
+    final expiration = DateTime.fromMillisecondsSinceEpoch(exp * 1000);
+    return DateTime.now().isAfter(expiration);
   }
 }

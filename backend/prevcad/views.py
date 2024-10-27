@@ -131,7 +131,6 @@ class LastTestResultsView(APIView):
           for question_response in form_response.question_responses.all()
         ]
       }
-      print("response_data: ", response_data)
 
       return Response(response_data, status=status.HTTP_200_OK)
 

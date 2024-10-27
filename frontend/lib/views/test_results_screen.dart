@@ -24,11 +24,13 @@ class TestResultsScreenState extends State<TestResultsScreen> {
     try {
       final categoryService = CategoryService();
       final results = await categoryService.fetchLastTestResults(widget.categoryId);
+      if (!mounted) return;  // Add this check
       setState(() {
         lastTestResults = results;
         isLoading = false;
       });
     } catch (e) {
+      if (!mounted) return;  // Add this check
       setState(() {
         isLoading = false;
       });
