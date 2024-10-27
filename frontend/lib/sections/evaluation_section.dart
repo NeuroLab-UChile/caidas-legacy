@@ -2,14 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:frontend/providers/category_provider.dart';
 import 'package:provider/provider.dart';
 
-class EvaluatationSection extends StatefulWidget {
-  const EvaluatationSection({super.key});
+class EvaluationSection extends StatefulWidget {
+  const EvaluationSection({super.key});
 
   @override
-  _EvaluateSectionState createState() => _EvaluateSectionState();
+  EvaluationSectionState createState() => EvaluationSectionState();
 }
 
-class _EvaluateSectionState extends State<EvaluatationSection> {
+class EvaluationSectionState extends State<EvaluationSection> {
   @override
   Widget build(BuildContext context) {
     // Accediendo al provider que mantiene el estado de la categoría seleccionada

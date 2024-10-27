@@ -109,12 +109,19 @@ class Profile(models.Model):
 
 
 class Form(models.Model):
-  category = models.OneToOneField(HealthCategory, on_delete=models.CASCADE, related_name='form')
+
+  class TYPE_CHOICES(models.TextChoices):
+    TEST = "TEST", "Test"
+
+  category = models.ForeignKey(HealthCategory, on_delete=models.CASCADE, related_name='forms')
   title = models.CharField(max_length=255)
   description = models.TextField()
+  type = models.CharField(max_length=50, choices=TYPE_CHOICES.choices, null=True, blank=True)
 
   def __str__(self):
-    return f"{self.category.name}"
+    return f"Formulario: {self.title} (Categoría: {self.category.name})"
+
+
 
 class FormQuestion(models.Model):
   form = models.ForeignKey(Form, on_delete=models.CASCADE, related_name='questions')
@@ -132,6 +139,7 @@ class FormResponse(models.Model):
 
   def __str__(self):
     return f"Respuesta de {self.user.username} para el formulario {self.form.title}"
+
 
 class QuestionResponse(models.Model):
   form_response = models.ForeignKey(FormResponse, on_delete=models.CASCADE, related_name='question_responses')

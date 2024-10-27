@@ -1,33 +1,36 @@
+
 class FormModel {
   final int id;
+  final int categoryId;
   final String title;
   final String description;
   final List<Question> questions;
 
   FormModel({
     required this.id,
+    required this.categoryId,
     required this.title,
     required this.description,
     required this.questions,
   });
 
   factory FormModel.fromJson(Map<String, dynamic> json) {
-    // El bloque 'form' no está directamente en el JSON, ajustamos la estructura aquí
     var questionsFromJson = json['questions'] as List;
     List<Question> questionsList =
         questionsFromJson.map((q) => Question.fromJson(q)).toList();
 
     return FormModel(
-      id: json['id'] ?? 0, // Si es null, usa 0 como valor predeterminado
-      title: json['title'] ?? '', // Si es null, usa cadena vacía
-      description: json['description'] ?? '', // Si es null, usa cadena vacía
+      id: json['id'] ?? 0,
+      categoryId: json['category_id'] ?? 0, // Inicializar el ID de la categoría desde JSON
+      title: json['title'] ?? '',
+      description: json['description'] ?? '',
       questions: questionsList,
     );
   }
 
   @override
   String toString() {
-    return 'FormModel(id: $id, title: $title, description: $description, questions: $questions)';
+    return 'FormModel(id: $id, categoryId: $categoryId, title: $title, description: $description, questions: $questions)';
   }
 }
 

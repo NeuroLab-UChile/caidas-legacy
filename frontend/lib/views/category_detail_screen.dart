@@ -1,18 +1,46 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/models/category.dart';
 import 'package:frontend/views/form_screen.dart';
+import 'package:frontend/views/test_results_screen.dart'; // Importa la pantalla de resultados
 import 'package:frontend/services/category_service.dart';
 
-class CategoryDetailScreen extends StatelessWidget {
+class CategoryDetailScreen extends StatefulWidget {
   final Category category;
 
-  const CategoryDetailScreen({Key? key, required this.category}) : super(key: key);
+  const CategoryDetailScreen({super.key, required this.category});
+
+  @override
+  CategoryDetailScreenState createState() => CategoryDetailScreenState();
+}
+
+class CategoryDetailScreenState extends State<CategoryDetailScreen> {
+  Future<void> _loadAndNavigateToTestForm(BuildContext context) async {
+    try {
+      final categoryService = CategoryService();
+      final form = await categoryService.fetchTestFormByCategoryId(widget.category.id);
+      if (!context.mounted) return;
+      await Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => FormScreen(
+            form: form,
+            categoryId: widget.category.id,
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al cargar el formulario de test: $e')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(category.name),
+        title: Text(widget.category.name), // Usa widget.category para acceder a las propiedades
         backgroundColor: Colors.yellow,
       ),
       body: Padding(
@@ -20,21 +48,17 @@ class CategoryDetailScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // Icono de la categoría
-            category.image.isNotEmpty
+            widget.category.image.isNotEmpty
                 ? Image.memory(
-                    category.image, // Mostrar la imagen
+                    widget.category.image,
                     width: 100,
                     height: 100,
                     fit: BoxFit.contain,
                   )
                 : const Icon(Icons.category, size: 100, color: Colors.grey),
-
             const SizedBox(height: 20),
-
-            // Descripción de la categoría
             Text(
-              category.description,
+              widget.category.description,
               style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w400,
@@ -42,37 +66,29 @@ class CategoryDetailScreen extends StatelessWidget {
               ),
               textAlign: TextAlign.center,
             ),
-
             const SizedBox(height: 30),
 
             // Botón para comenzar el test
             ElevatedButton(
-              onPressed: () async {
-                try {
-                  // Llamar al servicio para obtener el formulario
-                  final categoryService = CategoryService();
-                  final form = await categoryService.fetchFormByCategoryId(category.id);
-
-                  // Navegar a la pantalla del formulario
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => FormScreen(form: form),
-                    ),
-                  );
-                } catch (e) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Error al cargar el formulario: $e'),
-                    ),
-                  );
-                }
-              },
+              onPressed: () => _loadAndNavigateToTestForm(context),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.yellow, // Fondo del botón
-                foregroundColor: Colors.black, // Texto del botón
+                backgroundColor: Colors.yellow,
+                foregroundColor: Colors.black,
               ),
-              child: const Text('COMENZAR TEST'),
+              child: const Text('Comenzar Test'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => TestResultsScreen(categoryId: widget.category.id),
+                ),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Últimos resultados'),
             ),
           ],
         ),

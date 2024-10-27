@@ -6,10 +6,10 @@ class TrainingSection extends StatefulWidget {
   const TrainingSection({super.key});
 
   @override
-  _TrainSectionState createState() => _TrainSectionState();
+  TrainSectionState createState() => TrainSectionState();
 }
 
-class _TrainSectionState extends State<TrainingSection> {
+class TrainSectionState extends State<TrainingSection> {
   @override
   Widget build(BuildContext context) {
     // Accediendo al provider que mantiene el estado de la categoría seleccionada

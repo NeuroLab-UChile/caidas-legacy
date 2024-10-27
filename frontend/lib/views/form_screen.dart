@@ -1,24 +1,28 @@
-import 'package:flutter/material.dart';
-import '../models/form.dart';
-import 'package:http/http.dart' as http;
 import 'dart:convert';
+import '../models/form.dart';
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:frontend/services/auth_services.dart';
 
 class FormScreen extends StatefulWidget {
   final FormModel form;
+  final int categoryId; // Nuevo parámetro para el ID de la categoría
 
-  const FormScreen({super.key, required this.form});
+  const FormScreen({super.key, required this.form, required this.categoryId});
 
   @override
-  _FormScreenState createState() => _FormScreenState();
+  FormScreenState createState() => FormScreenState();
 }
 
-class _FormScreenState extends State<FormScreen> {
+
+class FormScreenState extends State<FormScreen> {
   // Almacena las respuestas seleccionadas por el usuario
   Map<int, dynamic> selectedAnswers = {};
 
   // Método para enviar las respuestas al backend
   Future<void> _submitAnswers() async {
-    final url = "http://127.0.0.1:8000/api/prevcad/health_categories/submit_answers/";
+    final url = "http://127.0.0.1:8000/api/prevcad/health_categories/${widget.categoryId}/test_form/";
+
     try {
       // Estructura de datos para enviar al backend
       final responseData = selectedAnswers.entries
@@ -27,23 +31,32 @@ class _FormScreenState extends State<FormScreen> {
 
       final response = await http.post(
         Uri.parse(url),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(responseData),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ${await AuthService().getAccessToken()}',
+        },
+        body: jsonEncode({'responses': responseData}),
       );
+      
 
       if (response.statusCode == 200) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Respuestas enviadas con éxito')),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Respuestas enviadas con éxito')),
+          );
+        }
       } else {
         throw Exception('Error al enviar las respuestas');
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e')),
+        );
+      }
     }
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -102,7 +115,7 @@ class _FormScreenState extends State<FormScreen> {
                 backgroundColor: Colors.yellow, // Fondo del botón
                 foregroundColor: Colors.black, // Texto del botón
               ),
-              child: const Text('ENVIAR'),
+              child: const Text('Enviar'),
             ),
           ),
         ],

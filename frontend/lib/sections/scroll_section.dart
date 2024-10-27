@@ -6,11 +6,10 @@ class TextRecomendationSection extends StatefulWidget {
   const TextRecomendationSection({super.key});
 
   @override
-  _TextRecomendationSectionState createState() =>
-      _TextRecomendationSectionState();
+  TextRecomendationSectionState createState() => TextRecomendationSectionState();
 }
 
-class _TextRecomendationSectionState extends State<TextRecomendationSection> {
+class TextRecomendationSectionState extends State<TextRecomendationSection> {
   final TextRecommendationService _textRecomendationService =
       TextRecommendationService();
 
