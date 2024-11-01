@@ -2,38 +2,18 @@ from rest_framework.views import APIView
 from rest_framework import viewsets, status
 from rest_framework.request import Request
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.decorators import api_view, permission_classes
+
 from prevcad.models import (
   HealthCategory,
-  TextRecomendation,
   Form,
   FormResponse,
   FormQuestion,
   QuestionResponse
 )
-from prevcad.serializers import (
-  HealthCategorySerializer, 
-  TextRecomendationSerializer, 
-  UserSerializer, 
+from prevcad.serializers.form_serializer import (
   FormSerializer
 )
 
-
-class HealthCategoryView(viewsets.ModelViewSet):
-  queryset = HealthCategory.objects.all()
-  serializer_class = HealthCategorySerializer
-
-  def create(self, request: Request, *args, **kwargs) -> Response:
-    serializer = self.get_serializer(data=request.data)
-    serializer.is_valid(raise_exception=True)
-    self.perform_create(serializer)
-    return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-  def list(self, request: Request, *args, **kwargs) -> Response:
-    queryset = self.get_queryset()
-    serializer = self.get_serializer(queryset, many=True)
-    return Response(serializer.data)
 
 
 class FormView(viewsets.ModelViewSet):
@@ -53,7 +33,7 @@ class FormView(viewsets.ModelViewSet):
     serializer = self.serializer_class(queryset, many=True)
     return Response(serializer.data, status=status.HTTP_200_OK)
 
-  
+
 class FormByCategoryTestView(APIView):
   def get(self, request, category_id, *args, **kwargs):
     try:
@@ -62,7 +42,7 @@ class FormByCategoryTestView(APIView):
 
       if not form:
         return Response({'error': 'No se encontró un formulario de test para esta categoría'}, status=status.HTTP_404_NOT_FOUND)
-      
+
       serializer = FormSerializer(form)
       return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -108,7 +88,6 @@ class FormByCategoryTestView(APIView):
       return Response({'error': 'Categoría no encontrada'}, status=status.HTTP_404_NOT_FOUND)
 
 
-
 class LastTestResultsView(APIView):
   def get(self, request, category_id, *args, **kwargs):
     try:
@@ -136,34 +115,3 @@ class LastTestResultsView(APIView):
 
     except HealthCategory.DoesNotExist:
       return Response({'error': 'Categoría no encontrada'}, status=status.HTTP_404_NOT_FOUND)
-
-
-class TextRecomendationsView(viewsets.ModelViewSet):
-  queryset = TextRecomendation.objects.all()
-  serializer_class = TextRecomendationSerializer
-
-  def create(self, request: Request, *args, **kwargs) -> Response:
-    serializer = self.get_serializer(data=request.data)
-    serializer.is_valid(raise_exception=True)
-    self.perform_create(serializer)
-    return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-  def retrieve(self, request: Request, pk=None, *args, **kwargs) -> Response:
-    try:
-      instance = self.get_object()
-      serializer = self.get_serializer(instance)
-      return Response(serializer.data)
-    except TextRecomendation.DoesNotExist:
-      return Response(status=status.HTTP_404_NOT_FOUND)
-
-  def list(self, request, *args, **kwargs) -> Response:
-    queryset = self.get_queryset()
-    serializer = self.get_serializer(queryset, many=True)
-    return Response(serializer.data)
-
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def getProfile(request: Request) -> Response:
-  user = request.user  # El usuario se obtiene automáticamente del token
-  serializer = UserSerializer(user, many=False)
-  return Response(serializer.data)

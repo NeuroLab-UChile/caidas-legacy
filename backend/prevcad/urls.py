@@ -1,14 +1,21 @@
 from rest_framework import routers
 from django.urls import path, include
 
-from prevcad.views import (
-  HealthCategoryView, 
+from prevcad.views.profiles import (
+  getProfile,
+)
+from prevcad.views.health_categories import (
+  HealthCategoryView,
+)
+from prevcad.views.text_recommendations import (
   TextRecomendationsView,
+)
+from prevcad.views.forms import (
   FormView,
   FormByCategoryTestView,
-  getProfile,
-  LastTestResultsView
+  LastTestResultsView,
 )
+
 
 router = routers.DefaultRouter(trailing_slash=False)
 
