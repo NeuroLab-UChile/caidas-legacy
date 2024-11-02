@@ -27,7 +27,9 @@ class UserDataSectionState extends State<UserDataSection> {
   Future<void> _loadUserData() async {
     try {
       final user = await _userService.fetchUserProfile();
+
       if (!mounted) return;
+
       setState(() {
         username = user.username;
         email = user.email;
@@ -36,6 +38,7 @@ class UserDataSectionState extends State<UserDataSection> {
         profile = user.profile;
       });
     } catch (e) {
+      print("error: $e");
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error al cargar los datos del usuario: $e')),

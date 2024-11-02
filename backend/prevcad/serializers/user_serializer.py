@@ -5,8 +5,14 @@ from prevcad.serializers.profile_serializer import ProfileSerializer
 
 
 class UserSerializer(serializers.ModelSerializer):
-  profile = ProfileSerializer()  # Relacionamos el perfil con el usuario
+  profile = ProfileSerializer(required=False)
 
   class Meta:
     model = User
-    fields = ['id', 'username', 'email', 'first_name', 'last_name', 'profile']  # Incluimos el perfil
+    fields = ['id', 'username', 'email', 'first_name', 'last_name', 'profile']
+
+  def to_representation(self, instance):
+    data = super().to_representation(instance)
+    if data['profile'] is None:
+      data['profile'] = {'profile_picture': None}
+    return data
