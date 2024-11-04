@@ -4,7 +4,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 
 from prevcad.models import (
-  HealthCategory,
+  PhysicalActivity,
   Form,
   FormResponse,
   FormQuestion,
@@ -37,7 +37,7 @@ class FormView(viewsets.ModelViewSet):
 class FormByCategoryTestView(APIView):
   def get(self, request, category_id, *args, **kwargs):
     try:
-      category = HealthCategory.objects.get(id=category_id)
+      category = PhysicalActivity.objects.get(id=category_id)
       form = category.forms.filter(type=Form.TYPE_CHOICES.TEST).first()
 
       if not form:
@@ -46,13 +46,13 @@ class FormByCategoryTestView(APIView):
       serializer = FormSerializer(form)
       return Response(serializer.data, status=status.HTTP_200_OK)
 
-    except HealthCategory.DoesNotExist:
+    except PhysicalActivity.DoesNotExist:
       return Response({'error': 'Categoría no encontrada'}, status=status.HTTP_404_NOT_FOUND)
 
   def post(self, request, category_id, *args, **kwargs):
     try:
       # Obtener el formulario de tipo "TEST"
-      category = HealthCategory.objects.get(id=category_id)
+      category = PhysicalActivity.objects.get(id=category_id)
       form = category.forms.filter(type=Form.TYPE_CHOICES.TEST).first()
       if not form:
         return Response({'error': 'No se encontró un formulario de test para esta categoría'}, status=status.HTTP_404_NOT_FOUND)
@@ -84,14 +84,14 @@ class FormByCategoryTestView(APIView):
 
       return Response({'message': 'Respuestas actualizadas con éxito' if not created else 'Respuestas guardadas con éxito'}, status=status.HTTP_200_OK)
 
-    except HealthCategory.DoesNotExist:
+    except PhysicalActivity.DoesNotExist:
       return Response({'error': 'Categoría no encontrada'}, status=status.HTTP_404_NOT_FOUND)
 
 
 class LastTestResultsView(APIView):
   def get(self, request, category_id, *args, **kwargs):
     try:
-      category = HealthCategory.objects.get(id=category_id)
+      category = PhysicalActivity.objects.get(id=category_id)
       form = category.forms.filter(type=Form.TYPE_CHOICES.TEST).first()
       if not form:
         return Response({'error': 'No se encontró un formulario de test para esta categoría'}, status=status.HTTP_404_NOT_FOUND)
@@ -113,5 +113,5 @@ class LastTestResultsView(APIView):
 
       return Response(response_data, status=status.HTTP_200_OK)
 
-    except HealthCategory.DoesNotExist:
+    except PhysicalActivity.DoesNotExist:
       return Response({'error': 'Categoría no encontrada'}, status=status.HTTP_404_NOT_FOUND)

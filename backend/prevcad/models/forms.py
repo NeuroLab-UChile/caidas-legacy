@@ -1,7 +1,7 @@
 from typing import Any
 from django.db import models
 from django.contrib.auth.models import User
-from .health_category import HealthCategory
+from .physical_activity import PhysicalActivity
 
 
 class Form(models.Model):
@@ -9,7 +9,7 @@ class Form(models.Model):
   class TYPE_CHOICES(models.TextChoices):
     TEST = "TEST", "Test"
 
-  category = models.ForeignKey(HealthCategory, on_delete=models.CASCADE, related_name='forms')
+  category = models.ForeignKey(PhysicalActivity, on_delete=models.CASCADE, related_name='forms')
   title = models.CharField(max_length=255)
   description = models.TextField()
   type = models.CharField(max_length=50, choices=TYPE_CHOICES.choices, null=True, blank=True)

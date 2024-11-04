@@ -3,13 +3,9 @@ from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.models import User
 
 from .models import (
-  HealthCategory,
   TextRecomendation,
   Profile,
-  Form,
-  FormQuestion,
-  FormResponse,
-  QuestionResponse
+  PhysicalActivity,
 )
 
 # Define an inline admin descriptor for Profile model
@@ -35,9 +31,5 @@ admin.site.unregister(User)
 admin.site.register(User, UserAdmin)
 
 # Register other models
-admin.site.register(HealthCategory)
 admin.site.register(TextRecomendation)
-admin.site.register(Form)
-admin.site.register(FormQuestion)
-admin.site.register(FormResponse)
-admin.site.register(QuestionResponse)
+admin.site.register(PhysicalActivity)

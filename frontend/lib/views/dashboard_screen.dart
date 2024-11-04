@@ -63,9 +63,7 @@ class MyDataSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
-      child: UserDataSection(),
-    );
+    return UserDataSection();
   }
 }
 
@@ -173,9 +171,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     borderRadius: BorderRadius.circular(10.0),
                   ),
                   child: _isHomeSelected
-                      ? const CategoriesWidget() // Muestra la vista de la casita
-                      : _widgetOptions.elementAt(
-                          _selectedIndex), // Muestra la vista seleccionada del BottomNavigationBar
+                      ? const CategoriesWidget()
+                      : _widgetOptions.elementAt(_selectedIndex),
                 ),
               ),
             ),

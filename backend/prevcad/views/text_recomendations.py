@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from prevcad.models import (
   TextRecomendation,
 )
-from prevcad.serializers.text_recommendation_serializer import (
+from prevcad.serializers.text_recomendation_serializer import (
   TextRecomendationSerializer,
 )
 

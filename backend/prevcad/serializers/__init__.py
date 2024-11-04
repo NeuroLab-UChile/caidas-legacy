@@ -1,0 +1,3 @@
+from .physical_activity_serializer import PhysicalActivitySerializer
+from .text_recomendation_serializer import TextRecomendationSerializer
+from .form_serializer import FormSerializer

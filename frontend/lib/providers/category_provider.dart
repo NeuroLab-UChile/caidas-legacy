@@ -21,8 +21,7 @@ class CategoryProvider with ChangeNotifier {
     _isLoading = true;
     notifyListeners(); // Notificar que está cargando
     try {
-      _categories = await _categoryService
-          .fetchCategories(); // Usa la instancia para llamar al método
+      _categories = await _categoryService.fetchCategories(); // Usa la instancia para llamar al método
       notifyListeners(); // Notificar a los listeners que los datos están listos
     } catch (e) {
       print('Error fetching categories: $e');

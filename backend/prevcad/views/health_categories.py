@@ -1,25 +1,31 @@
-from rest_framework import viewsets, status
-from rest_framework.request import Request
+from rest_framework.views import APIView
 from rest_framework.response import Response
-from prevcad.models import (
-  HealthCategory,
-)
-from prevcad.serializers.health_category_serializer import (
-  HealthCategorySerializer,
-)
+from rest_framework import status
+from ..models import PhysicalActivity
+import base64
+from django.utils.encoding import smart_str
 
+class HealthCategoryListView(APIView):
+  def get(self, request):
+    try:
+      activities = PhysicalActivity.objects.all()
+      serialized_data = []
 
-class HealthCategoryView(viewsets.ModelViewSet):
-  queryset = HealthCategory.objects.all()
-  serializer_class = HealthCategorySerializer
+      for activity in activities:
+        image_data = None
+        if activity.image and hasattr(activity.image, 'path'):
+          with open(activity.image.path, 'rb') as image_file:
+            image_data = base64.b64encode(image_file.read()).decode('utf-8')
 
-  def create(self, request: Request, *args, **kwargs) -> Response:
-    serializer = self.get_serializer(data=request.data)
-    serializer.is_valid(raise_exception=True)
-    self.perform_create(serializer)
-    return Response(serializer.data, status=status.HTTP_201_CREATED)
+        serialized_data.append({
+          'id': activity.id,
+          'name': smart_str(activity.name),
+          'image': image_data
+        })
 
-  def list(self, request: Request, *args, **kwargs) -> Response:
-    queryset = self.get_queryset()
-    serializer = self.get_serializer(queryset, many=True)
-    return Response(serializer.data)
+      return Response(serialized_data, status=status.HTTP_200_OK)
+    except Exception as e:
+      return Response(
+        {'error': str(e)},
+        status=status.HTTP_500_INTERNAL_SERVER_ERROR
+      )

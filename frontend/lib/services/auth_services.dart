@@ -51,7 +51,7 @@ class AuthService {
 
   Future<String?> getAccessToken() async {
     String? accessToken = await _storage.read(key: 'access_token');
-    
+
     if (accessToken != null && _isTokenExpired(accessToken)) {
       await refreshToken();
       accessToken = await _storage.read(key: 'access_token');

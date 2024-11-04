@@ -4,25 +4,20 @@ import 'dart:typed_data';
 class Category {
   final int id;
   final String name;
-  final Uint8List image; // Aquí guardaremos la imagen como bytes
-  final String description;
-
-  final Uint8List icon; // Aquí guardaremos la imagen como bytes
+  final Uint8List? image;
 
   Category({
     required this.id,
     required this.name,
-    required this.image,
-    required this.description,
-    required this.icon,
+    this.image,
   });
 
   factory Category.fromJson(Map<String, dynamic> json) {
     return Category(
-        id: json['id'],
-        name: json['name'],
-        image: base64Decode(json['image']),
-        description: json['description'],
-        icon: base64Decode(json['icon']));
+      id: json['id'],
+      name: json['name'] ?? '',
+      image: json['image'] != null ? base64Decode(json['image']) : null,
+
+    );
   }
 }

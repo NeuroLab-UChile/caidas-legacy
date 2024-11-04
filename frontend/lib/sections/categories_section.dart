@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:frontend/providers/category_provider.dart';
-import 'package:frontend/views/category_detail_screen.dart';
+import 'package:frontend/handlers/category_handler.dart';
 
 class CategoriesSection extends StatelessWidget {
   const CategoriesSection({super.key});
@@ -44,7 +44,7 @@ class CategoriesSection extends StatelessWidget {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => CategoryDetailScreen(category: category),
+                              builder: (context) => CategoryHandler(category: category),
                             ),
                           );
                         },
@@ -69,9 +69,9 @@ class CategoriesSection extends StatelessWidget {
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                     // Mostrar la imagen o el ícono
-                                    category.image.isNotEmpty
+                                    category.image != null
                                         ? Image.memory(
-                                            category.image, // Mostrar la imagen
+                                            category.image!, // Mostrar la imagen
                                             width: 80,
                                             height: 80,
                                             fit: BoxFit.contain,
