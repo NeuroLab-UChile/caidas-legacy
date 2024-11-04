@@ -103,8 +103,8 @@ class AppTheme {
 
       // Estilo de Checkbox
       checkboxTheme: CheckboxThemeData(
-        fillColor: WidgetStateProperty.all(accentColor),
-        checkColor: WidgetStateProperty.all(Colors.white),
+        fillColor: MaterialStateProperty.all(accentColor),
+        checkColor: MaterialStateProperty.all(Colors.white),
       ),
 
       // Estilo de BottomNavigationBar
