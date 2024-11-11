@@ -6,7 +6,8 @@ class TextRecomendationSection extends StatefulWidget {
   const TextRecomendationSection({super.key});
 
   @override
-  TextRecomendationSectionState createState() => TextRecomendationSectionState();
+  TextRecomendationSectionState createState() =>
+      TextRecomendationSectionState();
 }
 
 class TextRecomendationSectionState extends State<TextRecomendationSection> {
@@ -27,6 +28,7 @@ class TextRecomendationSectionState extends State<TextRecomendationSection> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Theme.of(context).colorScheme.primary, // Fondo general
       body: FutureBuilder<List<TextRecomendation>>(
         future: _fetchTextRecomendations(),
         builder: (context, snapshot) {
@@ -41,69 +43,87 @@ class TextRecomendationSectionState extends State<TextRecomendationSection> {
               itemCount: categories.length,
               itemBuilder: (context, index) {
                 final category = categories[index];
-                return InkWell(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => TextRecommendationDetailPage(
-                          title: category.data,
-                          insideText: category.contextExplanation,
-                        ),
-                      ),
-                    );
-                  },
-                  child: Container(
-                    decoration: const BoxDecoration(
-                      color: Color(0xFFFFEB3B), // Fondo amarillo
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        const SizedBox(height: 100),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                          child: Text(
-                            category.data,
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              fontFamily: 'Roboto',
-                              fontSize: 24.0,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black, // Color negro para el texto
+                return Column(
+                  children: [
+                    InkWell(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => TextRecommendationDetailPage(
+                              title: category.data,
+                              insideText: category.contextExplanation,
                             ),
                           ),
+                        );
+                      },
+                      child: Container(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .primary, // Fondo de cada tarjeta
+                        padding: const EdgeInsets.symmetric(vertical: 20.0),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 20.0),
+                              child: Text(
+                                category.data,
+                                textAlign: TextAlign.center,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .displayLarge
+                                    ?.copyWith(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onPrimary,
+                                    ),
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+                            Text(
+                              '//${category.category}/${category.subCategory}', // Mostrar categoría y subcategoría
+                              textAlign: TextAlign.center,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyMedium
+                                  ?.copyWith(
+                                    color:
+                                        Theme.of(context).colorScheme.onPrimary,
+                                  ),
+                            ),
+                            const SizedBox(height: 40),
+                            const Icon(
+                              Icons.abc_rounded,
+                              size: 40,
+                              color: Colors.black,
+                            ),
+                            Text(
+                              'DESLIZAR HACIA LA DERECHA\nVOLVER POR MÁS INFORMACIÓN',
+                              textAlign: TextAlign.center,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyMedium
+                                  ?.copyWith(
+                                    color: Colors.black,
+                                  ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: 20),
-                        Text(
-                          '//${category.category}/${category.subCategory}', // Mostrar categoría y subcategoría
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            fontFamily: 'Roboto',
-                            fontSize: 16.0,
-                            color: Colors.black,
-                          ),
-                        ),
-                        const SizedBox(height: 40),
-                        const Icon(
-                          Icons.abc_rounded,
-                          size: 40,
-                          color: Colors.black,
-                        ),
-                        const Text(
-                          'DESLIZAR HACIA LA DERECHA\nVOLVER POR MÁS INFORMACIÓN',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontFamily: 'Roboto',
-                            fontSize: 14.0,
-                            color: Colors.black,
-                          ),
-                        ),
-                        const SizedBox(height: 50),
-                      ],
+                      ),
                     ),
-                  ),
+                    // Añade un Divider solo si no es el último elemento
+                    if (index < categories.length - 1)
+                      Divider(
+                        thickness: 1,
+                        color: Colors.grey
+                            .withOpacity(0.5), // Color sutil de la línea
+                        indent: 20,
+                        endIndent: 20,
+                      ),
+                  ],
                 );
               },
             );
@@ -129,7 +149,7 @@ class TextRecommendationDetailPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text(title),
-        backgroundColor: const Color(0xFFFFEB3B), // Fondo amarillo en la barra
+        backgroundColor: Theme.of(context).colorScheme.primary,
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -139,7 +159,7 @@ class TextRecommendationDetailPage extends StatelessWidget {
             style: const TextStyle(
               fontSize: 18.0,
               fontFamily: 'Roboto',
-              color: Colors.black, // Texto en color negro
+              color: Colors.black,
             ),
           ),
         ),

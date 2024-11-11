@@ -24,6 +24,7 @@ class AppTheme {
         secondary: accentColor,
         onPrimary: Colors.black,
         surface: backgroundColor, // Changed from 'background' to 'surface'
+        background: backgroundColor,
       ),
       // Estilo del texto
       textTheme: TextTheme(

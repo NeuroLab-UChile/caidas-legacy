@@ -9,14 +9,15 @@ class CategoriesSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[100], // Fondo claro
+      backgroundColor: Theme.of(context).colorScheme.background,
       body: Consumer<CategoryProvider>(
         builder: (context, model, child) {
           if (model.isLoading) {
             return const Center(child: CircularProgressIndicator());
           }
           return Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 16.0),
+            padding:
+                const EdgeInsets.symmetric(vertical: 16.0, horizontal: 16.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -27,16 +28,19 @@ class CategoriesSection extends StatelessWidget {
                 const SizedBox(height: 16.0),
                 Expanded(
                   child: GridView.builder(
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 2,
                       crossAxisSpacing: 16.0,
                       mainAxisSpacing: 16.0,
-                      childAspectRatio: 0.75, // Ajusta la relación de aspecto de las tarjetas
+                      childAspectRatio:
+                          0.75, // Ajusta la relación de aspecto de las tarjetas
                     ),
                     itemCount: model.categories.length,
                     itemBuilder: (context, index) {
                       final category = model.categories[index];
-                      final isSelected = model.selectedCategoryId == category.id;
+                      final isSelected =
+                          model.selectedCategoryId == category.id;
 
                       return GestureDetector(
                         onTap: () {
@@ -44,7 +48,8 @@ class CategoriesSection extends StatelessWidget {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => CategoryHandler(category: category),
+                              builder: (context) =>
+                                  CategoryHandler(category: category),
                             ),
                           );
                         },
@@ -71,12 +76,14 @@ class CategoriesSection extends StatelessWidget {
                                     // Mostrar la imagen o el ícono
                                     category.image != null
                                         ? Image.memory(
-                                            category.image!, // Mostrar la imagen
+                                            category
+                                                .image!, // Mostrar la imagen
                                             width: 80,
                                             height: 80,
                                             fit: BoxFit.contain,
                                           )
-                                        : const Icon(Icons.category, size: 80, color: Colors.grey),
+                                        : const Icon(Icons.category,
+                                            size: 80, color: Colors.grey),
                                     const SizedBox(height: 16),
                                     Text(
                                       category.name,

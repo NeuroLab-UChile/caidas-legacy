@@ -39,7 +39,7 @@ class LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.yellowAccent[100], // Fondo amarillo
+      backgroundColor: Theme.of(context).colorScheme.primary,
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -55,26 +55,19 @@ class LoginScreenState extends State<LoginScreen> {
             ),
             const SizedBox(height: 20),
             // Título
-            const Center(
+            Center(
               child: Text(
                 'We train',
-                style: TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black,
-                ),
+                style: Theme.of(context).textTheme.headlineLarge,
               ),
             ),
             const SizedBox(height: 8),
             // Subtítulo
-            const Center(
+            Center(
               child: Text(
                 'Plataforma multidimensional\nprevención de caídas en personas mayores.',
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.black87,
-                ),
+                style: Theme.of(context).textTheme.bodyLarge,
               ),
             ),
             const SizedBox(height: 40),
