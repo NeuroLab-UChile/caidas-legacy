@@ -10,7 +10,8 @@ class HealthCategoryListView(APIView):
   def get(self, request):
     try:
       print('HealthCategoryListView')
-      categories = HealthCategory().objects.filter(user=request.user)
+      # TODO: Filtrar por usuario
+      categories = HealthCategory.objects.all()
       serialized_categories = HealthCategorySerializer(categories, many=True)
       return Response(
         serialized_categories.data,
