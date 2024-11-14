@@ -1,3 +1,4 @@
-from .physical_activity_serializer import PhysicalActivitySerializer
+
+from .health_category_serializer import HealthCategorySerializer
 from .text_recomendation_serializer import TextRecomendationSerializer
 from .form_serializer import FormSerializer

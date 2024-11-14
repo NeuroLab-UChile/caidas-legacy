@@ -14,6 +14,7 @@ class Form(models.Model):
   description = models.TextField()
   type = models.CharField(max_length=50, choices=TYPE_CHOICES.choices, null=True, blank=True)
 
+
   def __str__(self):
     return f"Formulario: {self.title} (Categoría: {self.category.name})"
 

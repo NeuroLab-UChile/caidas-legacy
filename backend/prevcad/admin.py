@@ -5,7 +5,7 @@ from django.contrib.auth.models import User
 from .models import (
   TextRecomendation,
   Profile,
-  PhysicalActivity,
+  HealthCategory
 )
 
 # Define an inline admin descriptor for Profile model
@@ -31,5 +31,6 @@ admin.site.unregister(User)
 admin.site.register(User, UserAdmin)
 
 # Register other models
+admin.site.register(HealthCategory)
 admin.site.register(TextRecomendation)
-admin.site.register(PhysicalActivity)
+

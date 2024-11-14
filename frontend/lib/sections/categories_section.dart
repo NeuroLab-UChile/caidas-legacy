@@ -74,10 +74,9 @@ class CategoriesSection extends StatelessWidget {
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                     // Mostrar la imagen o el ícono
-                                    category.image != null
+                                    category.icon != null
                                         ? Image.memory(
-                                            category
-                                                .image!, // Mostrar la imagen
+                                            category.icon!, // Mostrar la imagen
                                             width: 80,
                                             height: 80,
                                             fit: BoxFit.contain,
