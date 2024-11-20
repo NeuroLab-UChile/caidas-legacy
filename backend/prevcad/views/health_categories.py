@@ -9,15 +9,13 @@ from django.utils.encoding import smart_str
 class HealthCategoryListView(APIView):
   def get(self, request):
     try:
-      print('HealthCategoryListView')
-      # TODO: Filtrar por usuario
-      categories = HealthCategory.objects.all()
+      # Get categories for the authenticated user only
+      categories = HealthCategory.objects.filter(user=request.user)
       serialized_categories = HealthCategorySerializer(categories, many=True)
       return Response(
         serialized_categories.data,
         status=status.HTTP_200_OK
       )
-
     except Exception as e:
       return Response(
         {'error': str(e)},
