@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/models/category.dart';
-import 'package:frontend/views/physical_activity_screen.dart';
 
 class CategoryHandler extends StatelessWidget {
   final Category category;
@@ -9,11 +8,9 @@ class CategoryHandler extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    print("category.name: ${category.name}");
 
     switch (category.name) {
-      case "Actividad Física":
-        return const PhysicalActivityScreen();
-
       default:
         return _tempCategoryScreen(
           category: category,
@@ -35,7 +32,7 @@ class CategoryHandler extends StatelessWidget {
         backgroundColor: color,
       ),
       body: Center(
-        child: Text('Placeholder for ${category.name} screen'),
+        child: Text(category.description ?? 'No description'),
       ),
     );
   }

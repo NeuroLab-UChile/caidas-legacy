@@ -9,24 +9,26 @@ from rest_framework import serializers
 from prevcad.models import HealthCategory
 
 class HealthCategorySerializer(serializers.ModelSerializer):
-    icon = serializers.SerializerMethodField()
+  name = serializers.SerializerMethodField()
+  icon = serializers.SerializerMethodField()
+  description = serializers.SerializerMethodField()
 
-    def get_icon(self, obj):
-        if obj.icon and hasattr(obj.icon, 'path'):
-            try:
-                with open(obj.icon.path, 'rb') as image_file:
-                    return base64.b64encode(image_file.read()).decode('utf-8')
-            except Exception as e:
-                print(f"Error reading image file: {e}")
-                return None
+  def get_name(self, obj):
+    return smart_str(obj.template.name) if obj.template else None
+
+  def get_icon(self, obj):
+    if obj.template and obj.template.icon and hasattr(obj.template.icon, 'path'):
+      try:
+        with open(obj.template.icon.path, 'rb') as image_file:
+          return base64.b64encode(image_file.read()).decode('utf-8')
+      except Exception as e:
+        print(f"Error reading image file: {e}")
         return None
+    return None
 
-    def to_representation(self, instance):
-        # Convert name to proper string encoding
-        instance.name = smart_str(instance.name)
-        return super().to_representation(instance)
+  def get_description(self, obj):
+    return obj.template.description if obj.template else None
 
-    class Meta:
-        model = HealthCategory
-        fields = ['id', 'name', 'icon', 'template', 'user', 'root_node_id']
-        read_only_fields = ['template']
+  class Meta:
+    model = HealthCategory
+    fields = ['id', 'name', 'icon', 'description', 'root_node']

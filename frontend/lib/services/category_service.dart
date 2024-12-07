@@ -17,7 +17,7 @@ class CategoryService {
           'Authorization': 'Bearer $accessToken',
         },
       );
-      print(response.body);
+      print("categories response: ${response.body}");
 
       if (response.statusCode == 200) {
         try {

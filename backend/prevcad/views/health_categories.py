@@ -9,7 +9,6 @@ from django.utils.encoding import smart_str
 class HealthCategoryListView(APIView):
   def get(self, request):
     try:
-      # Get categories for the authenticated user only
       categories = HealthCategory.objects.filter(user=request.user)
       serialized_categories = HealthCategorySerializer(categories, many=True)
       return Response(

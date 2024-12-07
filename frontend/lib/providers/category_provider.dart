@@ -6,12 +6,14 @@ class CategoryProvider with ChangeNotifier {
   List<Category> _categories = [];
   int? _selectedCategoryId;
   bool _isLoading = false;
+  String? _error;
 
   final CategoryService _categoryService = CategoryService();
 
   List<Category> get categories => _categories;
   int? get selectedCategoryId => _selectedCategoryId;
   bool get isLoading => _isLoading;
+  String? get error => _error;
 
   CategoryProvider() {
     fetchCategories(); // Llama a cargar las categorías cuando se inicializa el provider
@@ -19,15 +21,16 @@ class CategoryProvider with ChangeNotifier {
 
   void fetchCategories() async {
     _isLoading = true;
-    notifyListeners(); // Notificar que está cargando
+    _error = null;
+    notifyListeners();
     try {
-      _categories = await _categoryService.fetchCategories(); // Usa la instancia para llamar al método
-      notifyListeners(); // Notificar a los listeners que los datos están listos
+      _categories = await _categoryService.fetchCategories();
     } catch (e) {
+      _error = e.toString();
       print('Error fetching categories: $e');
     } finally {
       _isLoading = false;
-      notifyListeners(); // Notificar que la carga ha finalizado
+      notifyListeners();
     }
   }
 

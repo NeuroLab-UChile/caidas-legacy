@@ -20,7 +20,7 @@ class ProfileInline(admin.StackedInline):
 class HealthCategoryInline(admin.TabularInline):
   model = HealthCategory
   extra = 0  # Don't show empty forms
-  readonly_fields = ['template', 'name', 'icon']  # Make them read-only
+  readonly_fields = ['template']  # Make them read-only
   can_delete = True
   verbose_name_plural = 'Health Categories'
 
