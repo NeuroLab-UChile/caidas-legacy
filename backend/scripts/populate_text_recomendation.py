@@ -12,8 +12,9 @@ from django.utils.encoding import smart_str
 import pandas as pd
 
 # Cargar el archivo Excel
+current_dir = os.path.dirname(os.path.abspath(__file__))
+file_path = os.path.join(current_dir, 'text_recomendation.xlsx')
 
-file_path = './text_recomendation.xlsx'
 df = pd.read_excel(file_path)
 
 # Limpiar los nombres de las columnas

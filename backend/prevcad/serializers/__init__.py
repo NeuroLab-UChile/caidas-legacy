@@ -1,4 +1,5 @@
 
 from .health_category_serializer import HealthCategorySerializer
 from .text_recomendation_serializer import TextRecomendationSerializer
+from .activity_node_serializer import ActivityNodeDescriptionSerializer,ActivityNodeSerializer
 
