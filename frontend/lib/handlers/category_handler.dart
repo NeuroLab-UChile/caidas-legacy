@@ -6,8 +6,11 @@ import 'package:provider/provider.dart';
 
 class CategoryHandler extends StatelessWidget {
   final Category category;
+  final Widget bottomNavigationBar;
 
-  const CategoryHandler({Key? key, required this.category}) : super(key: key);
+  const CategoryHandler(
+      {Key? key, required this.category, required this.bottomNavigationBar})
+      : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -19,7 +22,7 @@ class CategoryHandler extends StatelessWidget {
     );
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFFFF00), // Yellow background
+      backgroundColor: Theme.of(context).colorScheme.primary,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -51,9 +54,10 @@ class CategoryHandler extends StatelessWidget {
                       : _buildNodeContent(context, node),
             ),
           ),
-          _buildBottomNavigation(),
         ],
       ),
+      bottomNavigationBar:
+          bottomNavigationBar, // Directly use the passed bottom navigation bar here
     );
   }
 
@@ -301,84 +305,35 @@ class CategoryHandler extends StatelessWidget {
     );
   }
 
-  Widget _buildActionButtons() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        OutlinedButton.icon(
-          icon: const Icon(Icons.check_box_outlined),
-          label: const Text('Evaluación'),
-          onPressed: () {},
-          style: OutlinedButton.styleFrom(
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
-        ),
-        const SizedBox(height: 12),
-        OutlinedButton.icon(
-          icon: const Icon(Icons.sports),
-          label: const Text('Entrenamiento'),
-          onPressed: () {},
-          style: OutlinedButton.styleFrom(
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildBottomNavigation() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(top: BorderSide(color: Colors.grey.shade300)),
-      ),
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          _buildNavItem(Icons.calendar_today, 'RECORDAR'),
-          _buildNavItem(Icons.check_box_outlined, 'EVALUAR'),
-          Image.asset('assets/logo.png', height: 40), // PREIDAS logo
-          _buildNavItem(Icons.sports, 'ENTRENAR'),
-          _buildNavItem(Icons.person_outline, 'MIS DATOS'),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildNavItem(IconData icon, String label) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 24),
-        Text(label, style: const TextStyle(fontSize: 12)),
-      ],
-    );
-  }
-
   Widget _buildErrorView(String error) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.error_outline, size: 48, color: Colors.red[300]),
-            const SizedBox(height: 16),
-            Text(
-              error,
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: Colors.red),
-            ),
-          ],
+    return Center(child: Text(error, style: TextStyle(color: Colors.red)));
+  }
+
+  Widget _buildActionButtons() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        ElevatedButton(
+          child: Text('Cancelar'),
+          onPressed: () {
+            // Handle cancel action
+          },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.grey,
+            padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
+          ),
         ),
-      ),
+        ElevatedButton(
+          child: Text('Enviar'),
+          onPressed: () {
+            // Handle send action
+          },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.blue,
+            padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
+          ),
+        ),
+      ],
     );
   }
 }

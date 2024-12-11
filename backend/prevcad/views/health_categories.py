@@ -8,8 +8,12 @@ class HealthCategoryListView(APIView):
     print("HealthCategoryListView")
     def get(self, request):
         try:
+            print("HealthCategoryListView2")
             # Obtener categorías del usuario
             categories = HealthCategory.objects.filter(user=request.user)
+
+            # Serializar categorías
+            print(categories)
             serialized_categories = HealthCategorySerializer(categories, many=True).data
             print(serialized_categories)
 
@@ -30,6 +34,7 @@ class HealthCategoryListView(APIView):
                 status=status.HTTP_200_OK,
             )
         except Exception as e:
+            print(e)
             return Response(
                 {"error": str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,

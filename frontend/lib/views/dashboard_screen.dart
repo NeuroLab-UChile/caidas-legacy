@@ -7,38 +7,34 @@ import 'package:frontend/views/login_screen.dart';
 import 'package:frontend/services/auth_services.dart';
 import 'package:frontend/sections/scroll_section.dart';
 import 'package:frontend/components/custom_bottom_bar.dart';
+import 'package:frontend/models/category.dart';
+import 'package:frontend/models/activity_node.dart';
+import 'package:frontend/providers/category_provider.dart';
+import 'package:provider/provider.dart';
 
+void main() => runApp(MaterialApp(
+      home: const DashboardScreen(),
+      routes: {
+        '/login': (context) => const LoginScreen(),
+      },
+    ));
+
+// Dashboard Screen
 class DashboardScreen extends StatefulWidget {
-  const DashboardScreen({super.key});
+  const DashboardScreen({Key? key}) : super(key: key);
 
   @override
   State<DashboardScreen> createState() => _DashboardScreenState();
-}
-
-class DashboardChild extends StatelessWidget {
-  final Widget child;
-
-  const DashboardChild({Key? key, required this.child}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Container(
-        child: child,
-      ),
-    );
-  }
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
   int _selectedIndex = 0;
   bool _isHomeSelected = true;
 
-  List<Color> _iconColors = List.generate(5, (index) => Colors.grey);
-
+  final List<Color> _iconColors = List.generate(5, (_) => Colors.grey);
   final AuthService _authService = AuthService();
 
-  final List<Widget> _widgetOptions = <Widget>[
+  final List<Widget> _widgetOptions = [
     const DashboardChild(child: TextRecomendationSection()),
     const DashboardChild(child: EvaluationSection()),
     const DashboardChild(child: TrainingSection()),
@@ -46,32 +42,42 @@ class _DashboardScreenState extends State<DashboardScreen> {
     const DashboardChild(child: CategoriesSection())
   ];
 
+  @override
+  void initState() {
+    super.initState();
+    // Aquí es donde cargarías las categorías
+
+    final categoryProvider =
+        Provider.of<CategoryProvider>(context, listen: false);
+    categoryProvider.fetchCategoriesAndNodes();
+  }
+
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
       _isHomeSelected = false;
-
-      for (int i = 0; i < _iconColors.length; i++) {
-        _iconColors[i] = i == index + 1 ? Colors.white : Colors.grey;
-      }
+      _updateIconColors(index);
     });
+  }
+
+  void _updateIconColors(int activeIndex) {
+    for (int i = 0; i < _iconColors.length; i++) {
+      _iconColors[i] = i == activeIndex ? Colors.white : Colors.grey;
+    }
   }
 
   Future<void> _logout() async {
     await _authService.logout();
     if (!mounted) return;
     Navigator.of(context).pushReplacement(
-      MaterialPageRoute(
-        builder: (context) => const LoginScreen(),
-      ),
+      MaterialPageRoute(builder: (context) => const LoginScreen()),
     );
   }
 
   void _onFabPressed() {
     setState(() {
       _isHomeSelected = true;
-      _iconColors =
-          List.generate(5, (index) => index == 0 ? Colors.grey : Colors.grey);
+      _iconColors.fillRange(0, _iconColors.length, Colors.grey);
     });
   }
 
@@ -83,45 +89,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
           Stack(
             clipBehavior: Clip.none,
             children: [
-              // Contenedor de fondo
-              Container(
-                height: 90.0,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-
-              // Botón de logout en la esquina superior derecha
-              Positioned(
-                top: 15.0,
-                right: 5.0,
-                child: IconButton(
-                  icon: const Icon(Icons.logout, color: Colors.black),
-                  onPressed: _logout,
-                ),
-              ),
-
-              // Círculo en la parte superior (se asegura de que esté al final en el Stack)
+              _buildTopBar(context),
               Positioned(
                 top: 45.0,
                 left: MediaQuery.of(context).size.width / 2 - 40,
-                child: Container(
-                  width: 100.0,
-                  height: 100.0,
-                  decoration: BoxDecoration(
-                    color: _selectedIndex == 0 && !_isHomeSelected
-                        ? Theme.of(context).colorScheme.primary
-                        : Colors.white,
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: _selectedIndex == 0 && !_isHomeSelected
-                            ? Theme.of(context).colorScheme.primary
-                            : Colors.black.withOpacity(0.1),
-                        spreadRadius: 2,
-                        blurRadius: 4,
-                      ),
-                    ],
-                  ),
-                ),
+                child: _buildCenterCircle(context),
               ),
             ],
           ),
@@ -156,11 +128,51 @@ class _DashboardScreenState extends State<DashboardScreen> {
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
   }
+
+  Widget _buildTopBar(BuildContext context) {
+    return Container(
+      height: 90.0,
+      color: Theme.of(context).colorScheme.primary,
+      child: Align(
+        alignment: Alignment.topRight,
+        child: IconButton(
+          icon: const Icon(Icons.logout, color: Colors.black),
+          onPressed: _logout,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCenterCircle(BuildContext context) {
+    return Container(
+      width: 100.0,
+      height: 100.0,
+      decoration: BoxDecoration(
+        color: _selectedIndex == 0 && !_isHomeSelected
+            ? Theme.of(context).colorScheme.primary
+            : Colors.white,
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(
+            color: _selectedIndex == 0 && !_isHomeSelected
+                ? Theme.of(context).colorScheme.primary
+                : Colors.black.withOpacity(0.1),
+            spreadRadius: 2,
+            blurRadius: 4,
+          ),
+        ],
+      ),
+    );
+  }
 }
 
-void main() => runApp(MaterialApp(
-      home: const DashboardScreen(),
-      routes: {
-        '/login': (context) => const LoginScreen(),
-      },
-    ));
+class DashboardChild extends StatelessWidget {
+  final Widget child;
+
+  const DashboardChild({Key? key, required this.child}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return child;
+  }
+}

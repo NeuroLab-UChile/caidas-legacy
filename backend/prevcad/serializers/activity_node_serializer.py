@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from django.db import models
 from ..models import (
     ActivityNodeDescription,
     TextQuestion,
@@ -6,6 +7,7 @@ from ..models import (
     MultipleChoiceQuestion,
     ScaleQuestion,
     ImageQuestion,
+    ResultNode
 )
 
 # Serializador base para ActivityNode
@@ -24,10 +26,15 @@ class ActivityNodeSerializer(serializers.Serializer):
             return ScaleQuestionSerializer(instance).data
         elif isinstance(instance, ImageQuestion):
             return ImageQuestionSerializer(instance).data
+        elif isinstance(instance, ResultNode):
+            return ResultNodeSerializer(instance).data
+            
         return super().to_representation(instance)
 
 # Serializadores específicos para cada tipo de nodo
 class ActivityNodeDescriptionSerializer(serializers.ModelSerializer):
+    next_node = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='previous_node')
+
     class Meta:
         model = ActivityNodeDescription
         fields = '__all__'
@@ -55,4 +62,10 @@ class ScaleQuestionSerializer(serializers.ModelSerializer):
 class ImageQuestionSerializer(serializers.ModelSerializer):
     class Meta:
         model = ImageQuestion
+        fields = '__all__'
+
+
+class ResultNodeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ResultNode
         fields = '__all__'

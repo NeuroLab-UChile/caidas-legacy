@@ -1,7 +1,7 @@
 
 from .text_recomendation import TextRecomendation
 from .health_category import CategoryTemplate, HealthCategory
-from .activity import ActivityNodeDescription, ActivityNodeQuestion, TextQuestion, SingleChoiceQuestion, MultipleChoiceQuestion, ScaleQuestion, ImageQuestion
+from .activity import ActivityNode, ActivityNodeDescription, ActivityNodeQuestion, TextQuestion, SingleChoiceQuestion, MultipleChoiceQuestion, ScaleQuestion, ImageQuestion, ResultNode
 
 from .profile import Profile
 
@@ -11,4 +11,5 @@ __all__ = [
   'Profile',
   'TextRecomendation',
   'ActivityNodeDescription',
+  'ResultNode',
 ]

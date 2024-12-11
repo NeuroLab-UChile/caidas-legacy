@@ -33,8 +33,7 @@ class CategoriesSection extends StatelessWidget {
                       crossAxisCount: 2,
                       crossAxisSpacing: 16.0,
                       mainAxisSpacing: 16.0,
-                      childAspectRatio:
-                          0.75, // Ajusta la relación de aspecto de las tarjetas
+                      childAspectRatio: 0.75,
                     ),
                     itemCount: model.categories.length,
                     itemBuilder: (context, index) {
@@ -48,8 +47,25 @@ class CategoriesSection extends StatelessWidget {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) =>
-                                  CategoryHandler(category: category),
+                              builder: (context) => CategoryHandler(
+                                category: category,
+                                bottomNavigationBar: BottomNavigationBar(
+                                  items: const [
+                                    BottomNavigationBarItem(
+                                      icon: Icon(Icons.home),
+                                      label: 'Home',
+                                    ),
+                                    BottomNavigationBarItem(
+                                      icon: Icon(Icons.search),
+                                      label: 'Search',
+                                    ),
+                                    BottomNavigationBarItem(
+                                      icon: Icon(Icons.settings),
+                                      label: 'Settings',
+                                    ),
+                                  ],
+                                ),
+                              ),
                             ),
                           );
                         },
@@ -64,7 +80,7 @@ class CategoriesSection extends StatelessWidget {
                                     color: Colors.black.withOpacity(0.1),
                                     spreadRadius: 1,
                                     blurRadius: 6,
-                                    offset: const Offset(0, 3), // sombra suave
+                                    offset: const Offset(0, 3),
                                   ),
                                 ],
                               ),
@@ -73,10 +89,9 @@ class CategoriesSection extends StatelessWidget {
                                 child: Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    // Mostrar la imagen o el ícono
                                     category.icon != null
                                         ? Image.memory(
-                                            category.icon!, // Mostrar la imagen
+                                            category.icon!,
                                             width: 80,
                                             height: 80,
                                             fit: BoxFit.contain,
@@ -97,7 +112,6 @@ class CategoriesSection extends StatelessWidget {
                                 ),
                               ),
                             ),
-                            // Indicador de selección en la esquina superior izquierda
                             Positioned(
                               top: 8,
                               left: 8,
