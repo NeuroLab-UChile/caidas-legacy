@@ -7,8 +7,8 @@ import 'package:frontend/views/login_screen.dart';
 import 'package:frontend/services/auth_services.dart';
 import 'package:frontend/sections/scroll_section.dart';
 import 'package:frontend/components/custom_bottom_bar.dart';
-import 'package:frontend/models/category.dart';
-import 'package:frontend/models/activity_node.dart';
+import 'package:frontend/providers/category_provider.dart';
+import 'package:provider/provider.dart';
 import 'package:frontend/providers/category_provider.dart';
 import 'package:provider/provider.dart';
 
@@ -42,15 +42,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
     const DashboardChild(child: CategoriesSection())
   ];
 
-  @override
-  void initState() {
-    super.initState();
-    // Aquí es donde cargarías las categorías
-
-    final categoryProvider =
-        Provider.of<CategoryProvider>(context, listen: false);
-    categoryProvider.fetchCategoriesAndNodes();
-  }
+@override
+void initState() {
+  super.initState();
+  // Schedule the fetch after the widget is built
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    Provider.of<CategoryProvider>(context, listen: false).fetchCategories();
+  });
+}
 
   void _onItemTapped(int index) {
     setState(() {

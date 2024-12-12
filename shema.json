@@ -1,0 +1,63 @@
+{
+    "categories": [
+        {
+            "id": 1,
+            "name": "Physical Health",
+            "icon": "fas fa-heartbeat",
+            "root_node": {
+                "id": 1,
+                "type": "CATEGORY_DESCRIPTION",
+                "description": "Welcome to the physical health survey",
+                "first_button_text": "Start",
+                "first_button_node_id": 2
+            },
+            "evaluation_form": {
+                "id": 1,
+                "question_nodes": [
+                    {
+                        "id": 1,
+                        "type": "MULTIPLE_CHOICE",
+                        "question": "How often do you exercise?",
+                        "options": ["Never", "Sometimes", "Often", "Always"],
+                        "answer": "Often"
+                    },
+                    {
+                        "id": 2,
+                        "type": "MULTIPLE_CHOICE",
+                        "question": "How often do you eat healthy?",
+                        "options": ["Never", "Sometimes", "Often", "Always"],
+                        "answer": "Sometimes"
+                    },
+                    {
+                        "id": 3,
+                        "type": "SCALE",
+                        "question": "On a scale of 1-10, how would you rate your sleep quality?",
+                        "min_value": 1,
+                        "max_value": 10,
+                        "answer": 7
+                    },
+                    {
+                        "id": 4,
+                        "type": "TEXT",
+                        "question": "What are your main health goals?",
+                        "answer": "I want to improve my cardiovascular health and maintain a balanced diet"
+                    },
+                    {
+                        "id": 5,
+                        "type": "SINGLE_CHOICE",
+                        "question": "Do you have any chronic health conditions?",
+                        "options": ["Yes", "No", "Prefer not to say"],
+                        "answer": "No"
+                    }
+                ],
+                "completion_date": "2024-12-11T23:45:00Z",
+                "score": 75,
+                "recommendations": [
+                    "Consider increasing exercise frequency",
+                    "Focus on maintaining a more consistent healthy diet",
+                    "Your sleep quality is good, but could be improved"
+                ]
+            }
+        }
+    ]
+}

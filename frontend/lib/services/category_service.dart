@@ -9,8 +9,7 @@ class CategoryService {
       "http://127.0.0.1:8000/api/prevcad/health_categories/";
   final AuthService _authService = AuthService();
 
-  // Función para obtener categorías y nodos desde el mismo endpoint
-  Future<Map<String, List<dynamic>>> fetchCategoriesAndNodes() async {
+  Future<List<Category>> fetchCategories() async {
     final accessToken = await _authService.getAccessToken();
     try {
       final response = await http.get(
@@ -22,24 +21,15 @@ class CategoryService {
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> responseBody = jsonDecode(response.body);
+        final List<dynamic> categoriesJson = responseBody['categories'] ?? [];
 
-        // Mapea las categorías y los nodos
-        final categories = _parseCategories(responseBody);
-        final nodes = _parseNodes(responseBody);
-
-        // Devuelve las categorías y los nodos en un Map
-        return {
-          'categories': categories,
-          'nodes': nodes,
-        };
+        return categoriesJson.map((json) => Category.fromJson(json)).toList();
       } else {
         _handleHttpError(response.statusCode);
-        return {
-          'categories': [],
-          'nodes': []
-        }; // Regresa listas vacías si hay error
+        return [];
       }
     } catch (e) {
+      print('Error in fetchCategories: $e');
       rethrow;
     }
   }

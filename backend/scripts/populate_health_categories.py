@@ -1,4 +1,3 @@
-
 # Importar el modelo
 import os
 import django
@@ -6,6 +5,8 @@ import django
 # Configura el entorno de Django
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'backend.settings')
 django.setup()
+from django.contrib.contenttypes.models import ContentType
+
 from prevcad.models import CategoryTemplate
 
 
@@ -23,7 +24,7 @@ def crear_category_template(template_data):
             "evaluation_form": template_data["evaluation_form"]
         }
     )
-    
+
     # Si la plantilla es nueva, se crean los nodos relacionados
     if created:
         root_node = None
@@ -65,7 +66,8 @@ def crear_category_template(template_data):
 
             # Establecer el siguiente nodo
             if previous_node:
-                previous_node.next_node = node
+                previous_node.next_node_content_type = ContentType.objects.get_for_model(node)
+                previous_node.next_node_object_id = node.id
                 previous_node.save()
 
             previous_node = node  # Actualizar el nodo anterior
@@ -82,7 +84,7 @@ def crear_category_template(template_data):
         # Si la plantilla ya existe, solo actualiza el formulario de evaluación
         template.evaluation_form = template_data["evaluation_form"]
         template.save()
-    
+
     return template
 
 
@@ -94,12 +96,6 @@ templates_data = [
         "icon_path":'health_category/physical_health.png',
         "evaluation_form": {
             "nodes": [
-                {
-                    "type": "CATEGORY_DESCRIPTION",
-                    "description": "Welcome to the physical health survey",
-                    "first_button_text": "Start",
-                    "first_button_node_id": 2
-                },
                 {
                     "type": "TEXT_QUESTION",
                     "question": "How do you feel after exercise?"
@@ -117,12 +113,6 @@ templates_data = [
         "icon_path": "health_category/mental_health.png",
         "evaluation_form": {
             "nodes": [
-                {
-                    "type": "CATEGORY_DESCRIPTION",
-                    "description": "Welcome to the mental well-being survey",
-                    "first_button_text": "Begin",
-                    "first_button_node_id": 2
-                },
                 {
                     "type": "SCALE_QUESTION",
                     "question": "On a scale of 1 to 10, how stressed are you?",

@@ -10,6 +10,9 @@ from ..models import (
     ResultNode
 )
 
+from django.contrib.contenttypes.models import ContentType
+from django.contrib.contenttypes.fields import GenericForeignKey
+
 # Serializador base para ActivityNode
 class ActivityNodeSerializer(serializers.Serializer):
     def to_representation(self, instance):
@@ -28,16 +31,53 @@ class ActivityNodeSerializer(serializers.Serializer):
             return ImageQuestionSerializer(instance).data
         elif isinstance(instance, ResultNode):
             return ResultNodeSerializer(instance).data
-            
+
         return super().to_representation(instance)
 
 # Serializadores específicos para cada tipo de nodo
 class ActivityNodeDescriptionSerializer(serializers.ModelSerializer):
-    next_node = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='previous_node')
+    next_node_type = serializers.CharField(write_only=True, required=False, allow_null=True)
+    next_node_id = serializers.IntegerField(write_only=True, required=False, allow_null=True)
 
     class Meta:
         model = ActivityNodeDescription
         fields = '__all__'
+        extra_fields = ['next_node_type', 'next_node_id']
+
+    def create(self, validated_data):
+        next_node_type = validated_data.pop('next_node_type', None)
+        next_node_id = validated_data.pop('next_node_id', None)
+
+        instance = super().create(validated_data)
+
+        if next_node_type and next_node_id:
+            content_type = ContentType.objects.get(model=next_node_type.lower())
+            instance.content_type = content_type
+            instance.object_id = next_node_id
+            instance.save()
+
+        return instance
+
+    def update(self, instance, validated_data):
+        next_node_type = validated_data.pop('next_node_type', None)
+        next_node_id = validated_data.pop('next_node_id', None)
+
+        instance = super().update(instance, validated_data)
+
+        if next_node_type and next_node_id:
+            content_type = ContentType.objects.get(model=next_node_type.lower())
+            instance.content_type = content_type
+            instance.object_id = next_node_id
+            instance.save()
+
+        return instance
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        if instance.next_node:
+            data['next_node_type'] = instance.next_node._meta.model_name
+            data['next_node_id'] = instance.next_node.id
+        return data
 
 class TextQuestionSerializer(serializers.ModelSerializer):
     class Meta:

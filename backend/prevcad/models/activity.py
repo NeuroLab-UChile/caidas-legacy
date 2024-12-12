@@ -1,5 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
 
 
 class ActivityNode(models.Model):
@@ -15,13 +17,13 @@ class ActivityNode(models.Model):
     type = models.TextField(choices=NodeType.choices)
     next_node = models.ForeignKey(
         'self',
-        on_delete=models.SET_NULL, 
-        null=True, 
-        blank=True, 
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
         related_name='previous_node',
         help_text="Next node in the sequence"
     )
-    
+
 
     class Meta:
         abstract = True
@@ -34,6 +36,17 @@ class ActivityNodeDescription(ActivityNode):
     second_button_text = models.TextField(null=True, blank=True)
     first_button_node_id = models.IntegerField(null=True, blank=True)
     second_button_node_id = models.IntegerField(null=True, blank=True)
+
+    # Add these fields for the generic foreign key
+    next_node_content_type = models.ForeignKey(
+        ContentType,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='+'
+    )
+    next_node_object_id = models.PositiveIntegerField(null=True, blank=True)
+    next_node = GenericForeignKey('next_node_content_type', 'next_node_object_id')
 
 
 class ActivityNodeQuestion(ActivityNode):

@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:frontend/providers/category_provider.dart';
@@ -91,7 +93,7 @@ class CategoriesSection extends StatelessWidget {
                                   children: [
                                     category.icon != null
                                         ? Image.memory(
-                                            category.icon!,
+                                            category.icon! as Uint8List,
                                             width: 80,
                                             height: 80,
                                             fit: BoxFit.contain,

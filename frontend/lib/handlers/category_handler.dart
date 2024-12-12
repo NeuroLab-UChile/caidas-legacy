@@ -15,11 +15,7 @@ class CategoryHandler extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final categoryProvider = Provider.of<CategoryProvider>(context);
-    final node = categoryProvider.nodes.firstWhere(
-      (node) => node.id == category.rootNode,
-      orElse: () => ActivityNode(
-          id: -1, description: 'No node found', type: 'CATEGORY_DESCRIPTION'),
-    );
+    final node = category.rootNode;
 
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.primary,
@@ -62,6 +58,9 @@ class CategoryHandler extends StatelessWidget {
   }
 
   Widget _buildNodeContent(BuildContext context, ActivityNode node) {
+    print('Node type: ${node.type}');
+    print('Node description: ${node.description}');
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
       child: Column(

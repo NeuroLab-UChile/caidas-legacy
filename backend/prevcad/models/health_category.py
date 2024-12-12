@@ -40,8 +40,11 @@ class HealthCategory(models.Model):
     template = models.ForeignKey(CategoryTemplate, on_delete=models.SET_NULL, null=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='health_categories')
     root_node = models.ForeignKey(ActivityNodeDescription, on_delete=models.SET_NULL, null=True, blank=True, related_name='health_categories')
-    result_node = models.ForeignKey(ResultNode, on_delete=models.SET_NULL, null=True, blank=True, related_name='health_categories')
-    evaluation = models.JSONField(null=True, blank=True)
+    form = models.JSONField(null=True, blank=True)
+    form_response = models.JSONField(null=True, blank=True)
+    result_text = models.TextField(null=True, blank=True)
+    result_color = models.TextField(null=True, blank=True)
+
 
     def update_evaluation(self, responses: dict):
         """
@@ -112,14 +115,12 @@ class HealthCategory(models.Model):
                 type=ActivityNode.NodeType.CATEGORY_DESCRIPTION,
                 description=template.description
             )
-            result_node = ResultNode.objects.create(
-                type=ActivityNode.NodeType.RESULT_NODE
-            )
+
             cls.objects.create(
                 user=user,
                 template=template,
                 root_node=root_node,
-                result_node=result_node
+
             )
 
 @receiver(post_save, sender=User)
