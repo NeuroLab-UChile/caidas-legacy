@@ -15,6 +15,7 @@ import { useColorScheme } from "@/hooks/useColorScheme";
 import { Redirect } from "expo-router";
 import { AuthProvider } from "./contexts/auth";
 import { theme } from "@/src/theme";
+import { CategoriesProvider } from "./contexts/categories";
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -38,23 +39,28 @@ export default function RootLayout() {
   return (
     <AuthProvider>
       <ThemeProvider value={theme}>
-        <Stack
-          screenOptions={{
-            headerStyle: {
-              backgroundColor: theme.components.appBar.backgroundColor,
-            },
-            headerTintColor: theme.components.appBar.titleColor,
-            headerTitleStyle: {
-              fontSize: theme.components.appBar.titleSize,
-              fontFamily: theme.typography.primary.fontFamily,
-            },
-          }}
-        >
-          <Stack.Screen name="(auth)/sign-in" options={{ headerShown: false }} />
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="+not-found" />
-        </Stack>
-        <StatusBar style="auto" />
+        <CategoriesProvider>
+          <Stack
+            screenOptions={{
+              headerStyle: {
+                backgroundColor: theme.components.appBar.backgroundColor,
+              },
+              headerTintColor: theme.components.appBar.titleColor,
+              headerTitleStyle: {
+                fontSize: theme.components.appBar.titleSize,
+                fontFamily: theme.typography.primary.fontFamily,
+              },
+            }}
+          >
+            <Stack.Screen
+              name="(auth)/sign-in"
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen name="+not-found" />
+          </Stack>
+          <StatusBar style="auto" />
+        </CategoriesProvider>
       </ThemeProvider>
     </AuthProvider>
   );

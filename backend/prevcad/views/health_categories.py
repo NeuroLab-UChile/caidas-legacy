@@ -14,7 +14,7 @@ class HealthCategoryListView(APIView):
             serialized_categories = HealthCategorySerializer(categories, many=True).data
 
             return Response(
-                {"categories": serialized_categories},
+               serialized_categories,
                 status=status.HTTP_200_OK,
             )
         except Exception as e:

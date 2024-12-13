@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { authService, AuthResponse } from "../services/api";
+import authService, { AuthResponse } from "../services/authService";
 
 type AuthContextType = {
   user: AuthResponse["user"] | null;
