@@ -1,0 +1,103 @@
+/* Tema oscuro general */
+:root {
+  --bg-primary: #0f172a;
+  --bg-secondary: #1e293b;
+  --text-primary: #ffffff;
+  --text-secondary: #ffffff;
+  --accent: #0ea5e9;
+  --border: #334155;
+  --input-bg: #1e1e1e;
+}
+
+/* Fondo general */
+body {
+  background-color: var(--bg-primary) !important;
+}
+
+/* Header */
+#header {
+  background: var(--bg-secondary) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Contenido principal */
+#content {
+  background: var(--bg-primary) !important;
+}
+
+/* Módulos */
+.module {
+  background: var(--bg-secondary) !important;
+  border: 1px solid var(--border) !important;
+}
+
+/* Campos de formulario */
+input[type="text"],
+input[type="password"],
+input[type="email"],
+input[type="number"],
+input[type="url"],
+input[type="tel"],
+textarea,
+select,
+.vTextField {
+  background-color: var(--input-bg) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid var(--border) !important;
+}
+
+/* Textos */
+body,
+p,
+label,
+span,
+div,
+td,
+th,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+.help,
+p.help {
+  color: var(--text-primary) !important;
+}
+
+/* Enlaces */
+a:link,
+a:visited {
+  color: var(--text-primary) !important;
+}
+
+/* Botones */
+.button,
+input[type="submit"],
+input[type="button"],
+.submit-row input {
+  background: var(--accent) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Campo específico del formulario */
+#id_evaluation_form {
+  background-color: var(--input-bg) !important;
+  color: var(--text-primary) !important;
+  font-family: "Monaco", "Consolas", "Courier New", monospace !important;
+  font-size: 14px !important;
+  line-height: 1.6 !important;
+  padding: 20px !important;
+  border: 2px solid var(--border) !important;
+  width: 100% !important;
+  min-height: 300px !important;
+}
+
+/* Descripción del fieldset */
+fieldset .description {
+  background-color: var(--input-bg) !important;
+  color: var(--text-primary) !important;
+  padding: 15px !important;
+  border: 1px solid var(--border) !important;
+  margin: 10px 0 !important;
+}

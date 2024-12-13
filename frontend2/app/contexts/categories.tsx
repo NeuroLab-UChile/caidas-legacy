@@ -2,16 +2,16 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 import apiService from "../services/apiService";
 import { Category } from "../types/category";
 
-interface CategoriesContextType {
-  categories: Category[];
-  selectedCategory: Category | null;
-  setSelectedCategory: (category: Category | null) => void;
+interface CategoriesContextType<T = Category> {
+  categories: T[];
+  selectedCategory: T | null;
+  setSelectedCategory: (category: T | null) => void;
   loading: boolean;
   error: string | null;
 }
 
-const CategoriesContext = createContext<CategoriesContextType | undefined>(
-  undefined
+export const CategoriesContext = createContext<CategoriesContextType>(
+  {} as CategoriesContextType
 );
 
 export function CategoriesProvider({
@@ -32,7 +32,6 @@ export function CategoriesProvider({
       const response = await apiService.categories.getAll();
       const apiData = response.data as Category[];
 
-      console.log("Categorías cargadas:", apiData); // Debug log
       setCategories(apiData);
     } catch (err) {
       console.error("Error fetching categories:", err);
@@ -47,7 +46,6 @@ export function CategoriesProvider({
   }, []);
 
   const handleSetSelectedCategory = (category: Category | null) => {
-    console.log("Estableciendo categoría seleccionada:", category); // Debug log
     setSelectedCategory(category);
   };
 
@@ -66,10 +64,4 @@ export function CategoriesProvider({
   );
 }
 
-export function useCategories() {
-  const context = useContext(CategoriesContext);
-  if (context === undefined) {
-    throw new Error("useCategories must be used within a CategoriesProvider");
-  }
-  return context;
-}
+export const useCategories = () => useContext(CategoriesContext);

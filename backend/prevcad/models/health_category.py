@@ -39,11 +39,12 @@ class CategoryTemplate(models.Model):
 class HealthCategory(models.Model):
     template = models.ForeignKey(CategoryTemplate, on_delete=models.SET_NULL, null=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='health_categories')
-    root_node = models.ForeignKey(ActivityNodeDescription, on_delete=models.SET_NULL, null=True, blank=True, related_name='health_categories')
-    form = models.JSONField(null=True, blank=True)
-    form_response = models.JSONField(null=True, blank=True)
-    result_text = models.TextField(null=True, blank=True)
-    result_color = models.TextField(null=True, blank=True)
+    root_node = models.ForeignKey(ActivityNodeDescription, on_delete=models.SET_NULL, null=True, blank=True)
+    evaluation_form = models.JSONField(null=True, blank=True)
+    responses = models.JSONField(null=True, blank=True)
+    score = models.IntegerField(null=True, blank=True)
+    completion_date = models.DateTimeField(null=True, blank=True)
+    recommendations = models.JSONField(null=True, blank=True)
 
 
     def update_evaluation(self, responses: dict):

@@ -63,7 +63,7 @@ const apiService = {
       }
 
       const data = await response.json();
-      console.log('Respuesta de la API:', data);
+
       return { data, status: response.status };
     } catch (error) {
       console.error('API request failed:', error);
@@ -90,14 +90,46 @@ const apiService = {
 
   user: {
     async getProfile(): Promise<ApiResponse<UserProfile>> {
-      return await apiService.request('/user/profile/');
+      return await apiService.request('/user/profile/', {}, true);
     },
 
     async updateProfile(data: Partial<UserProfile>): Promise<ApiResponse<UserProfile>> {
       return await apiService.request('/user/profile/', {
         method: 'PUT',
         body: JSON.stringify(data),
-      });
+      }, true);
+    },
+
+    async uploadProfileImage(uri: string): Promise<ApiResponse<UserProfile>> {
+      console.log('1. Iniciando subida de imagen:', uri);
+
+      const formData = new FormData();
+      const filename = uri.split('/').pop();
+      const match = /\.(\w+)$/.exec(filename || '');
+      const type = match ? `image/${match[1]}` : 'image';
+
+      console.log('2. Preparando datos de imagen:', { filename, type });
+
+      formData.append('profile_image', {
+        uri,
+        name: filename,
+        type,
+      } as any);
+
+      return await apiService.request('/user/profile/upload_image/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+        body: formData as any,
+      }, true);
+    },
+
+    deleteProfileImage: async () => {
+      const response = await apiService.request('/users/profile/image/', {
+        method: 'DELETE',
+      }, true);
+      return response;
     },
   },
 

@@ -12,7 +12,7 @@ export default function SignIn() {
   const handleLogin = async () => {
     try {
       await signIn(username, password);
-      router.replace("/(tabs)/action/")
+      router.replace("/(tabs)/action/");
     } catch (error) {
       console.error(error);
     }
@@ -70,40 +70,39 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.background,
   },
   title: {
-    fontSize: theme.typography.sizes.displayLarge,
-    fontFamily: theme.typography.primary.fontFamily,
+    fontSize: theme.typography.sizes.title,
+    fontFamily: theme.typography.fonts.primary.bold,
     color: theme.colors.text,
     marginBottom: theme.spacing.xl,
     textAlign: "center",
   },
   input: {
     height: 50,
-    borderWidth: theme.components.button.borderWidth,
-    borderColor: theme.components.button.borderColor,
-    borderRadius: theme.components.button.borderRadius,
+    borderWidth: theme.components.button.variants.primary.borderWidth,
+    borderColor: theme.components.button.variants.primary.borderColor,
+    borderRadius: theme.components.button.variants.primary.borderRadius,
     paddingHorizontal: theme.spacing.md,
     marginBottom: theme.spacing.md,
-    fontSize: theme.typography.sizes.bodyMedium,
-    fontFamily: theme.typography.primary.fontFamily,
+    fontSize: theme.typography.sizes.body1,
+    fontFamily: theme.typography.fonts.primary.regular,
     color: theme.colors.text,
     backgroundColor: theme.colors.card,
   },
   button: {
     backgroundColor: theme.colors.primary,
     padding: theme.spacing.md,
-    borderRadius: theme.components.button.borderRadius,
+    borderRadius: theme.components.button.variants.primary.borderRadius,
     alignItems: "center",
     marginTop: theme.spacing.md,
-    borderWidth: theme.components.button.borderWidth,
-    borderColor: theme.components.button.borderColor,
+    borderWidth: theme.components.button.variants.primary.borderWidth,
+    borderColor: theme.components.button.variants.primary.borderColor,
   },
   buttonPressed: {
     opacity: 0.8,
   },
   buttonText: {
     color: theme.colors.text,
-    fontSize: theme.typography.sizes.bodyMedium,
-    fontFamily: theme.typography.primary.fontFamily,
-    fontWeight: theme.typography.primary.bold,
+    fontSize: theme.typography.sizes.body1,
+    fontFamily: theme.typography.fonts.primary.bold,
   },
 });

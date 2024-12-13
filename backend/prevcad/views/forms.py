@@ -8,10 +8,16 @@ from prevcad.models import (
   Form,
   FormResponse,
   FormQuestion,
-  QuestionResponse
+  QuestionResponse,
+  HealthCategory,
+  RootNode,
+  EvaluationForm
 )
 from prevcad.serializers.form_serializer import (
   FormSerializer
+)
+from prevcad.serializers.health_category_serializer import (
+  HealthCategorySerializer
 )
 
 
@@ -115,3 +121,35 @@ class LastTestResultsView(APIView):
 
     except PhysicalActivity.DoesNotExist:
       return Response({'error': 'Categoría no encontrada'}, status=status.HTTP_404_NOT_FOUND)
+
+
+class HealthCategoryViewSet(viewsets.ModelViewSet):
+    queryset = HealthCategory.objects.all()
+    serializer_class = HealthCategorySerializer
+
+    def create(self, request, *args, **kwargs):
+        data = request.data
+        
+        # Crear la categoría con root node automático
+        category = HealthCategory.objects.create(
+            name=data['name'],
+            description=data['description'],
+            icon=data.get('icon', 'default-icon')
+        )
+
+        # Crear y vincular root node automáticamente
+        root_node = RootNode.objects.create(
+            type="ROOT_NODE",
+            description=data['description'],
+            first_button_text="Comenzar evaluación",
+        )
+
+        # Crear y vincular form
+        evaluation_form = EvaluationForm.objects.create()
+
+        category.root_node = root_node
+        category.evaluation_form = evaluation_form
+        category.save()
+
+        serializer = self.get_serializer(category)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)

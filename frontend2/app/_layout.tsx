@@ -43,12 +43,12 @@ export default function RootLayout() {
           <Stack
             screenOptions={{
               headerStyle: {
-                backgroundColor: theme.components.appBar.backgroundColor,
+                backgroundColor: theme.colors.background,
               },
-              headerTintColor: theme.components.appBar.titleColor,
+              headerTintColor: theme.colors.text,
               headerTitleStyle: {
-                fontSize: theme.components.appBar.titleSize,
-                fontFamily: theme.typography.primary.fontFamily,
+                fontSize: theme.typography.sizes.title,
+                fontFamily: theme.typography.fonts.primary.regular,
               },
             }}
           >

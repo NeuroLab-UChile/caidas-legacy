@@ -8,11 +8,12 @@ from .activity_node_serializer import ActivityNodeDescriptionSerializer, ResultN
 class HealthCategorySerializer(serializers.ModelSerializer):
     name = serializers.SerializerMethodField()
     icon = serializers.SerializerMethodField()
-    root_node = ActivityNodeDescriptionSerializer(read_only=True)
-    form = serializers.JSONField(required=False, allow_null=True)
-    form_response = serializers.JSONField(required=False, allow_null=True)
-    result_text = serializers.CharField(required=False, allow_null=True)
-    result_color = serializers.CharField(required=False, allow_null=True)
+    root_node = serializers.SerializerMethodField()
+    evaluation_form = serializers.SerializerMethodField()
+    responses = serializers.JSONField(required=False)
+    score = serializers.IntegerField(required=False)
+    completion_date = serializers.DateTimeField(required=False)
+    recommendations = serializers.JSONField(required=False)
 
     def get_name(self, obj):
         """Returns the name of the category template"""
@@ -30,6 +31,22 @@ class HealthCategorySerializer(serializers.ModelSerializer):
                 return None
         return None  # Ensure None is returned if no icon is available
 
+    def get_root_node(self, obj):
+        """Returns the root node data"""
+        if not obj.template:
+            return None
+        return {
+            "type": "CATEGORY_DESCRIPTION",
+            "description": obj.template.description,
+            "first_button_text": "Comenzar Evaluación",
+            "first_button_node_id": obj.evaluation_form.get("question_nodes", [])[0].get("id") if obj.evaluation_form else None
+        }
+
+    def get_evaluation_form(self, obj):
+        """Returns the evaluation form from the template"""
+        return obj.template.evaluation_form if obj.template else None
+
     class Meta:
         model = HealthCategory
-        fields = ['id', 'name', 'icon', 'root_node', 'form', 'form_response', 'result_text', 'result_color']
+        fields = ['id', 'name', 'icon', 'root_node', 'evaluation_form', 
+                 'responses', 'score', 'completion_date', 'recommendations']

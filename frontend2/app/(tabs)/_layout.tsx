@@ -6,11 +6,13 @@ import {
   Text,
   StyleSheet,
   Dimensions,
+  Alert,
 } from "react-native";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { router } from "expo-router";
 import { HapticTab } from "@/components/HapticTab";
 import { theme } from "@/src/theme";
+import authService from "../services/authService";
 
 const BOTTOM_TAB_HEIGHT = 83;
 const MIDDLE_BUTTON_SIZE = 65;
@@ -48,13 +50,11 @@ const hiddenItems = [
     name: "action",
     title: "PREIDAS",
     icon: "plus.circle",
-    hidden: true,
   },
   {
     name: "category-detail",
-    title: "Detalle",
-    icon: "info.circle",
-    hidden: true,
+    title: "Detalle de Categoría",
+    icon: "folder",
   },
 ];
 
@@ -68,51 +68,215 @@ export default function TabLayout() {
       style={[styles.container, { backgroundColor: theme.colors.background }]}
     >
       <Tabs
-        screenOptions={{
+        screenOptions={({ route }) => ({
           tabBarActiveTintColor: theme.colors.text,
-          tabBarInactiveTintColor: "#000000",
+          tabBarInactiveTintColor: theme.colors.text + "80",
           headerShown: true,
           tabBarButton: HapticTab,
+          headerTitle: () => {
+            const item = [
+              ...leftMenuItems,
+              ...rightMenuItems,
+              ...hiddenItems,
+            ].find((item) => item.name === route.name);
+            return (
+              <Text style={[styles.headerTitle, { color: theme.colors.text }]}>
+                {item?.title || route.name}
+              </Text>
+            );
+          },
           headerStyle: {
             backgroundColor: theme.colors.primary,
             elevation: 0,
             shadowOpacity: 0,
+            height: route.name === "category-detail" ? 100 : 60,
           },
-          headerTitleStyle: {
-            color: theme.colors.text,
-            fontSize: theme.typography.sizes.titleLarge,
-            fontFamily: theme.typography.primary.fontFamily,
-            fontWeight: theme.typography.primary.bold,
+          headerTitleAlign: "center",
+          header: ({ route, options }) => {
+            const item = [
+              ...leftMenuItems,
+              ...rightMenuItems,
+              ...hiddenItems,
+            ].find((item) => item.name === route.name);
+            return (
+              <View style={styles.headerContainer}>
+                <View style={styles.headerTopRow}>
+                  <Text
+                    style={[styles.headerTitle, { color: theme.colors.text }]}
+                  >
+                    {item?.title || route.name}
+                  </Text>
+                  <TouchableOpacity
+                    onPress={() => {
+                      Alert.alert(
+                        "Cerrar Sesión",
+                        "¿Estás seguro que deseas salir?",
+                        [
+                          {
+                            text: "Cancelar",
+                            style: "cancel",
+                          },
+                          {
+                            text: "Salir",
+                            style: "destructive",
+                            onPress: async () => {
+                              try {
+                                await authService.logout();
+                                router.replace("/sign-in");
+                              } catch (error) {
+                                console.error("Error al cerrar sesión:", error);
+                                Alert.alert(
+                                  "Error",
+                                  "No se pudo cerrar la sesión"
+                                );
+                              }
+                            },
+                          },
+                        ]
+                      );
+                    }}
+                    style={[
+                      styles.logoutButton,
+                      {
+                        backgroundColor: theme.colors.background,
+                        borderWidth: 2,
+                        borderColor: theme.colors.border,
+                      },
+                    ]}
+                  >
+                    <View style={styles.logoutContent}>
+                      <IconSymbol
+                        name="power"
+                        size={18}
+                        color={theme.colors.text}
+                        style={styles.logoutIcon}
+                      />
+                      <Text
+                        style={[
+                          styles.logoutText,
+                          { color: theme.colors.text },
+                        ]}
+                      >
+                        Salir
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                </View>
+                {route.name === "category-detail" && (
+                  <TouchableOpacity
+                    onPress={() => router.replace("/(tabs)/action")}
+                    style={[styles.backButton, { marginTop: 8 }]}
+                  >
+                    <Text
+                      style={[
+                        styles.backButtonText,
+                        { color: theme.colors.text },
+                      ]}
+                    >
+                      {"< Volver"}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            );
           },
-          headerLeft: () => (
-            <TouchableOpacity
-              onPress={() => router.replace("/(tabs)/action")}
-              style={styles.backButton}
-            >
-              <Text
-                style={[styles.backButtonText, { color: theme.colors.text }]}
-              >
-                {"< Volver"}
-              </Text>
-            </TouchableOpacity>
-          ),
+          headerLeft: undefined,
           tabBarStyle: {
             ...styles.tabBar,
             backgroundColor: theme.colors.card,
+            borderTopWidth: 2,
+            borderLeftWidth: 2,
+            borderRightWidth: 2,
+            borderColor: theme.colors.border,
+            borderBottomWidth: 0,
           },
           tabBarItemStyle: {
-            width: SCREEN_WIDTH / 4 - 10,
+            width: SCREEN_WIDTH / 4,
+            height: BOTTOM_TAB_HEIGHT - 20,
+            paddingTop: 4,
           },
           tabBarLabelStyle: {
-            fontSize: 11,
-            fontFamily: theme.typography.primary.fontFamily,
-            fontWeight: theme.typography.primary.bold,
-            paddingBottom: 15,
+            fontSize: 10,
+            fontWeight: "600",
+            position: "relative",
+            top: 0,
+            display: "flex",
+            marginTop: 4,
           },
+          tabBarIcon: ({ color, focused }) => {
+            const item = [...leftMenuItems, ...rightMenuItems].find(
+              (item) => item.name === route.name
+            );
+            if (!item) return null;
+
+            return (
+              <View
+                style={[
+                  styles.iconContainer,
+                  focused && styles.activeIconContainer,
+                ]}
+              >
+                <IconSymbol
+                  size={24}
+                  name={item.icon as any}
+                  color={focused ? theme.colors.text : color}
+                />
+              </View>
+            );
+          },
+          headerRight: () => (
+            <TouchableOpacity
+              onPress={() => {
+                Alert.alert(
+                  "Cerrar Sesión",
+                  "¿Estás seguro que deseas salir?",
+                  [
+                    {
+                      text: "Cancelar",
+                      style: "cancel",
+                    },
+                    {
+                      text: "Salir",
+                      style: "destructive",
+                      onPress: async () => {
+                        try {
+                          await authService.logout();
+                          router.replace("/login");
+                        } catch (error) {
+                          console.error("Error al cerrar sesión:", error);
+                          Alert.alert("Error", "No se pudo cerrar la sesión");
+                        }
+                      },
+                    },
+                  ]
+                );
+              }}
+              style={[
+                styles.logoutButton,
+                {
+                  backgroundColor: theme.colors.background,
+                  borderWidth: 2,
+                  borderColor: theme.colors.border,
+                },
+              ]}
+            >
+              <View style={styles.logoutContent}>
+                <IconSymbol
+                  name="power"
+                  size={20}
+                  color={theme.colors.text}
+                  style={styles.logoutIcon}
+                />
+                <Text style={[styles.logoutText, { color: theme.colors.text }]}>
+                  Salir
+                </Text>
+              </View>
+            </TouchableOpacity>
+          ),
           tabBarIconStyle: {
-            marginTop: 15,
+            marginBottom: 4,
           },
-        }}
+        })}
       >
         {leftMenuItems.map((item) => (
           <Tabs.Screen
@@ -120,12 +284,10 @@ export default function TabLayout() {
             name={item.name}
             options={{
               title: item.title,
+              headerTitle: item.title,
+              tabBarLabel: item.title,
               tabBarIcon: ({ color }) => (
-                <IconSymbol
-                  size={theme.components.icon.size}
-                  name={item.icon as any}
-                  color={color}
-                />
+                <IconSymbol size={24} name={item.icon as any} color={color} />
               ),
             }}
           />
@@ -137,8 +299,26 @@ export default function TabLayout() {
             name={item.name}
             options={{
               title: item.title,
-              tabBarLabel: "",
+              headerTitle: item.title,
               tabBarButton: () => null,
+              headerLeft:
+                item.name === "category-detail"
+                  ? () => (
+                      <TouchableOpacity
+                        onPress={() => router.replace("/(tabs)/action")}
+                        style={styles.backButton}
+                      >
+                        <Text
+                          style={[
+                            styles.backButtonText,
+                            { color: theme.colors.text },
+                          ]}
+                        >
+                          {"< Volver"}
+                        </Text>
+                      </TouchableOpacity>
+                    )
+                  : undefined,
             }}
           />
         ))}
@@ -149,12 +329,10 @@ export default function TabLayout() {
             name={item.name}
             options={{
               title: item.title,
+              headerTitle: item.title,
+              tabBarLabel: item.title,
               tabBarIcon: ({ color }) => (
-                <IconSymbol
-                  size={theme.components.icon.size}
-                  name={item.icon as any}
-                  color={color}
-                />
+                <IconSymbol size={24} name={item.icon as any} color={color} />
               ),
             }}
           />
@@ -163,15 +341,44 @@ export default function TabLayout() {
 
       <TouchableOpacity
         onPress={handleMiddleButtonPress}
-        style={[styles.middleButton, { backgroundColor: theme.colors.primary }]}
+        style={[
+          styles.middleButton,
+          {
+            backgroundColor: theme.colors.background,
+          },
+        ]}
       >
+        <View
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            height: MIDDLE_BUTTON_SIZE / 2,
+            borderTopLeftRadius: MIDDLE_BUTTON_SIZE / 2,
+            borderTopRightRadius: MIDDLE_BUTTON_SIZE / 2,
+            borderWidth: 2,
+            borderBottomWidth: 0,
+            borderColor: theme.colors.border,
+          }}
+        />
         <IconSymbol
           name="figure.walk"
-          size={24}
+          size={28}
           color={theme.colors.text}
-          style={styles.buttonIcon}
+          style={[styles.buttonIcon, { marginBottom: 2 }]}
         />
-        <Text style={[styles.logoText, { color: theme.colors.text }]}>
+        <Text
+          style={[
+            styles.logoText,
+            {
+              color: theme.colors.text,
+              fontSize: 12,
+              fontWeight: "bold",
+              marginTop: 0,
+            },
+          ]}
+        >
           PREIDAS
         </Text>
       </TouchableOpacity>
@@ -184,12 +391,15 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   backButton: {
-    marginLeft: 16,
-    flexDirection: "row",
-    alignItems: "center",
+    alignSelf: "flex-start",
+    padding: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.background,
   },
   backButtonText: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "600",
   },
   tabBar: {
@@ -197,15 +407,16 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    height: BOTTOM_TAB_HEIGHT,
+    height: BOTTOM_TAB_HEIGHT - 10,
     elevation: 0,
-    borderTopWidth: 0,
     shadowColor: "transparent",
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     flexDirection: "row",
     justifyContent: "space-between",
     paddingHorizontal: 20,
+    paddingBottom: 8,
+    overflow: "hidden",
   },
   middleButton: {
     position: "absolute",
@@ -216,24 +427,71 @@ const styles = StyleSheet.create({
     borderRadius: MIDDLE_BUTTON_SIZE / 2,
     justifyContent: "center",
     alignItems: "center",
-    zIndex: 1,
-    elevation: 5,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
+    zIndex: 1000,
+    elevation: 8,
+    overflow: "hidden",
   },
   buttonIcon: {
     marginBottom: 2,
   },
   logoText: {
-    fontSize: 12,
+    fontSize: 10,
     fontWeight: "bold",
-    marginTop: -2,
+    textAlign: "center",
+    letterSpacing: 0.5,
   },
   activeIconContainer: {
-    backgroundColor: "#F2FF2A",
-    padding: 8,
+    backgroundColor: theme.colors.text + "20",
+    transform: [{ scale: 1.1 }],
+  },
+  logoutButton: {
+    marginRight: 0,
+    padding: 6,
+    paddingHorizontal: 10,
     borderRadius: 8,
+    elevation: 1,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.15,
+    shadowRadius: 2,
+    zIndex: 1,
+  },
+  logoutContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    height: 24,
+  },
+  logoutIcon: {
+    marginRight: 4,
+  },
+  logoutText: {
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  iconContainer: {
+    padding: 4,
+    borderRadius: 12,
+    backgroundColor: "transparent",
+  },
+  headerContainer: {
+    backgroundColor: theme.colors.primary,
+    paddingTop: 40,
+    paddingHorizontal: 16,
+    paddingBottom: 8,
+  },
+  headerTopRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 4,
+    paddingRight: 0,
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    flex: 1,
   },
 });

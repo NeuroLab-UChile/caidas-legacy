@@ -1,11 +1,10 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { useCategories } from "../contexts/categories";
-import { useCustomTheme } from "@/src/hooks/useCustomTheme";
+import { theme } from "@/src/theme";
 
 export default function CategoryDetailScreen() {
   const { selectedCategory } = useCategories();
-  const theme = useCustomTheme();
 
   if (!selectedCategory) {
     return (

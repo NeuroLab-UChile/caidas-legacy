@@ -25,63 +25,7 @@ def crear_category_template(template_data):
         }
     )
 
-    # Si la plantilla es nueva, se crean los nodos relacionados
-    if created:
-        root_node = None
-        previous_node = None  # Para enlazar los nodos en secuencia
-
-        # Iterar sobre los nodos del formulario de evaluación
-        for node_data in template_data["evaluation_form"]["nodes"]:
-            node_type = node_data["type"]
-
-            # Crear el nodo dependiendo del tipo
-            if node_type == "CATEGORY_DESCRIPTION":
-                node = ActivityNodeDescription.objects.create(
-                    type=ActivityNode.NodeType.CATEGORY_DESCRIPTION,
-                    description=node_data["description"],
-                    first_button_text=node_data.get("first_button_text"),
-                    first_button_node_id=node_data.get("first_button_node_id")
-                )
-
-            elif node_type == "TEXT_QUESTION":
-                node = TextQuestion.objects.create(
-                    type=ActivityNode.NodeType.TEXT_QUESTION,
-                    question=node_data["question"]
-                )
-
-            elif node_type == "SCALE_QUESTION":
-                node = ScaleQuestion.objects.create(
-                    type=ActivityNode.NodeType.SCALE_QUESTION,
-                    question=node_data["question"],
-                    min_value=node_data["min_value"],
-                    max_value=node_data["max_value"],
-                    step=node_data["step"]
-                )
-
-            elif node_type == "RESULT_NODE":
-                node = ResultNode.objects.create(
-                    type=ActivityNode.NodeType.RESULT_NODE,
-                    response=node_data["response"]
-                )
-
-            # Establecer el siguiente nodo
-            if previous_node:
-                previous_node.next_node_content_type = ContentType.objects.get_for_model(node)
-                previous_node.next_node_object_id = node.id
-                previous_node.save()
-
-            previous_node = node  # Actualizar el nodo anterior
-
-            # Si es el primer nodo, establece el root_node
-            if not root_node:
-                root_node = node
-
-        # Después de crear los nodos, asociar el root_node a la plantilla
-        template.root_node = root_node
-        template.save()
-
-    else:
-        # Si la plantilla ya existe, solo actualiza el formulario de evaluación
+    if not created:
         template.evaluation_form = template_data["evaluation_form"]
         template.save()
 
@@ -91,38 +35,166 @@ def crear_category_template(template_data):
 # Datos del formulario a procesar
 templates_data = [
     {
-        "name": "Physical Health",
-        "description": "Monitor and improve your physical health.",
-        "icon_path":'health_category/physical_health.png',
+        "name": "Riesgo Domiciliario",
+        "description": "Entendemos que nuestras casas varían en forma, tamaño y distribución, pero es importante conocer los espacios que más utiliza para darle consejos pertinentes a su contexto.",
+        "icon_path": "health_category/home.png",
+        "root_node": {
+            "type": "CATEGORY_DESCRIPTION",
+            "description": "¡Hola! Antes de recomendarle mejoras en su vivienda, necesitamos conocer su contexto habitacional.",
+            "first_button_text": "Comenzar Evaluación",
+            "first_button_node_id": 1
+        },
         "evaluation_form": {
-            "nodes": [
+            "id": 1,
+            "question_nodes": [
                 {
-                    "type": "TEXT_QUESTION",
-                    "question": "How do you feel after exercise?"
+                    "id": 1,
+                    "type": "SINGLE_CHOICE_QUESTION",
+                    "question": "¿En qué tipo de vivienda reside actualmente?",
+                    "options": ["Casa", "Departamento"],
+                    "next_node_id": 2
                 },
                 {
+                    "id": 2,
+                    "type": "MULTIPLE_CHOICE_QUESTION",
+                    "question": "Seleccione los espacios que más utiliza en su día a día:",
+                    "options": [
+                        "Cocina",
+                        "Living-comedor",
+                        "Habitación",
+                        "Baño",
+                        "Escalera",
+                        "Pasillo",
+                        "Exterior"
+                    ],
+                    "next_node_id": 3
+                },
+                {
+                    "id": 3,
+                    "type": "SINGLE_CHOICE_QUESTION",
+                    "question": "Si vive en departamento, ¿cómo accede a su vivienda?",
+                    "options": [
+                        "Uso ascensor",
+                        "Uso escaleras",
+                        "Vivo en planta baja"
+                    ],
+                    "next_node_id": 4
+                },
+                {
+                    "id": 4,
                     "type": "RESULT_NODE",
-                    "response": None
+                    "description": "Basado en los espacios que utiliza, le presentaremos recomendaciones específicas para cada área de su hogar.",
+                    "next_node_id": '',
+                    "recommendations": [
+                        "Asegúrese de tener una iluminación adecuada en todos los espacios",
+                        "Mantenga los pasillos y áreas de tránsito libres de obstáculos",
+                        "Considere la instalación de elementos de apoyo en zonas críticas"
+                    ]
                 }
             ]
         }
     },
     {
-        "name": "Mental Well-being",
-        "description": "Track your mental health and get insights.",
-        "icon_path": "health_category/mental_health.png",
+        "name": "Actividad Física",
+        "description": "Evaluación de tu nivel de actividad física",
+        "icon_path": "health_category/activity.png",
+        "root_node": {
+            "type": "CATEGORY_DESCRIPTION",
+            "description": "La actividad física es cualquier movimiento corporal producido por los músculos que consume energía. Evaluemos tu nivel actual.",
+            "first_button_text": "Comenzar Evaluación",
+            "first_button_node_id": 6
+        },
         "evaluation_form": {
-            "nodes": [
+            "id": 2,
+            "question_nodes": [
+                # ... más nodos aquí
+            ]
+        }
+    },
+    {
+        "name": "Alimentación Saludable",
+        "description": "Una alimentación saludable es fundamental para mantener un buen estado de salud y prevenir enfermedades. Evaluemos tus hábitos alimenticios actuales.",
+        "icon_path": "health_category/nutrition.png",
+        "root_node": {
+            "type": "CATEGORY_DESCRIPTION",
+            "description": "¡Hola! Vamos a evaluar tus hábitos alimenticios para brindarte recomendaciones personalizadas que mejoren tu nutrición diaria.",
+            "first_button_text": "Comenzar Evaluación",
+            "first_button_node_id": 1
+        },
+        "evaluation_form": {
+            "id": 3,
+            "question_nodes": [
                 {
-                    "type": "SCALE_QUESTION",
-                    "question": "On a scale of 1 to 10, how stressed are you?",
-                    "min_value": 1,
-                    "max_value": 10,
-                    "step": 1
+                    "id": 1,
+                    "type": "MULTIPLE_CHOICE_QUESTION",
+                    "question": "¿Cuántas porciones de frutas y verduras consume al día?",
+                    "options": [
+                        "Ninguna",
+                        "1-2 porciones",
+                        "3-4 porciones",
+                        "5 o más porciones"
+                    ],
+                    "next_node_id": 2
                 },
                 {
+                    "id": 2,
+                    "type": "SINGLE_CHOICE_QUESTION",
+                    "question": "¿Con qué frecuencia consume comida rápida o procesada?",
+                    "options": [
+                        "Todos los días",
+                        "3-4 veces por semana",
+                        "1-2 veces por semana",
+                        "Rara vez o nunca"
+                    ],
+                    "next_node_id": 3
+                },
+                {
+                    "id": 3,
+                    "type": "MULTIPLE_CHOICE_QUESTION",
+                    "question": "¿Qué comidas realiza habitualmente?",
+                    "options": [
+                        "Desayuno",
+                        "Colación media mañana",
+                        "Almuerzo",
+                        "Colación media tarde",
+                        "Cena"
+                    ],
+                    "next_node_id": 4
+                },
+                {
+                    "id": 4,
+                    "type": "SCALE_QUESTION",
+                    "question": "¿Cuántos vasos de agua consume al día?",
+                    "min_value": 0,
+                    "max_value": 8,
+                    "step": 1,
+                    "next_node_id": 5
+                },
+                {
+                    "id": 5,
+                    "type": "SINGLE_CHOICE_QUESTION",
+                    "question": "¿Sigue alguna dieta específica?",
+                    "options": [
+                        "No",
+                        "Vegetariana",
+                        "Vegana",
+                        "Sin gluten",
+                        "Baja en sodio",
+                        "Otra"
+                    ],
+                    "next_node_id": 6
+                },
+                {
+                    "id": 6,
                     "type": "RESULT_NODE",
-                    "response": None
+                    "description": "Basado en sus respuestas, le presentaremos recomendaciones para mejorar sus hábitos alimenticios.",
+                    "next_node_id": '',
+                    "recommendations": [
+                        "Intente incluir más frutas y verduras en su dieta diaria",
+                        "Mantenga un horario regular de comidas",
+                        "Aumente su consumo de agua durante el día",
+                        "Reduzca el consumo de alimentos procesados"
+                    ]
                 }
             ]
         }
@@ -132,3 +204,28 @@ templates_data = [
 # Procesar la carga de datos
 for template_data in templates_data:
     crear_category_template(template_data)
+
+def create_category(name, description, icon):
+    # Crear la categoría
+    category = HealthCategory.objects.create(
+        name=name,
+        description=description,
+        icon=icon
+    )
+
+    # Crear automáticamente el root node
+    root_node = RootNode.objects.create(
+        type="ROOT_NODE",
+        description=description,
+        first_button_text="Comenzar evaluación",
+    )
+
+    # Crear el formulario de evaluación
+    evaluation_form = EvaluationForm.objects.create()
+
+    # Vincular todo
+    category.root_node = root_node
+    category.evaluation_form = evaluation_form
+    category.save()
+
+    return category, evaluation_form
