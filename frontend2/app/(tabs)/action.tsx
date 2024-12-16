@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   Dimensions,
   Image,
+  ScrollView,
 } from "react-native";
 import { useCategories } from "../contexts/categories";
 import { theme } from "@/src/theme";
@@ -29,6 +30,34 @@ export default function ActionScreen() {
     router.push({
       pathname: "/(tabs)/category-detail",
     });
+  };
+
+  const renderIcon = (base64Icon: string) => {
+    try {
+      console.log("Icon data:", {
+        hasIcon: !!base64Icon,
+        iconLength: base64Icon?.length,
+        iconPreview: base64Icon?.substring(0, 50) + "...",
+      });
+
+      const imageUri = base64Icon.includes("data:image")
+        ? base64Icon
+        : `data:image/png;base64,${base64Icon}`;
+
+      return (
+        <Image
+          source={{ uri: imageUri }}
+          style={styles.iconImage}
+          resizeMode="contain"
+          onError={(e) =>
+            console.log("Error loading image:", e.nativeEvent.error)
+          }
+        />
+      );
+    } catch (error) {
+      console.log("Error processing icon:", error);
+      return null;
+    }
   };
 
   if (loading) {
@@ -61,6 +90,9 @@ export default function ActionScreen() {
         data={categories}
         numColumns={COLUMN_COUNT}
         contentContainerStyle={styles.listContainer}
+        ListHeaderComponent={null}
+        showsVerticalScrollIndicator={true}
+        bounces={true}
         renderItem={({ item }) => (
           <TouchableOpacity
             style={[
@@ -71,13 +103,7 @@ export default function ActionScreen() {
             onPress={() => handleCategoryPress(item)}
           >
             <View style={styles.iconContainer}>
-              {item.icon && (
-                <Image
-                  source={{ uri: `data:image/png;base64,${item.icon}` }}
-                  style={styles.iconImage}
-                  resizeMode="contain"
-                />
-              )}
+              {item.icon && renderIcon(item.icon)}
             </View>
             <Text style={[styles.categoryName, { color: theme.colors.text }]}>
               {item.name}
@@ -93,7 +119,14 @@ export default function ActionScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: SPACING,
+    backgroundColor: theme.colors.background,
+  },
+  contentContainer: {
+    flexGrow: 1,
+    paddingBottom: 100, // Espacio extra al final para el scroll
+  },
+  content: {
+    padding: 16,
   },
   selectedCategoryContainer: {
     padding: SPACING,

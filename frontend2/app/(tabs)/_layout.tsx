@@ -13,6 +13,7 @@ import { router } from "expo-router";
 import { HapticTab } from "@/components/HapticTab";
 import { theme } from "@/src/theme";
 import authService from "../services/authService";
+import { ScrollLayout } from "@/components/ScrollLayout";
 
 const BOTTOM_TAB_HEIGHT = 83;
 const MIDDLE_BUTTON_SIZE = 65;
@@ -67,277 +68,286 @@ export default function TabLayout() {
     <View
       style={[styles.container, { backgroundColor: theme.colors.background }]}
     >
-      <Tabs
-        screenOptions={({ route }) => ({
-          tabBarActiveTintColor: theme.colors.text,
-          tabBarInactiveTintColor: theme.colors.text + "80",
-          headerShown: true,
-          tabBarButton: HapticTab,
-          headerTitle: () => {
-            const item = [
-              ...leftMenuItems,
-              ...rightMenuItems,
-              ...hiddenItems,
-            ].find((item) => item.name === route.name);
-            return (
-              <Text style={[styles.headerTitle, { color: theme.colors.text }]}>
-                {item?.title || route.name}
-              </Text>
-            );
-          },
-          headerStyle: {
-            backgroundColor: theme.colors.primary,
-            elevation: 0,
-            shadowOpacity: 0,
-            height: route.name === "category-detail" ? 100 : 60,
-          },
-          headerTitleAlign: "center",
-          header: ({ route, options }) => {
-            const item = [
-              ...leftMenuItems,
-              ...rightMenuItems,
-              ...hiddenItems,
-            ].find((item) => item.name === route.name);
-            return (
-              <View style={styles.headerContainer}>
-                <View style={styles.headerTopRow}>
-                  <Text
-                    style={[styles.headerTitle, { color: theme.colors.text }]}
-                  >
-                    {item?.title || route.name}
-                  </Text>
-                  <TouchableOpacity
-                    onPress={() => {
-                      Alert.alert(
-                        "Cerrar Sesión",
-                        "¿Estás seguro que deseas salir?",
-                        [
-                          {
-                            text: "Cancelar",
-                            style: "cancel",
-                          },
-                          {
-                            text: "Salir",
-                            style: "destructive",
-                            onPress: async () => {
-                              try {
-                                await authService.logout();
-                                router.replace("/sign-in");
-                              } catch (error) {
-                                console.error("Error al cerrar sesión:", error);
-                                Alert.alert(
-                                  "Error",
-                                  "No se pudo cerrar la sesión"
-                                );
-                              }
-                            },
-                          },
-                        ]
-                      );
-                    }}
-                    style={[
-                      styles.logoutButton,
-                      {
-                        backgroundColor: theme.colors.background,
-                        borderWidth: 2,
-                        borderColor: theme.colors.border,
-                      },
-                    ]}
-                  >
-                    <View style={styles.logoutContent}>
-                      <IconSymbol
-                        name="power"
-                        size={18}
-                        color={theme.colors.text}
-                        style={styles.logoutIcon}
-                      />
-                      <Text
-                        style={[
-                          styles.logoutText,
-                          { color: theme.colors.text },
-                        ]}
-                      >
-                        Salir
-                      </Text>
-                    </View>
-                  </TouchableOpacity>
-                </View>
-                {route.name === "category-detail" && (
-                  <TouchableOpacity
-                    onPress={() => router.replace("/(tabs)/action")}
-                    style={[styles.backButton, { marginTop: 8 }]}
-                  >
+      <ScrollLayout>
+        <Tabs
+          screenOptions={({ route }) => ({
+            tabBarActiveTintColor: theme.colors.text,
+            tabBarInactiveTintColor: theme.colors.text + "80",
+            headerShown: true,
+            tabBarButton: HapticTab,
+            headerTitle: () => {
+              const item = [
+                ...leftMenuItems,
+                ...rightMenuItems,
+                ...hiddenItems,
+              ].find((item) => item.name === route.name);
+              return (
+                <Text
+                  style={[styles.headerTitle, { color: theme.colors.text }]}
+                >
+                  {item?.title || route.name}
+                </Text>
+              );
+            },
+            headerStyle: {
+              backgroundColor: theme.colors.primary,
+              elevation: 0,
+              shadowOpacity: 0,
+              height: route.name === "category-detail" ? 100 : 60,
+            },
+            headerTitleAlign: "center",
+            header: ({ route, options }) => {
+              const item = [
+                ...leftMenuItems,
+                ...rightMenuItems,
+                ...hiddenItems,
+              ].find((item) => item.name === route.name);
+              return (
+                <View style={styles.headerContainer}>
+                  <View style={styles.headerTopRow}>
                     <Text
+                      style={[styles.headerTitle, { color: theme.colors.text }]}
+                    >
+                      {item?.title || route.name}
+                    </Text>
+                    <TouchableOpacity
+                      onPress={() => {
+                        Alert.alert(
+                          "Cerrar Sesión",
+                          "¿Estás seguro que deseas salir?",
+                          [
+                            {
+                              text: "Cancelar",
+                              style: "cancel",
+                            },
+                            {
+                              text: "Salir",
+                              style: "destructive",
+                              onPress: async () => {
+                                try {
+                                  await authService.logout();
+                                  router.replace("/sign-in");
+                                } catch (error) {
+                                  console.error(
+                                    "Error al cerrar sesión:",
+                                    error
+                                  );
+                                  Alert.alert(
+                                    "Error",
+                                    "No se pudo cerrar la sesión"
+                                  );
+                                }
+                              },
+                            },
+                          ]
+                        );
+                      }}
                       style={[
-                        styles.backButtonText,
-                        { color: theme.colors.text },
+                        styles.logoutButton,
+                        {
+                          backgroundColor: theme.colors.background,
+                          borderWidth: 2,
+                          borderColor: theme.colors.border,
+                        },
                       ]}
                     >
-                      {"< Volver"}
-                    </Text>
-                  </TouchableOpacity>
-                )}
-              </View>
-            );
-          },
-          headerLeft: undefined,
-          tabBarStyle: {
-            ...styles.tabBar,
-            backgroundColor: theme.colors.card,
-            borderTopWidth: 2,
-            borderLeftWidth: 2,
-            borderRightWidth: 2,
-            borderColor: theme.colors.border,
-            borderBottomWidth: 0,
-          },
-          tabBarItemStyle: {
-            width: SCREEN_WIDTH / 4,
-            height: BOTTOM_TAB_HEIGHT - 20,
-            paddingTop: 4,
-          },
-          tabBarLabelStyle: {
-            fontSize: 10,
-            fontWeight: "600",
-            position: "relative",
-            top: 0,
-            display: "flex",
-            marginTop: 4,
-          },
-          tabBarIcon: ({ color, focused }) => {
-            const item = [...leftMenuItems, ...rightMenuItems].find(
-              (item) => item.name === route.name
-            );
-            if (!item) return null;
-
-            return (
-              <View
-                style={[
-                  styles.iconContainer,
-                  focused && styles.activeIconContainer,
-                ]}
-              >
-                <IconSymbol
-                  size={24}
-                  name={item.icon as any}
-                  color={focused ? theme.colors.text : color}
-                />
-              </View>
-            );
-          },
-          headerRight: () => (
-            <TouchableOpacity
-              onPress={() => {
-                Alert.alert(
-                  "Cerrar Sesión",
-                  "¿Estás seguro que deseas salir?",
-                  [
-                    {
-                      text: "Cancelar",
-                      style: "cancel",
-                    },
-                    {
-                      text: "Salir",
-                      style: "destructive",
-                      onPress: async () => {
-                        try {
-                          await authService.logout();
-                          router.replace("/login");
-                        } catch (error) {
-                          console.error("Error al cerrar sesión:", error);
-                          Alert.alert("Error", "No se pudo cerrar la sesión");
-                        }
-                      },
-                    },
-                  ]
-                );
-              }}
-              style={[
-                styles.logoutButton,
-                {
-                  backgroundColor: theme.colors.background,
-                  borderWidth: 2,
-                  borderColor: theme.colors.border,
-                },
-              ]}
-            >
-              <View style={styles.logoutContent}>
-                <IconSymbol
-                  name="power"
-                  size={20}
-                  color={theme.colors.text}
-                  style={styles.logoutIcon}
-                />
-                <Text style={[styles.logoutText, { color: theme.colors.text }]}>
-                  Salir
-                </Text>
-              </View>
-            </TouchableOpacity>
-          ),
-          tabBarIconStyle: {
-            marginBottom: 4,
-          },
-        })}
-      >
-        {leftMenuItems.map((item) => (
-          <Tabs.Screen
-            key={item.name}
-            name={item.name}
-            options={{
-              title: item.title,
-              headerTitle: item.title,
-              tabBarLabel: item.title,
-              tabBarIcon: ({ color }) => (
-                <IconSymbol size={24} name={item.icon as any} color={color} />
-              ),
-            }}
-          />
-        ))}
-
-        {hiddenItems.map((item) => (
-          <Tabs.Screen
-            key={item.name}
-            name={item.name}
-            options={{
-              title: item.title,
-              headerTitle: item.title,
-              tabBarButton: () => null,
-              headerLeft:
-                item.name === "category-detail"
-                  ? () => (
-                      <TouchableOpacity
-                        onPress={() => router.replace("/(tabs)/action")}
-                        style={styles.backButton}
-                      >
+                      <View style={styles.logoutContent}>
+                        <IconSymbol
+                          name="power"
+                          size={18}
+                          color={theme.colors.text}
+                          style={styles.logoutIcon}
+                        />
                         <Text
                           style={[
-                            styles.backButtonText,
+                            styles.logoutText,
                             { color: theme.colors.text },
                           ]}
                         >
-                          {"< Volver"}
+                          Salir
                         </Text>
-                      </TouchableOpacity>
-                    )
-                  : undefined,
-            }}
-          />
-        ))}
+                      </View>
+                    </TouchableOpacity>
+                  </View>
+                  {route.name === "category-detail" && (
+                    <TouchableOpacity
+                      onPress={() => router.replace("/(tabs)/action")}
+                      style={[styles.backButton, { marginTop: 8 }]}
+                    >
+                      <Text
+                        style={[
+                          styles.backButtonText,
+                          { color: theme.colors.text },
+                        ]}
+                      >
+                        {"< Volver"}
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              );
+            },
+            headerLeft: undefined,
+            tabBarStyle: {
+              ...styles.tabBar,
+              backgroundColor: theme.colors.card,
+              borderTopWidth: 2,
+              borderLeftWidth: 2,
+              borderRightWidth: 2,
+              borderColor: theme.colors.border,
+              borderBottomWidth: 0,
+            },
+            tabBarItemStyle: {
+              width: SCREEN_WIDTH / 4,
+              height: BOTTOM_TAB_HEIGHT - 20,
+              paddingTop: 4,
+            },
+            tabBarLabelStyle: {
+              fontSize: 10,
+              fontWeight: "600",
+              position: "relative",
+              top: 0,
+              display: "flex",
+              marginTop: 4,
+            },
+            tabBarIcon: ({ color, focused }) => {
+              const item = [...leftMenuItems, ...rightMenuItems].find(
+                (item) => item.name === route.name
+              );
+              if (!item) return null;
 
-        {rightMenuItems.map((item) => (
-          <Tabs.Screen
-            key={item.name}
-            name={item.name}
-            options={{
-              title: item.title,
-              headerTitle: item.title,
-              tabBarLabel: item.title,
-              tabBarIcon: ({ color }) => (
-                <IconSymbol size={24} name={item.icon as any} color={color} />
-              ),
-            }}
-          />
-        ))}
-      </Tabs>
+              return (
+                <View
+                  style={[
+                    styles.iconContainer,
+                    focused && styles.activeIconContainer,
+                  ]}
+                >
+                  <IconSymbol
+                    size={24}
+                    name={item.icon as any}
+                    color={focused ? theme.colors.text : color}
+                  />
+                </View>
+              );
+            },
+            headerRight: () => (
+              <TouchableOpacity
+                onPress={() => {
+                  Alert.alert(
+                    "Cerrar Sesión",
+                    "¿Estás seguro que deseas salir?",
+                    [
+                      {
+                        text: "Cancelar",
+                        style: "cancel",
+                      },
+                      {
+                        text: "Salir",
+                        style: "destructive",
+                        onPress: async () => {
+                          try {
+                            await authService.logout();
+                            router.replace("/login");
+                          } catch (error) {
+                            console.error("Error al cerrar sesión:", error);
+                            Alert.alert("Error", "No se pudo cerrar la sesión");
+                          }
+                        },
+                      },
+                    ]
+                  );
+                }}
+                style={[
+                  styles.logoutButton,
+                  {
+                    backgroundColor: theme.colors.background,
+                    borderWidth: 2,
+                    borderColor: theme.colors.border,
+                  },
+                ]}
+              >
+                <View style={styles.logoutContent}>
+                  <IconSymbol
+                    name="power"
+                    size={20}
+                    color={theme.colors.text}
+                    style={styles.logoutIcon}
+                  />
+                  <Text
+                    style={[styles.logoutText, { color: theme.colors.text }]}
+                  >
+                    Salir
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            ),
+            tabBarIconStyle: {
+              marginBottom: 4,
+            },
+          })}
+        >
+          {leftMenuItems.map((item) => (
+            <Tabs.Screen
+              key={item.name}
+              name={item.name}
+              options={{
+                title: item.title,
+                headerTitle: item.title,
+                tabBarLabel: item.title,
+                tabBarIcon: ({ color }) => (
+                  <IconSymbol size={24} name={item.icon as any} color={color} />
+                ),
+              }}
+            />
+          ))}
+
+          {hiddenItems.map((item) => (
+            <Tabs.Screen
+              key={item.name}
+              name={item.name}
+              options={{
+                title: item.title,
+                headerTitle: item.title,
+                tabBarButton: () => null,
+                headerLeft:
+                  item.name === "category-detail"
+                    ? () => (
+                        <TouchableOpacity
+                          onPress={() => router.replace("/(tabs)/action")}
+                          style={styles.backButton}
+                        >
+                          <Text
+                            style={[
+                              styles.backButtonText,
+                              { color: theme.colors.text },
+                            ]}
+                          >
+                            {"< Volver"}
+                          </Text>
+                        </TouchableOpacity>
+                      )
+                    : undefined,
+              }}
+            />
+          ))}
+
+          {rightMenuItems.map((item) => (
+            <Tabs.Screen
+              key={item.name}
+              name={item.name}
+              options={{
+                title: item.title,
+                headerTitle: item.title,
+                tabBarLabel: item.title,
+                tabBarIcon: ({ color }) => (
+                  <IconSymbol size={24} name={item.icon as any} color={color} />
+                ),
+              }}
+            />
+          ))}
+        </Tabs>
+      </ScrollLayout>
 
       <TouchableOpacity
         onPress={handleMiddleButtonPress}

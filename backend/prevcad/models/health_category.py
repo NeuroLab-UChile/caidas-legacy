@@ -5,6 +5,7 @@ from django.contrib.auth.models import User
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from .activity_node import ActivityNode, ActivityNodeDescription
+import base64
 
 
 class CategoryTemplate(models.Model):
@@ -33,6 +34,16 @@ class CategoryTemplate(models.Model):
     verbose_name="Nodo raíz"
   )
 
+  def get_icon_base64(self):
+    if self.icon:
+      try:
+        with self.icon.open('rb') as image_file:
+          encoded_string = base64.b64encode(image_file.read())
+          return encoded_string.decode('utf-8')
+      except Exception as e:
+        print(f"Error encoding image: {e}")
+        return None
+    return None
   def get_ordered_training_nodes(self):
     """Retorna los nodos de entrenamiento ordenados"""
     if not self.training_nodes:

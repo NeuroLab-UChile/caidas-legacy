@@ -1,7 +1,7 @@
 import base64
 from rest_framework import serializers
 from django.utils.encoding import smart_str
-from prevcad.models import HealthCategory
+from prevcad.models import HealthCategory, CategoryTemplate
 from .activity_node_serializer import ActivityNodeDescriptionSerializer, ResultNodeSerializer
 
 
@@ -12,7 +12,6 @@ class HealthCategorySerializer(serializers.ModelSerializer):
     evaluation_form = serializers.SerializerMethodField()
     training_nodes = serializers.SerializerMethodField()
     status = serializers.SerializerMethodField()
-    status_info = serializers.SerializerMethodField()
 
     class Meta:
         model = HealthCategory
@@ -25,10 +24,9 @@ class HealthCategorySerializer(serializers.ModelSerializer):
             'training_nodes',
             'responses',
             'completion_date',
-            'status',
             'status_color',
             'doctor_recommendations',
-            'status_info'
+            'status'
         ]
 
     def get_name(self, obj):
@@ -36,7 +34,7 @@ class HealthCategorySerializer(serializers.ModelSerializer):
 
     def get_icon(self, obj):
         if obj.template and obj.template.icon:
-            return obj.template.icon.url
+            return obj.template.get_icon_base64()
         return None
 
     def get_evaluation_form(self, obj):
@@ -76,30 +74,3 @@ class HealthCategorySerializer(serializers.ModelSerializer):
             return obj.template.description
         print("No description found")
         return None
-
-    def get_status_info(self, obj):
-        if obj.doctor_recommendations and obj.status_color:
-            return {
-                'status': 'reviewed',
-                'text': '✅ Evaluación Revisada por Doctor'
-            }
-        
-        if obj.completion_date:
-            return {
-                'status': 'completed',
-                'text': '✅ Evaluación Completada'
-            }
-        
-        if obj.responses:
-            total_questions = len(obj.template.evaluation_form.get('question_nodes', []))
-            answered_questions = len(obj.responses)
-            if answered_questions > 0:
-                return {
-                    'status': 'in_progress',
-                    'text': f'📝 Evaluación en Progreso ({answered_questions}/{total_questions})'
-                }
-        
-        return {
-            'status': 'pending',
-            'text': '📝 Evaluación Pendiente'
-        }

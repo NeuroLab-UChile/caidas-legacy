@@ -44,6 +44,9 @@ export function MultipleChoiceQuestionView({
     <ScrollView
       style={styles.container}
       contentContainerStyle={styles.contentContainer}
+      showsVerticalScrollIndicator={true}
+      bounces={true}
+      alwaysBounceVertical={true}
     >
       <View>
         <Text style={styles.questionText}>{data.question}</Text>
@@ -108,6 +111,8 @@ const styles = StyleSheet.create({
   contentContainer: {
     padding: 20,
     paddingBottom: 40,
+    flexGrow: 1,
+    minHeight: "100%",
   },
   questionText: {
     fontSize: 20,
