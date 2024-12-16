@@ -40,7 +40,7 @@ const RememberScreen = () => {
   const fetchRecommendations = async () => {
     try {
       setLoading(true);
-      const { data } = await apiService.textRecommendations.getAll();
+      const { data } = await apiService.recommendations.getAll();
 
       setRecommendations(data as TextRecommendation[]);
     } catch (err) {

@@ -4,147 +4,132 @@ from django.utils.encoding import smart_str
 from django.contrib.auth.models import User
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from .activity_node import ActivityNode, ActivityNodeDescription, ResultNode
-import json
+from .activity_node import ActivityNode, ActivityNodeDescription
 
-# The admin creates this instance
 
 class CategoryTemplate(models.Model):
-    icon = models.ImageField(upload_to='health_categories_icons/')
-    name = models.TextField()
-    description = models.TextField()
-    is_active = models.BooleanField(default=True)
-    evaluation_form = models.JSONField(
-        null=True, 
-        blank=True, 
-        default=dict,
-        help_text="Formulario de evaluación en formato JSON"
-    )
+  icon = models.ImageField(upload_to='health_categories_icons/')
+  name = models.TextField()
+  description = models.TextField()
+  is_active = models.BooleanField(default=True)
+  evaluation_form = models.JSONField(
+    null=True, 
+    blank=True, 
+    default=dict,
+    help_text="Formulario de evaluación en formato JSON"
+  )
+  training_nodes = models.JSONField(
+    null=True,
+    blank=True,
+    default=dict,
+    help_text="Nodos de entrenamiento en formato JSON"
+  )
+  root_node = models.OneToOneField(
+    ActivityNodeDescription,
+    on_delete=models.CASCADE,
+    null=True,
+    blank=True,
+    related_name="category_template",
+    verbose_name="Nodo raíz"
+  )
 
-    def save(self, *args, **kwargs):
-            if not self.evaluation_form:
-                self.evaluation_form = {"question_nodes": []}
-            elif "question_nodes" not in self.evaluation_form:
-                self.evaluation_form["question_nodes"] = []
+  def get_ordered_training_nodes(self):
+    """Retorna los nodos de entrenamiento ordenados"""
+    if not self.training_nodes:
+      return []
+      
+    nodes = self.training_nodes
+    for i, node in enumerate(nodes):
+      node['next_node_id'] = nodes[i + 1]['id'] if i < len(nodes) - 1 else None
 
-            super().save(*args, **kwargs)
+    return nodes
 
-    def update_evaluation_form(self, data):
-        print(f"\nActualizando evaluation_form con datos: {data}")
-        
-        if not isinstance(data, dict):
-            raise ValueError(f"Los datos deben ser un diccionario, recibido: {type(data)}")
-            
-        if "question_nodes" not in data:
-            raise ValueError("Los datos deben contener 'question_nodes'")
-            
-        if not isinstance(data["question_nodes"], list):
-            raise ValueError("question_nodes debe ser una lista")
-            
-        for node in data["question_nodes"]:
-            if not isinstance(node, dict):
-                raise ValueError("Cada nodo debe ser un diccionario")
-            if "type" not in node or "question" not in node:
-                raise ValueError("Cada nodo debe tener 'type' y 'question'")
-        
-        print(f"Datos validados correctamente")
-        self.evaluation_form = data
-        self.save(update_fields=['evaluation_form'])
-        print(f"Formulario guardado. Nuevo estado: {self.evaluation_form}")
+  def save(self, *args, **kwargs):
+    if not self.root_node:
+      # Crear el nodo raíz usando ActivityNodeDescription en lugar de ActivityNode
+      self.root_node = ActivityNodeDescription.objects.create(
+        type=ActivityNodeDescription.NodeType.CATEGORY_DESCRIPTION,
+        description=self.description
+      )
+    if self.training_nodes:
+      self.training_nodes = self.get_ordered_training_nodes()
+    super().save(*args, **kwargs)
 
-    def __str__(self):
-        return self.name
+  def update_evaluation_form(self, data):
+    if not isinstance(data, dict):
+      raise ValueError("Los datos deben ser un diccionario.")
+      
+    if "question_nodes" not in data:
+      raise ValueError("Los datos deben contener 'question_nodes'.")
+      
+    if not isinstance(data["question_nodes"], list):
+      raise ValueError("question_nodes debe ser una lista.")
+      
+    for node in data["question_nodes"]:
+      if not isinstance(node, dict) or "type" not in node or "question" not in node:
+        raise ValueError("Cada nodo debe ser un diccionario con 'type' y 'question'.")
+
+    self.evaluation_form = data
+    self.save(update_fields=['evaluation_form'])
+
+  def __str__(self):
+    return self.name
 
 
 class HealthCategory(models.Model):
-    template = models.ForeignKey(CategoryTemplate, on_delete=models.SET_NULL, null=True)
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='health_categories')
-    root_node = models.ForeignKey(ActivityNodeDescription, on_delete=models.SET_NULL, null=True, blank=True)
-    evaluation_form = models.JSONField(null=True, blank=True)
-    responses = models.JSONField(null=True, blank=True)
-    score = models.IntegerField(null=True, blank=True)
-    completion_date = models.DateTimeField(null=True, blank=True)
-    recommendations = models.JSONField(null=True, blank=True)
+  COLOR_CHOICES = [
+    ('green', 'Verde - Saludable'),
+    ('yellow', 'Amarillo - Precaución'),
+    ('red', 'Rojo - Atención Requerida'),
+  ]
 
+  user = models.ForeignKey(User, on_delete=models.CASCADE)
+  template = models.ForeignKey(CategoryTemplate, on_delete=models.SET_NULL, null=True)
+  responses = models.JSONField(null=True, blank=True)
+  completion_date = models.DateTimeField(null=True, blank=True)
+  status_color = models.CharField(
+    max_length=10, 
+    choices=COLOR_CHOICES,
+    null=True, 
+    blank=True,
+    verbose_name="Estado de Salud"
+  )
+  doctor_recommendations = models.TextField(
+    null=True, 
+    blank=True,
+    verbose_name="Recomendaciones del Doctor"
+  )
 
-    def update_evaluation(self, responses: dict):
-        """
-        Updates the evaluation field with the provided responses.
+  class Meta:
+    verbose_name = "Categoría de Salud"
+    verbose_name_plural = "Categorías de Salud"
 
-        Args:
-            responses (dict): A dictionary mapping ActivityNode IDs to answers.
-        """
-        activity_nodes = self.template.get_activity_nodes()
-        node_ids = {str(node.id) for node in activity_nodes}
+  @classmethod
+  def create_categories_for_user(cls, user):
+    templates = CategoryTemplate.objects.filter(is_active=True)
+    for template in templates:
+      cls.objects.create(
+        user=user,
+        template=template,
+      )
 
-        # Validar respuestas
-        for node in activity_nodes:
-            if node.type == ActivityNode.NodeType.QUESTION and str(node.id) not in responses:
-                raise ValueError(f"Question '{node.description}' is required but not answered.")
+  @classmethod
+  def create_categories_for_template(cls, template):
+    users = User.objects.all()
+    for user in users:
+      cls.objects.create(
+        user=user,
+        template=template,
+      )
 
-        # Guardar las respuestas
-        self.evaluation = {"responses": responses}
-        self.save()
-
-    def process_evaluation_test(self, evaluation_test: dict) -> dict:
-        """
-        Processes an evaluation test and generates an evaluation result.
-
-        Args:
-            evaluation_test (dict): A dictionary containing test data for evaluation.
-
-        Returns:
-            dict: The evaluation result based on the test data.
-        """
-        activity_nodes = self.template.get_activity_nodes()
-        result = {"evaluation_result": {}}
-
-        for node in activity_nodes:
-            node_id = str(node.id)
-            if node.type == ActivityNode.NodeType.QUESTION and node_id in evaluation_test:
-                answer = evaluation_test[node_id]
-                # Example processing: Validate or compute result based on the answer
-                result["evaluation_result"][node_id] = {
-                    "question": node.description,
-                    "answer": answer,
-                    "is_correct": self.validate_answer(node, answer)  # Example validation method
-                }
-
-        return result
-
-    def validate_answer(self, node: ActivityNode, answer: Any) -> bool:
-        """
-        Validates an answer for a specific node.
-
-        Args:
-            node (ActivityNode): The activity node to validate.
-            answer (Any): The answer provided.
-
-        Returns:
-            bool: True if the answer is valid, False otherwise.
-        """
-        # Example validation logic; customize as needed
-        if node.type == ActivityNode.NodeType.SINGLE_CHOICE:
-            return answer in node.options
-        return True
-
-    @classmethod
-    def create_categories_for_user(cls, user):
-        templates = CategoryTemplate.objects.filter(is_active=True)
-        for template in templates:
-            root_node = ActivityNodeDescription.objects.create(
-                type=ActivityNode.NodeType.CATEGORY_DESCRIPTION,
-                description=template.description
-            )
-
-            cls.objects.create(
-                user=user,
-                template=template,
-                root_node=root_node,
-
-            )
 
 @receiver(post_save, sender=User)
 def create_user_health_categories(sender, instance, created, **kwargs):
-    if created:
-        HealthCategory.create_categories_for_user(instance)
+  if created:
+    HealthCategory.create_categories_for_user(instance)
+
+
+@receiver(post_save, sender=CategoryTemplate)
+def create_health_categories_for_template(sender, instance, created, **kwargs):
+  if created:
+    HealthCategory.create_categories_for_template(instance)

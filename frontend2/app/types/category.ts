@@ -26,12 +26,30 @@ export interface RootNode {
   first_button_node_id: number;
 }
 
+export interface TrainingNode {
+  id: number;
+  type: 'DESCRIPTION_NODE' | 'VIDEO_NODE' | 'IMAGE_NODE';
+  title: string;
+  description: string;
+  media_url?: string;
+  next_node_id: number | null;
+}
+
 export interface Category {
   id: number;
   name: string;
-  icon: string;
-  description: string;
-  root_node: RootNode;
-  evaluation_form: EvaluationForm;
-  responses?: { [key: number]: any };
+  icon?: string;
+
+  evaluation_form?: {
+    question_nodes: QuestionNode[];
+  };
+  training_nodes?: TrainingNode[];
+  responses?: Record<string, any>;
+  completion_date?: string;
+  status_color?: 'green' | 'yellow' | 'red';
+  doctor_recommendations?: string;
+  status?: {
+    color: string;
+    text: string;
+  };
 } 

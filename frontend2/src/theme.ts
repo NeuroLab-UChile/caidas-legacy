@@ -399,6 +399,7 @@ export const theme = {
         marginBottom: 12,
         flexDirection: 'row',
         alignItems: 'center',
+        color: '#000000',
       },
       optionText: {
         fontSize: 16,

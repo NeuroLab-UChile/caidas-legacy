@@ -117,11 +117,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
   },
-  optionText: {
-    fontSize: 16,
-    color: theme.colors.text,
-    marginLeft: 12,
-  },
+
   selectedOption: {
     backgroundColor: theme.colors.primary + "20",
     borderColor: theme.colors.primary,

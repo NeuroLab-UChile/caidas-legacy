@@ -51,6 +51,12 @@ class CategoryTemplateAdmin(admin.ModelAdmin):
   readonly_fields = ('formatted_evaluation_form',)
   ordering = ('name',)
   change_form_template = "admin/categorytemplate/change_activity_form.html"
+  
+  class Media:
+    css = {
+      'all': ('css/output.css',)
+    }
+    js = ('js/tailwind.config.js',)
 
   def formatted_evaluation_form(self, obj):
     """Muestra el evaluation_form formateado"""
@@ -91,6 +97,51 @@ admin.site.register(User, UserAdmin)
 
 # Register other models
 
-admin.site.register(HealthCategory)
+@admin.register(HealthCategory)
+class HealthCategoryAdmin(admin.ModelAdmin):
+    list_display = ('user', 'template', 'completion_date', 'get_responses_status', 'status_color')
+    list_filter = ('template', 'user', 'completion_date', 'status_color')
+    search_fields = ('user__username', 'user__email', 'template__name')
+    readonly_fields = ('completion_date', 'get_formatted_responses')
+    raw_id_fields = ('user',)
+    
+    COLOR_CHOICES = [
+        ('green', '🟢 Verde - Saludable'),
+        ('yellow', '🟡 Amarillo - Precaución'),
+        ('red', '🔴 Rojo - Atención Requerida'),
+    ]
+    
+    def get_responses_status(self, obj):
+        if obj.responses:
+            return '✅ Completado'
+        return '❌ Pendiente'
+    get_responses_status.short_description = 'Estado'
+
+    def get_formatted_responses(self, obj):
+        if obj.responses:
+            return format_html('<pre>{}</pre>', json.dumps(obj.responses, indent=2))
+        return '-'
+    get_formatted_responses.short_description = 'Respuestas'
+
+    fieldsets = (
+        ('Información Básica', {
+            'fields': ('user', 'template')
+        }),
+        ('Evaluación', {
+            'fields': ('completion_date', 'get_formatted_responses'),
+            'classes': ('collapse',),
+            'description': 'Detalles de la evaluación completada'
+        }),
+        ('Diagnóstico y Recomendaciones', {
+            'fields': ('status_color', 'doctor_recommendations'),
+            'description': 'Evaluación del doctor y recomendaciones'
+        }),
+    )
+
+    class Media:
+        css = {
+            'all': ('css/output.css',)
+        }
+
 admin.site.register(TextRecomendation)
 

@@ -31,7 +31,7 @@
                 {% if node.options %}
                   <ul class="list-disc ml-6 mt-2 text-sm">
                     {% for option in node.options %}
-                      <li>{{ option }}</li>
+                      <li>{{ option|safe }}</li>
                     {% endfor %}
                   </ul>
                 {% endif %}
@@ -130,7 +130,35 @@
   };
 
   function renderOptions() {
-    document.getElementById('optionsList').innerHTML = options.map(opt => `<li>${opt}</li>`).join('');
+    const optionsList = document.getElementById('optionsList');
+    optionsList.innerHTML = options.map((opt, index) => `
+        <li class="flex items-center gap-2 mb-2">
+            <input 
+                type="text" 
+                value="${opt}" 
+                onchange="updateOption(${index}, this.value)" 
+                class="flex-1 border rounded p-2"
+            >
+            <button 
+                type="button" 
+                onclick="removeOption(${index})" 
+                class="bg-red-500 text-white px-3 py-2 rounded hover:bg-red-600"
+            >
+                Eliminar
+            </button>
+        </li>
+    `).join('');
+  }
+
+  function updateOption(index, value) {
+    options[index] = value.trim();
+    console.log('Updated options:', options); // For debugging
+  }
+
+  function removeOption(index) {
+    options.splice(index, 1);
+    renderOptions();
+    console.log('Options after removal:', options); // For debugging
   }
 
   function resetQuestionForm() {
@@ -145,41 +173,71 @@
     document.getElementById('nodeId').value = node.id;
     document.getElementById('questionText').value = node.question;
     document.getElementById('questionType').value = node.type;
+    
+    // Show options container if it's a multiple choice question
+    const isChoiceQuestion = ['MULTIPLE_CHOICE_QUESTION', 'SINGLE_CHOICE_QUESTION'].includes(node.type);
+    optionsContainer.classList.toggle('hidden', !isChoiceQuestion);
+    
+    // Set options and render them
     options = node.options || [];
     renderOptions();
+    
     questionModal.classList.remove('hidden');
   }
 
   function deleteQuestion(nodeId) {
     if (confirm("¿Estás seguro de eliminar esta pregunta?")) {
-      fetch("", {
-        method: "POST",
-        headers: { "X-CSRFToken": "{{ csrf_token }}" },
-        body: new URLSearchParams({ "_delete_node": "", "node_id": nodeId })
-      }).then(response => {
-        if (!response.ok) {
-          throw new Error(`Error: ${response.statusText}`);
-        }
-        return response.json();
-      }).then(responseData => {
-        if (responseData.status === 'success') {
-          alert("Pregunta eliminada correctamente");
-          location.reload();
-        } else {
-          throw new Error(responseData.message || 'Error desconocido');
-        }
-      }).catch(error => {
-        console.error("Error al eliminar la pregunta:", error);
-        alert(`Error: ${error.message}`);
-      });
+        const currentForm = {{ original.evaluation_form|safe|default:"{}" }};
+        let currentNodes = currentForm.question_nodes || [];
+        
+        // Filter out the node to delete
+        currentNodes = currentNodes.filter(node => node.id !== nodeId);
+        
+        const updatedForm = {
+            question_nodes: currentNodes,
+        };
+
+        fetch("{% url 'update_evaluation_form' original.id %}", {
+            method: "POST",
+            headers: { 
+                "X-CSRFToken": "{{ csrf_token }}"
+            },
+            body: new URLSearchParams({
+                "evaluation_form": JSON.stringify(updatedForm)
+            })
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`Error: ${response.statusText}`);
+            }
+            return response.json();
+        })
+        .then(responseData => {
+            if (responseData.status === 'success') {
+                alert("Pregunta eliminada correctamente");
+                location.reload();
+            } else {
+                throw new Error(responseData.message || 'Error desconocido');
+            }
+        })
+        .catch(error => {
+            console.error("Error al eliminar la pregunta:", error);
+            alert(`Error: ${error.message}`);
+        });
     }
   }
 
   function saveQuestion() {
+    const questionType = document.getElementById('questionType').value;
+    const isChoiceQuestion = ['MULTIPLE_CHOICE_QUESTION', 'SINGLE_CHOICE_QUESTION'].includes(questionType);
+    
+    if (isChoiceQuestion && (!options || options.length === 0)) {
+        alert('Debe agregar al menos una opción para preguntas de selección');
+        return;
+    }
+
     const nodeId = document.getElementById('nodeId').value;
     const questionText = document.getElementById('questionText').value;
-    const questionType = document.getElementById('questionType').value;
-    const options = Array.from(document.querySelectorAll('#optionsList li')).map(li => li.textContent);
 
     const newNode = {
       id: nodeId ? parseInt(nodeId) : Date.now(),

@@ -21,43 +21,32 @@ export function CategoriesProvider({
 }: {
   children: React.ReactNode;
 }) {
+  const { isAuthenticated } = useAuth();
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(
     null
   );
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { isAuthenticated } = useAuth();
-
-  const fetchCategories = async () => {
-    if (!isAuthenticated) {
-      setCategories([]);
-      return;
-    }
-
-    try {
-      setLoading(true);
-      setError(null);
-      const response = await apiService.categories.getAll();
-      const apiData = response.data as Category[];
-      setCategories(apiData);
-    } catch (err) {
-      console.error("Error fetching categories:", err);
-      setError("Error al cargar las categorías");
-      setCategories([]);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   useEffect(() => {
     if (isAuthenticated) {
       fetchCategories();
-    } else {
-      setCategories([]);
-      setSelectedCategory(null);
     }
   }, [isAuthenticated]);
+
+  const fetchCategories = async () => {
+    try {
+      setLoading(true);
+      const response = await apiService.categories.getAll();
+      setCategories(response.data);
+    } catch (error) {
+      console.error("Error fetching categories:", error);
+      setError("Error al cargar las categorías");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSetSelectedCategory = (category: Category | null) => {
     setSelectedCategory(category);

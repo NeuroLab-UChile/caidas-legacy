@@ -6,12 +6,16 @@ import { Ionicons } from "@expo/vector-icons";
 import { theme } from "@/src/theme";
 
 interface ActivityNodeContainerProps {
-  type: ActivityNodeType;
+  type: string;
   data: any;
-  onNext?: (response?: any) => void;
-  onBack?: () => void;
+  onNext: ((response?: any) => void) &
+    ((response: { answer: string }) => void) &
+    ((response: { selectedOption: number }) => void) &
+    ((response: { selectedOptions: number[] }) => void) &
+    ((response: { value: number }) => void);
+  onBack: () => void;
   categoryId?: number;
-  responses?: { [key: number]: any };
+  responses: { [key: number]: any };
 }
 
 export const ActivityNodeContainer: React.FC<ActivityNodeContainerProps> = ({
@@ -22,12 +26,17 @@ export const ActivityNodeContainer: React.FC<ActivityNodeContainerProps> = ({
   categoryId,
   responses,
 }) => {
-  const NodeComponent = ActivityNodeViews[type];
+  const NodeComponent =
+    ActivityNodeViews[type as keyof typeof ActivityNodeViews];
 
   if (!NodeComponent) {
     console.error(`No view found for node type: ${type}`);
     return null;
   }
+
+  const handleNext = (response?: any) => {
+    onNext(response);
+  };
 
   return (
     <View style={styles.container}>
@@ -39,15 +48,14 @@ export const ActivityNodeContainer: React.FC<ActivityNodeContainerProps> = ({
       )}
 
       {type === "RESULT_NODE" ? (
-        // <ResultNodeView
-        //   data={data}
-        //   onNext={onNext}
-        //   categoryId={categoryId}
-        //   responses={responses}
-        // />
-        <Text>{JSON.stringify(data)}</Text>
+        <ResultNodeView
+          data={data}
+          onNext={onNext}
+          categoryId={categoryId}
+          responses={responses}
+        />
       ) : (
-        <NodeComponent data={data} onNext={onNext} />
+        <NodeComponent data={data} onNext={handleNext} />
       )}
     </View>
   );

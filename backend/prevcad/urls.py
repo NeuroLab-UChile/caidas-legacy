@@ -4,7 +4,7 @@ from prevcad.models import HealthCategory
 
 from prevcad.views.profiles import getProfile, uploadProfileImage
 from prevcad.views.text_recomendations import TextRecomendationsView
-from prevcad.views.health_categories import HealthCategoryListView, save_evaluation_responses
+from prevcad.views.health_categories import HealthCategoryListView, save_evaluation_responses, submit_responses, create_health_category
 from django.conf import settings
 from django.conf.urls.static import static
 from .views import admin_views
@@ -13,7 +13,7 @@ from .views import admin_views
 
 router = routers.DefaultRouter(trailing_slash=False)
 
-router.register('prevcad/text_recommendations/', TextRecomendationsView)
+router.register('prevcad/text_recommendations/', TextRecomendationsView, basename='text_recommendations')
 
 
 
@@ -24,5 +24,11 @@ urlpatterns = [
   path('prevcad/user/profile/upload_image/', uploadProfileImage, name='upload_profile_image'),
   path('prevcad/health_categories/', HealthCategoryListView.as_view(), name='health-categories'),
   path('prevcad/health-categories/<int:category_id>/responses', save_evaluation_responses, name='save_evaluation_responses'),
+  path('prevcad/health-categories/<int:category_id>/submit_responses/', 
+       submit_responses, 
+       name='submit_responses'),
+  path('prevcad/health-categories/create', 
+       create_health_category, 
+       name='create_health_category'),
   path('admin/update-evaluation-form/<int:template_id>/', admin_views.update_evaluation_form, name='update_evaluation_form'),
 ] + router.urls + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

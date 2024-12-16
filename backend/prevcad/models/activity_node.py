@@ -21,9 +21,18 @@ class ActivityNode(models.Model):
         null=True,
         blank=True,
         related_name='previous_node',
-        help_text="Next node in the sequence"
     )
 
+    @property
+    def next_node_id(self):
+        """Retorna el ID del siguiente nodo en la secuencia"""
+        if hasattr(self, '_next_node_id'):
+            return self._next_node_id
+        return None
+
+    @next_node_id.setter
+    def next_node_id(self, value):
+        self._next_node_id = value
 
     class Meta:
         abstract = True

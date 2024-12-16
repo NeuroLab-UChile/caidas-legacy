@@ -1,11 +1,13 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
-import authService from './authService';
 import { API_URL } from '@/constants';
+import authService from './authService';
+import { Category } from '../types/category';
 
+// Types
 interface ApiResponse<T> {
   data: T;
   status: number;
+  message?: string;
 }
 
 export interface UserProfile {
@@ -17,111 +19,175 @@ export interface UserProfile {
   is_active: boolean;
   profile: {
     profile_picture?: string;
-    [key: string]: any;  // Para otros campos dinámicos del perfil
+    [key: string]: any;
   };
 }
 
-const apiService = {
-  async request<T>(
-    endpoint: string,
-    options: RequestInit = {},
-    usePrevcadPrefix: boolean = true
-  ): Promise<ApiResponse<T>> {
-    try {
+
+
+// API Client Class
+class ApiClient {
+  private baseUrl: string;
+  private prevcadPrefix: string;
+
+  constructor() {
+    this.baseUrl = API_URL;
+    this.prevcadPrefix = '/prevcad';
+  }
+
+  public async getHeaders(includeAuth: boolean = true): Promise<HeadersInit> {
+    const headers: HeadersInit = {
+      'Content-Type': 'application/json',
+    };
+
+    if (includeAuth) {
       const token = await AsyncStorage.getItem('auth_token');
-      console.log('🔑 Token usado:', token ? 'Presente' : 'Ausente');
+      if (token) {
+        // Validar token
+        const isValid = await authService.validateToken(token);
+        if (!isValid) {
+          // Intentar refrescar el token
+          const refreshToken = await AsyncStorage.getItem('refresh_token');
+          if (refreshToken) {
+            const newToken = await authService.refreshToken(refreshToken);
+            if (newToken) {
+              headers['Authorization'] = `Bearer ${newToken}`;
+              return headers;
+            }
+          }
+          throw new Error('Session expired');
+        }
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+    }
 
-      const headers = {
-        'Content-Type': 'application/json',
-        ...(token && { Authorization: `Bearer ${token}` }),
-        ...options.headers,
-      };
+    return headers;
+  }
 
-      const baseUrl = usePrevcadPrefix ? `${API_URL}/prevcad` : API_URL;
-      const fullUrl = `${baseUrl}${endpoint}`;
-      console.log('🌐 Haciendo petición a:', fullUrl);
-      console.log('📤 Headers:', headers);
-      console.log('📦 Options:', options);
-
-      let response = await fetch(fullUrl, {
-        ...options,
-        headers,
-      });
-
-      console.log('📥 Status:', response.status);
-      const responseData = await response.json();
-      console.log('📥 Response data:', responseData);
-
-      // Si el token expiró, intentamos refrescarlo
-      if (response.status === 401 && refreshToken) {
-        console.log('🔄 Token expirado, intentando refrescar...');
+  private async handleResponse<T>(response: Response): Promise<ApiResponse<T>> {
+    if (response.status === 401) {
+      // Token expirado o inválido
+      const refreshToken = await AsyncStorage.getItem('refresh_token');
+      if (refreshToken) {
         const newToken = await authService.refreshToken(refreshToken);
         if (newToken) {
-          console.log('🔑 Token refrescado exitosamente');
-          headers.Authorization = `Bearer ${newToken}`;
-          response = await fetch(fullUrl, {
-            ...options,
-            headers,
+          // Reintentar la petición original con el nuevo token
+          const newResponse = await fetch(response.url, {
+            ...response,
+            headers: {
+              ...response.headers,
+              'Authorization': `Bearer ${newToken}`
+            }
           });
-          console.log('📥 Nuevo status después de refrescar:', response.status);
+          return this.handleResponse(newResponse);
         }
       }
-
-      if (!response.ok) {
-        throw new Error(`API error: ${response.status}`);
-      }
-
-      return { data: responseData, status: response.status };
-    } catch (error) {
-      console.error('❌ API request failed:', error);
-      throw error;
+      throw new Error('Session expired');
     }
-  },
 
-  // Métodos específicos para diferentes endpoints
-  categories: {
-    async getAll() {
-      console.log('📋 Solicitando todas las categorías...');
-      const result = await apiService.request('/health_categories/');
-      console.log('📋 Categorías recibidas:', result.data);
-      return result;
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || `API error: ${response.status}`);
+    }
+
+    return {
+      data,
+      status: response.status,
+      message: data.message,
+    };
+  }
+
+  private getUrl(endpoint: string, usePrevcadPrefix: boolean = true): string {
+    return `${this.baseUrl}${usePrevcadPrefix ? this.prevcadPrefix : ''}${endpoint}`;
+  }
+
+  // Health Categories
+  public categories = {
+    create: async (templateId: number): Promise<ApiResponse<Category>> => {
+      const response = await fetch(
+        this.getUrl('/health-categories/create'),
+        {
+          method: 'POST',
+          headers: await this.getHeaders(),
+          body: JSON.stringify({ template_id: templateId }),
+        }
+      );
+      return this.handleResponse<Category>(response);
     },
 
-    async getById(id: number) {
-      console.log(`📋 Solicitando categoría ${id}...`);
-      const result = await apiService.request(`/health_categories/${id}/`);
-      console.log(`📋 Categoría ${id} recibida:`, result.data);
-      return result;
-    },
-  },
-
-  textRecommendations: {
-    async getAll() {
-      return await apiService.request('/text_recommendations/');
-    },
-  },
-
-  user: {
-    async getProfile(): Promise<ApiResponse<UserProfile>> {
-      return await apiService.request('/user/profile/', {}, true);
+    saveResponses: async (categoryId: number, responses: Record<string, any>): Promise<ApiResponse<any>> => {
+      const response = await fetch(
+        this.getUrl(`/health-categories/${categoryId}/responses`),
+        {
+          method: 'POST',
+          headers: await this.getHeaders(),
+          body: JSON.stringify({ responses }),
+        }
+      );
+      return this.handleResponse(response);
     },
 
-    async updateProfile(data: Partial<UserProfile>): Promise<ApiResponse<UserProfile>> {
-      return await apiService.request('/user/profile/', {
-        method: 'PUT',
-        body: JSON.stringify(data),
-      }, true);
+    getAll: async (): Promise<ApiResponse<Category[]>> => {
+      try {
+        const token = await AsyncStorage.getItem('auth_token');
+        if (!token) {
+          throw new Error('No auth token found');
+        }
+
+        const response = await fetch(
+          this.getUrl('/health_categories'),
+          {
+            headers: await this.getHeaders(),
+          }
+        );
+        return this.handleResponse<Category[]>(response);
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+        throw error;
+      }
     },
 
-    async uploadProfileImage(uri: string): Promise<ApiResponse<UserProfile>> {
-      console.log('1. Iniciando subida de imagen:', uri);
+    getById: async (id: number): Promise<ApiResponse<Category>> => {
+      const response = await fetch(
+        this.getUrl(`/health_categories/${id}`),
+        {
+          headers: await this.getHeaders(),
+        }
+      );
+      return this.handleResponse<Category>(response);
+    },
+  };
 
+  // User Management
+  public user = {
+    getProfile: async (): Promise<ApiResponse<UserProfile>> => {
+      const response = await fetch(
+        this.getUrl('/user/profile'),
+        {
+          headers: await this.getHeaders(),
+        }
+      );
+      return this.handleResponse<UserProfile>(response);
+    },
+
+    updateProfile: async (data: Partial<UserProfile>): Promise<ApiResponse<UserProfile>> => {
+      const response = await fetch(
+        this.getUrl('/user/profile'),
+        {
+          method: 'PUT',
+          headers: await this.getHeaders(),
+          body: JSON.stringify(data),
+        }
+      );
+      return this.handleResponse<UserProfile>(response);
+    },
+
+    uploadProfileImage: async (uri: string): Promise<ApiResponse<UserProfile>> => {
       const formData = new FormData();
-      const filename = uri.split('/').pop();
-      const match = /\.(\w+)$/.exec(filename || '');
+      const filename = uri.split('/').pop() || 'image';
+      const match = /\.(\w+)$/.exec(filename);
       const type = match ? `image/${match[1]}` : 'image';
-
-      console.log('2. Preparando datos de imagen:', { filename, type });
 
       formData.append('profile_image', {
         uri,
@@ -129,45 +195,42 @@ const apiService = {
         type,
       } as any);
 
-      return await apiService.request('/user/profile/upload_image/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-        body: formData as any,
-      }, true);
+      const response = await fetch(
+        this.getUrl('/user/profile/upload_image'),
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+          body: formData as any,
+        }
+      );
+      return this.handleResponse<UserProfile>(response);
     },
+  };
 
-    deleteProfileImage: async () => {
-      const response = await apiService.request('/users/profile/image/', {
-        method: 'DELETE',
-      }, true);
-      return response;
-    },
-  },
+  public recommendations = {
+    getAll: async (): Promise<ApiResponse<any>> => {
+      try {
+        const token = await AsyncStorage.getItem('auth_token');
+        if (!token) {
+          throw new Error('No auth token found');
+        }
 
-  auth: {
-    async login(credentials: { username: string; password: string }) {
-      return await apiService.request('/token/', {
-        method: 'POST',
-        body: JSON.stringify(credentials),
-      }, false); // No usar prefijo prevcad
-    },
+        const response = await fetch(
+          this.getUrl('/text_recommendations'),
+          {
+            headers: await this.getHeaders(),
+          }
+        );
+        return this.handleResponse(response);
+      } catch (error) {
+        console.error('Error fetching recommendations:', error);
+        throw error;
+      }
+    }
+  };
+}
 
-    async refreshToken(refreshToken: string) {
-      return await apiService.request('/token/refresh/', {
-        method: 'POST',
-        body: JSON.stringify({ refresh: refreshToken }),
-      }, false); // No usar prefijo prevcad
-    },
-
-    async validateToken(token: string) {
-      return await apiService.request('/token/verify/', {
-        method: 'POST',
-        body: JSON.stringify({ token }),
-      }, false); // No usar prefijo prevcad
-    },
-  },
-};
-
+export const apiService = new ApiClient();
 export default apiService; 
