@@ -1,0 +1,195 @@
+{% extends "admin/change_form.html" %}
+{% load static %}
+
+{% block extrahead %}
+  {{ block.super }}
+  <script src="https://cdn.tailwindcss.com"></script>
+{% endblock %}
+
+{% block content %}
+  {{ block.super }}
+  
+  <!-- Botón para abrir el modal -->
+  <div class="mt-4">
+    <button
+      id="openModal"
+      class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+      type="button"
+    >
+      Agregar Pregunta
+    </button>
+  </div>
+
+  <!-- Modal -->
+  <div
+    id="modal"
+    class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center"
+  >
+    <div class="bg-white p-6 rounded-lg w-1/2">
+      <form method="post">
+        {% csrf_token %}
+        <h2 class="text-lg font-bold mb-4">Agregar Nueva Pregunta</h2>
+        
+        <!-- Tipo de Pregunta -->
+        <div class="mb-4">
+          <label class="block font-semibold mb-2">Tipo de Pregunta:</label>
+          <select
+            name="questionType"
+            id="questionType"
+            class="w-full border rounded p-2"
+          >
+            <option value="TEXT_QUESTION">Texto</option>
+            <option value="SINGLE_CHOICE_QUESTION">Opción Única</option>
+            <option value="MULTIPLE_CHOICE_QUESTION">Múltiples Opciones</option>
+            <option value="SCALE_QUESTION">Escala</option>
+          </select>
+        </div>
+
+        <!-- Pregunta -->
+        <div class="mb-4">
+          <label class="block font-semibold mb-2">Pregunta:</label>
+          <input
+            name="questionText"
+            type="text"
+            placeholder="Escribe la pregunta"
+            class="w-full border rounded p-2"
+            required
+          />
+        </div>
+
+        <!-- Opciones para preguntas de selección -->
+        <div id="optionsContainer" class="hidden mb-4">
+          <label class="block font-semibold mb-2">Opciones:</label>
+          <div class="flex mb-2">
+            <input
+              type="text"
+              id="newOption"
+              placeholder="Nueva opción"
+              class="flex-1 border rounded p-2 mr-2"
+            />
+            <button
+              type="button"
+              id="addOption"
+              class="bg-green-500 text-white px-4 py-2 rounded"
+            >
+              Agregar
+            </button>
+          </div>
+          <div id="optionsList" class="space-y-2"></div>
+          <input type="hidden" name="options" id="optionsInput" value="[]">
+        </div>
+
+        <!-- Campos para pregunta de escala -->
+        <div id="scaleContainer" class="hidden mb-4">
+          <div class="grid grid-cols-3 gap-4">
+            <div>
+              <label class="block font-semibold mb-2">Mínimo:</label>
+              <input
+                type="number"
+                name="minValue"
+                class="w-full border rounded p-2"
+              />
+            </div>
+            <div>
+              <label class="block font-semibold mb-2">Máximo:</label>
+              <input
+                type="number"
+                name="maxValue"
+                class="w-full border rounded p-2"
+              />
+            </div>
+            <div>
+              <label class="block font-semibold mb-2">Incremento:</label>
+              <input
+                type="number"
+                name="stepValue"
+                class="w-full border rounded p-2"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div class="flex justify-end space-x-2">
+          <button 
+            type="button" 
+            id="closeModal" 
+            class="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400"
+          >
+            Cancelar
+          </button>
+          <button 
+            type="submit"
+            name="_add_node"
+            class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-700"
+          >
+            Guardar
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const modal = document.getElementById('modal');
+    const questionType = document.getElementById('questionType');
+    const optionsContainer = document.getElementById('optionsContainer');
+    const scaleContainer = document.getElementById('scaleContainer');
+    const optionsList = document.getElementById('optionsList');
+    const optionsInput = document.getElementById('optionsInput');
+    let options = [];
+
+    // Mostrar/ocultar secciones según el tipo de pregunta
+    questionType.addEventListener('change', () => {
+      const type = questionType.value;
+      optionsContainer.classList.toggle('hidden', 
+        type !== 'MULTIPLE_CHOICE_QUESTION' && type !== 'SINGLE_CHOICE_QUESTION');
+      scaleContainer.classList.toggle('hidden', 
+        type !== 'SCALE_QUESTION');
+    });
+
+    // Agregar opción
+    document.getElementById('addOption').addEventListener('click', () => {
+      const newOption = document.getElementById('newOption');
+      if (newOption.value.trim()) {
+        options.push(newOption.value.trim());
+        updateOptionsList();
+        newOption.value = '';
+      }
+    });
+
+    // Actualizar lista de opciones
+    function updateOptionsList() {
+      optionsList.innerHTML = options.map((option, index) => `
+        <div class="flex items-center">
+          <span class="flex-1 p-2 bg-gray-100 rounded">${option}</span>
+          <button 
+            type="button"
+            onclick="removeOption(${index})"
+            class="ml-2 text-red-500 hover:text-red-700"
+          >
+            ×
+          </button>
+        </div>
+      `).join('');
+      optionsInput.value = JSON.stringify(options);
+    }
+
+    // Eliminar opción
+    function removeOption(index) {
+      options.splice(index, 1);
+      updateOptionsList();
+    }
+
+    // Abrir/cerrar modal
+    document.getElementById('openModal').addEventListener('click', () => {
+      modal.classList.remove('hidden');
+    });
+
+    document.getElementById('closeModal').addEventListener('click', () => {
+      modal.classList.add('hidden');
+      options = [];
+      updateOptionsList();
+      document.getElementById('newOption').value = '';
+    });
+  </script>
+{% endblock %}

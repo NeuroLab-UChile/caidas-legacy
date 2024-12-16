@@ -39,12 +39,13 @@ export const ActivityNodeContainer: React.FC<ActivityNodeContainerProps> = ({
       )}
 
       {type === "RESULT_NODE" ? (
-        <ResultNodeView
-          data={data}
-          onNext={onNext}
-          categoryId={categoryId}
-          responses={responses}
-        />
+        // <ResultNodeView
+        //   data={data}
+        //   onNext={onNext}
+        //   categoryId={categoryId}
+        //   responses={responses}
+        // />
+        <Text>{JSON.stringify(data)}</Text>
       ) : (
         <NodeComponent data={data} onNext={onNext} />
       )}

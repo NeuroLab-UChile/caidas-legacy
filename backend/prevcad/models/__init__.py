@@ -1,7 +1,7 @@
 
 from .text_recomendation import TextRecomendation
 from .health_category import CategoryTemplate, HealthCategory
-from .activity import ActivityNode, ActivityNodeDescription, ActivityNodeQuestion, TextQuestion, SingleChoiceQuestion, MultipleChoiceQuestion, ScaleQuestion, ImageQuestion, ResultNode
+from .activity_node import ActivityNode, ActivityNodeDescription, ActivityNodeQuestion, TextQuestion, SingleChoiceQuestion, MultipleChoiceQuestion, ScaleQuestion, ImageQuestion, ResultNode
 
 from .profile import Profile
 

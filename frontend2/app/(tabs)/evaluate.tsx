@@ -23,16 +23,23 @@ interface EvaluationState {
   responses: { [key: number]: any };
   completed: boolean;
   history: number[];
+  evaluationResult: {
+    initial_node_id: number | null;
+    nodes: QuestionNode[];
+  };
 }
 
 const EvaluateScreen = () => {
   const { selectedCategory } = useCategories();
 
-  if (!selectedCategory?.evaluation_form?.question_nodes?.length) {
+  if (
+    !selectedCategory?.evaluation_form?.question_nodes?.length ||
+    !selectedCategory?.id
+  ) {
     return (
       <View style={styles.container}>
         <Text style={styles.errorText}>
-          Esta categoría no tiene preguntas disponibles
+          Esta categoría no tiene evaluación disponible
         </Text>
       </View>
     );
@@ -40,69 +47,53 @@ const EvaluateScreen = () => {
 
   const [evaluationState, setEvaluationState] = useState<EvaluationState>(
     () => {
-      const firstNode = selectedCategory.evaluation_form.question_nodes[0];
+      if (!selectedCategory)
+        return {
+          currentNodeId: null,
+          responses: {},
+          completed: false,
+          history: [],
+          evaluationResult: {
+            initial_node_id: null,
+            nodes: [],
+          },
+        };
+
+      const evaluation = selectedCategory.evaluation_form;
+      const nodes = evaluation?.question_nodes || [];
+
       return {
-        currentNodeId: firstNode.id,
-        responses: {},
+        currentNodeId: nodes.length > 0 ? nodes[0].id : null,
+        responses: selectedCategory.responses || {},
         completed: false,
         history: [],
+        evaluationResult: {
+          initial_node_id: nodes.length > 0 ? nodes[0].id : null,
+          nodes: nodes,
+        },
       };
     }
   );
-
-  const handleBack = () => {
-    if (evaluationState.history.length > 0) {
-      const previousNodes = [...evaluationState.history];
-      const previousNodeId = previousNodes.pop();
-
-      setEvaluationState((prev) => ({
-        ...prev,
-        currentNodeId: previousNodeId || null,
-        history: previousNodes,
-      }));
-    }
-  };
 
   const handleNodeResponse = (
     nodeId: number,
     response: any,
     nextNodeId: number | null
   ) => {
-    setEvaluationState((prev) => ({
-      ...prev,
-      responses: {
-        ...prev.responses,
-        [nodeId]: response,
-      },
-      currentNodeId: nextNodeId,
-      completed: !nextNodeId,
-      history: [...prev.history, nodeId],
-    }));
-  };
+    setEvaluationState((prev) => {
+      const newState = {
+        ...prev,
+        responses: {
+          ...prev.responses,
+          [nodeId]: response,
+        },
+        currentNodeId: nextNodeId,
+        completed: !nextNodeId,
+        history: [...prev.history, nodeId],
+      };
 
-  const submitEvaluation = async () => {
-    try {
-      const response = await apiService.request(
-        `/health-categories/${selectedCategory?.id}/responses`,
-        {
-          method: "POST",
-          body: JSON.stringify({
-            responses: evaluationState.responses,
-          }),
-        }
-      );
-
-      if (response.status === 200) {
-        setEvaluationState({
-          currentNodeId: null,
-          responses: {},
-          completed: true,
-          history: [],
-        });
-      }
-    } catch (error) {
-      console.error("Error:", error);
-    }
+      return newState;
+    });
   };
 
   const getCurrentNode = (nodeId: number | null): QuestionNode | null => {
@@ -150,17 +141,21 @@ const EvaluateScreen = () => {
       {evaluationState.completed ? (
         <View style={styles.completedContainer}>
           <Text style={styles.completedText}>
-            ¡Evaluación lista para revisar!
+            ¡Has completado la evaluación!
           </Text>
-          <TouchableOpacity
-            style={styles.submitButton}
-            onPress={submitEvaluation}
-          >
-            <Text style={styles.submitButtonText}>Evaluar Respuestas</Text>
-          </TouchableOpacity>
         </View>
       ) : (
-        renderNode(evaluationState.currentNodeId, handleBack)
+        renderNode(evaluationState.currentNodeId, () => {
+          if (evaluationState.history.length > 0) {
+            const previousNodes = [...evaluationState.history];
+            const previousNodeId = previousNodes.pop();
+            setEvaluationState((prev) => ({
+              ...prev,
+              currentNodeId: previousNodeId || null,
+              history: previousNodes,
+            }));
+          }
+        })
       )}
     </ScrollView>
   );

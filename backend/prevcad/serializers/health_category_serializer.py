@@ -14,6 +14,7 @@ class HealthCategorySerializer(serializers.ModelSerializer):
     score = serializers.IntegerField(required=False)
     completion_date = serializers.DateTimeField(required=False)
     recommendations = serializers.JSONField(required=False)
+    
 
     def get_name(self, obj):
         """Returns the name of the category template"""

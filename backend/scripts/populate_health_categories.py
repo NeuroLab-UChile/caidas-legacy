@@ -79,18 +79,8 @@ templates_data = [
                         "Vivo en planta baja"
                     ],
                     "next_node_id": 4
-                },
-                {
-                    "id": 4,
-                    "type": "RESULT_NODE",
-                    "description": "Basado en los espacios que utiliza, le presentaremos recomendaciones específicas para cada área de su hogar.",
-                    "next_node_id": '',
-                    "recommendations": [
-                        "Asegúrese de tener una iluminación adecuada en todos los espacios",
-                        "Mantenga los pasillos y áreas de tránsito libres de obstáculos",
-                        "Considere la instalación de elementos de apoyo en zonas críticas"
-                    ]
                 }
+ 
             ]
         }
     },
@@ -183,19 +173,9 @@ templates_data = [
                         "Otra"
                     ],
                     "next_node_id": 6
-                },
-                {
-                    "id": 6,
-                    "type": "RESULT_NODE",
-                    "description": "Basado en sus respuestas, le presentaremos recomendaciones para mejorar sus hábitos alimenticios.",
-                    "next_node_id": '',
-                    "recommendations": [
-                        "Intente incluir más frutas y verduras en su dieta diaria",
-                        "Mantenga un horario regular de comidas",
-                        "Aumente su consumo de agua durante el día",
-                        "Reduzca el consumo de alimentos procesados"
-                    ]
                 }
+
+ 
             ]
         }
     }
@@ -207,21 +187,20 @@ for template_data in templates_data:
 
 def create_category(name, description, icon):
     # Crear la categoría
-    category = HealthCategory.objects.create(
+    evaluation_form = EvaluationForm.objects.create()
+    category = CategoryTemplate.objects.create(
         name=name,
         description=description,
-        icon=icon
+        icon=icon,
+        evaluation_form=evaluation_form
     )
 
     # Crear automáticamente el root node
-    root_node = RootNode.objects.create(
-        type="ROOT_NODE",
-        description=description,
-        first_button_text="Comenzar evaluación",
-    )
+
+
 
     # Crear el formulario de evaluación
-    evaluation_form = EvaluationForm.objects.create()
+
 
     # Vincular todo
     category.root_node = root_node
