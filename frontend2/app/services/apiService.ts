@@ -29,7 +29,7 @@ const apiService = {
   ): Promise<ApiResponse<T>> {
     try {
       const token = await AsyncStorage.getItem('auth_token');
-      const refreshToken = await AsyncStorage.getItem('refresh_token');
+      console.log('🔑 Token usado:', token ? 'Presente' : 'Ausente');
 
       const headers = {
         'Content-Type': 'application/json',
@@ -38,23 +38,32 @@ const apiService = {
       };
 
       const baseUrl = usePrevcadPrefix ? `${API_URL}/prevcad` : API_URL;
-      let response = await fetch(`${baseUrl}${endpoint}`, {
+      const fullUrl = `${baseUrl}${endpoint}`;
+      console.log('🌐 Haciendo petición a:', fullUrl);
+      console.log('📤 Headers:', headers);
+      console.log('📦 Options:', options);
+
+      let response = await fetch(fullUrl, {
         ...options,
         headers,
       });
 
-      console.log('URL completa:', `${baseUrl}${endpoint}`);
-      console.log('Headers:', headers);
+      console.log('📥 Status:', response.status);
+      const responseData = await response.json();
+      console.log('📥 Response data:', responseData);
 
       // Si el token expiró, intentamos refrescarlo
       if (response.status === 401 && refreshToken) {
+        console.log('🔄 Token expirado, intentando refrescar...');
         const newToken = await authService.refreshToken(refreshToken);
         if (newToken) {
+          console.log('🔑 Token refrescado exitosamente');
           headers.Authorization = `Bearer ${newToken}`;
-          response = await fetch(`${baseUrl}${endpoint}`, {
+          response = await fetch(fullUrl, {
             ...options,
             headers,
           });
+          console.log('📥 Nuevo status después de refrescar:', response.status);
         }
       }
 
@@ -62,11 +71,9 @@ const apiService = {
         throw new Error(`API error: ${response.status}`);
       }
 
-      const data = await response.json();
-
-      return { data, status: response.status };
+      return { data: responseData, status: response.status };
     } catch (error) {
-      console.error('API request failed:', error);
+      console.error('❌ API request failed:', error);
       throw error;
     }
   },
@@ -74,11 +81,17 @@ const apiService = {
   // Métodos específicos para diferentes endpoints
   categories: {
     async getAll() {
-      return await apiService.request('/health_categories/');
+      console.log('📋 Solicitando todas las categorías...');
+      const result = await apiService.request('/health_categories/');
+      console.log('📋 Categorías recibidas:', result.data);
+      return result;
     },
 
     async getById(id: number) {
-      return await apiService.request(`/health_categories/${id}/`);
+      console.log(`📋 Solicitando categoría ${id}...`);
+      const result = await apiService.request(`/health_categories/${id}/`);
+      console.log(`📋 Categoría ${id} recibida:`, result.data);
+      return result;
     },
   },
 

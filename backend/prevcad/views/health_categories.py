@@ -9,18 +9,29 @@ from django.utils import timezone
 class HealthCategoryListView(APIView):
     def get(self, request):
         try:
+            print("\n=== Debug HealthCategoryListView ===")
+            print(f"Usuario autenticado: {request.user}")
+            
             # Get user categories
             categories = HealthCategory.objects.filter(user=request.user)
+            print(f"Categorías encontradas: {categories.count()}")
+            
+            # Debug cada categoría
+            for category in categories:
+                print(f"\nCategoría ID: {category.id}")
+                print(f"Template: {category.template.name if category.template else 'No template'}")
+                print(f"Evaluation Form: {category.template.evaluation_form if category.template else None}")
+                print(f"Responses: {category.responses}")
 
-            # Serialize categories with their evaluation forms
+            # Filtrar categorías sin template
+            categories = categories.filter(template__isnull=False)
+            
             serialized_categories = HealthCategorySerializer(categories, many=True).data
-
-            return Response(
-               serialized_categories,
-                status=status.HTTP_200_OK,
-            )
+            return Response(serialized_categories, status=status.HTTP_200_OK)
         except Exception as e:
-            print(f"Error in HealthCategoryListView: {e}")
+            print(f"❌ Error in HealthCategoryListView: {e}")
+            import traceback
+            print(traceback.format_exc())
             return Response(
                 {"error": str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,

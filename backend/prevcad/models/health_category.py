@@ -14,37 +14,10 @@ class CategoryTemplate(models.Model):
     name = models.TextField()
     description = models.TextField()
     is_active = models.BooleanField(default=True)
-    evaluation_form = models.JSONField(null=True, blank=True, default=dict)
-
-    def add_activity_node(self, node_data):
-        """
-        Adds an activity node to the evaluation form
-        """
-        if self.evaluation_form is None:
-            self.evaluation_form = {'nodes': [], 'next_node_id': 1}
-        
-        if 'nodes' not in self.evaluation_form:
-            self.evaluation_form['nodes'] = []
-            
-        if 'next_node_id' not in self.evaluation_form:
-            self.evaluation_form['next_node_id'] = 1
-
-        # Asignar un ID único al nodo
-        node_id = self.evaluation_form['next_node_id']
-        node_data['id'] = node_id
-        self.evaluation_form['next_node_id'] = node_id + 1
-
-        # Si hay nodos previos, conectar con el último
-        if self.evaluation_form['nodes']:
-            last_node = self.evaluation_form['nodes'][-1]
-            last_node['next_node_id'] = node_id
-
-        # Agregar el nuevo nodo
-        self.evaluation_form['nodes'].append(node_data)
-        self.save()
+    evaluation_form = models.JSONField(null=True, blank=True)
 
     def save(self, *args, **kwargs):
-        if not self.pk:  # Only for new instances
+        if not self.pk:
             super().save(*args, **kwargs)
             root_node = ActivityNodeDescription.objects.create(
                 type=ActivityNode.NodeType.CATEGORY_DESCRIPTION,
@@ -60,7 +33,7 @@ class CategoryTemplate(models.Model):
             super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"{self.name} - {self.description}"
+        return self.name
 
 
 class HealthCategory(models.Model):
@@ -72,16 +45,6 @@ class HealthCategory(models.Model):
     score = models.IntegerField(null=True, blank=True)
     completion_date = models.DateTimeField(null=True, blank=True)
     recommendations = models.JSONField(null=True, blank=True)
-    readonly_fields = ['evaluation_form']  # Hacer `evaluation_form` de solo lectura aquí
-
-
-    def save(self, *args, **kwargs):
-        # Bloquear cambios en `evaluation_form`
-        if self.pk:  # Si la instancia ya existe
-            original = HealthCategory.objects.get(pk=self.pk)
-            if self.evaluation_form != original.evaluation_form:
-                raise ValueError("The evaluation_form field cannot be edited directly.")
-            super().save(*args, **kwargs)
 
 
     def update_evaluation(self, responses: dict):
