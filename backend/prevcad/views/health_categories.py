@@ -47,12 +47,13 @@ def save_evaluation_responses(request, category_id):
         category = HealthCategory.objects.get(id=category_id, user=request.user)
         responses = request.data.get('responses', {})
         
-        # Guardar respuestas y actualizar completion_date
+        # Actualizar estado y respuestas
         category.responses = responses
-        category.completion_date = timezone.now()  # Importante: actualizar la fecha
+        category.completion_date = timezone.now()
+        category.status = 'completed'
         category.save(update_fields=['responses', 'completion_date'])
         
-        # Recargar la categoría para obtener los datos actualizados
+        # Recargar la categoría
         category.refresh_from_db()
         
         return Response({

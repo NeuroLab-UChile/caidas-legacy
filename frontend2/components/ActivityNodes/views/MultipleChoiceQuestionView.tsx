@@ -5,18 +5,15 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
+  Platform,
 } from "react-native";
-
 import { Ionicons } from "@expo/vector-icons";
 import { theme } from "@/src/theme";
 
 interface MultipleChoiceQuestionProps {
   data: {
     question: string;
-    options: Array<{
-      id: number;
-      text: string;
-    }>;
+    options: Array<string>;
     image?: string;
   };
   onNext?: (response: { selectedOptions: number[] }) => void;
@@ -28,56 +25,76 @@ export function MultipleChoiceQuestionView({
 }: MultipleChoiceQuestionProps) {
   const [selectedOptions, setSelectedOptions] = useState<number[]>([]);
 
+  const formattedOptions = data.options.map(
+    (option: string, index: number) => ({
+      id: index,
+      text: option,
+    })
+  );
+
   const toggleOption = (optionId: number) => {
-    setSelectedOptions((prev) =>
-      prev.includes(optionId)
-        ? prev.filter((id) => id !== optionId)
-        : [...prev, optionId]
-    );
+    if (selectedOptions.includes(optionId)) {
+      setSelectedOptions([]);
+    } else {
+      setSelectedOptions([optionId]);
+    }
   };
 
   return (
-    <ScrollView style={theme.components.activityNode.container}>
-      <Text style={theme.components.activityNode.question}>
-        {data.question}
-      </Text>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.contentContainer}
+    >
+      <View>
+        <Text style={styles.questionText}>{data.question}</Text>
+      </View>
 
       <View style={styles.optionsContainer}>
-        {data.options.map((option) => (
-          <TouchableOpacity
-            key={`multiple-choice-${option.id}`}
-            style={[
-              theme.components.activityNode.option,
-              selectedOptions.includes(option.id) &&
-                theme.components.activityNode.selectedOption,
-            ]}
-            onPress={() => toggleOption(option.id)}
-          >
-            <Ionicons
-              name={
-                selectedOptions.includes(option.id)
-                  ? "checkbox"
-                  : "square-outline"
-              }
-              size={24}
-              color={theme.colors.text}
-              style={styles.checkbox}
-            />
-            <Text style={theme.components.activityNode.optionText}>
-              {option.text}
-            </Text>
-          </TouchableOpacity>
-        ))}
+        {formattedOptions.map((option, index) => {
+          const isSelected = selectedOptions.includes(option.id);
+          return (
+            <TouchableOpacity
+              key={`option-${index}`}
+              style={[
+                styles.optionButton,
+                isSelected && styles.selectedOptionButton,
+              ]}
+              onPress={() => toggleOption(option.id)}
+              activeOpacity={0.7}
+            >
+              <View style={styles.optionContent}>
+                <Ionicons
+                  name={isSelected ? "checkbox" : "square-outline"}
+                  size={24}
+                  color={isSelected ? theme.colors.primary : theme.colors.text}
+                  style={styles.checkbox}
+                />
+                <Text
+                  style={[
+                    styles.optionText,
+                    isSelected && styles.selectedOptionText,
+                  ]}
+                >
+                  {option.text}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          );
+        })}
       </View>
 
       <TouchableOpacity
-        style={theme.components.activityNode.button}
+        style={[
+          styles.continueButton,
+          selectedOptions.length === 0 && styles.disabledButton,
+        ]}
         onPress={() =>
           selectedOptions.length > 0 && onNext?.({ selectedOptions })
         }
         disabled={selectedOptions.length === 0}
+        activeOpacity={0.8}
       >
-        <Text style={theme.components.activityNode.buttonText}>Continuar</Text>
+        <Text style={styles.continueButtonText}>Continuar</Text>
       </TouchableOpacity>
     </ScrollView>
   );
@@ -87,61 +104,87 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: theme.colors.background,
-    padding: 16,
   },
-  question: {
-    fontSize: 18,
+  contentContainer: {
+    padding: 20,
+    paddingBottom: 40,
+  },
+  questionText: {
+    fontSize: 20,
+    fontWeight: "600",
     color: theme.colors.text,
-    marginBottom: 16,
+    marginBottom: 24,
+    lineHeight: 28,
   },
   optionsContainer: {
     gap: 12,
-    marginVertical: 24,
+    marginBottom: 32,
   },
-  option: {
+  optionButton: {
+    backgroundColor: "#FFFFFF", // Color de fondo explícito
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    marginBottom: 8, // Añadir espacio entre opciones
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 2,
+      },
+    }),
+  },
+  optionContent: {
     flexDirection: "row",
     alignItems: "center",
+  },
+  selectedOptionButton: {
+    backgroundColor: `${theme.colors.primary}15`,
+    borderColor: theme.colors.primary,
   },
   checkbox: {
     marginRight: 12,
   },
-  optionContainer: {
-    backgroundColor: theme.colors.surface,
-    borderRadius: 8,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
+  optionText: {
+    fontSize: 16,
+    color: "#000000", // Color de texto explícito
+    flex: 1,
+    lineHeight: 24,
   },
-  optionButton: {
-    padding: 16,
-    flexDirection: "row",
-    alignItems: "center",
+  selectedOptionText: {
+    color: theme.colors.primary,
+    fontWeight: "500",
   },
-
-  selectedOption: {
-    backgroundColor: theme.colors.primary + "20",
-    borderColor: theme.colors.primary,
-  },
-  submitButton: {
-    marginTop: 16,
+  continueButton: {
     backgroundColor: theme.colors.primary,
     padding: 16,
-    borderRadius: 8,
+    borderRadius: 12,
     alignItems: "center",
+    marginTop: 8,
+    ...Platform.select({
+      ios: {
+        shadowColor: theme.colors.primary,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
   },
-  submitButtonText: {
-    color: "white",
+  disabledButton: {
+    backgroundColor: theme.colors.border,
+    opacity: 0.7,
+  },
+  continueButtonText: {
     fontSize: 16,
     fontWeight: "600",
-  },
-  button: {
-    backgroundColor: theme.colors.primary,
-    padding: 16,
-    borderRadius: 8,
-    alignItems: "center",
-  },
-  buttonText: {
-    fontSize: 16,
-    fontWeight: "600",
+    color: theme.colors.text,
   },
 });
