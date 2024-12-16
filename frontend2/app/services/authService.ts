@@ -1,5 +1,6 @@
 import { API_URL } from '@/constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+
 export interface AuthResponse {
   user: {
     id: number;
@@ -18,6 +19,8 @@ export interface LoginCredentials {
 const authService = {
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
     try {
+      console.log("Attempting login with:", credentials.username); // Debug
+
       const response = await fetch(`${API_URL}/token/`, {
         method: 'POST',
         headers: {
@@ -31,12 +34,30 @@ const authService = {
       }
 
       const data = await response.json();
-      await AsyncStorage.setItem('auth_token', data.access);
-      await AsyncStorage.setItem('refresh_token', data.refresh);
+      console.log("Login successful, got token"); // Debug
 
       return data;
     } catch (error) {
       console.error('Error en login:', error);
+      throw error;
+    }
+  },
+
+  async getUserInfo(token: string) {
+    try {
+      const response = await fetch(`${API_URL}/prevcad/user/profile/`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Error obteniendo información del usuario');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error getting user info:', error);
       throw error;
     }
   },
