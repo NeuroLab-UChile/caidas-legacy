@@ -60,46 +60,20 @@ class CategoryTemplateAdmin(admin.ModelAdmin):
   formatted_evaluation_form.short_description = 'Formulario de Evaluación'
 
   def response_change(self, request, obj):
-    if "_add_node" in request.POST:
-      try:
-        node_data = {
-          'type': request.POST.get('questionType'),
-          'question': request.POST.get('questionText'),
-        }
-
-        # Add options for choice questions
-        if node_data['type'] in ['SINGLE_CHOICE_QUESTION', 'MULTIPLE_CHOICE_QUESTION']:
-          options = json.loads(request.POST.get('options', '[]'))
-          if not options:
-            self.message_user(request, "Debe agregar al menos una opción", level='ERROR')
-            return self.response_post_save_change(request, obj)
-          node_data['options'] = options
-
-        # Add scale parameters
-        if node_data['type'] == 'SCALE_QUESTION':
-          min_value = request.POST.get('minValue')
-          max_value = request.POST.get('maxValue')
-          step = request.POST.get('stepValue')
-          
-          if not all([min_value, max_value, step]):
-            self.message_user(request, "Todos los campos de escala son requeridos", level='ERROR')
-            return self.response_post_save_change(request, obj)
-            
-          node_data.update({
-            'min_value': int(min_value),
-            'max_value': int(max_value),
-            'step': int(step)
-          })
-
-        obj.add_activity_node(node_data)
-        self.message_user(request, "Pregunta agregada exitosamente")
-        
-      except Exception as e:
-        self.message_user(request, f"Error al guardar la pregunta: {str(e)}", level='ERROR')
-        
-      return self.response_post_save_change(request, obj)
-    
-    return super().response_change(request, obj)
+      if "_add_node" in request.POST:
+          node_data = self._get_node_data_from_request(request)
+          obj.add_activity_node(node_data)
+          self.message_user(request, "Pregunta agregada exitosamente")
+      elif "_edit_node" in request.POST:
+          node_id = request.POST.get('node_id')
+          node_data = self._get_node_data_from_request(request)
+          self._edit_node(obj, node_id, node_data)
+          self.message_user(request, "Pregunta actualizada exitosamente")
+      elif "_delete_node" in request.POST:
+          node_id = request.POST.get('node_id')
+          self._delete_node(obj, node_id)
+          self.message_user(request, "Pregunta eliminada exitosamente")
+      return super().response_change(request, obj)
 
   def formatted_description(self, obj):
     truncated_text = Truncator(obj.description).chars(50, truncate='...')
@@ -108,6 +82,8 @@ class CategoryTemplateAdmin(admin.ModelAdmin):
     )
 
   formatted_description.short_description = "Descripción"
+  
+  
 
 # Unregister the original User admin and register the new one
 admin.site.unregister(User)

@@ -8,188 +8,229 @@
 
 {% block content %}
   {{ block.super }}
-  
-  <!-- Botón para abrir el modal -->
-  <div class="mt-4">
-    <button
-      id="openModal"
-      class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-      type="button"
-    >
-      Agregar Pregunta
+
+  <div class="mt-8 mb-4">
+    <h3 class="text-lg font-bold mb-4">Formulario de Evaluación</h3>
+    <button id="openViewFormModal" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+      Ver Formulario
     </button>
   </div>
 
-  <!-- Modal -->
-  <div
-    id="modal"
-    class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center"
-  >
+  <!-- Modal: Lista de Preguntas -->
+  <div id="viewFormModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+    <div class="bg-white p-6 rounded-lg w-2/3">
+      <h2 class="text-lg font-bold mb-4">Preguntas del Formulario</h2>
+      
+      <div id="questionsList" class="space-y-4 overflow-y-auto max-h-[400px]">
+        {% for node in original.evaluation_form.question_nodes %}
+          <div class="bg-gray-100 shadow p-4 rounded-lg">
+            <div class="flex justify-between items-center">
+              <div>
+                <span class="text-sm font-semibold">{{ node.type }}</span>
+                <p class="text-md">{{ node.question }}</p>
+                {% if node.options %}
+                  <ul class="list-disc ml-6 mt-2 text-sm">
+                    {% for option in node.options %}
+                      <li>{{ option }}</li>
+                    {% endfor %}
+                  </ul>
+                {% endif %}
+              </div>
+              <div class="flex space-x-2">
+                <button type="button" onclick="editQuestion({{ node|safe }})"
+                  class="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600">Editar</button>
+                <button type="button" onclick="deleteQuestion({{ node.id }})"
+                  class="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600">Eliminar</button>
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+      
+      <!-- Botón Agregar Pregunta -->
+      <div class="mt-4">
+        <button id="openAddQuestionModal" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+          Agregar Pregunta
+        </button>
+        <button id="closeViewFormModal" class="bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-500">
+          Cerrar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Formulario Pregunta -->
+  <div id="questionModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
     <div class="bg-white p-6 rounded-lg w-1/2">
-      <form method="post">
+      <h2 id="modalTitle" class="text-lg font-bold mb-4">Agregar Pregunta</h2>
+      <form id="questionForm" method="POST">
         {% csrf_token %}
-        <h2 class="text-lg font-bold mb-4">Agregar Nueva Pregunta</h2>
-        
-        <!-- Tipo de Pregunta -->
+        <input type="hidden" name="node_id" id="nodeId">
+
+        <!-- Tipo -->
         <div class="mb-4">
-          <label class="block font-semibold mb-2">Tipo de Pregunta:</label>
-          <select
-            name="questionType"
-            id="questionType"
-            class="w-full border rounded p-2"
-          >
-            <option value="TEXT_QUESTION">Texto</option>
-            <option value="SINGLE_CHOICE_QUESTION">Opción Única</option>
-            <option value="MULTIPLE_CHOICE_QUESTION">Múltiples Opciones</option>
+          <label class="block font-semibold mb-2">Tipo de Pregunta</label>
+          <select id="questionType" name="questionType" class="w-full border rounded p-2">
+            <option value="MULTIPLE_CHOICE_QUESTION">Múltiple</option>
+            <option value="SINGLE_CHOICE_QUESTION">Única</option>
             <option value="SCALE_QUESTION">Escala</option>
           </select>
         </div>
 
         <!-- Pregunta -->
         <div class="mb-4">
-          <label class="block font-semibold mb-2">Pregunta:</label>
-          <input
-            name="questionText"
-            type="text"
-            placeholder="Escribe la pregunta"
-            class="w-full border rounded p-2"
-            required
-          />
+          <label class="block font-semibold mb-2">Pregunta</label>
+          <input name="question" id="questionText" type="text" class="w-full border rounded p-2" required>
         </div>
 
-        <!-- Opciones para preguntas de selección -->
-        <div id="optionsContainer" class="hidden mb-4">
-          <label class="block font-semibold mb-2">Opciones:</label>
+        <!-- Opciones -->
+        <div id="optionsContainer" class="hidden">
+          <label class="block font-semibold mb-2">Opciones</label>
           <div class="flex mb-2">
-            <input
-              type="text"
-              id="newOption"
-              placeholder="Nueva opción"
-              class="flex-1 border rounded p-2 mr-2"
-            />
-            <button
-              type="button"
-              id="addOption"
-              class="bg-green-500 text-white px-4 py-2 rounded"
-            >
-              Agregar
-            </button>
+            <input type="text" id="newOption" placeholder="Agregar Opción" class="flex-1 border p-2 rounded">
+            <button type="button" id="addOptionBtn" class="bg-green-500 text-white px-2 py-1 rounded">+</button>
           </div>
-          <div id="optionsList" class="space-y-2"></div>
-          <input type="hidden" name="options" id="optionsInput" value="[]">
-        </div>
-
-        <!-- Campos para pregunta de escala -->
-        <div id="scaleContainer" class="hidden mb-4">
-          <div class="grid grid-cols-3 gap-4">
-            <div>
-              <label class="block font-semibold mb-2">Mínimo:</label>
-              <input
-                type="number"
-                name="minValue"
-                class="w-full border rounded p-2"
-              />
-            </div>
-            <div>
-              <label class="block font-semibold mb-2">Máximo:</label>
-              <input
-                type="number"
-                name="maxValue"
-                class="w-full border rounded p-2"
-              />
-            </div>
-            <div>
-              <label class="block font-semibold mb-2">Incremento:</label>
-              <input
-                type="number"
-                name="stepValue"
-                class="w-full border rounded p-2"
-              />
-            </div>
-          </div>
+          <ul id="optionsList" class="list-disc ml-6"></ul>
         </div>
 
         <div class="flex justify-end space-x-2">
-          <button 
-            type="button" 
-            id="closeModal" 
-            class="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400"
-          >
-            Cancelar
-          </button>
-          <button 
-            type="submit"
-            name="_add_node"
-            class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-700"
-          >
-            Guardar
-          </button>
+          <button type="button" id="closeQuestionModal" class="bg-gray-400 px-4 py-2 rounded">Cancelar</button>
+          <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded">Guardar</button>
         </div>
       </form>
     </div>
   </div>
 
-  <script>
-    const modal = document.getElementById('modal');
-    const questionType = document.getElementById('questionType');
-    const optionsContainer = document.getElementById('optionsContainer');
-    const scaleContainer = document.getElementById('scaleContainer');
-    const optionsList = document.getElementById('optionsList');
-    const optionsInput = document.getElementById('optionsInput');
-    let options = [];
+<script>
+  const viewFormModal = document.getElementById('viewFormModal');
+  const questionModal = document.getElementById('questionModal');
+  const optionsContainer = document.getElementById('optionsContainer');
+  let options = [];
 
-    // Mostrar/ocultar secciones según el tipo de pregunta
-    questionType.addEventListener('change', () => {
-      const type = questionType.value;
-      optionsContainer.classList.toggle('hidden', 
-        type !== 'MULTIPLE_CHOICE_QUESTION' && type !== 'SINGLE_CHOICE_QUESTION');
-      scaleContainer.classList.toggle('hidden', 
-        type !== 'SCALE_QUESTION');
-    });
+  document.getElementById('openViewFormModal').onclick = () => viewFormModal.classList.remove('hidden');
+  document.getElementById('closeViewFormModal').onclick = () => viewFormModal.classList.add('hidden');
+  
+  document.getElementById('openAddQuestionModal').onclick = () => {
+    resetQuestionForm();
+    questionModal.classList.remove('hidden');
+  };
+  document.getElementById('closeQuestionModal').onclick = () => questionModal.classList.add('hidden');
 
-    // Agregar opción
-    document.getElementById('addOption').addEventListener('click', () => {
-      const newOption = document.getElementById('newOption');
-      if (newOption.value.trim()) {
-        options.push(newOption.value.trim());
-        updateOptionsList();
-        newOption.value = '';
-      }
-    });
+  document.getElementById('questionType').onchange = (e) => {
+    optionsContainer.classList.toggle('hidden', e.target.value !== 'MULTIPLE_CHOICE_QUESTION' && e.target.value !== 'SINGLE_CHOICE_QUESTION');
+  };
 
-    // Actualizar lista de opciones
-    function updateOptionsList() {
-      optionsList.innerHTML = options.map((option, index) => `
-        <div class="flex items-center">
-          <span class="flex-1 p-2 bg-gray-100 rounded">${option}</span>
-          <button 
-            type="button"
-            onclick="removeOption(${index})"
-            class="ml-2 text-red-500 hover:text-red-700"
-          >
-            ×
-          </button>
-        </div>
-      `).join('');
-      optionsInput.value = JSON.stringify(options);
-    }
-
-    // Eliminar opción
-    function removeOption(index) {
-      options.splice(index, 1);
-      updateOptionsList();
-    }
-
-    // Abrir/cerrar modal
-    document.getElementById('openModal').addEventListener('click', () => {
-      modal.classList.remove('hidden');
-    });
-
-    document.getElementById('closeModal').addEventListener('click', () => {
-      modal.classList.add('hidden');
-      options = [];
-      updateOptionsList();
+  document.getElementById('addOptionBtn').onclick = () => {
+    const newOption = document.getElementById('newOption').value.trim();
+    if (newOption) {
+      options.push(newOption);
+      renderOptions();
       document.getElementById('newOption').value = '';
+    }
+  };
+
+  function renderOptions() {
+    document.getElementById('optionsList').innerHTML = options.map(opt => `<li>${opt}</li>`).join('');
+  }
+
+  function resetQuestionForm() {
+    document.getElementById('questionForm').reset();
+    options = [];
+    renderOptions();
+  }
+
+  function editQuestion(node) {
+    resetQuestionForm();
+    document.getElementById('modalTitle').textContent = 'Editar Pregunta';
+    document.getElementById('nodeId').value = node.id;
+    document.getElementById('questionText').value = node.question;
+    document.getElementById('questionType').value = node.type;
+    options = node.options || [];
+    renderOptions();
+    questionModal.classList.remove('hidden');
+  }
+
+  function deleteQuestion(nodeId) {
+    if (confirm("¿Estás seguro de eliminar esta pregunta?")) {
+      fetch("", {
+        method: "POST",
+        headers: { "X-CSRFToken": "{{ csrf_token }}" },
+        body: new URLSearchParams({ "_delete_node": "", "node_id": nodeId })
+      }).then(response => {
+        if (!response.ok) {
+          throw new Error(`Error: ${response.statusText}`);
+        }
+        return response.json();
+      }).then(responseData => {
+        if (responseData.status === 'success') {
+          alert("Pregunta eliminada correctamente");
+          location.reload();
+        } else {
+          throw new Error(responseData.message || 'Error desconocido');
+        }
+      }).catch(error => {
+        console.error("Error al eliminar la pregunta:", error);
+        alert(`Error: ${error.message}`);
+      });
+    }
+  }
+
+  function saveQuestion() {
+    const nodeId = document.getElementById('nodeId').value;
+    const questionText = document.getElementById('questionText').value;
+    const questionType = document.getElementById('questionType').value;
+    const options = Array.from(document.querySelectorAll('#optionsList li')).map(li => li.textContent);
+
+    const newNode = {
+      id: nodeId ? parseInt(nodeId) : Date.now(),
+      question: questionText,
+      type: questionType,
+      options: options
+    };
+
+    const currentForm = {{ original.evaluation_form|safe|default:"{}" }};
+    let currentNodes = currentForm.question_nodes || [];
+
+    if (nodeId) {
+      const index = currentNodes.findIndex(node => node.id === parseInt(nodeId));
+      if (index !== -1) {
+        currentNodes[index] = newNode;
+      } else {
+        currentNodes.push(newNode);
+      }
+    } else {
+      currentNodes.push(newNode);
+    }
+
+    const updatedForm = {
+      question_nodes: currentNodes,
+    };
+
+    fetch("{% url 'update_evaluation_form' original.id %}", {
+      method: "POST",
+      headers: { "X-CSRFToken": "{{ csrf_token }}" },
+      body: new URLSearchParams({ "evaluation_form": JSON.stringify(updatedForm) })
+    }).then(response => {
+      if (!response.ok) {
+        throw new Error(`Error: ${response.statusText}`);
+      }
+      return response.json();
+    }).then(responseData => {
+      if (responseData.status === 'success') {
+        alert("Formulario actualizado correctamente");
+        location.reload();
+      } else {
+        throw new Error(responseData.message || 'Error desconocido');
+      }
+    }).catch(error => {
+      console.error("Error al guardar el formulario:", error);
+      alert(`Error: ${error.message}`);
     });
-  </script>
+  }
+
+  document.getElementById('questionForm').onsubmit = function(e) {
+    e.preventDefault();
+    saveQuestion();
+  };
+</script>
 {% endblock %}

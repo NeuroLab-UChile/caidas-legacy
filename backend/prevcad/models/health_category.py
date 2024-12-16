@@ -14,23 +14,43 @@ class CategoryTemplate(models.Model):
     name = models.TextField()
     description = models.TextField()
     is_active = models.BooleanField(default=True)
-    evaluation_form = models.JSONField(null=True, blank=True)
+    evaluation_form = models.JSONField(
+        null=True, 
+        blank=True, 
+        default=dict,
+        help_text="Formulario de evaluación en formato JSON"
+    )
 
     def save(self, *args, **kwargs):
-        if not self.pk:
+            if not self.evaluation_form:
+                self.evaluation_form = {"question_nodes": []}
+            elif "question_nodes" not in self.evaluation_form:
+                self.evaluation_form["question_nodes"] = []
+
             super().save(*args, **kwargs)
-            root_node = ActivityNodeDescription.objects.create(
-                type=ActivityNode.NodeType.CATEGORY_DESCRIPTION,
-                description=self.description
-            )
-            for user in User.objects.all():
-                HealthCategory.objects.create(
-                    user=user,
-                    template=self,
-                    root_node=root_node
-                )
-        else:
-            super().save(*args, **kwargs)
+
+    def update_evaluation_form(self, data):
+        print(f"\nActualizando evaluation_form con datos: {data}")
+        
+        if not isinstance(data, dict):
+            raise ValueError(f"Los datos deben ser un diccionario, recibido: {type(data)}")
+            
+        if "question_nodes" not in data:
+            raise ValueError("Los datos deben contener 'question_nodes'")
+            
+        if not isinstance(data["question_nodes"], list):
+            raise ValueError("question_nodes debe ser una lista")
+            
+        for node in data["question_nodes"]:
+            if not isinstance(node, dict):
+                raise ValueError("Cada nodo debe ser un diccionario")
+            if "type" not in node or "question" not in node:
+                raise ValueError("Cada nodo debe tener 'type' y 'question'")
+        
+        print(f"Datos validados correctamente")
+        self.evaluation_form = data
+        self.save(update_fields=['evaluation_form'])
+        print(f"Formulario guardado. Nuevo estado: {self.evaluation_form}")
 
     def __str__(self):
         return self.name
