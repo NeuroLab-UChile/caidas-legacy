@@ -1,5 +1,11 @@
 import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+} from "react-native";
 import { ActivityNodeViews } from "./index";
 import { ResultNodeView } from "./views/ResultNodeView";
 import { Ionicons } from "@expo/vector-icons";
@@ -53,28 +59,35 @@ export const ActivityNodeContainer: React.FC<ActivityNodeContainerProps> = ({
         </TouchableOpacity>
       )}
 
-      <View style={styles.cardContainer}>
-        {type === "RESULT_NODE" ? (
-          <ResultNodeView
-            data={nodeData}
-            onNext={onNext}
-            categoryId={categoryId}
-            responses={responses}
-          />
-        ) : (
-          <View style={styles.questionContainer}>
-            <View style={styles.questionHeader}>
-              <Text style={styles.questionType}>
-                {type === "SINGLE_CHOICE_QUESTION" && "Selección Única"}
-                {type === "MULTIPLE_CHOICE_QUESTION" && "Selección Múltiple"}
-                {type === "TEXT_QUESTION" && "Respuesta Abierta"}
-                {type === "SCALE_QUESTION" && "Escala"}
-              </Text>
+      <ScrollView
+        style={styles.scrollContainer}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={true}
+        bounces={false}
+      >
+        <View style={styles.cardContainer}>
+          {type === "RESULT_NODE" ? (
+            <ResultNodeView
+              data={nodeData}
+              onNext={onNext}
+              categoryId={categoryId}
+              responses={responses}
+            />
+          ) : (
+            <View style={styles.questionContainer}>
+              <View style={styles.questionHeader}>
+                <Text style={styles.questionType}>
+                  {type === "SINGLE_CHOICE_QUESTION" && "Selección Única"}
+                  {type === "MULTIPLE_CHOICE_QUESTION" && "Selección Múltiple"}
+                  {type === "TEXT_QUESTION" && "Respuesta Abierta"}
+                  {type === "SCALE_QUESTION" && "Escala"}
+                </Text>
+              </View>
+              <NodeComponent data={nodeData} onNext={handleNext} />
             </View>
-            <NodeComponent data={nodeData} onNext={handleNext} />
-          </View>
-        )}
-      </View>
+          )}
+        </View>
+      </ScrollView>
     </View>
   );
 };
@@ -82,23 +95,25 @@ export const ActivityNodeContainer: React.FC<ActivityNodeContainerProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
     backgroundColor: theme.colors.background,
+  },
+  scrollContainer: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: 24,
   },
   cardContainer: {
     backgroundColor: theme.colors.card,
-    borderRadius: 16,
+    borderRadius: 12,
     padding: 20,
+    margin: 16,
     shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   questionContainer: {
     gap: 16,

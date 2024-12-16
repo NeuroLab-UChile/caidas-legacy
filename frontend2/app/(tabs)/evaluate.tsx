@@ -14,6 +14,7 @@ import { Category, QuestionNode } from "@/app/types/category";
 import { ActivityNodeContainer } from "@/components/ActivityNodes/ActivityNodeContainer";
 import apiService from "../services/apiService";
 import { getCategoryStatus } from "@/utils/categoryHelpers";
+import { CategoryHeader } from "@/components/CategoryHeader";
 
 interface NodeResponse {
   nodeId: number;
@@ -78,16 +79,21 @@ const EvaluateScreen = () => {
   useEffect(() => {
     if (selectedCategory) {
       const status = getCategoryStatus(selectedCategory);
-      setEvaluationState((prev) => ({
-        ...prev,
-        completed:
-          status?.status === "completed" || status?.status === "reviewed",
-        responses: selectedCategory.responses || {},
-        currentNodeId:
-          status?.status === "completed" || status?.status === "reviewed"
-            ? null
-            : selectedCategory.evaluation_form?.question_nodes[0]?.id || null,
-      }));
+      const nodes = selectedCategory.evaluation_form?.question_nodes || [];
+      const existingResponses = selectedCategory.responses || {};
+      const isCompleted =
+        status?.status === "completed" || status?.status === "reviewed";
+
+      setEvaluationState({
+        currentNodeId: isCompleted ? null : nodes[0]?.id || null,
+        responses: existingResponses,
+        completed: isCompleted,
+        history: [],
+        evaluationResult: {
+          initial_node_id: nodes[0]?.id || null,
+          nodes: nodes,
+        },
+      });
     }
   }, [selectedCategory]);
 
@@ -119,10 +125,12 @@ const EvaluateScreen = () => {
       if (isCompleted && selectedCategory?.id) {
         setLoading(true);
         try {
-          const result = await apiService.categories.saveResponses(
+          await apiService.categories.saveResponses(
             selectedCategory.id,
             newResponses
           );
+
+          await fetchCategories();
 
           setEvaluationState({
             currentNodeId: null,
@@ -131,12 +139,19 @@ const EvaluateScreen = () => {
             history: [],
             evaluationResult: {
               initial_node_id: null,
-              nodes: selectedCategory.evaluation_form.question_nodes,
+              nodes: selectedCategory?.evaluation_form?.question_nodes || [],
             },
           });
 
-          await fetchCategories();
-          Alert.alert("Éxito", "Evaluación guardada correctamente");
+          Alert.alert("Éxito", "Evaluación guardada correctamente", [
+            {
+              text: "OK",
+              onPress: async () => {
+                await fetchCategories();
+                setEvaluationState((prev) => ({ ...prev }));
+              },
+            },
+          ]);
         } catch (error) {
           console.error("Error saving responses:", error);
           Alert.alert("Error", "No se pudo guardar la evaluación");
@@ -276,25 +291,46 @@ const EvaluateScreen = () => {
 
     const status = getCategoryStatus(selectedCategory);
 
-    if (status?.status === "reviewed") {
+    if (selectedCategory?.doctor_recommendations) {
       return (
         <View style={styles.completedContainer}>
-          <Text style={styles.completedText}>{status.text}</Text>
+          <Text style={styles.completedText}>
+            {status?.text || "✅ Evaluación Completada"}
+          </Text>
           <Text style={styles.infoText}>
             El doctor ha revisado tus respuestas
           </Text>
           {renderDoctorReview()}
           {renderResponsesList()}
+          <TouchableOpacity
+            style={[styles.startButton, { marginTop: 24 }]}
+            onPress={() => {
+              setEvaluationState((prev) => ({
+                ...prev,
+                completed: false,
+                responses: {},
+                currentNodeId:
+                  selectedCategory?.evaluation_form?.question_nodes[0]?.id ||
+                  null,
+              }));
+            }}
+          >
+            <Text style={styles.startButtonText}>
+              Realizar Nueva Evaluación
+            </Text>
+          </TouchableOpacity>
         </View>
       );
     }
 
-    if (status?.status === "completed") {
+    if (status?.status === "completed" || evaluationState.completed) {
       return (
         <View style={styles.completedContainer}>
-          <Text style={styles.completedText}>{status.text}</Text>
+          <Text style={styles.completedText}>
+            {status?.text || "✅ Evaluación Completada"}
+          </Text>
           <Text style={styles.infoText}>
-            Tus respuestas están pendientes de revisión por el doctor
+            Por favor, espera a que el doctor revise tus respuestas
           </Text>
           {renderResponsesList()}
         </View>
@@ -331,22 +367,6 @@ const EvaluateScreen = () => {
     );
   };
 
-  const renderDescription = () => {
-    console.log("Rendering description:", selectedCategory?.description);
-    if (!selectedCategory?.description) {
-      console.log("No description available");
-      return null;
-    }
-
-    return (
-      <View style={[styles.descriptionContainer, { marginTop: 16 }]}>
-        <Text style={[styles.descriptionText, { fontWeight: "500" }]}>
-          {selectedCategory.description}
-        </Text>
-      </View>
-    );
-  };
-
   if (loading) {
     return (
       <View style={styles.container}>
@@ -367,7 +387,8 @@ const EvaluateScreen = () => {
 
   return (
     <ScrollView style={styles.container}>
-      {renderDescription()}
+      {selectedCategory && <CategoryHeader name={selectedCategory.name} />}
+
       {evaluationState.completed
         ? renderCompletionActions()
         : renderNode(evaluationState.currentNodeId, () => {
@@ -390,69 +411,86 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 16,
   },
-  nodeContainer: {
-    marginBottom: 20,
-  },
-  description: {
-    fontSize: 16,
-    color: theme.colors.text,
-    marginBottom: 16,
-  },
-  question: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: theme.colors.text,
-    marginBottom: 16,
-  },
-  button: {
-    backgroundColor: theme.colors.primary,
-    padding: 12,
-    borderRadius: 8,
-    alignItems: "center",
-  },
-  buttonText: {
-    color: theme.colors.text,
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  optionButton: {
+  descriptionContainer: {
     backgroundColor: theme.colors.card,
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 8,
-    borderWidth: 2,
-    borderColor: theme.colors.border,
+    borderRadius: 12,
+    padding: 20,
+    marginBottom: 24,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  optionText: {
-    color: theme.colors.text,
+  descriptionText: {
     fontSize: 16,
+    color: theme.colors.text,
+    lineHeight: 24,
   },
   completedContainer: {
     alignItems: "center",
-    padding: 20,
+    padding: 24,
   },
   completedText: {
-    fontSize: 20,
+    fontSize: 22,
+    fontWeight: "700",
     color: theme.colors.text,
-    marginBottom: 20,
+    marginBottom: 12,
+    textAlign: "center",
   },
-  submitButton: {
+  infoText: {
+    fontSize: 16,
+    color: theme.colors.textSecondary,
+    textAlign: "center",
+    marginBottom: 24,
+    lineHeight: 22,
+  },
+  responsesList: {
+    width: "100%",
+    backgroundColor: theme.colors.card,
+    borderRadius: 12,
+    padding: 20,
+    marginTop: 24,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  responseItem: {
+    marginBottom: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+    paddingBottom: 16,
+  },
+  questionText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: theme.colors.text,
+    marginBottom: 8,
+  },
+  answerText: {
+    fontSize: 15,
+    color: theme.colors.text,
+    marginLeft: 16,
+    lineHeight: 22,
+  },
+  startButton: {
     backgroundColor: theme.colors.primary,
     padding: 16,
     borderRadius: 8,
     width: "100%",
     alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  submitButtonText: {
+  startButtonText: {
     color: theme.colors.text,
     fontSize: 18,
     fontWeight: "600",
-  },
-  errorText: {
-    fontSize: 18,
-    color: theme.colors.text,
-    textAlign: "center",
-    marginTop: 20,
   },
   reviewContainer: {
     padding: 16,
@@ -492,61 +530,13 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     textAlign: "center",
   },
-  infoText: {
-    fontSize: 16,
-    color: theme.colors.text,
-    textAlign: "center",
-    marginBottom: 16,
-  },
   viewButton: {
     backgroundColor: theme.colors.primary,
   },
-  responsesList: {
-    width: "100%",
-    marginTop: 16,
-    padding: 16,
-    backgroundColor: theme.colors.card,
-    borderRadius: 8,
-  },
-  responseItem: {
-    marginBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
-    paddingBottom: 8,
-  },
-  questionText: {
+  buttonText: {
+    color: theme.colors.text,
     fontSize: 16,
     fontWeight: "600",
-    color: theme.colors.text,
-    marginBottom: 4,
-  },
-  answerText: {
-    fontSize: 14,
-    color: theme.colors.text,
-    marginLeft: 16,
-  },
-  startButton: {
-    backgroundColor: theme.colors.primary,
-    padding: 16,
-    borderRadius: 8,
-    width: "100%",
-    alignItems: "center",
-  },
-  startButtonText: {
-    color: theme.colors.text,
-    fontSize: 18,
-    fontWeight: "600",
-  },
-  descriptionContainer: {
-    backgroundColor: theme.colors.card,
-    borderRadius: 8,
-    padding: 16,
-    marginBottom: 16,
-  },
-  descriptionText: {
-    fontSize: 16,
-    color: theme.colors.text,
-    lineHeight: 24,
   },
 });
 

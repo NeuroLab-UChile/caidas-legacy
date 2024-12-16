@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import { useCategories } from "../contexts/categories";
 import { theme } from "@/src/theme";
+import { CategoryHeader } from "@/components/CategoryHeader";
 
 interface TrainingState {
   currentNodeIndex: number;
@@ -147,6 +148,7 @@ const TrainingScreen = () => {
 
   return (
     <ScrollView style={styles.container}>
+      {selectedCategory && <CategoryHeader name={selectedCategory.name} />}
       <Text style={styles.progressText}>
         Progreso: {trainingState.currentNodeIndex + 1} / {trainingNodes.length}
       </Text>
@@ -162,66 +164,76 @@ const styles = StyleSheet.create({
   },
   nodeContainer: {
     backgroundColor: theme.colors.card,
-    borderRadius: 8,
-    padding: 16,
+    borderRadius: 12,
+    padding: 20,
     marginBottom: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  progressText: {
+    fontSize: 14,
+    color: theme.colors.textSecondary,
+    marginBottom: 16,
+    textAlign: "center",
   },
   title: {
-    fontSize: 24,
-    fontWeight: "600",
+    fontSize: 22,
+    fontWeight: "700",
     color: theme.colors.text,
     marginBottom: 16,
   },
   description: {
     fontSize: 16,
     color: theme.colors.text,
-    marginBottom: 16,
+    marginBottom: 20,
     lineHeight: 24,
   },
   media: {
     width: "100%",
     height: 200,
-    marginBottom: 16,
-    borderRadius: 8,
+    marginBottom: 20,
+    borderRadius: 12,
   },
   navigationButtons: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginTop: 16,
+    marginTop: 24,
+    gap: 12,
   },
   button: {
-    padding: 12,
+    flex: 1,
+    padding: 16,
     borderRadius: 8,
-    minWidth: 100,
     alignItems: "center",
+    justifyContent: "center",
   },
   backButton: {
-    backgroundColor: theme.colors.card,
+    backgroundColor: theme.colors.background,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
   },
   nextButton: {
     backgroundColor: theme.colors.primary,
   },
   buttonText: {
-    color: theme.colors.text,
     fontSize: 16,
     fontWeight: "600",
   },
-  message: {
-    fontSize: 18,
-    color: theme.colors.text,
-    textAlign: "center",
+  completedContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 20,
   },
   completedText: {
     fontSize: 24,
+    fontWeight: "700",
     color: theme.colors.success,
     textAlign: "center",
-    marginBottom: 24,
-  },
-  progressText: {
-    fontSize: 18,
-    color: theme.colors.text,
-    marginBottom: 16,
-    textAlign: "center",
+    marginBottom: 32,
   },
 });
 

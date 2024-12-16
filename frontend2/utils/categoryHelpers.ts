@@ -7,11 +7,11 @@ export const getCategoryStatus = (category: any) => {
   if (category.doctor_recommendations && category.status_color) {
     return {
       status: 'reviewed',
-      text: '✅ Evaluación Revisada'
+      text: '✅ Evaluación Revisada por Doctor'
     };
   }
 
-  if (category.completion_date) {
+  if (answeredQuestions === totalQuestions && category.completion_date) {
     return {
       status: 'completed',
       text: '✅ Evaluación Completada'
