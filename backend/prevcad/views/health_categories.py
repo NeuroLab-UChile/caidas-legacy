@@ -22,36 +22,24 @@ class HealthCategoryListView(APIView):
             print("\n=== Debug HealthCategoryListView ===")
             print(f"Usuario autenticado: {request.user}")
             
-            if not request.user.is_authenticated:
-                return Response(
-                    {"error": "Usuario no autenticado"},
-                    status=status.HTTP_401_UNAUTHORIZED
-                )
-            
-            # Get user categories
-            categories = HealthCategory.objects.filter(user=request.user)
-            print(f"Categorías encontradas: {categories.count()}")
-            
-            # Debug cada categoría
-            for category in categories:
-                print(f"\nCategoría ID: {category.id}")
-                print(f"Template: {category.template.name if category.template else 'No template'}")
-                print(f"Evaluation Form: {category.template.evaluation_form if category.template else None}")
-                print(f"Responses: {category.responses}")
+            # Obtener solo las categorías del usuario actual
+            categories = HealthCategory.objects.filter(
+                user=request.user,
+                template__is_active=True  # Solo templates activos
+            ).select_related('template')  # Optimizar consultas
 
-            # Filtrar categorías sin template
-            categories = categories.filter(template__isnull=False)
+            for category in categories:
+                print(f"\nCategoría: {category.id}")
+                print(f"Template: {category.template}")
+                print(f"Evaluation Form: {category.template.evaluation_form if category.template else None}")
             
-            serialized_categories = HealthCategorySerializer(categories, many=True).data
-            return Response(serialized_categories, status=status.HTTP_200_OK)
+            serialized = HealthCategorySerializer(categories, many=True).data
+            print(f"\nDatos serializados: {serialized}")
+            
+            return Response(serialized)
         except Exception as e:
-            print(f"❌ Error in HealthCategoryListView: {e}")
-            import traceback
-            print(traceback.format_exc())
-            return Response(
-                {"error": str(e)},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
+            print(f"Error: {e}")
+            return Response({"error": str(e)}, status=500)
 
 @api_view(['POST'])
 def save_evaluation_responses(request, category_id):
@@ -59,14 +47,18 @@ def save_evaluation_responses(request, category_id):
         category = HealthCategory.objects.get(id=category_id, user=request.user)
         responses = request.data.get('responses', {})
         
-        # Guardar respuestas
+        # Guardar respuestas y actualizar completion_date
         category.responses = responses
-        category.completion_date = timezone.now()
-        category.save()
+        category.completion_date = timezone.now()  # Importante: actualizar la fecha
+        category.save(update_fields=['responses', 'completion_date'])
+        
+        # Recargar la categoría para obtener los datos actualizados
+        category.refresh_from_db()
         
         return Response({
             'status': 'success',
-            'message': 'Respuestas guardadas correctamente'
+            'message': 'Respuestas guardadas correctamente',
+            'data': HealthCategorySerializer(category).data
         })
     except HealthCategory.DoesNotExist:
         return Response({'error': 'Category not found'}, status=status.HTTP_404_NOT_FOUND)

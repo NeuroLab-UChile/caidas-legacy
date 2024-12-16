@@ -13,6 +13,7 @@ import { theme } from "@/src/theme";
 import { Category, QuestionNode } from "@/app/types/category";
 import { ActivityNodeContainer } from "@/components/ActivityNodes/ActivityNodeContainer";
 import apiService from "../services/apiService";
+import { getCategoryStatus } from "@/utils/categoryHelpers";
 
 interface NodeResponse {
   nodeId: number;
@@ -31,36 +32,40 @@ interface EvaluationState {
 }
 
 const EvaluateScreen = () => {
-  const { selectedCategory } = useCategories();
+  const { selectedCategory, fetchCategories } = useCategories();
   const [loading, setLoading] = useState(false);
 
-  // Determinar si ya hay una evaluación completada y revisada por el doctor
+  console.log("Selected Category:", selectedCategory);
+  console.log("Category Description:", selectedCategory?.description);
+  console.log("Evaluation Form:", selectedCategory?.evaluation_form);
+  console.log(
+    "Question Nodes:",
+    selectedCategory?.evaluation_form?.question_nodes
+  );
+
+  // Determinar si esta categoría específica está completada
   const hasDocterReview =
     selectedCategory?.status_color && selectedCategory?.doctor_recommendations;
+
   const hasCompletedEvaluation =
     selectedCategory?.responses &&
-    Object.keys(selectedCategory.responses).length > 0;
+    selectedCategory?.evaluation_form?.question_nodes &&
+    Object.keys(selectedCategory.responses || {}).length > 0;
 
+  const isFullyCompleted =
+    selectedCategory?.responses &&
+    selectedCategory?.evaluation_form?.question_nodes &&
+    Object.keys(selectedCategory.responses || {}).length ===
+      selectedCategory.evaluation_form.question_nodes.length;
   const [evaluationState, setEvaluationState] = useState<EvaluationState>(
     () => {
-      if (!selectedCategory?.evaluation_form?.question_nodes) {
-        return {
-          currentNodeId: null,
-          responses: {},
-          completed: false,
-          history: [],
-          evaluationResult: {
-            initial_node_id: null,
-            nodes: [],
-          },
-        };
-      }
+      const nodes = selectedCategory?.evaluation_form?.question_nodes || [];
+      const existingResponses = selectedCategory?.responses || {};
 
-      const nodes = selectedCategory.evaluation_form.question_nodes;
       return {
-        currentNodeId: nodes[0]?.id || null,
-        responses: selectedCategory.responses || {},
-        completed: Boolean(hasCompletedEvaluation),
+        currentNodeId: Boolean(isFullyCompleted) ? null : nodes[0]?.id || null,
+        responses: existingResponses,
+        completed: Boolean(isFullyCompleted),
         history: [],
         evaluationResult: {
           initial_node_id: nodes[0]?.id || null,
@@ -69,6 +74,22 @@ const EvaluateScreen = () => {
       };
     }
   );
+
+  useEffect(() => {
+    if (selectedCategory) {
+      const status = getCategoryStatus(selectedCategory);
+      setEvaluationState((prev) => ({
+        ...prev,
+        completed:
+          status?.status === "completed" || status?.status === "reviewed",
+        responses: selectedCategory.responses || {},
+        currentNodeId:
+          status?.status === "completed" || status?.status === "reviewed"
+            ? null
+            : selectedCategory.evaluation_form?.question_nodes[0]?.id || null,
+      }));
+    }
+  }, [selectedCategory]);
 
   const getNextNodeId = (currentNodeId: number): number | null => {
     if (!selectedCategory?.evaluation_form?.question_nodes) {
@@ -87,32 +108,50 @@ const EvaluateScreen = () => {
 
   const handleNodeResponse = async (nodeId: number, response: any) => {
     try {
-      setEvaluationState((prev) => {
-        const newResponses = {
-          ...prev.responses,
-          [nodeId]: response,
-        };
+      const newResponses = {
+        ...evaluationState.responses,
+        [nodeId]: response,
+      };
 
-        // Obtener el siguiente nodo automáticamente
-        const nextNodeId = getNextNodeId(nodeId);
-        const isCompleted = !nextNodeId;
+      const nextNodeId = getNextNodeId(nodeId);
+      const isCompleted = !nextNodeId;
 
-        // Si está completado, guardar todas las respuestas
-        if (isCompleted && selectedCategory?.id) {
-          apiService.categories.saveResponses(
+      if (isCompleted && selectedCategory?.id) {
+        setLoading(true);
+        try {
+          const result = await apiService.categories.saveResponses(
             selectedCategory.id,
             newResponses
           );
-        }
 
-        return {
+          setEvaluationState({
+            currentNodeId: null,
+            responses: newResponses,
+            completed: true,
+            history: [],
+            evaluationResult: {
+              initial_node_id: null,
+              nodes: selectedCategory.evaluation_form.question_nodes,
+            },
+          });
+
+          await fetchCategories();
+          Alert.alert("Éxito", "Evaluación guardada correctamente");
+        } catch (error) {
+          console.error("Error saving responses:", error);
+          Alert.alert("Error", "No se pudo guardar la evaluación");
+        } finally {
+          setLoading(false);
+        }
+      } else {
+        setEvaluationState((prev) => ({
           ...prev,
           responses: newResponses,
           currentNodeId: nextNodeId,
-          completed: isCompleted,
+          completed: false,
           history: [...prev.history, nodeId],
-        };
-      });
+        }));
+      }
     } catch (error) {
       Alert.alert("Error", "No se pudo procesar la respuesta");
     }
@@ -183,22 +222,42 @@ const EvaluateScreen = () => {
 
   const renderResponsesList = () => {
     if (!selectedCategory?.responses) return null;
+    if (!selectedCategory?.evaluation_form?.question_nodes) {
+      console.log("No hay question_nodes disponibles:", selectedCategory);
+      return null;
+    }
+
+    const formatResponse = (response: any) => {
+      if (response.selectedOption !== undefined) {
+        const optionNode =
+          selectedCategory.evaluation_form?.question_nodes[0]?.data?.options;
+        const option = optionNode
+          ? optionNode[response.selectedOption]
+          : undefined;
+        return option || "Sin respuesta";
+      }
+      if (response.answer) return response.answer;
+      if (response.value) return `${response.value}`;
+      return "Sin respuesta";
+    };
 
     return (
       <View style={styles.responsesList}>
-        {selectedCategory.evaluation_form?.question_nodes.map((node, index) => (
-          <View key={node.id} style={styles.responseItem}>
-            <Text style={styles.questionText}>
-              {index + 1}. {node?.data?.question}
-            </Text>
-            <Text style={styles.answerText}>
-              {selectedCategory?.responses?.[node.id]?.answer ||
-                selectedCategory?.responses?.[node.id]?.selectedOption ||
-                selectedCategory?.responses?.[node.id]?.value ||
-                "Sin respuesta"}
-            </Text>
-          </View>
-        ))}
+        {selectedCategory.evaluation_form.question_nodes.map((node, index) => {
+          const response = selectedCategory.responses
+            ? selectedCategory.responses[node.id]
+            : undefined;
+          return (
+            <View key={node.id} style={styles.responseItem}>
+              <Text style={styles.questionText}>
+                {index + 1}. {node?.data?.question}
+              </Text>
+              <Text style={styles.answerText}>
+                {response ? formatResponse(response) : "Sin respuesta"}
+              </Text>
+            </View>
+          );
+        })}
       </View>
     );
   };
@@ -215,12 +274,12 @@ const EvaluateScreen = () => {
       );
     }
 
-    if (hasDocterReview) {
+    const status = getCategoryStatus(selectedCategory);
+
+    if (status?.status === "reviewed") {
       return (
         <View style={styles.completedContainer}>
-          <Text style={styles.completedText}>
-            Ya has completado esta evaluación
-          </Text>
+          <Text style={styles.completedText}>{status.text}</Text>
           <Text style={styles.infoText}>
             El doctor ha revisado tus respuestas
           </Text>
@@ -230,12 +289,10 @@ const EvaluateScreen = () => {
       );
     }
 
-    if (hasCompletedEvaluation) {
+    if (status?.status === "completed") {
       return (
         <View style={styles.completedContainer}>
-          <Text style={styles.completedText}>
-            Ya has completado esta evaluación
-          </Text>
+          <Text style={styles.completedText}>{status.text}</Text>
           <Text style={styles.infoText}>
             Tus respuestas están pendientes de revisión por el doctor
           </Text>
@@ -246,29 +303,46 @@ const EvaluateScreen = () => {
 
     return (
       <View style={styles.completedContainer}>
-        <Text style={styles.completedText}>¡Has completado la evaluación!</Text>
+        <Text style={styles.completedText}>
+          {status?.text || "Estado desconocido"}
+        </Text>
+        {status?.status === "in_progress" && (
+          <Text style={styles.infoText}>Continúa donde lo dejaste</Text>
+        )}
         <TouchableOpacity
-          style={styles.submitButton}
-          onPress={async () => {
-            try {
-              if (selectedCategory?.id) {
-                setLoading(true);
-                await apiService.categories.saveResponses(
-                  selectedCategory.id,
-                  evaluationState.responses
-                );
-                Alert.alert("Éxito", "Evaluación guardada correctamente");
-              }
-            } catch (error) {
-              console.error("Error saving final responses:", error);
-              Alert.alert("Error", "No se pudo guardar la evaluación");
-            } finally {
-              setLoading(false);
-            }
+          style={styles.startButton}
+          onPress={() => {
+            setEvaluationState((prev) => ({
+              ...prev,
+              completed: false,
+              currentNodeId:
+                selectedCategory?.evaluation_form?.question_nodes[0]?.id ||
+                null,
+            }));
           }}
         >
-          <Text style={styles.submitButtonText}>Guardar Evaluación</Text>
+          <Text style={styles.startButtonText}>
+            {status?.status === "in_progress"
+              ? "Continuar Evaluación"
+              : "Comenzar Evaluación"}
+          </Text>
         </TouchableOpacity>
+      </View>
+    );
+  };
+
+  const renderDescription = () => {
+    console.log("Rendering description:", selectedCategory?.description);
+    if (!selectedCategory?.description) {
+      console.log("No description available");
+      return null;
+    }
+
+    return (
+      <View style={[styles.descriptionContainer, { marginTop: 16 }]}>
+        <Text style={[styles.descriptionText, { fontWeight: "500" }]}>
+          {selectedCategory.description}
+        </Text>
       </View>
     );
   };
@@ -293,6 +367,7 @@ const EvaluateScreen = () => {
 
   return (
     <ScrollView style={styles.container}>
+      {renderDescription()}
       {evaluationState.completed
         ? renderCompletionActions()
         : renderNode(evaluationState.currentNodeId, () => {
@@ -424,7 +499,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   viewButton: {
-    backgroundColor: theme.colors.secondary,
+    backgroundColor: theme.colors.primary,
   },
   responsesList: {
     width: "100%",
@@ -449,6 +524,29 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: theme.colors.text,
     marginLeft: 16,
+  },
+  startButton: {
+    backgroundColor: theme.colors.primary,
+    padding: 16,
+    borderRadius: 8,
+    width: "100%",
+    alignItems: "center",
+  },
+  startButtonText: {
+    color: theme.colors.text,
+    fontSize: 18,
+    fontWeight: "600",
+  },
+  descriptionContainer: {
+    backgroundColor: theme.colors.card,
+    borderRadius: 8,
+    padding: 16,
+    marginBottom: 16,
+  },
+  descriptionText: {
+    fontSize: 16,
+    color: theme.colors.text,
+    lineHeight: 24,
   },
 });
 

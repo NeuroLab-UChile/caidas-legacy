@@ -125,8 +125,18 @@ class HealthCategory(models.Model):
 
 @receiver(post_save, sender=User)
 def create_user_health_categories(sender, instance, created, **kwargs):
+  """Crear categorías de salud para un nuevo usuario"""
   if created:
-    HealthCategory.create_categories_for_user(instance)
+    # Obtener todos los templates activos
+    templates = CategoryTemplate.objects.filter(is_active=True)
+    
+    # Crear una categoría por cada template para el nuevo usuario
+    for template in templates:
+      HealthCategory.objects.create(
+        user=instance,
+        template=template,
+        evaluation_form=template.evaluation_form
+      )
 
 
 @receiver(post_save, sender=CategoryTemplate)

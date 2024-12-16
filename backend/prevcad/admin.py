@@ -143,5 +143,28 @@ class HealthCategoryAdmin(admin.ModelAdmin):
             'all': ('css/output.css',)
         }
 
-admin.site.register(TextRecomendation)
+@admin.register(TextRecomendation)
+class TextRecomendationAdmin(admin.ModelAdmin):
+    list_display = ('theme', 'category', 'sub_category')
+    list_filter = ('theme', 'category', 'sub_category')
+    search_fields = ('theme', 'category', 'sub_category', 'learn', 'remember', 'data', 'context_explanation')
+    ordering = ('theme', 'category')
+    
+    fieldsets = (
+        ('Información Básica', {
+            'fields': ('theme', 'category', 'sub_category')
+        }),
+        ('Contenido', {
+            'fields': ('learn', 'remember', 'data', 'practic_data', 'context_explanation'),
+            'classes': ('wide',)
+        }),
+        ('Metadatos', {
+            'fields': ('quote_link', 'keywords'),
+            'classes': ('collapse',),
+            'description': 'Información adicional'
+        }),
+    )
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related()
 

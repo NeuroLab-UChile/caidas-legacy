@@ -34,7 +34,7 @@ const leftMenuItems = [
 
 const rightMenuItems = [
   {
-    name: "train",
+    name: "training",
     title: "ENTRENAR",
     icon: "figure.walk",
   },

@@ -23,7 +23,7 @@ urlpatterns = [
   path('prevcad/user/profile/', getProfile, name='get_profile'),
   path('prevcad/user/profile/upload_image/', uploadProfileImage, name='upload_profile_image'),
   path('prevcad/health_categories/', HealthCategoryListView.as_view(), name='health-categories'),
-  path('prevcad/health-categories/<int:category_id>/responses', save_evaluation_responses, name='save_evaluation_responses'),
+  path('prevcad/health-categories/<int:category_id>/responses/', save_evaluation_responses, name='save_responses'),
   path('prevcad/health-categories/<int:category_id>/submit_responses/', 
        submit_responses, 
        name='submit_responses'),

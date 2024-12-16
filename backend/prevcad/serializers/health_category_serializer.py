@@ -8,6 +8,7 @@ from .activity_node_serializer import ActivityNodeDescriptionSerializer, ResultN
 class HealthCategorySerializer(serializers.ModelSerializer):
     name = serializers.SerializerMethodField()
     icon = serializers.SerializerMethodField()
+    description = serializers.SerializerMethodField()
     evaluation_form = serializers.SerializerMethodField()
     training_nodes = serializers.SerializerMethodField()
     status = serializers.SerializerMethodField()
@@ -18,6 +19,7 @@ class HealthCategorySerializer(serializers.ModelSerializer):
             'id', 
             'name', 
             'icon', 
+            'description',
             'evaluation_form',
             'training_nodes',
             'responses',
@@ -36,8 +38,12 @@ class HealthCategorySerializer(serializers.ModelSerializer):
         return None
 
     def get_evaluation_form(self, obj):
+        print(f"\nSerializando evaluation_form para categoría {obj.id}")
         if obj.template:
+            print(f"Template encontrado: {obj.template.id}")
+            print(f"Evaluation form: {obj.template.evaluation_form}")
             return obj.template.evaluation_form
+        print("No se encontró template")
         return None
 
     def get_training_nodes(self, obj):
@@ -56,3 +62,15 @@ class HealthCategorySerializer(serializers.ModelSerializer):
         }
         
         return status_map.get(obj.status_color, None)
+
+    def get_description(self, obj):
+        """Obtener la descripción del template"""
+        print(f"Getting description for category {obj.id}")
+        if obj.template and obj.template.root_node:
+            print(f"Root node description: {obj.template.root_node.description}")
+            return obj.template.root_node.description
+        if obj.template:
+            print(f"Template description: {obj.template.description}")
+            return obj.template.description
+        print("No description found")
+        return None

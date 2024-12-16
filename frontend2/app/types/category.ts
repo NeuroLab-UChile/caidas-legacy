@@ -39,6 +39,7 @@ export interface Category {
   id: number;
   name: string;
   icon?: string;
+  description?: string;
 
   evaluation_form?: {
     question_nodes: QuestionNode[];

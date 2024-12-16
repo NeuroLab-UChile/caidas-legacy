@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
-import { ActivityNodeViews, ActivityNodeType } from "./index";
+import { ActivityNodeViews } from "./index";
 import { ResultNodeView } from "./views/ResultNodeView";
 import { Ionicons } from "@expo/vector-icons";
 import { theme } from "@/src/theme";
@@ -38,6 +38,12 @@ export const ActivityNodeContainer: React.FC<ActivityNodeContainerProps> = ({
     onNext(response);
   };
 
+  const nodeData = {
+    ...data.data,
+    id: data.id,
+    type: data.type,
+  };
+
   return (
     <View style={styles.container}>
       {onBack && (
@@ -47,16 +53,28 @@ export const ActivityNodeContainer: React.FC<ActivityNodeContainerProps> = ({
         </TouchableOpacity>
       )}
 
-      {type === "RESULT_NODE" ? (
-        <ResultNodeView
-          data={data}
-          onNext={onNext}
-          categoryId={categoryId}
-          responses={responses}
-        />
-      ) : (
-        <NodeComponent data={data} onNext={handleNext} />
-      )}
+      <View style={styles.cardContainer}>
+        {type === "RESULT_NODE" ? (
+          <ResultNodeView
+            data={nodeData}
+            onNext={onNext}
+            categoryId={categoryId}
+            responses={responses}
+          />
+        ) : (
+          <View style={styles.questionContainer}>
+            <View style={styles.questionHeader}>
+              <Text style={styles.questionType}>
+                {type === "SINGLE_CHOICE_QUESTION" && "Selección Única"}
+                {type === "MULTIPLE_CHOICE_QUESTION" && "Selección Múltiple"}
+                {type === "TEXT_QUESTION" && "Respuesta Abierta"}
+                {type === "SCALE_QUESTION" && "Escala"}
+              </Text>
+            </View>
+            <NodeComponent data={nodeData} onNext={handleNext} />
+          </View>
+        )}
+      </View>
     </View>
   );
 };
@@ -67,14 +85,49 @@ const styles = StyleSheet.create({
     padding: 16,
     backgroundColor: theme.colors.background,
   },
+  cardContainer: {
+    backgroundColor: theme.colors.card,
+    borderRadius: 16,
+    padding: 20,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  questionContainer: {
+    gap: 16,
+  },
+  questionHeader: {
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+    paddingBottom: 12,
+    marginBottom: 16,
+  },
+  questionType: {
+    fontSize: 14,
+    color: theme.colors.textSecondary,
+    fontWeight: "600",
+    textTransform: "uppercase",
+  },
   backButton: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 16,
+    marginBottom: 20,
+    backgroundColor: theme.colors.card,
+    padding: 8,
+    borderRadius: 8,
+    alignSelf: "flex-start",
   },
   backText: {
     marginLeft: 8,
     fontSize: 16,
     color: theme.colors.text,
+    fontWeight: "500",
   },
 });

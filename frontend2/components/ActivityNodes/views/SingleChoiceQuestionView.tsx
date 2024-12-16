@@ -8,104 +8,112 @@ import {
 } from "react-native";
 
 import { theme } from "@/src/theme";
-interface SingleChoiceQuestionProps {
+
+interface SingleChoiceQuestionViewProps {
   data: {
     id: number;
+    type: string;
     question: string;
+    description?: string;
     options: string[];
-    image?: string;
   };
-  onNext?: (response: { selectedOption: number }) => void;
+  onNext: (response: { selectedOption: number }) => void;
 }
 
-export function SingleChoiceQuestionView({
-  data,
-  onNext,
-}: SingleChoiceQuestionProps) {
-  const [selectedOption, setSelectedOption] = useState<number | null>(null);
+export const SingleChoiceQuestionView: React.FC<
+  SingleChoiceQuestionViewProps
+> = ({ data, onNext }) => {
+  const [selected, setSelected] = useState<number | null>(null);
 
   return (
-    <ScrollView style={theme.components.activityNode.container}>
-      <Text style={theme.components.activityNode.question}>
-        {data.question}
-      </Text>
-
-      <View style={styles.optionsContainer}>
-        {data.options.map((option, index) => (
-          <TouchableOpacity
-            key={`question-${data.id}-option-${index}`}
-            style={[
-              theme.components.activityNode.option,
-              selectedOption === index &&
-                theme.components.activityNode.selectedOption,
-            ]}
-            onPress={() => setSelectedOption(index)}
-          >
-            <Text style={theme.components.activityNode.optionText}>
+    <View style={styles.container}>
+      <Text style={styles.question}>{data.question}</Text>
+      {data.options.map((option, index) => (
+        <TouchableOpacity
+          key={index}
+          style={[
+            styles.optionButton,
+            selected === index && styles.selectedOption,
+          ]}
+          onPress={() => {
+            setSelected(index);
+            onNext({ selectedOption: index });
+          }}
+        >
+          <View style={styles.optionContent}>
+            <View
+              style={[
+                styles.radioButton,
+                selected === index && styles.radioButtonSelected,
+              ]}
+            >
+              {selected === index && <View style={styles.radioButtonInner} />}
+            </View>
+            <Text
+              style={[
+                styles.optionText,
+                selected === index && styles.selectedOptionText,
+              ]}
+            >
               {option}
             </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      <TouchableOpacity
-        style={theme.components.activityNode.button}
-        onPress={() => selectedOption !== null && onNext?.({ selectedOption })}
-        disabled={selectedOption === null}
-      >
-        <Text style={theme.components.activityNode.buttonText}>Continuar</Text>
-      </TouchableOpacity>
-    </ScrollView>
+          </View>
+        </TouchableOpacity>
+      ))}
+    </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    backgroundColor: theme.colors.background,
-    padding: 16,
+    gap: 12,
   },
   question: {
-    fontSize: 18,
+    fontSize: 20,
+    fontWeight: "600",
     color: theme.colors.text,
-    marginBottom: 16,
-  },
-  optionsContainer: {
-    gap: 12,
     marginBottom: 24,
-    paddingHorizontal: 16,
-  },
-  option: {
-    padding: 16,
-    borderRadius: 8,
-    borderWidth: 1,
-  },
-  optionText: {
-    fontSize: 16,
-  },
-  button: {
-    margin: 16,
-    padding: 16,
-    borderRadius: 8,
-    alignItems: "center",
-  },
-  buttonText: {
-    color: "white",
-    fontSize: 16,
-    fontWeight: "500",
-  },
-  optionContainer: {
-    backgroundColor: theme.colors.surface,
-    borderRadius: 8,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
+    lineHeight: 28,
   },
   optionButton: {
     padding: 16,
+    borderRadius: 12,
+    backgroundColor: theme.colors.background,
+    borderWidth: 2,
+    borderColor: theme.colors.border,
   },
   selectedOption: {
-    backgroundColor: theme.colors.primary + "20",
     borderColor: theme.colors.primary,
+    backgroundColor: `${theme.colors.primary}20`,
+  },
+  optionContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  radioButton: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: theme.colors.border,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  radioButtonSelected: {
+    borderColor: theme.colors.primary,
+  },
+  radioButtonInner: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: theme.colors.primary,
+  },
+  optionText: {
+    fontSize: 16,
+    color: theme.colors.text,
+  },
+  selectedOptionText: {
+    fontWeight: "600",
   },
 });

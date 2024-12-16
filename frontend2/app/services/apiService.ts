@@ -116,9 +116,9 @@ class ApiClient {
       return this.handleResponse<Category>(response);
     },
 
-    saveResponses: async (categoryId: number, responses: Record<string, any>): Promise<ApiResponse<any>> => {
+    saveResponses: async (categoryId: number, responses: any): Promise<ApiResponse<any>> => {
       const response = await fetch(
-        this.getUrl(`/health-categories/${categoryId}/responses`),
+        this.getUrl(`/health-categories/${categoryId}/responses/`),
         {
           method: 'POST',
           headers: await this.getHeaders(),
@@ -136,7 +136,7 @@ class ApiClient {
         }
 
         const response = await fetch(
-          this.getUrl('/health_categories'),
+          this.getUrl('/health_categories/'),
           {
             headers: await this.getHeaders(),
           }
