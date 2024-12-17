@@ -8,12 +8,17 @@ from django.views.decorators.http import require_http_methods
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_protect
 import json
+from django.urls import reverse
+from django.contrib.admin import SimpleListFilter
+from django.utils.safestring import mark_safe
 
 from .models import (
   TextRecomendation,
   Profile,
   CategoryTemplate,
-  HealthCategory
+  HealthCategory,
+  ActivityNode,
+  ActivityNodeDescription
 )
 
 # Define an inline admin descriptor for Profile model
@@ -45,25 +50,76 @@ class UserAdmin(BaseUserAdmin):
 
 @admin.register(CategoryTemplate)
 class CategoryTemplateAdmin(admin.ModelAdmin):
-  list_display = ('name', 'formatted_description', 'is_active')
-  search_fields = ('name', 'description')
+  change_form_template = 'admin/categorytemplate/change_activity_form.html'
+  list_display = ('name', 'is_active', 'preview_icon', 'description_preview')
   list_filter = ('is_active',)
-  readonly_fields = ('formatted_evaluation_form',)
-  ordering = ('name',)
-  change_form_template = "admin/categorytemplate/change_activity_form.html"
+  search_fields = ('name', 'description')
   
+  fieldsets = (
+    ('Información Básica', {
+      'fields': ('name', 'description', 'icon', 'is_active')
+    }),
+    ('Formulario de Evaluación', {
+      'classes': ('wide',),
+      'fields': ('evaluation_form_display', 'evaluation_form'),
+      'description': 'Configure las preguntas del formulario de evaluación.'
+    }),
+    ('Configuración Avanzada', {
+      'classes': ('collapse',),
+      'fields': ('training_nodes', 'root_node'),
+    }),
+  )
+  readonly_fields = ('evaluation_form_display',)
+
+  def preview_icon(self, obj):
+    if obj.icon:
+      return format_html('<img src="{}" style="height: 30px; width: auto;"/>', obj.icon.url)
+    return "Sin ícono"
+  preview_icon.short_description = 'Ícono'
+
+  def description_preview(self, obj):
+    return Truncator(obj.description).chars(50)
+  description_preview.short_description = 'Descripción'
+
+  def evaluation_form_display(self, obj):
+    if not obj.evaluation_form:
+      return "No hay formulario configurado"
+    
+    try:
+      questions = obj.evaluation_form.get('question_nodes', [])
+      html = ['<div class="evaluation-form-preview">']
+      
+      for i, q in enumerate(questions, 1):
+        q_type = q.get('type', '')
+        question = q.get('data', {}).get('question', '')
+        options = q.get('data', {}).get('options', [])
+        
+        html.append(f'<div class="question-item">')
+        html.append(f'<div class="question-number">Pregunta {i}</div>')
+        html.append(f'<div class="question-type">{q_type}</div>')
+        html.append(f'<div class="question-text">{question}</div>')
+        
+        if options:
+          html.append('<div class="question-options">')
+          for opt in options:
+            html.append(f'<div class="option-item">• {opt}</div>')
+          html.append('</div>')
+        
+        html.append('</div>')
+      
+      html.append('</div>')
+      return mark_safe(''.join(html))
+      
+    except Exception as e:
+      return f"Error al mostrar el formulario: {str(e)}"
+  
+  evaluation_form_display.short_description = 'Vista Previa del Formulario'
+
   class Media:
     css = {
-      'all': ('css/output.css',)
+      'all': ('admin/css/custom_admin.css',)
     }
-    js = ('js/tailwind.config.js',)
-
-  def formatted_evaluation_form(self, obj):
-    """Muestra el evaluation_form formateado"""
-    if obj.evaluation_form:
-      return format_html('<pre>{}</pre>', json.dumps(obj.evaluation_form, indent=2))
-    return '-'
-  formatted_evaluation_form.short_description = 'Formulario de Evaluación'
+    js = ('admin/js/custom_admin.js',)
 
   def response_change(self, request, obj):
       if "_add_node" in request.POST:
@@ -97,74 +153,121 @@ admin.site.register(User, UserAdmin)
 
 # Register other models
 
-@admin.register(HealthCategory)
+class HealthStatusFilter(SimpleListFilter):
+    title = 'Estado'
+    parameter_name = 'status_color'
+
+    def lookups(self, request, model_admin):
+        return HealthCategory.COLOR_CHOICES
+
+    def queryset(self, request, queryset):
+        if self.value():
+            return queryset.filter(status_color=self.value())
+
 class HealthCategoryAdmin(admin.ModelAdmin):
-    list_display = ('user', 'template', 'completion_date', 'get_responses_status', 'status_color')
-    list_filter = ('template', 'user', 'completion_date', 'status_color')
-    search_fields = ('user__username', 'user__email', 'template__name')
-    readonly_fields = ('completion_date', 'get_formatted_responses')
-    raw_id_fields = ('user',)
+    list_display = (
+        'user_info', 
+        'template_info', 
+        'status_badge', 
+        'completion_status',
+        'date_display'
+    )
+    list_filter = (
+        HealthStatusFilter, 
+        'template',
+        ('user', admin.RelatedOnlyFieldListFilter),
+        'completion_date'
+    )
+    search_fields = ('user__username', 'template__name')
     
-    COLOR_CHOICES = [
-        ('green', '🟢 Verde - Saludable'),
-        ('yellow', '🟡 Amarillo - Precaución'),
-        ('red', '🔴 Rojo - Atención Requerida'),
-    ]
-    
-    def get_responses_status(self, obj):
-        if obj.responses:
-            return '✅ Completado'
-        return '❌ Pendiente'
-    get_responses_status.short_description = 'Estado'
-
-    def get_formatted_responses(self, obj):
-        if obj.responses:
-            return format_html('<pre>{}</pre>', json.dumps(obj.responses, indent=2))
-        return '-'
-    get_formatted_responses.short_description = 'Respuestas'
-
     fieldsets = (
-        ('Información Básica', {
-            'fields': ('user', 'template')
+        ('Principal', {
+            'fields': (
+                'user',
+                'template',
+                'status_color',
+            )
         }),
-        ('Evaluación', {
-            'fields': ('completion_date', 'get_formatted_responses'),
+        ('Detalles', {
             'classes': ('collapse',),
-            'description': 'Detalles de la evaluación completada'
-        }),
-        ('Diagnóstico y Recomendaciones', {
-            'fields': ('status_color', 'doctor_recommendations'),
-            'description': 'Evaluación del doctor y recomendaciones'
+            'fields': (
+                'doctor_recommendations',
+                'responses',
+                'completion_date',
+            )
         }),
     )
+
+    def user_info(self, obj):
+        return format_html(
+            '<div class="flex-cell" style="min-width:100px; flex: 1;">'
+            '<strong>{}</strong>'
+            '</div>',
+            obj.user.username
+        )
+    user_info.short_description = 'Usuario'
+
+    def template_info(self, obj):
+        if obj.template:
+            return format_html(
+                '<div class="flex-cell" style="min-width:120px; flex: 1.5;">'
+                '<strong>{}</strong><br/>'
+                '<small style="color: #666">{}</small>'
+                '</div>',
+                obj.template.name,
+                Truncator(obj.template.description).chars(25)
+            )
+    template_info.short_description = 'Categoría'
+
+    def status_badge(self, obj):
+        colors = {
+            'green': ('#28a745', '✓'),
+            'yellow': ('#ffc107', '!'),
+            'red': ('#dc3545', '×'),
+        }
+        if obj.status_color:
+            color, symbol = colors.get(obj.status_color, ('#6c757d', '-'))
+            return format_html(
+                '<div class="flex-cell" style="flex: 0.5; text-align: center;">'
+                '<span style="'
+                'background-color: {};'
+                'color: white;'
+                'padding: 1px 6px;'
+                'border-radius: 10px;'
+                'display: inline-block;'
+                '">{}</span>'
+                '</div>',
+                color, symbol
+            )
+        return '-'
+    status_badge.short_description = 'Estado'
+
+    def completion_status(self, obj):
+        return format_html(
+            '<div class="flex-cell" style="flex: 0.5; text-align: center;">'
+            '<span style="color: {}">{}</span>'
+            '</div>',
+            '#28a745' if obj.completion_date else '#dc3545',
+            '✓' if obj.completion_date else '×'
+        )
+    completion_status.short_description = 'Completado'
+
+    def date_display(self, obj):
+        if obj.completion_date:
+            return format_html(
+                '<div class="flex-cell" style="flex: 1; text-align: right;">'
+                '<small style="color: #666">{}</small>'
+                '</div>',
+                obj.completion_date.strftime('%d/%m/%Y')
+            )
+        return ''
+    date_display.short_description = 'Fecha'
 
     class Media:
         css = {
-            'all': ('css/output.css',)
+            'all': ('admin/css/custom_admin.css',)
         }
 
-@admin.register(TextRecomendation)
-class TextRecomendationAdmin(admin.ModelAdmin):
-    list_display = ('theme', 'category', 'sub_category')
-    list_filter = ('theme', 'category', 'sub_category')
-    search_fields = ('theme', 'category', 'sub_category', 'learn', 'remember', 'data', 'context_explanation')
-    ordering = ('theme', 'category')
-    
-    fieldsets = (
-        ('Información Básica', {
-            'fields': ('theme', 'category', 'sub_category')
-        }),
-        ('Contenido', {
-            'fields': ('learn', 'remember', 'data', 'practic_data', 'context_explanation'),
-            'classes': ('wide',)
-        }),
-        ('Metadatos', {
-            'fields': ('quote_link', 'keywords'),
-            'classes': ('collapse',),
-            'description': 'Información adicional'
-        }),
-    )
-
-    def get_queryset(self, request):
-        return super().get_queryset(request).select_related()
+admin.site.register(HealthCategory, HealthCategoryAdmin)
+admin.site.register(TextRecomendation)
 

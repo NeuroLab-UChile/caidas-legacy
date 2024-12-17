@@ -10,6 +10,7 @@ import {
 import { useCategories } from "../contexts/categories";
 import { theme } from "@/src/theme";
 import { CategoryHeader } from "@/components/CategoryHeader";
+import { WeeklyRecipeNodeView } from "@/components/ActivityNodes/views/WeeklyRecipeNodeView";
 
 interface TrainingState {
   currentNodeIndex: number;
@@ -74,34 +75,63 @@ const TrainingScreen = () => {
     );
   };
 
-  const renderNode = (node: any) => (
-    <View style={styles.nodeContainer}>
-      <Text style={styles.title}>{node.title}</Text>
-      {renderMediaContent(node)}
-      <Text style={styles.description}>{node.description}</Text>
-
+  const renderNode = (node: any) => {
+    if (!node) return null;
+    const navigationButtons = (
       <View style={styles.navigationButtons}>
         {trainingState.history.length > 0 && (
           <TouchableOpacity
             style={[styles.button, styles.backButton]}
             onPress={handleBack}
           >
-            <Text style={styles.buttonText}>Anterior</Text>
+            <Text style={[styles.buttonText, styles.backButtonText]}>
+              Anterior
+            </Text>
           </TouchableOpacity>
         )}
         <TouchableOpacity
           style={[styles.button, styles.nextButton]}
           onPress={() => handleNodeResponse("completed")}
         >
-          <Text style={styles.buttonText}>
+          <Text style={[styles.buttonText, styles.nextButtonText]}>
             {trainingState.currentNodeIndex < trainingNodes.length - 1
               ? "Siguiente"
               : "Completar"}
           </Text>
         </TouchableOpacity>
       </View>
-    </View>
-  );
+    );
+
+    if (node.type === "WEEKLY_RECIPE_NODE") {
+      return (
+        <View style={styles.fullNodeContainer}>
+          <WeeklyRecipeNodeView
+            data={node}
+            onNext={() => handleNodeResponse("completed")}
+          />
+          {navigationButtons}
+        </View>
+      );
+    }
+
+    return (
+      <View style={styles.nodeContainer}>
+        <View style={styles.contentContainer}>
+          <View style={styles.headerSection}>
+            <Text style={styles.title}>{node.title}</Text>
+            <View style={styles.divider} />
+          </View>
+
+          {renderMediaContent(node)}
+
+          <View style={styles.descriptionContainer}>
+            <Text style={styles.description}>{node.description}</Text>
+          </View>
+        </View>
+        {navigationButtons}
+      </View>
+    );
+  };
 
   if (!selectedCategory) {
     return (
@@ -152,61 +182,83 @@ const TrainingScreen = () => {
       <Text style={styles.progressText}>
         Progreso: {trainingState.currentNodeIndex + 1} / {trainingNodes.length}
       </Text>
-      {renderNode(trainingNodes[trainingState.currentNodeIndex])}
+      {trainingNodes &&
+        renderNode(trainingNodes[trainingState.currentNodeIndex])}
     </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  mainContainer: {
     flex: 1,
-    padding: 16,
+    backgroundColor: theme.colors.background,
+  },
+  contentContainer: {
+    flex: 1,
+    padding: 20,
+  },
+  headerSection: {
+    marginBottom: 24,
+  },
+  divider: {
+    height: 2,
+    backgroundColor: theme.colors.primary,
+    width: 40,
+    marginTop: 8,
+  },
+  fullNodeContainer: {
+    flex: 1,
+    backgroundColor: theme.colors.card,
   },
   nodeContainer: {
+    flex: 1,
     backgroundColor: theme.colors.card,
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 16,
+    borderRadius: 16,
+    margin: 16,
+    overflow: "hidden",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  progressText: {
-    fontSize: 14,
-    color: theme.colors.textSecondary,
-    marginBottom: 16,
-    textAlign: "center",
+    shadowRadius: 8,
+    elevation: 4,
   },
   title: {
-    fontSize: 22,
-    fontWeight: "700",
+    fontSize: 24,
+    fontWeight: "800",
     color: theme.colors.text,
-    marginBottom: 16,
+    letterSpacing: 0.5,
+  },
+  descriptionContainer: {
+    backgroundColor: theme.colors.background,
+    padding: 16,
+    borderRadius: 12,
+    marginTop: 16,
   },
   description: {
     fontSize: 16,
     color: theme.colors.text,
-    marginBottom: 20,
     lineHeight: 24,
+    letterSpacing: 0.3,
   },
   media: {
     width: "100%",
     height: 200,
-    marginBottom: 20,
     borderRadius: 12,
+    marginBottom: 20,
   },
   navigationButtons: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginTop: 24,
+    padding: 16,
     gap: 12,
+    backgroundColor: theme.colors.card,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.border,
   },
   button: {
     flex: 1,
     padding: 16,
-    borderRadius: 8,
+    borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -222,11 +274,18 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
   },
-  completedContainer: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 20,
+  backButtonText: {
+    color: theme.colors.text,
+  },
+  nextButtonText: {
+    color: theme.colors.white,
+  },
+  progressText: {
+    fontSize: 14,
+    color: theme.colors.textSecondary,
+    textAlign: "center",
+    marginVertical: 16,
+    fontWeight: "500",
   },
   completedText: {
     fontSize: 24,

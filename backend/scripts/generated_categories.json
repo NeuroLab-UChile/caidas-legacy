@@ -132,20 +132,6 @@
           "data": {
             "question": "¿Qué alimentos considera esenciales en su dieta diaria?"
           }
-        },
-        {
-          "id": 3,
-          "type": "MULTIPLE_CHOICE_QUESTION",
-          "data": {
-            "question": "¿Qué alimentos suele evitar?",
-            "options": [
-              "Azúcares",
-              "Grasas",
-              "Carbohidratos",
-              "Lácteos",
-              "Ninguno"
-            ]
-          }
         }
       ]
     },
@@ -159,10 +145,35 @@
       },
       {
         "id": 2,
-        "type": "VIDEO_NODE",
-        "title": "Planificación de Comidas Saludables",
-        "description": "Este video ofrece consejos prácticos para preparar comidas equilibradas y nutritivas.",
-        "media_url": "/assets/training/meal-planning.mp4"
+        "type": "WEEKLY_RECIPE_NODE",
+        "title": "Plan Semanal WeTrain",
+        "description": "EVALUAR\nRECORDAR ENTRENAR MIS DATOS",
+        "weekly_plan": {
+          "MON": {
+            "BREAKFAST": {
+              "meal": "1 vaso de leche\n2 rebanadas de pan integral con queso fresco",
+              "proteins": "18g",
+              "notes": "8g proteínas (leche) + 10g proteínas (queso fresco)"
+            },
+            "DINNER": {
+              "meal": "Salmón a la plancha con arroz integral y espinacas",
+              "proteins": "120g",
+              "notes": "100g proteínas (salmón) + 20g proteínas (acompañamientos)"
+            }
+          },
+          "TUE": {
+            "BREAKFAST": {
+              "meal": "1 vaso de leche\n2 rebanadas de pan integral con queso fresco",
+              "proteins": "18g",
+              "notes": "8g proteínas (leche) + 10g proteínas (queso fresco)"
+            },
+            "DINNER": {
+              "meal": "Salmón a la plancha con arroz integral y espinacas",
+              "proteins": "120g",
+              "notes": "100g proteínas (salmón) + 20g proteínas (acompañamientos)"
+            }
+          }
+        }
       }
     ]
   },

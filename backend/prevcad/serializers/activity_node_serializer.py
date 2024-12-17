@@ -7,7 +7,8 @@ from ..models import (
     MultipleChoiceQuestion,
     ScaleQuestion,
     ImageQuestion,
-    ResultNode
+    ResultNode,
+    WeeklyRecipeNode
 )
 
 from django.contrib.contenttypes.models import ContentType
@@ -31,6 +32,8 @@ class ActivityNodeSerializer(serializers.Serializer):
             return ImageQuestionSerializer(instance).data
         elif isinstance(instance, ResultNode):
             return ResultNodeSerializer(instance).data
+        elif isinstance(instance, WeeklyRecipeNode):
+            return WeeklyRecipeNodeSerializer(instance).data
 
         return super().to_representation(instance)
 
@@ -108,4 +111,10 @@ class ImageQuestionSerializer(serializers.ModelSerializer):
 class ResultNodeSerializer(serializers.ModelSerializer):
     class Meta:
         model = ResultNode
+        fields = '__all__'
+
+
+class WeeklyRecipeNodeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = WeeklyRecipeNode
         fields = '__all__'

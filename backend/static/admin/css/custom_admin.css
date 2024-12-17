@@ -19,3 +19,109 @@ fieldset .description {
   border: 1px solid var(--body-fg) !important;
   margin: 10px 0 !important;
 }
+
+/* Estilos flex para la tabla */
+#result_list tbody tr {
+  display: flex;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #eee;
+}
+
+#result_list thead tr {
+  display: flex;
+  align-items: center;
+}
+
+.flex-cell {
+  padding: 0 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Ajustar ancho de columnas en el header */
+#result_list thead th {
+  flex: 1;
+}
+
+#result_list thead th:nth-child(2) {
+  flex: 2;
+}
+
+#result_list thead th:nth-child(3),
+#result_list thead th:nth-child(4) {
+  flex: 0.5;
+  text-align: center;
+}
+
+/* Estilos para el formulario de evaluación */
+.evaluation-form-preview {
+  background: var(--body-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 20px;
+  margin: 10px 0;
+}
+
+.question-item {
+  background: var(--darkened-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 15px;
+  margin-bottom: 15px;
+}
+
+.question-number {
+  font-weight: bold;
+  color: var(--link-fg);
+  margin-bottom: 8px;
+}
+
+.question-type {
+  display: inline-block;
+  background: var(--primary);
+  color: white;
+  font-size: 0.8em;
+  padding: 2px 8px;
+  border-radius: 12px;
+  margin-bottom: 8px;
+}
+
+.question-text {
+  font-size: 1.1em;
+  margin: 10px 0;
+  color: var(--body-fg);
+}
+
+.question-options {
+  margin-left: 20px;
+  padding: 10px 0;
+}
+
+.option-item {
+  color: var(--body-quiet-color);
+  padding: 4px 0;
+}
+
+/* Campo JSON */
+#id_evaluation_form {
+  font-family: "Monaco", "Menlo", "Ubuntu Mono", "Consolas", monospace;
+  font-size: 13px;
+  line-height: 1.5;
+  padding: 15px;
+  border-radius: 4px;
+  border: 1px solid var(--border-color);
+  background: var(--darkened-bg);
+  color: var(--body-fg);
+}
+
+/* Descripción del fieldset */
+.fieldset-description {
+  padding: 10px;
+  margin: 10px 0;
+  background: var(--message-success-bg);
+  border: 1px solid var(--message-success-border);
+  border-radius: 4px;
+  color: var(--body-fg);
+}

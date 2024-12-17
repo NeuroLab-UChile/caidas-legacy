@@ -1,7 +1,11 @@
 const colors = require('tailwindcss/colors')
 
 module.exports = {
-    
+    content: [
+        "./templates/**/*.html",
+        "./**/templates/**/*.html",
+        "./static/js/**/*.js"
+      ],
     purge: [
         './django_admin_tailwind/**/*.html',
     ],

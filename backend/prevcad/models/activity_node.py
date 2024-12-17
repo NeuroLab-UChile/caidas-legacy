@@ -12,7 +12,8 @@ class ActivityNode(models.Model):
         MULTIPLE_CHOICE_QUESTION = 'MULTIPLE_CHOICE_QUESTION', 'Multiple Choice Question'
         SCALE_QUESTION = 'SCALE_QUESTION', 'Scale Question'
         IMAGE_QUESTION = 'IMAGE_QUESTION', 'Image Question'
-        RESULT_NODE = 'RESULT_NODE', 'Result Node'
+        RESULT_NODE = 'RESULT_NODE', 'Result Node',
+        WEEKLY_RECIPE_NODE = 'WEEKLY_RECIPE_NODE', 'Weekly Recipe Node'
 
     type = models.TextField(choices=NodeType.choices)
     next_node = models.ForeignKey(
@@ -88,3 +89,59 @@ class ImageQuestion(ActivityNodeQuestion):
 
 class ResultNode(ActivityNode):
     response = models.JSONField(null=True, blank=True)
+
+
+class WeeklyRecipeNode(ActivityNode):
+    DAYS_OF_WEEK = [
+        ('MON', 'Lunes'),
+        ('TUE', 'Martes'),
+        ('WED', 'Miércoles'),
+        ('THU', 'Jueves'),
+        ('FRI', 'Viernes'),
+        ('SAT', 'Sábado'),
+        ('SUN', 'Domingo')
+    ]
+
+    MEAL_TYPES = [
+        ('BREAKFAST', 'Desayuno'),
+        ('LUNCH', 'Almuerzo'),
+        ('DINNER', 'Cena')
+    ]
+
+    title = models.CharField(max_length=200, default="Plan Semanal WeTrain")
+    description = models.TextField(default="Plan de alimentación personalizado")
+    
+    weekly_plan = models.JSONField(default=dict, help_text="""
+    Estructura esperada:
+    {
+        "MON": {
+            "BREAKFAST": {
+                "meal": "1 vaso de leche",
+                "proteins": "8g",
+                "notes": "Preferiblemente descremada"
+            },
+            "LUNCH": {...},
+            "DINNER": {...}
+        },
+        "TUE": {...},
+        ...
+    }
+    """)
+
+    def __str__(self):
+        return f"{self.title}"
+
+    class Meta:
+        verbose_name = "Plan Semanal"
+        verbose_name_plural = "Planes Semanales"
+
+    def get_day_meals(self, day_code):
+        """Obtiene las comidas para un día específico"""
+        return self.weekly_plan.get(day_code, {})
+
+    def get_meal(self, day_code, meal_type):
+        """Obtiene una comida específica de un día"""
+        day_meals = self.get_day_meals(day_code)
+        return day_meals.get(meal_type, {})
+
+ 
