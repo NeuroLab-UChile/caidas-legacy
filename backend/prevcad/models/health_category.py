@@ -125,6 +125,7 @@ class HealthCategory(models.Model):
     verbose_name="Recomendaciones del Doctor"
   )
 
+
   class Meta:
     verbose_name = "Categoría de Salud"
     verbose_name_plural = "Categorías de Salud"

@@ -12,9 +12,11 @@ import { theme } from "@/src/theme";
 
 interface MultipleChoiceQuestionProps {
   data: {
-    question: string;
-    options: Array<string>;
-    image?: string;
+    data: {
+      question: string;
+      options: Array<string>;
+      image?: string;
+    };
   };
   onNext?: (response: { selectedOptions: number[] }) => void;
 }
@@ -25,7 +27,7 @@ export function MultipleChoiceQuestionView({
 }: MultipleChoiceQuestionProps) {
   const [selectedOptions, setSelectedOptions] = useState<number[]>([]);
 
-  const formattedOptions = data.options.map(
+  const formattedOptions = data.data.options.map(
     (option: string, index: number) => ({
       id: index,
       text: option,
@@ -49,7 +51,7 @@ export function MultipleChoiceQuestionView({
       alwaysBounceVertical={true}
     >
       <View>
-        <Text style={styles.questionText}>{data.question}</Text>
+        <Text style={styles.questionText}>{data.data.question}</Text>
       </View>
 
       <View style={styles.optionsContainer}>

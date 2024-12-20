@@ -26,7 +26,7 @@ export const SingleChoiceQuestionView: React.FC<
   SingleChoiceQuestionViewProps
 > = ({ data, onNext }) => {
   const [selected, setSelected] = useState<number | null>(null);
-  console.log(data);
+
   if (!data || !data.data.options) {
     console.error(
       "Missing required data or options in SingleChoiceQuestionView"

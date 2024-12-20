@@ -10,7 +10,6 @@ from django.conf.urls.static import static
 from .views import admin_views
 
 
-
 router = routers.DefaultRouter(trailing_slash=False)
 
 router.register('prevcad/text_recommendations/', TextRecomendationsView, basename='text_recommendations')
@@ -32,4 +31,5 @@ urlpatterns = [
        name='create_health_category'),
   path('admin/update-evaluation-form/<int:template_id>/', admin_views.update_evaluation_form, name='update_evaluation_form'),
   path('admin/update-training-form/<int:template_id>/', admin_views.update_training_form, name='update_training_form'),
+
 ] + router.urls + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

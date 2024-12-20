@@ -3,7 +3,7 @@ import django
 import json
 
 # Configura el entorno de Django
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'backend.settings')
 django.setup()
 
 from prevcad.models import CategoryTemplate

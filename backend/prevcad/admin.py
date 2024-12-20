@@ -1,3 +1,4 @@
+import re
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.models import User
@@ -11,6 +12,7 @@ import json
 from django.urls import reverse
 from django.contrib.admin import SimpleListFilter
 from django.utils.safestring import mark_safe
+from django.template.loader import render_to_string
 
 from .models import (
   TextRecomendation,
@@ -18,7 +20,14 @@ from .models import (
   CategoryTemplate,
   HealthCategory,
   ActivityNode,
-  ActivityNodeDescription
+  ActivityNodeDescription,
+  TextQuestion,
+  SingleChoiceQuestion,
+  MultipleChoiceQuestion,
+  ScaleQuestion,
+  ImageQuestion,
+  ResultNode,
+  WeeklyRecipeNode
 )
 
 # Define an inline admin descriptor for Profile model
@@ -147,6 +156,7 @@ class HealthStatusFilter(SimpleListFilter):
         if self.value():
             return queryset.filter(status_color=self.value())
 
+@admin.register(HealthCategory)
 class HealthCategoryAdmin(admin.ModelAdmin):
     list_display = (
         'user_info', 
@@ -155,32 +165,27 @@ class HealthCategoryAdmin(admin.ModelAdmin):
         'completion_status',
         'date_display'
     )
+    readonly_fields = ['get_detailed_responses', 'completion_date']
     list_filter = (
         HealthStatusFilter, 
         'template',
         ('user', admin.RelatedOnlyFieldListFilter),
         'completion_date'
     )
-    search_fields = ('user__username', 'template__name')
     
     fieldsets = (
-        ('Principal', {
-            'fields': (
-                'user',
-                'template',
-                'status_color',
-            )
+        ('Información Básica', {
+            'fields': ('template', 'completion_date')
         }),
-        ('Detalles', {
-            'classes': ('collapse',),
-            'fields': (
-                'doctor_recommendations',
-                'responses',
-                'completion_date',
-            )
+        ('Respuestas', {
+            'fields': ('get_detailed_responses',),
+            'classes': ('collapse',)
         }),
     )
-
+    class Media:
+        css = {
+            'all': ('admin/css/custom_admin.css',)
+        }
     def user_info(self, obj):
         return format_html(
             '<div class="flex-cell" style="min-width:100px; flex: 1;">'
@@ -188,7 +193,7 @@ class HealthCategoryAdmin(admin.ModelAdmin):
             '</div>',
             obj.user.username
         )
-    user_info.short_description = 'Usuario'
+    user_info.short_description = "Usuario"
 
     def template_info(self, obj):
         if obj.template:
@@ -201,6 +206,7 @@ class HealthCategoryAdmin(admin.ModelAdmin):
                 Truncator(obj.template.description).chars(25)
             )
     template_info.short_description = 'Categoría'
+
 
     def status_badge(self, obj):
         colors = {
@@ -246,11 +252,101 @@ class HealthCategoryAdmin(admin.ModelAdmin):
         return ''
     date_display.short_description = 'Fecha'
 
-    class Media:
-        css = {
-            'all': ('admin/css/custom_admin.css',)
-        }
+    def get_response_summary(self, obj):
+        if not obj.responses:
+            return "Sin respuestas"
+        return f"{len(obj.responses)} respuestas registradas"
+    get_response_summary.short_description = "Respuestas"
 
-admin.site.register(HealthCategory, HealthCategoryAdmin)
-admin.site.register(TextRecomendation)
+    def get_detailed_responses(self, obj):
+        if not obj.responses:
+            return "No hay respuestas registradas"
+
+        html = ["""
+            <table style='width:100%; border-collapse: collapse; margin-top: 10px;'>
+                <tr>
+                    <th style='border:1px solid #ddd; padding:12px; background-color:#f8f9fa;'>ID</th>
+                    <th style='border:1px solid #ddd; padding:12px; background-color:#f8f9fa;'>Tipo</th>
+                    <th style='border:1px solid #ddd; padding:12px; background-color:#f8f9fa;'>Pregunta</th>
+                    <th style='border:1px solid #ddd; padding:12px; background-color:#f8f9fa;'>Respuesta</th>
+                    <th style='border:1px solid #ddd; padding:12px; background-color:#f8f9fa;'>Fecha</th>
+                </tr>
+        """]
+
+        for node_id, response_data in obj.responses.items():
+            try:
+                # Extraer datos del nuevo formato de respuesta
+                question = response_data.get('question', 'Sin pregunta')
+                response_type = response_data.get('type', 'Desconocido')
+                answer_data = response_data.get('answer', {})
+                timestamp = response_data.get('metadata', {}).get('timestamp', '')
+                
+                # Formatear la respuesta según el tipo
+                formatted_answer = ""
+                if response_type == 'SINGLE_CHOICE_QUESTION':
+                    selected_idx = answer_data.get('selectedOption')
+                    options = answer_data.get('options', [])
+                    formatted_answer = options[selected_idx] if selected_idx is not None and options else "No seleccionada"
+                
+                elif response_type == 'MULTIPLE_CHOICE_QUESTION':
+                    selected_indices = answer_data.get('selectedOptions', [])
+                    options = answer_data.get('options', [])
+                    selected_options = [options[i] for i in selected_indices if i < len(options)]
+                    formatted_answer = ", ".join(selected_options) if selected_options else "No seleccionada"
+                
+                elif response_type == 'TEXT_QUESTION':
+                    formatted_answer = answer_data.get('text', 'Sin respuesta')
+
+                # Formatear la fecha
+                formatted_date = timestamp.split('T')[0] if timestamp else ''
+
+                html.append(f"""
+                    <tr>
+                        <td style='border:1px solid #ddd; padding:8px;'>{response_data.get('id', node_id)}</td>
+                        <td style='border:1px solid #ddd; padding:8px;'>{response_type}</td>
+                        <td style='border:1px solid #ddd; padding:8px;'>{question}</td>
+                        <td style='border:1px solid #ddd; padding:8px;'>{formatted_answer}</td>
+                        <td style='border:1px solid #ddd; padding:8px;'>{formatted_date}</td>
+                    </tr>
+                """)
+                
+            except Exception as e:
+                print(f"Error processing response {node_id}: {str(e)}")
+                html.append(f"""
+                    <tr>
+                        <td style='border:1px solid #ddd; padding:8px;'>{node_id}</td>
+                        <td colspan="4" style='border:1px solid #ddd; padding:8px; color: red;'>
+                            Error procesando respuesta: {str(e)}
+                        </td>
+                    </tr>
+                """)
+
+        html.append("</table>")
+        return mark_safe(''.join(html))
+    get_detailed_responses.short_description = "Detalle de Respuestas"
+
+@admin.register(TextRecomendation)
+class TextRecomendationAdmin(admin.ModelAdmin):
+    list_display = ('theme', 'category', 'sub_category')
+    list_filter = ('theme', 'category', 'sub_category')
+    search_fields = ('theme', 'category', 'sub_category', 'learn', 'remember', 'data', 'context_explanation')
+    ordering = ('theme', 'category')
+    
+    fieldsets = (
+        ('Información Básica', {
+            'fields': ('theme', 'category', 'sub_category')
+        }),
+        ('Contenido', {
+            'fields': ('learn', 'remember', 'data', 'practic_data', 'context_explanation'),
+            'classes': ('wide',)
+        }),
+        ('Metadatos', {
+            'fields': ('quote_link', 'keywords'),
+            'classes': ('collapse',),
+            'description': 'Información adicional'
+        }),
+    )
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related()
 

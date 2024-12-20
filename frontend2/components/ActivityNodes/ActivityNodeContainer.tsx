@@ -23,7 +23,8 @@ interface ActivityNodeContainerProps {
     | "VIDEO_NODE"
     | "IMAGE_NODE"
     | "WEEKLY_RECIPE_NODE"
-    | "RESULT_NODE";
+    | "RESULT_NODE"
+    | "IMAGE_QUESTION";
   data: any;
   onNext: ((response?: any) => void) &
     ((response: { answer: string }) => void) &
@@ -46,6 +47,8 @@ const ActivityNodeContainer: React.FC<ActivityNodeContainerProps> = ({
   const NodeComponent =
     ActivityNodeViews[type as keyof typeof ActivityNodeViews];
 
+  console.log(data);
+
   const handleNext = (response?: any) => {
     onNext(response);
   };
@@ -59,40 +62,6 @@ const ActivityNodeContainer: React.FC<ActivityNodeContainerProps> = ({
 
   const renderContent = () => {
     switch (type) {
-      case "DESCRIPTION_NODE":
-        return (
-          <View style={styles.contentContainer}>
-            <Text style={styles.title}>{data.title}</Text>
-            <Text style={styles.description}>{data.description}</Text>
-          </View>
-        );
-      case "VIDEO_NODE":
-        return (
-          <View style={styles.contentContainer}>
-            <Text style={styles.title}>{data.title}</Text>
-            <VideoNodeView data={data} />
-          </View>
-        );
-      case "IMAGE_NODE":
-        return (
-          <View style={styles.contentContainer}>
-            <Text style={styles.title}>{data.title}</Text>
-            <Image
-              source={{ uri: data.media_url }}
-              style={styles.image}
-              resizeMode="contain"
-            />
-          </View>
-        );
-      case "RESULT_NODE":
-        return (
-          <ResultNodeView
-            data={data}
-            onNext={onNext}
-            categoryId={categoryId}
-            responses={responses}
-          />
-        );
       default:
         if (NodeComponent) {
           return (

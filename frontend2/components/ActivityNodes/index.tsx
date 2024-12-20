@@ -14,6 +14,7 @@ export const ActivityNodeViews = {
   MULTIPLE_CHOICE_QUESTION: MultipleChoiceQuestionView,
   TEXT_QUESTION: TextQuestionView,
   SCALE_QUESTION: ScaleQuestionView,
+  IMAGE_QUESTION: ImageQuestionView,
   // Training nodes
   DESCRIPTION_NODE: CategoryDescriptionView,
   VIDEO_NODE: VideoNodeView,

@@ -21,12 +21,17 @@ import ActivityNodeContainer from "@/components/ActivityNodes/ActivityNodeContai
 
 interface NodeResponse {
   nodeId: number;
-  response: any;
+  response: {
+    selectedOption?: number;
+    selectedOptions?: number[];
+    answer?: string;
+    value?: number;
+  };
 }
 
 interface EvaluationState {
   currentNodeId: number | null;
-  responses: { [key: number]: any };
+  responses: NodeResponse[];
   completed: boolean;
   history: number[];
   evaluationResult: {
@@ -56,7 +61,14 @@ const EvaluateScreen = () => {
   const [evaluationState, setEvaluationState] = useState<EvaluationState>(
     () => {
       const nodes = selectedCategory?.evaluation_form?.question_nodes || [];
-      const existingResponses = selectedCategory?.responses || {};
+      const existingResponses = Object.entries(
+        selectedCategory?.responses || {}
+      ).map(
+        ([key, value]): NodeResponse => ({
+          nodeId: parseInt(key),
+          response: value,
+        })
+      );
 
       return {
         currentNodeId: Boolean(isFullyCompleted) ? null : nodes[0]?.id || null,
@@ -81,7 +93,12 @@ const EvaluateScreen = () => {
 
       setEvaluationState({
         currentNodeId: isCompleted ? null : nodes[0]?.id || null,
-        responses: existingResponses,
+        responses: Object.entries(existingResponses).map(
+          ([key, value]): NodeResponse => ({
+            nodeId: parseInt(key),
+            response: value,
+          })
+        ),
         completed: isCompleted,
         history: [],
         evaluationResult: {
@@ -109,9 +126,59 @@ const EvaluateScreen = () => {
 
   const handleNodeResponse = async (nodeId: number, response: any) => {
     try {
+      const node = getCurrentNode(nodeId);
+      if (!node) {
+        Alert.alert("Error", "Nodo no encontrado");
+        return;
+      }
+
+      // Formato más completo de respuesta
+      let formattedResponse = {
+        id: nodeId,
+        type: node.type,
+        question: node.data.question,
+        answer: null as any,
+        metadata: {
+          timestamp: new Date().toISOString(),
+          version: "1.0",
+        },
+      };
+
+      switch (node.type) {
+        case "SINGLE_CHOICE_QUESTION":
+          formattedResponse.answer = {
+            selectedOption: response.selectedOption,
+            options: node.data.options,
+          };
+          break;
+        case "MULTIPLE_CHOICE_QUESTION":
+          formattedResponse.answer = {
+            selectedOptions: response.selectedOptions,
+            options: node.data.options,
+          };
+          break;
+        case "TEXT_QUESTION":
+          formattedResponse.answer = {
+            text: response.answer || response.value || "",
+          };
+          break;
+        default:
+          formattedResponse.answer = response;
+      }
+
+      // Obtener respuestas existentes y formatearlas
+      const existingResponses = evaluationState.responses.reduce<
+        Record<number, any>
+      >((acc, curr) => {
+        if (Object.keys(curr.response).length > 0) {
+          acc[curr.nodeId] = curr.response;
+        }
+        return acc;
+      }, {});
+
       const newResponses = {
-        ...evaluationState.responses,
-        [nodeId]: response,
+        ...existingResponses,
+        [nodeId]: formattedResponse,
       };
 
       const nextNodeId = getNextNodeId(nodeId);
@@ -129,7 +196,10 @@ const EvaluateScreen = () => {
 
           setEvaluationState({
             currentNodeId: null,
-            responses: newResponses,
+            responses: Object.entries(newResponses).map(([key, value]) => ({
+              nodeId: parseInt(key),
+              response: value,
+            })),
             completed: true,
             history: [],
             evaluationResult: {
@@ -154,9 +224,13 @@ const EvaluateScreen = () => {
           setLoading(false);
         }
       } else {
+        // Actualizar el estado solo con respuestas válidas
         setEvaluationState((prev) => ({
           ...prev,
-          responses: newResponses,
+          responses: Object.entries(newResponses).map(([key, value]) => ({
+            nodeId: parseInt(key),
+            response: value,
+          })),
           currentNodeId: nextNodeId,
           completed: false,
           history: [...prev.history, nodeId],
@@ -237,17 +311,23 @@ const EvaluateScreen = () => {
       return null;
     }
 
-    const formatResponse = (response: any) => {
-      if (response.selectedOption !== undefined) {
-        const optionNode =
-          selectedCategory.evaluation_form?.question_nodes[0]?.data?.options;
-        const option = optionNode
-          ? optionNode[response.selectedOption]
-          : undefined;
-        return option || "Sin respuesta";
+    const formatResponse = (response: any, node: QuestionNode) => {
+      switch (node.type) {
+        case "SINGLE_CHOICE_QUESTION":
+          if (response.selectedOption !== undefined && node.data?.options) {
+            return node.data.options[response.selectedOption];
+          }
+          break;
+        case "MULTIPLE_CHOICE_QUESTION":
+          if (response.selectedOptions && node.data?.options) {
+            return response.selectedOptions
+              .map((index: number) => node.data.options?.[index] || "")
+              .join(", ");
+          }
+          break;
+        case "TEXT_QUESTION":
+          return response.answer || response.value;
       }
-      if (response.answer) return response.answer;
-      if (response.value) return `${response.value}`;
       return "Sin respuesta";
     };
 
@@ -263,7 +343,7 @@ const EvaluateScreen = () => {
                 {index + 1}. {node?.data?.question}
               </Text>
               <Text style={styles.answerText}>
-                {response ? formatResponse(response) : "Sin respuesta"}
+                {response ? formatResponse(response, node) : "Sin respuesta"}
               </Text>
             </View>
           );
@@ -303,7 +383,7 @@ const EvaluateScreen = () => {
               setEvaluationState((prev) => ({
                 ...prev,
                 completed: false,
-                responses: {},
+                responses: [],
                 currentNodeId:
                   selectedCategory?.evaluation_form?.question_nodes[0]?.id ||
                   null,

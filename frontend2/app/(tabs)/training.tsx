@@ -37,6 +37,7 @@ interface TrainingState {
 const TrainingScreen = () => {
   const { selectedCategory, fetchCategories } = useCategories();
   const [loading, setLoading] = useState(false);
+  const [isCompleted, setIsCompleted] = useState(false);
 
   const [trainingState, setTrainingState] = useState<TrainingState>(() => {
     const nodes = selectedCategory?.training_form?.training_nodes || [];
@@ -71,18 +72,32 @@ const TrainingScreen = () => {
   }, [selectedCategory]);
 
   const getNextNodeId = (currentNodeId: number): number | null => {
-    if (!selectedCategory?.evaluation_form?.question_nodes) {
+    if (!selectedCategory?.training_form?.training_nodes) {
       return null;
     }
 
-    const nodes = selectedCategory.evaluation_form.question_nodes;
+    const nodes = selectedCategory.training_form.training_nodes;
     const currentIndex = nodes.findIndex((node) => node.id === currentNodeId);
 
     if (currentIndex === -1 || currentIndex === nodes.length - 1) {
+      setIsCompleted(true); // Set completed when we reach the last node
       return null;
     }
 
     return nodes[currentIndex + 1].id;
+  };
+
+  const handleRestart = () => {
+    const nodes = selectedCategory?.training_form?.training_nodes || [];
+    setIsCompleted(false);
+    setTrainingState({
+      currentNodeId: nodes[0]?.id || null,
+      history: [],
+      trainingResult: {
+        initial_node_id: nodes[0]?.id || null,
+        nodes: nodes,
+      },
+    });
   };
 
   const getCurrentNode = (nodeId: number | null): TrainingNode | null => {
@@ -153,17 +168,33 @@ const TrainingScreen = () => {
     <ScrollView style={styles.container}>
       {selectedCategory && <CategoryHeader name={selectedCategory.name} />}
 
-      {renderNode(trainingState.currentNodeId, () => {
-        if (trainingState.history.length > 0) {
-          const previousNodes = [...trainingState.history];
-          const previousNodeId = previousNodes.pop();
-          setTrainingState((prev) => ({
-            ...prev,
-            currentNodeId: previousNodeId || null,
-            history: previousNodes,
-          }));
-        }
-      })}
+      {isCompleted ? (
+        <View style={styles.completedContainer}>
+          <Text style={styles.completedTitle}>¡Entrenamiento Completado!</Text>
+          <Text style={styles.completedText}>
+            Has completado el entrenamiento de esta categoría. ¿Deseas
+            realizarlo nuevamente?
+          </Text>
+          <TouchableOpacity
+            style={styles.restartButton}
+            onPress={handleRestart}
+          >
+            <Text style={styles.restartButtonText}>Realizar nuevamente</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        renderNode(trainingState.currentNodeId, () => {
+          if (trainingState.history.length > 0) {
+            const previousNodes = [...trainingState.history];
+            const previousNodeId = previousNodes.pop();
+            setTrainingState((prev) => ({
+              ...prev,
+              currentNodeId: previousNodeId || null,
+              history: previousNodes,
+            }));
+          }
+        })
+      )}
     </ScrollView>
   );
 };
@@ -173,16 +204,32 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 16,
   },
-  descriptionContainer: {
-    backgroundColor: theme.colors.card,
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 24,
-    shadowColor: "#000",
+  completedContainer: {
+    padding: 16,
+  },
+  completedTitle: {
+    fontSize: 24,
+    fontWeight: "bold",
+    textAlign: "center",
+    marginBottom: 16,
+  },
+  completedText: {
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+  },
+  restartButton: {
+    backgroundColor: theme.colors.primary,
+    padding: 16,
+    borderRadius: 8,
+    width: "100%",
+    alignItems: "center",
+  },
+  restartButtonText: {
+    color: theme.colors.text,
+    fontSize: 18,
+    fontWeight: "600",
   },
   descriptionText: {
     fontSize: 16,

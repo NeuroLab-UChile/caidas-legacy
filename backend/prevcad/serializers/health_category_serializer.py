@@ -74,3 +74,7 @@ class HealthCategorySerializer(serializers.ModelSerializer):
             return obj.template.description
         print("No description found")
         return None
+    
+
+    def get_responses(self, obj):
+        return obj.responses

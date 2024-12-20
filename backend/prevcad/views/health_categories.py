@@ -1,7 +1,7 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from ..models import HealthCategory, CategoryTemplate
+from ..models import HealthCategory, CategoryTemplate, ActivityNode
 from ..serializers import HealthCategorySerializer
 from rest_framework.decorators import api_view
 from django.utils import timezone
@@ -43,9 +43,13 @@ class HealthCategoryListView(APIView):
 
 @api_view(['POST'])
 def save_evaluation_responses(request, category_id):
+    print("\n=== Debug save_evaluation_responses ===")
+    print(f"Request data: {request.data}")
     try:
         category = HealthCategory.objects.get(id=category_id, user=request.user)
         responses = request.data.get('responses', {})
+
+        print(f"Received responses: {responses}")
         
         # Actualizar estado y respuestas
         category.responses = responses
@@ -82,39 +86,84 @@ def submit_responses(request, category_id):
     try:
         category = get_object_or_404(HealthCategory, id=category_id)
         
-        # Obtener las respuestas del request
-        data = json.loads(request.body)
-        responses = data.get('responses')
+        # Log de inicio
+        print(f"\n=== Processing submission for category {category_id} ===")
         
+        # Validar y parsear el JSON
+        try:
+            data = json.loads(request.body)
+            responses = data.get('responses', {})
+            print(f"Received responses: {responses}")
+        except json.JSONDecodeError:
+            return JsonResponse({
+                'status': 'error',
+                'message': 'Formato JSON inválido'
+            }, status=400)
+
+        # Validaciones básicas
         if not responses:
             return JsonResponse({
                 'status': 'error',
                 'message': 'No se recibieron respuestas'
             }, status=400)
 
-        # Validar las respuestas contra el formulario de evaluación
         if not category.template or not category.template.evaluation_form:
             return JsonResponse({
                 'status': 'error',
                 'message': 'No existe un formulario de evaluación para esta categoría'
             }, status=400)
 
-        # Actualizar el modelo con las respuestas
-        category.responses = responses
-        category.completion_date = datetime.now()
-        category.save(update_fields=['responses', 'completion_date'])
+        # Validar formato de respuestas
+        validated_responses = {}
+        for node_id, response in responses.items():
+            try:
+                node = ActivityNode.objects.get(id=node_id)
+                print(f"\nValidating node {node_id} of type {node.type}")
+                print(f"Response: {response}")
 
-        return JsonResponse({
-            'status': 'success',
-            'message': 'Respuestas guardadas correctamente'
-        })
+                # Validar según el tipo de nodo
+                if node.type == 'SINGLE_CHOICE_QUESTION':
+                    if not isinstance(response.get('selectedOption'), int):
+                        print(f"Warning: Invalid single choice response for node {node_id}")
+                        continue
+                    validated_responses[node_id] = {'selectedOption': response['selectedOption']}
+                
+                elif node.type == 'MULTIPLE_CHOICE_QUESTION':
+                    if not isinstance(response.get('selectedOptions'), list):
+                        print(f"Warning: Invalid multiple choice response for node {node_id}")
+                        continue
+                    validated_responses[node_id] = {'selectedOptions': response['selectedOptions']}
+                
+                elif node.type == 'TEXT_QUESTION':
+                    if not isinstance(response.get('answer'), str):
+                        print(f"Warning: Invalid text response for node {node_id}")
+                        continue
+                    validated_responses[node_id] = {'answer': response['answer']}
 
-    except json.JSONDecodeError:
-        return JsonResponse({
-            'status': 'error',
-            'message': 'Formato de datos inválido'
-        }, status=400)
+            except ActivityNode.DoesNotExist:
+                print(f"Warning: Node {node_id} does not exist")
+                continue
+
+        # Guardar solo si hay respuestas válidas
+        if validated_responses:
+            print(f"\nSaving validated responses: {validated_responses}")
+            category.responses = validated_responses
+            category.completion_date = datetime.now()
+            category.save(update_fields=['responses', 'completion_date'])
+
+            return JsonResponse({
+                'status': 'success',
+                'message': 'Respuestas guardadas correctamente',
+                'validated_responses': validated_responses
+            })
+        else:
+            return JsonResponse({
+                'status': 'error',
+                'message': 'No se encontraron respuestas válidas'
+            }, status=400)
+
     except Exception as e:
+        print(f"Error processing submission: {str(e)}")
         return JsonResponse({
             'status': 'error',
             'message': str(e)
