@@ -5,14 +5,25 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
+  Image,
 } from "react-native";
-import { ActivityNodeViews } from "./index";
-import { ResultNodeView } from "./views/ResultNodeView";
 import { Ionicons } from "@expo/vector-icons";
 import { theme } from "@/src/theme";
+import { ActivityNodeViews } from "./index";
+import { ResultNodeView } from "./views/ResultNodeView";
+import { VideoNodeView } from "./views/VideoNodeView";
 
 interface ActivityNodeContainerProps {
-  type: string;
+  type:
+    | "SINGLE_CHOICE_QUESTION"
+    | "MULTIPLE_CHOICE_QUESTION"
+    | "TEXT_QUESTION"
+    | "SCALE_QUESTION"
+    | "DESCRIPTION_NODE"
+    | "VIDEO_NODE"
+    | "IMAGE_NODE"
+    | "WEEKLY_RECIPE_NODE"
+    | "RESULT_NODE";
   data: any;
   onNext: ((response?: any) => void) &
     ((response: { answer: string }) => void) &
@@ -20,75 +31,103 @@ interface ActivityNodeContainerProps {
     ((response: { selectedOptions: number[] }) => void) &
     ((response: { value: number }) => void);
   onBack: () => void;
-  categoryId?: number;
   responses: { [key: number]: any };
+  categoryId?: number;
 }
 
-export const ActivityNodeContainer: React.FC<ActivityNodeContainerProps> = ({
+const ActivityNodeContainer: React.FC<ActivityNodeContainerProps> = ({
   type,
   data,
   onNext,
   onBack,
-  categoryId,
   responses,
+  categoryId,
 }) => {
   const NodeComponent =
     ActivityNodeViews[type as keyof typeof ActivityNodeViews];
-
-  if (!NodeComponent) {
-    console.error(`No view found for node type: ${type}`);
-    return null;
-  }
 
   const handleNext = (response?: any) => {
     onNext(response);
   };
 
-  const nodeData = {
-    ...data.data,
-    id: data.id,
-    type: data.type,
-  };
+  const renderHeader = () => (
+    <TouchableOpacity style={styles.backButton} onPress={onBack}>
+      <Ionicons name="arrow-back" size={24} color={theme.colors.text} />
+      <Text style={styles.backText}>Atrás</Text>
+    </TouchableOpacity>
+  );
 
-  return (
-    <View style={styles.container}>
-      {onBack && (
-        <TouchableOpacity style={styles.backButton} onPress={onBack}>
-          <Ionicons name="arrow-back" size={24} color={theme.colors.text} />
-          <Text style={styles.backText}>Atrás</Text>
-        </TouchableOpacity>
-      )}
-
-      <ScrollView
-        style={styles.scrollContainer}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={true}
-        bounces={false}
-      >
-        <View style={styles.cardContainer}>
-          {type === "RESULT_NODE" ? (
-            <ResultNodeView
-              data={nodeData}
-              onNext={onNext}
-              categoryId={categoryId}
-              responses={responses}
+  const renderContent = () => {
+    switch (type) {
+      case "DESCRIPTION_NODE":
+        return (
+          <View style={styles.contentContainer}>
+            <Text style={styles.title}>{data.title}</Text>
+            <Text style={styles.description}>{data.description}</Text>
+          </View>
+        );
+      case "VIDEO_NODE":
+        return (
+          <View style={styles.contentContainer}>
+            <Text style={styles.title}>{data.title}</Text>
+            <VideoNodeView data={data} />
+          </View>
+        );
+      case "IMAGE_NODE":
+        return (
+          <View style={styles.contentContainer}>
+            <Text style={styles.title}>{data.title}</Text>
+            <Image
+              source={{ uri: data.media_url }}
+              style={styles.image}
+              resizeMode="contain"
             />
-          ) : (
+          </View>
+        );
+      case "RESULT_NODE":
+        return (
+          <ResultNodeView
+            data={data}
+            onNext={onNext}
+            categoryId={categoryId}
+            responses={responses}
+          />
+        );
+      default:
+        if (NodeComponent) {
+          return (
             <View style={styles.questionContainer}>
               <View style={styles.questionHeader}>
                 <Text style={styles.questionType}>
-                  {type === "SINGLE_CHOICE_QUESTION" && "Selección Única"}
+                  {type === "SINGLE_CHOICE_QUESTION" && "Selección Únic"}
                   {type === "MULTIPLE_CHOICE_QUESTION" && "Selección Múltiple"}
                   {type === "TEXT_QUESTION" && "Respuesta Abierta"}
                   {type === "SCALE_QUESTION" && "Escala"}
                 </Text>
               </View>
-              <NodeComponent data={nodeData} onNext={handleNext} />
+              <NodeComponent data={data} onNext={handleNext} />
             </View>
-          )}
-        </View>
-      </ScrollView>
-    </View>
+          );
+        }
+        return (
+          <View style={styles.contentContainer}>
+            <Text style={styles.title}>Nodo desconocido</Text>
+            <Text style={styles.description}>
+              No se puede renderizar este tipo de nodo.
+            </Text>
+          </View>
+        );
+    }
+  };
+
+  return (
+    <ScrollView style={styles.container}>
+      {renderHeader()}
+      <View style={styles.card}>{renderContent()}</View>
+      <TouchableOpacity style={styles.nextButton} onPress={() => onNext()}>
+        <Text style={styles.nextText}>Siguiente</Text>
+      </TouchableOpacity>
+    </ScrollView>
   );
 };
 
@@ -97,23 +136,48 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: theme.colors.background,
   },
-  scrollContainer: {
-    flex: 1,
+  backButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 16,
+    padding: 10,
   },
-  scrollContent: {
-    flexGrow: 1,
-    paddingBottom: 24,
+  backText: {
+    marginLeft: 8,
+    fontSize: 16,
+    color: theme.colors.text,
   },
-  cardContainer: {
+  card: {
     backgroundColor: theme.colors.card,
     borderRadius: 12,
-    padding: 20,
+    padding: 16,
     margin: 16,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+  },
+  contentContainer: {
+    alignItems: "center",
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: "600",
+    marginBottom: 12,
+    textAlign: "center",
+    color: theme.colors.text,
+  },
+  description: {
+    fontSize: 16,
+    textAlign: "center",
+    color: theme.colors.textSecondary,
+  },
+  image: {
+    width: "100%",
+    height: 200,
+    marginBottom: 16,
+    borderRadius: 8,
   },
   questionContainer: {
     gap: 16,
@@ -130,19 +194,18 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     textTransform: "uppercase",
   },
-  backButton: {
-    flexDirection: "row",
+  nextButton: {
     alignItems: "center",
-    marginBottom: 20,
-    backgroundColor: theme.colors.card,
-    padding: 8,
+    padding: 16,
+    margin: 16,
+    backgroundColor: theme.colors.primary,
     borderRadius: 8,
-    alignSelf: "flex-start",
   },
-  backText: {
-    marginLeft: 8,
+  nextText: {
     fontSize: 16,
+    fontWeight: "600",
     color: theme.colors.text,
-    fontWeight: "500",
   },
 });
+
+export default ActivityNodeContainer;

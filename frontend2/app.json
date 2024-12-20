@@ -19,22 +19,19 @@
       "newArchEnabled": true,
       "infoPlist": {
         "NSPhotoLibraryUsageDescription": "La aplicación necesita acceso a tus fotos para subir imágenes de perfil."
-      },
-      "jsEngine": "hermes"
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff",
-        "newArchEnabled": true
+        "backgroundColor": "#ffffff"
       },
       "permissions": [
         "android.permission.CAMERA",
         "android.permission.READ_EXTERNAL_STORAGE",
         "android.permission.WRITE_EXTERNAL_STORAGE",
         "android.permission.MEDIA_LIBRARY"
-      ],
-      "jsEngine": "hermes"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -54,17 +51,7 @@
       "silentLaunch": true
     },
     "extra": {
-      "disableHotReloadR": true,
-      "eas": {
-        "projectId": "your-project-id"
-      }
-    },
-    "experiments": {
-      "tsconfigPaths": true
-    },
-    "hostUri": "192.168.100.226:8081",
-    "developer": {
-      "tool": "expo-cli"
+      "disableHotReloadR": true
     }
   }
 }

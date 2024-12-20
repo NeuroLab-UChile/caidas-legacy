@@ -11,10 +11,13 @@ import {
 import { useCategories } from "../contexts/categories";
 import { theme } from "@/src/theme";
 import { Category, QuestionNode } from "@/app/types/category";
-import { ActivityNodeContainer } from "@/components/ActivityNodes/ActivityNodeContainer";
+
 import apiService from "../services/apiService";
 import { getCategoryStatus } from "@/utils/categoryHelpers";
 import { CategoryHeader } from "@/components/CategoryHeader";
+import { renderActivityNode } from "@/utils/nodeRenderers";
+import { ActivityNodeType } from "@/components/ActivityNodes";
+import ActivityNodeContainer from "@/components/ActivityNodes/ActivityNodeContainer";
 
 interface NodeResponse {
   nodeId: number;
@@ -35,14 +38,6 @@ interface EvaluationState {
 const EvaluateScreen = () => {
   const { selectedCategory, fetchCategories } = useCategories();
   const [loading, setLoading] = useState(false);
-
-  console.log("Selected Category:", selectedCategory);
-  console.log("Category Description:", selectedCategory?.description);
-  console.log("Evaluation Form:", selectedCategory?.evaluation_form);
-  console.log(
-    "Question Nodes:",
-    selectedCategory?.evaluation_form?.question_nodes
-  );
 
   // Determinar si esta categoría específica está completada
   const hasDocterReview =
@@ -190,9 +185,9 @@ const EvaluateScreen = () => {
 
     return (
       <ActivityNodeContainer
-        type={node.type}
+        type={node.type as ActivityNodeType}
         data={node}
-        onNext={(response) => handleNodeResponse(node.id, response)}
+        onNext={(response: any) => handleNodeResponse(node.id, response)}
         onBack={handleBack}
         categoryId={selectedCategory?.id}
         responses={evaluationState.responses}

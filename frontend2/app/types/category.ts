@@ -28,7 +28,7 @@ export interface RootNode {
 
 export interface TrainingNode {
   id: number;
-  type: 'DESCRIPTION_NODE' | 'VIDEO_NODE' | 'IMAGE_NODE';
+  type: 'DESCRIPTION_NODE' | 'VIDEO_NODE' | 'IMAGE_NODE' | 'WEEKLY_RECIPE_NODE';
   title: string;
   description: string;
   media_url?: string;
@@ -44,7 +44,9 @@ export interface Category {
   evaluation_form?: {
     question_nodes: QuestionNode[];
   };
-  training_nodes?: TrainingNode[];
+  training_form?: {
+    training_nodes: TrainingNode[];
+  }
   responses?: Record<string, any>;
   completion_date?: string;
   status_color?: 'green' | 'yellow' | 'red';

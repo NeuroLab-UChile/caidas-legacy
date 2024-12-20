@@ -49,7 +49,7 @@ const rightMenuItems = [
 const hiddenItems = [
   {
     name: "action",
-    title: "PREIDAS",
+    title: "WE-FLOW",
     icon: "plus.circle",
   },
   {
@@ -383,13 +383,13 @@ export default function TabLayout() {
             styles.logoText,
             {
               color: theme.colors.text,
-              fontSize: 12,
+              fontSize: 10,
               fontWeight: "bold",
-              marginTop: 0,
+              marginTop: 2,
             },
           ]}
         >
-          PREIDAS
+          WE-FLOW
         </Text>
       </TouchableOpacity>
     </View>

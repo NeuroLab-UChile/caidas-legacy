@@ -51,8 +51,15 @@ const MEAL_NAMES = {
 export const WeeklyRecipeNodeView: React.FC<RecipeNodeViewProps> = ({
   data,
 }) => {
-  const nodeData = Array.isArray(data) ? data[1] : data;
-
+  const nodeData = data as {
+    description: string;
+    id: number;
+    next_node_id: number | null;
+    title: string;
+    type: string;
+    weekly_plan: WeeklyPlan;
+  };
+  console.log("recipe node data", nodeData);
   const weeklyPlan = nodeData.weekly_plan;
 
   return (

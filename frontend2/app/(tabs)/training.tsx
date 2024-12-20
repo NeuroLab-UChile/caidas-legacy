@@ -1,3 +1,4 @@
+// frontend2/app/(tabs)/evaluate.tsx
 import React, { useState, useEffect } from "react";
 import {
   View,
@@ -5,173 +6,145 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Image,
+  Alert,
 } from "react-native";
 import { useCategories } from "../contexts/categories";
 import { theme } from "@/src/theme";
+import { Category, TrainingNode } from "@/app/types/category";
+
+import apiService from "../services/apiService";
+import { getCategoryStatus } from "@/utils/categoryHelpers";
 import { CategoryHeader } from "@/components/CategoryHeader";
-import { WeeklyRecipeNodeView } from "@/components/ActivityNodes/views/WeeklyRecipeNodeView";
+import { renderActivityNode } from "@/utils/nodeRenderers";
+import ActivityNodeContainer from "@/components/ActivityNodes/ActivityNodeContainer";
+import { ActivityNodeType } from "@/components/ActivityNodes";
+
+interface NodeResponse {
+  nodeId: number;
+  response: any;
+}
 
 interface TrainingState {
-  currentNodeIndex: number;
-  responses: { [key: number]: any };
+  currentNodeId: number | null;
+
   history: number[];
-  completed: boolean;
+  trainingResult: {
+    initial_node_id: number | null;
+    nodes: TrainingNode[];
+  };
 }
 
 const TrainingScreen = () => {
-  const { selectedCategory } = useCategories();
-  const [trainingState, setTrainingState] = useState<TrainingState>({
-    currentNodeIndex: 0,
-    responses: {},
-    history: [],
-    completed: false,
+  const { selectedCategory, fetchCategories } = useCategories();
+  const [loading, setLoading] = useState(false);
+
+  const [trainingState, setTrainingState] = useState<TrainingState>(() => {
+    const nodes = selectedCategory?.training_form?.training_nodes || [];
+
+    return {
+      currentNodeId: nodes[0]?.id || null,
+
+      history: [],
+      trainingResult: {
+        initial_node_id: nodes[0]?.id || null,
+        nodes: nodes,
+      },
+    };
   });
 
-  const trainingNodes = selectedCategory?.training_nodes || [];
-
   useEffect(() => {
-    console.log("Training nodes loaded:", trainingNodes);
-  }, [trainingNodes]);
+    if (selectedCategory) {
+      const status = getCategoryStatus(selectedCategory);
+      const nodes = selectedCategory.training_form?.training_nodes || [];
+      const existingResponses = selectedCategory.responses || {};
 
-  const handleNodeResponse = (response: any) => {
-    const currentNodeIndex = trainingState.currentNodeIndex;
+      setTrainingState({
+        currentNodeId: nodes[0]?.id || null,
 
-    // Guardar la respuesta y avanzar
-    const nextIndex =
-      currentNodeIndex < trainingNodes.length - 1 ? currentNodeIndex + 1 : null;
-
-    setTrainingState((prev) => ({
-      ...prev,
-      responses: { ...prev.responses, [currentNodeIndex]: response },
-      history: [...prev.history, currentNodeIndex],
-      currentNodeIndex: nextIndex !== null ? nextIndex : currentNodeIndex,
-      completed: nextIndex === null,
-    }));
-  };
-
-  const handleBack = () => {
-    const previousHistory = [...trainingState.history];
-    const lastNodeIndex = previousHistory.pop();
-
-    if (lastNodeIndex !== undefined) {
-      setTrainingState((prev) => ({
-        ...prev,
-        currentNodeIndex: lastNodeIndex,
-        history: previousHistory,
-      }));
+        history: [],
+        trainingResult: {
+          initial_node_id: nodes[0]?.id || null,
+          nodes: nodes,
+        },
+      });
     }
+  }, [selectedCategory]);
+
+  const getNextNodeId = (currentNodeId: number): number | null => {
+    if (!selectedCategory?.evaluation_form?.question_nodes) {
+      return null;
+    }
+
+    const nodes = selectedCategory.evaluation_form.question_nodes;
+    const currentIndex = nodes.findIndex((node) => node.id === currentNodeId);
+
+    if (currentIndex === -1 || currentIndex === nodes.length - 1) {
+      return null;
+    }
+
+    return nodes[currentIndex + 1].id;
   };
 
-  const renderMediaContent = (node: any) => {
-    if (!node.media_url) return null;
+  const getCurrentNode = (nodeId: number | null): TrainingNode | null => {
+    if (!nodeId || !selectedCategory?.training_form?.training_nodes) {
+      return null;
+    }
 
     return (
-      <Image
-        source={{ uri: node.media_url }}
-        style={styles.media}
-        resizeMode="contain"
+      selectedCategory.training_form.training_nodes.find(
+        (node) => node.id === nodeId
+      ) || null
+    );
+  };
+
+  const renderNode = (nodeId: number | null, handleBack: () => void) => {
+    const node = getCurrentNode(nodeId);
+
+    if (!node) return null;
+
+    return (
+      <ActivityNodeContainer
+        type={node.type as ActivityNodeType}
+        data={node}
+        onNext={() => {
+          const nextNodeId = getNextNodeId(node.id);
+          setTrainingState((prev) => ({
+            ...prev,
+            currentNodeId: nextNodeId || null,
+            history: [...prev.history, node.id],
+          }));
+        }}
+        onBack={() => {
+          if (trainingState.history.length > 0) {
+            const previousNodes = [...trainingState.history];
+            const previousNodeId = previousNodes.pop();
+            setTrainingState((prev) => ({
+              ...prev,
+              currentNodeId: previousNodeId || null,
+              history: previousNodes,
+            }));
+          }
+        }}
+        categoryId={selectedCategory?.id}
+        responses={[]}
       />
     );
   };
 
-  const renderNode = (node: any) => {
-    if (!node) return null;
-    const navigationButtons = (
-      <View style={styles.navigationButtons}>
-        {trainingState.history.length > 0 && (
-          <TouchableOpacity
-            style={[styles.button, styles.backButton]}
-            onPress={handleBack}
-          >
-            <Text style={[styles.buttonText, styles.backButtonText]}>
-              Anterior
-            </Text>
-          </TouchableOpacity>
-        )}
-        <TouchableOpacity
-          style={[styles.button, styles.nextButton]}
-          onPress={() => handleNodeResponse("completed")}
-        >
-          <Text style={[styles.buttonText, styles.nextButtonText]}>
-            {trainingState.currentNodeIndex < trainingNodes.length - 1
-              ? "Siguiente"
-              : "Completar"}
-          </Text>
-        </TouchableOpacity>
-      </View>
-    );
-
-    if (node.type === "WEEKLY_RECIPE_NODE") {
-      return (
-        <View style={styles.fullNodeContainer}>
-          <WeeklyRecipeNodeView
-            data={node}
-            onNext={() => handleNodeResponse("completed")}
-          />
-          {navigationButtons}
-        </View>
-      );
-    }
-
+  if (loading) {
     return (
-      <View style={styles.nodeContainer}>
-        <View style={styles.contentContainer}>
-          <View style={styles.headerSection}>
-            <Text style={styles.title}>{node.title}</Text>
-            <View style={styles.divider} />
-          </View>
-
-          {renderMediaContent(node)}
-
-          <View style={styles.descriptionContainer}>
-            <Text style={styles.description}>{node.description}</Text>
-          </View>
-        </View>
-        {navigationButtons}
+      <View style={styles.container}>
+        <Text>Cargando...</Text>
       </View>
     );
-  };
+  }
 
   if (!selectedCategory) {
     return (
       <View style={styles.container}>
-        <Text style={styles.message}>
-          Selecciona una categoría para comenzar el entrenamiento
+        <Text style={styles.buttonText}>
+          Selecciona una categoría para comenzar
         </Text>
-      </View>
-    );
-  }
-
-  if (!trainingNodes.length) {
-    return (
-      <View style={styles.container}>
-        <Text style={styles.message}>
-          No hay contenido de entrenamiento disponible
-        </Text>
-      </View>
-    );
-  }
-
-  if (trainingState.completed) {
-    return (
-      <View style={styles.container}>
-        <Text style={styles.completedText}>
-          ¡Has completado el entrenamiento!
-        </Text>
-        <TouchableOpacity
-          style={styles.button}
-          onPress={() =>
-            setTrainingState({
-              currentNodeIndex: 0,
-              responses: {},
-              history: [],
-              completed: false,
-            })
-          }
-        >
-          <Text style={styles.buttonText}>Volver a Empezar</Text>
-        </TouchableOpacity>
       </View>
     );
   }
@@ -179,120 +152,143 @@ const TrainingScreen = () => {
   return (
     <ScrollView style={styles.container}>
       {selectedCategory && <CategoryHeader name={selectedCategory.name} />}
-      <Text style={styles.progressText}>
-        Progreso: {trainingState.currentNodeIndex + 1} / {trainingNodes.length}
-      </Text>
-      {trainingNodes &&
-        renderNode(trainingNodes[trainingState.currentNodeIndex])}
+
+      {renderNode(trainingState.currentNodeId, () => {
+        if (trainingState.history.length > 0) {
+          const previousNodes = [...trainingState.history];
+          const previousNodeId = previousNodes.pop();
+          setTrainingState((prev) => ({
+            ...prev,
+            currentNodeId: previousNodeId || null,
+            history: previousNodes,
+          }));
+        }
+      })}
     </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
-  mainContainer: {
+  container: {
     flex: 1,
-    backgroundColor: theme.colors.background,
+    padding: 16,
   },
-  contentContainer: {
-    flex: 1,
+  descriptionContainer: {
+    backgroundColor: theme.colors.card,
+    borderRadius: 12,
     padding: 20,
-  },
-  headerSection: {
     marginBottom: 24,
-  },
-  divider: {
-    height: 2,
-    backgroundColor: theme.colors.primary,
-    width: 40,
-    marginTop: 8,
-  },
-  fullNodeContainer: {
-    flex: 1,
-    backgroundColor: theme.colors.card,
-  },
-  nodeContainer: {
-    flex: 1,
-    backgroundColor: theme.colors.card,
-    borderRadius: 16,
-    margin: 16,
-    overflow: "hidden",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  title: {
-    fontSize: 24,
-    fontWeight: "800",
-    color: theme.colors.text,
-    letterSpacing: 0.5,
-  },
-  descriptionContainer: {
-    backgroundColor: theme.colors.background,
-    padding: 16,
-    borderRadius: 12,
-    marginTop: 16,
-  },
-  description: {
+  descriptionText: {
     fontSize: 16,
     color: theme.colors.text,
     lineHeight: 24,
-    letterSpacing: 0.3,
   },
-  media: {
+
+  infoText: {
+    fontSize: 16,
+    color: theme.colors.textSecondary,
+    textAlign: "center",
+    marginBottom: 24,
+    lineHeight: 22,
+  },
+  responsesList: {
     width: "100%",
-    height: 200,
-    borderRadius: 12,
-    marginBottom: 20,
-  },
-  navigationButtons: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    padding: 16,
-    gap: 12,
     backgroundColor: theme.colors.card,
-    borderTopWidth: 1,
-    borderTopColor: theme.colors.border,
-  },
-  button: {
-    flex: 1,
-    padding: 16,
     borderRadius: 12,
+    padding: 20,
+    marginTop: 24,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  responseItem: {
+    marginBottom: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+    paddingBottom: 16,
+  },
+  questionText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: theme.colors.text,
+    marginBottom: 8,
+  },
+  answerText: {
+    fontSize: 15,
+    color: theme.colors.text,
+    marginLeft: 16,
+    lineHeight: 22,
+  },
+  startButton: {
+    backgroundColor: theme.colors.primary,
+    padding: 16,
+    borderRadius: 8,
+    width: "100%",
     alignItems: "center",
-    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  backButton: {
-    backgroundColor: theme.colors.background,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
+  startButtonText: {
+    color: theme.colors.text,
+    fontSize: 18,
+    fontWeight: "600",
   },
-  nextButton: {
+  reviewContainer: {
+    padding: 16,
+    backgroundColor: theme.colors.card,
+    borderRadius: 8,
+    marginVertical: 16,
+  },
+  statusText: {
+    fontSize: 18,
+    fontWeight: "600",
+    textAlign: "center",
+    marginBottom: 8,
+  },
+  recommendationsContainer: {
+    marginTop: 16,
+  },
+  recommendationsTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: theme.colors.text,
+    marginBottom: 8,
+  },
+  recommendationsText: {
+    fontSize: 16,
+    color: theme.colors.text,
+    lineHeight: 24,
+  },
+  actionButton: {
+    backgroundColor: theme.colors.primary,
+    padding: 16,
+    borderRadius: 8,
+    marginTop: 16,
+  },
+  actionButtonText: {
+    color: theme.colors.text,
+    fontSize: 16,
+    fontWeight: "600",
+    textAlign: "center",
+  },
+  viewButton: {
     backgroundColor: theme.colors.primary,
   },
   buttonText: {
+    color: theme.colors.text,
     fontSize: 16,
     fontWeight: "600",
-  },
-  backButtonText: {
-    color: theme.colors.text,
-  },
-  nextButtonText: {
-    color: theme.colors.white,
-  },
-  progressText: {
-    fontSize: 14,
-    color: theme.colors.textSecondary,
-    textAlign: "center",
-    marginVertical: 16,
-    fontWeight: "500",
-  },
-  completedText: {
-    fontSize: 24,
-    fontWeight: "700",
-    color: theme.colors.success,
-    textAlign: "center",
-    marginBottom: 32,
   },
 });
 

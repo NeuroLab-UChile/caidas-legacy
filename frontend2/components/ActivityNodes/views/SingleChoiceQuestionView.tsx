@@ -11,11 +11,13 @@ import { theme } from "@/src/theme";
 
 interface SingleChoiceQuestionViewProps {
   data: {
-    id: number;
-    type: string;
-    question: string;
-    description?: string;
-    options: string[];
+    data: {
+      id: number;
+      type: string;
+      question: string;
+      description?: string;
+      options: string[];
+    };
   };
   onNext: (response: { selectedOption: number }) => void;
 }
@@ -24,11 +26,18 @@ export const SingleChoiceQuestionView: React.FC<
   SingleChoiceQuestionViewProps
 > = ({ data, onNext }) => {
   const [selected, setSelected] = useState<number | null>(null);
+  console.log(data);
+  if (!data || !data.data.options) {
+    console.error(
+      "Missing required data or options in SingleChoiceQuestionView"
+    );
+    return null;
+  }
 
   return (
     <View style={styles.container}>
-      <Text style={styles.question}>{data.question}</Text>
-      {data.options.map((option, index) => (
+      <Text style={styles.question}>{data.data.question}</Text>
+      {data.data.options.map((option, index) => (
         <TouchableOpacity
           key={index}
           style={[

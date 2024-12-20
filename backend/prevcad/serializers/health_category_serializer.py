@@ -10,7 +10,7 @@ class HealthCategorySerializer(serializers.ModelSerializer):
     icon = serializers.SerializerMethodField()
     description = serializers.SerializerMethodField()
     evaluation_form = serializers.SerializerMethodField()
-    training_nodes = serializers.SerializerMethodField()
+    training_form = serializers.SerializerMethodField()
     status = serializers.SerializerMethodField()
 
     class Meta:
@@ -21,7 +21,7 @@ class HealthCategorySerializer(serializers.ModelSerializer):
             'icon', 
             'description',
             'evaluation_form',
-            'training_nodes',
+            'training_form',
             'responses',
             'completion_date',
             'status_color',
@@ -46,9 +46,9 @@ class HealthCategorySerializer(serializers.ModelSerializer):
         print("No se encontró template")
         return None
 
-    def get_training_nodes(self, obj):
+    def get_training_form(self, obj):
         if obj.template:
-            return obj.template.training_nodes
+            return obj.template.training_form
         return None
 
     def get_status(self, obj):
