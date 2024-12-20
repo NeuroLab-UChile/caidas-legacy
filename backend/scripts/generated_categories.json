@@ -40,22 +40,24 @@
         }
       ]
     },
-    "training_nodes": [
-      {
-        "id": 1,
-        "type": "DESCRIPTION_NODE",
-        "title": "Introducción al Riesgo Domiciliario",
-        "description": "Aprenda a identificar y reducir los riesgos más comunes en su hogar, desde evitar tropiezos hasta mejorar la iluminación en pasillos y escaleras.",
-        "media_url": "/assets/training/home-safety.jpg"
-      },
-      {
-        "id": 2,
-        "type": "VIDEO_NODE",
-        "title": "Prevención de Caídas",
-        "description": "Este video le enseñará técnicas prácticas para minimizar riesgos de caídas, como el uso de barandillas y alfombras antideslizantes.",
-        "media_url": "/assets/training/fall-prevention.mp4"
-      }
-    ]
+    "training_form": {
+      "training_nodes": [
+        {
+          "id": 1,
+          "type": "DESCRIPTION_NODE",
+          "title": "Introducción al Riesgo Domiciliario",
+          "description": "Aprenda a identificar y reducir los riesgos más comunes en su hogar, desde evitar tropiezos hasta mejorar la iluminación en pasillos y escaleras.",
+          "media_url": "/assets/training/home-safety.jpg"
+        },
+        {
+          "id": 2,
+          "type": "VIDEO_NODE",
+          "title": "Prevención de Caídas",
+          "description": "Este video le enseñará técnicas prácticas para minimizar riesgos de caídas, como el uso de barandillas y alfombras antideslizantes.",
+          "media_url": "/assets/training/fall-prevention.mp4"
+        }
+      ]
+    }
   },
   {
     "name": "Actividad Física",
@@ -93,22 +95,24 @@
         }
       ]
     },
-    "training_nodes": [
-      {
-        "id": 1,
-        "type": "VIDEO_NODE",
-        "title": "Rutinas Básicas de Ejercicio",
-        "description": "Descubra rutinas simples y efectivas que puede hacer desde casa, diseñadas para personas de cualquier nivel de condición física.",
-        "media_url": "/assets/training/exercise-routine.mp4"
-      },
-      {
-        "id": 2,
-        "type": "IMAGE_NODE",
-        "title": "Ejercicios Ilustrativos",
-        "description": "Galería de ejercicios con instrucciones detalladas para fortalecer sus músculos y mantener la movilidad.",
-        "media_url": "/assets/training/exercise-examples.jpg"
-      }
-    ]
+    "training_form": {
+      "training_nodes": [
+        {
+          "id": 1,
+          "type": "VIDEO_NODE",
+          "title": "Rutinas Básicas de Ejercicio",
+          "description": "Descubra rutinas simples y efectivas que puede hacer desde casa, diseñadas para personas de cualquier nivel de condición física.",
+          "media_url": "/assets/training/exercise-routine.mp4"
+        },
+        {
+          "id": 2,
+          "type": "IMAGE_NODE",
+          "title": "Ejercicios Ilustrativos",
+          "description": "Galería de ejercicios con instrucciones detalladas para fortalecer sus músculos y mantener la movilidad.",
+          "media_url": "/assets/training/exercise-examples.jpg"
+        }
+      ]
+    }
   },
   {
     "name": "Alimentación Saludable",
@@ -135,47 +139,49 @@
         }
       ]
     },
-    "training_nodes": [
-      {
-        "id": 1,
-        "type": "DESCRIPTION_NODE",
-        "title": "Importancia de una Dieta Balanceada",
-        "description": "Descubra cómo una alimentación saludable puede mejorar su bienestar general y prevenir enfermedades.",
-        "media_url": "/assets/training/healthy-diet.jpg"
-      },
-      {
-        "id": 2,
-        "type": "WEEKLY_RECIPE_NODE",
-        "title": "Plan Semanal WeTrain",
-        "description": "EVALUAR\nRECORDAR ENTRENAR MIS DATOS",
-        "weekly_plan": {
-          "MON": {
-            "BREAKFAST": {
-              "meal": "1 vaso de leche\n2 rebanadas de pan integral con queso fresco",
-              "proteins": "18g",
-              "notes": "8g proteínas (leche) + 10g proteínas (queso fresco)"
+    "training_form": {
+      "training_nodes": [
+        {
+          "id": 1,
+          "type": "DESCRIPTION_NODE",
+          "title": "Importancia de una Dieta Balanceada",
+          "description": "Descubra cómo una alimentación saludable puede mejorar su bienestar general y prevenir enfermedades.",
+          "media_url": "/assets/training/healthy-diet.jpg"
+        },
+        {
+          "id": 2,
+          "type": "WEEKLY_RECIPE_NODE",
+          "title": "Plan Semanal WeTrain",
+          "description": "EVALUAR\nRECORDAR ENTRENAR MIS DATOS",
+          "weekly_plan": {
+            "MON": {
+              "BREAKFAST": {
+                "meal": "1 vaso de leche\n2 rebanadas de pan integral con queso fresco",
+                "proteins": "18g",
+                "notes": "8g proteínas (leche) + 10g proteínas (queso fresco)"
+              },
+              "DINNER": {
+                "meal": "Salmón a la plancha con arroz integral y espinacas",
+                "proteins": "120g",
+                "notes": "100g proteínas (salmón) + 20g proteínas (acompañamientos)"
+              }
             },
-            "DINNER": {
-              "meal": "Salmón a la plancha con arroz integral y espinacas",
-              "proteins": "120g",
-              "notes": "100g proteínas (salmón) + 20g proteínas (acompañamientos)"
-            }
-          },
-          "TUE": {
-            "BREAKFAST": {
-              "meal": "1 vaso de leche\n2 rebanadas de pan integral con queso fresco",
-              "proteins": "18g",
-              "notes": "8g proteínas (leche) + 10g proteínas (queso fresco)"
-            },
-            "DINNER": {
-              "meal": "Salmón a la plancha con arroz integral y espinacas",
-              "proteins": "120g",
-              "notes": "100g proteínas (salmón) + 20g proteínas (acompañamientos)"
+            "TUE": {
+              "BREAKFAST": {
+                "meal": "1 vaso de leche\n2 rebanadas de pan integral con queso fresco",
+                "proteins": "18g",
+                "notes": "8g proteínas (leche) + 10g proteínas (queso fresco)"
+              },
+              "DINNER": {
+                "meal": "Salmón a la plancha con arroz integral y espinacas",
+                "proteins": "120g",
+                "notes": "100g proteínas (salmón) + 20g proteínas (acompañamientos)"
+              }
             }
           }
         }
-      }
-    ]
+      ]
+    }
   },
   {
     "name": "Valoración Sensorial",
@@ -206,15 +212,17 @@
         }
       ]
     },
-    "training_nodes": [
-      {
-        "id": 1,
-        "type": "VIDEO_NODE",
-        "title": "Consejos para Mejorar la Visión y Audición",
-        "description": "Aprenda ejercicios y hábitos para mantener la salud de sus sentidos.",
-        "media_url": "/assets/training/sensory-health.mp4"
-      }
-    ]
+    "training_form": {
+      "training_nodes": [
+        {
+          "id": 1,
+          "type": "VIDEO_NODE",
+          "title": "Consejos para Mejorar la Visión y Audición",
+          "description": "Aprenda ejercicios y hábitos para mantener la salud de sus sentidos.",
+          "media_url": "/assets/training/sensory-health.mp4"
+        }
+      ]
+    }
   },
   {
     "name": "Fármacos y Medicación",
@@ -241,15 +249,17 @@
         }
       ]
     },
-    "training_nodes": [
-      {
-        "id": 1,
-        "type": "DESCRIPTION_NODE",
-        "title": "Guía para un Uso Seguro de Medicamentos",
-        "description": "Descubra cómo evitar interacciones adversas y efectos secundarios con un uso adecuado de medicamentos.",
-        "media_url": "/assets/training/medication-safety.jpg"
-      }
-    ]
+    "training_form": {
+      "training_nodes": [
+        {
+          "id": 1,
+          "type": "DESCRIPTION_NODE",
+          "title": "Guía para un Uso Seguro de Medicamentos",
+          "description": "Descubra cómo evitar interacciones adversas y efectos secundarios con un uso adecuado de medicamentos.",
+          "media_url": "/assets/training/medication-safety.jpg"
+        }
+      ]
+    }
   },
   {
     "name": "Cognición y Ánimo",
@@ -276,15 +286,17 @@
         }
       ]
     },
-    "training_nodes": [
-      {
-        "id": 1,
-        "type": "VIDEO_NODE",
-        "title": "Técnicas para Mejorar la Atención",
-        "description": "Aprenda estrategias prácticas para mantener la concentración y un estado de ánimo positivo.",
-        "media_url": "/assets/training/mind-techniques.mp4"
-      }
-    ]
+    "training_form": {
+      "training_nodes": [
+        {
+          "id": 1,
+          "type": "VIDEO_NODE",
+          "title": "Técnicas para Mejorar la Atención",
+          "description": "Aprenda estrategias prácticas para mantener la concentración y un estado de ánimo positivo.",
+          "media_url": "/assets/training/mind-techniques.mp4"
+        }
+      ]
+    }
   },
   {
     "name": "Historia de Caídas",
@@ -311,15 +323,17 @@
         }
       ]
     },
-    "training_nodes": [
-      {
-        "id": 1,
-        "type": "DESCRIPTION_NODE",
-        "title": "Cómo Evitar Caídas Futuras",
-        "description": "Guía práctica con recomendaciones personalizadas para reducir incidentes relacionados con caídas.",
-        "media_url": "/assets/training/prevent-falls.jpg"
-      }
-    ]
+    "training_form": {
+      "training_nodes": [
+        {
+          "id": 1,
+          "type": "DESCRIPTION_NODE",
+          "title": "Cómo Evitar Caídas Futuras",
+          "description": "Guía práctica con recomendaciones personalizadas para reducir incidentes relacionados con caídas.",
+          "media_url": "/assets/training/prevent-falls.jpg"
+        }
+      ]
+    }
   },
   {
     "name": "Estado Óseo y Muscular",
@@ -346,14 +360,16 @@
         }
       ]
     },
-    "training_nodes": [
-      {
-        "id": 1,
-        "type": "VIDEO_NODE",
-        "title": "Ejercicios para Fortalecer Huesos y Músculos",
-        "description": "Videos enfocados en ejercicios para mejorar la densidad ósea y la fuerza muscular.",
-        "media_url": "/assets/training/bone-muscle-health.mp4"
-      }
-    ]
+    "training_form": {
+      "training_nodes": [
+        {
+          "id": 1,
+          "type": "VIDEO_NODE",
+          "title": "Ejercicios para Fortalecer Huesos y Músculos",
+          "description": "Videos enfocados en ejercicios para mejorar la densidad ósea y la fuerza muscular.",
+          "media_url": "/assets/training/bone-muscle-health.mp4"
+        }
+      ]
+    }
   }
 ]

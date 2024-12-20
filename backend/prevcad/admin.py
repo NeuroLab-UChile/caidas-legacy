@@ -54,6 +54,8 @@ class CategoryTemplateAdmin(admin.ModelAdmin):
   list_display = ('name', 'is_active', 'preview_icon', 'description_preview')
   list_filter = ('is_active',)
   search_fields = ('name', 'description')
+
+  
   
   fieldsets = (
     ('Información Básica', {
@@ -61,15 +63,15 @@ class CategoryTemplateAdmin(admin.ModelAdmin):
     }),
     ('Formulario de Evaluación', {
       'classes': ('wide',),
-      'fields': ('evaluation_form_display', 'evaluation_form'),
+      'fields': ('evaluation_form_button',),
       'description': 'Configure las preguntas del formulario de evaluación.'
     }),
-    ('Configuración Avanzada', {
+    ('Nodos de Entrenamiento', {
       'classes': ('collapse',),
-      'fields': ('training_nodes', 'root_node'),
+      'fields': ('training_nodes_button',),
     }),
   )
-  readonly_fields = ('evaluation_form_display',)
+  readonly_fields = ('evaluation_form_button', 'training_nodes_button')
 
   def preview_icon(self, obj):
     if obj.icon:
@@ -81,45 +83,26 @@ class CategoryTemplateAdmin(admin.ModelAdmin):
     return Truncator(obj.description).chars(50)
   description_preview.short_description = 'Descripción'
 
-  def evaluation_form_display(self, obj):
-    if not obj.evaluation_form:
-      return "No hay formulario configurado"
-    
-    try:
-      questions = obj.evaluation_form.get('question_nodes', [])
-      html = ['<div class="evaluation-form-preview">']
-      
-      for i, q in enumerate(questions, 1):
-        q_type = q.get('type', '')
-        question = q.get('data', {}).get('question', '')
-        options = q.get('data', {}).get('options', [])
-        
-        html.append(f'<div class="question-item">')
-        html.append(f'<div class="question-number">Pregunta {i}</div>')
-        html.append(f'<div class="question-type">{q_type}</div>')
-        html.append(f'<div class="question-text">{question}</div>')
-        
-        if options:
-          html.append('<div class="question-options">')
-          for opt in options:
-            html.append(f'<div class="option-item">• {opt}</div>')
-          html.append('</div>')
-        
-        html.append('</div>')
-      
-      html.append('</div>')
-      return mark_safe(''.join(html))
-      
-    except Exception as e:
-      return f"Error al mostrar el formulario: {str(e)}"
+  def evaluation_form_button(self, obj):
+    return mark_safe(f"""
+  <div class="form-row field-evaluation_form">
+    <label for="id_evaluation_form">Formulario de Evaluación</label>
+    <button type="button" class="btn btn-primary" onclick="openViewFormModal({obj.id})">
+      Ver Formulario
+    </button>
+  </div>
+    """)
   
-  evaluation_form_display.short_description = 'Vista Previa del Formulario'
 
-  class Media:
-    css = {
-      'all': ('admin/css/custom_admin.css',)
-    }
-    js = ('admin/js/custom_admin.js',)
+  evaluation_form_button.short_description = "Formulario de Evaluación"
+
+  def training_nodes_button(self, obj):
+    return mark_safe(f"""
+      <button type="button" class="btn btn-primary" onclick="openTrainingFormModal({obj.id})">
+        Ver Nodos de Entrenamiento
+      </button>
+    """)
+  training_nodes_button.short_description = "Nodos de Entrenamiento"
 
   def response_change(self, request, obj):
       if "_add_node" in request.POST:

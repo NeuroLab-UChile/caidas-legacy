@@ -19,11 +19,11 @@ class CategoryTemplate(models.Model):
     default=dict,
     help_text="Formulario de evaluación en formato JSON"
   )
-  training_nodes = models.JSONField(
+  training_form = models.JSONField(
     null=True,
     blank=True,
     default=dict,
-    help_text="Nodos de entrenamiento en formato JSON"
+    help_text="Formulario de entrenamiento en formato JSON"
   )
   root_node = models.OneToOneField(
     ActivityNodeDescription,
@@ -46,10 +46,10 @@ class CategoryTemplate(models.Model):
     return None
   def get_ordered_training_nodes(self):
     """Retorna los nodos de entrenamiento ordenados"""
-    if not self.training_nodes:
+    if not self.training_form:
       return []
       
-    nodes = self.training_nodes
+    nodes = self.training_form['training_nodes']  
     for i, node in enumerate(nodes):
       node['next_node_id'] = nodes[i + 1]['id'] if i < len(nodes) - 1 else None
 
@@ -62,8 +62,7 @@ class CategoryTemplate(models.Model):
         type=ActivityNodeDescription.NodeType.CATEGORY_DESCRIPTION,
         description=self.description
       )
-    if self.training_nodes:
-      self.training_nodes = self.get_ordered_training_nodes()
+  
     super().save(*args, **kwargs)
 
   def update_evaluation_form(self, data):
@@ -82,6 +81,21 @@ class CategoryTemplate(models.Model):
 
     self.evaluation_form = data
     self.save(update_fields=['evaluation_form'])
+
+
+  def update_training_form(self, data):
+    if not isinstance(data, dict):
+      raise ValueError("Los datos deben ser un diccionario.")
+
+    if "training_nodes" not in data:
+      raise ValueError("Los datos deben contener 'training_nodes'.")
+    
+    for node in data["training_nodes"]:
+      if not isinstance(node, dict) or "type" not in node or "content" not in node:
+        raise ValueError("Cada nodo debe ser un diccionario con 'type' y 'content'.")
+
+    self.training_form = data
+    self.save(update_fields=['training_form'])
 
   def __str__(self):
     return self.name
@@ -146,7 +160,8 @@ def create_user_health_categories(sender, instance, created, **kwargs):
       HealthCategory.objects.create(
         user=instance,
         template=template,
-        evaluation_form=template.evaluation_form
+        evaluation_form=template.evaluation_form,
+        training_form=template.training_form
       )
 
 

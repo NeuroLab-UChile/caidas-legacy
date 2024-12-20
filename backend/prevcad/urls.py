@@ -31,4 +31,5 @@ urlpatterns = [
        create_health_category, 
        name='create_health_category'),
   path('admin/update-evaluation-form/<int:template_id>/', admin_views.update_evaluation_form, name='update_evaluation_form'),
+  path('admin/update-training-form/<int:template_id>/', admin_views.update_training_form, name='update_training_form'),
 ] + router.urls + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

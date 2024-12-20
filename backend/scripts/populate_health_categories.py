@@ -20,7 +20,7 @@ def populate_category_templates_from_file(file_path):
                     'description': template_info['description'],
                     'is_active': True,
                     'evaluation_form': template_info['evaluation_form'],
-                    'training_nodes': template_info['training_nodes']
+                    'training_form': template_info['training_form']
                 }
             )
 

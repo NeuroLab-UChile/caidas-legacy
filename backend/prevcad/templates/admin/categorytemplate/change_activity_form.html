@@ -4,7 +4,6 @@
 {% block extrahead %}
   {{ block.super }}
   <style>
-    /* Fondo del modal */
     :root {
       --color-primary: #ffcc00;
       --color-secondary: #333333;
@@ -14,6 +13,7 @@
       --color-danger-hover: #c53030;
       --color-overlay: rgba(0, 0, 0, 0.5);
     }
+
     .modal-overlay {
       position: fixed;
       top: 0;
@@ -30,20 +30,17 @@
       animation: fadeIn 0.3s forwards;
     }
 
-    /* Contenedor principal del modal */
-    /* Modal Content */
     .modal-content {
       background-color: var(--color-light);
-      border-radius: 10px;
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
-      padding: 24px;
+      border-radius: 1rem;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+      padding: 1.5rem;
       width: 90%;
       max-width: 600px;
       text-align: left;
       animation: slideUp 0.4s forwards;
     }
 
-    /* Animations */
     @keyframes fadeIn {
       from { opacity: 0; }
       to { opacity: 1; }
@@ -54,42 +51,16 @@
       to { transform: translateY(0); opacity: 1; }
     }
 
-    /* Modal Header */
-    .modal-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 16px;
-    }
-
-    .modal-title {
-      font-size: 1.5rem;
-      font-weight: bold;
-      color: var(--color-primary);
-    }
-
-    .btn-close {
-      background: none;
-      border: none;
-      font-size: 1.5rem;
-      color: var(--color-secondary);
-      cursor: pointer;
-      transition: color 0.2s;
-    }
-
-    .btn-close:hover {
-      color: var(--color-danger);
-    }
-
-    /* Buttons */
     .btn {
       padding: 0.5rem 1rem;
-      font-size: 1rem;
-      font-weight: 500;
+      font-size: 0.875rem;
       border: none;
-      border-radius: 8px;
+      border-radius: 0.5rem;
       cursor: pointer;
-      transition: background-color 0.2s ease-in-out;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
     }
 
     .btn-primary {
@@ -98,16 +69,8 @@
     }
 
     .btn-primary:hover {
-      background-color: #ffdb4d;
-    }
-
-    .btn-secondary {
-      background-color: var(--color-dark);
-      color: var(--color-light);
-    }
-
-    .btn-secondary:hover {
-      background-color: #444444;
+      background-color: #e6b800;
+      transform: translateY(-1px);
     }
 
     .btn-danger {
@@ -117,40 +80,148 @@
 
     .btn-danger:hover {
       background-color: var(--color-danger-hover);
+      transform: translateY(-1px);
     }
 
-    /* Inputs and Form Elements */
-    .form-input, .form-select {
+    .btn-secondary {
+      background-color: var(--color-secondary);
+      color: var(--color-light);
+    }
+
+    .btn-secondary:hover {
+      background-color: #404040;
+      transform: translateY(-1px);
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    /* Espaciados y estilos de botones */
+    .btn-container {
+      display: flex;
+      gap: 0.75rem;
+      margin-top: 1.5rem;
+      justify-content: flex-end;
+    }
+
+    .btn {
+      padding: 0.625rem 1.25rem;
+      font-size: 0.875rem;
+      border: none;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-weight: 500;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+    }
+
+    .btn svg {
+      width: 1rem;
+      height: 1rem;
+    }
+
+    /* Espaciados para el contenedor de preguntas */
+    #questionsList {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      padding: 1rem 0;
+    }
+
+    /* Espaciados para el modal */
+    .modal-content {
+      padding: 2rem;
+    }
+
+    .modal-title {
+      margin-bottom: 1.5rem;
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: var(--color-dark);
+    }
+
+    /* Espaciados para el formulario */
+    .form-group {
+      margin-bottom: 1.5rem;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 500;
+      color: var(--color-dark);
+    }
+
+    .form-input,
+    .form-select {
       width: 100%;
-      padding: 0.5rem;
-      margin-bottom: 12px;
-      border: 1px solid #ddd;
-      border-radius: 6px;
-      background-color: #f9f9f9;
-      font-size: 1rem;
-      transition: border-color 0.2s;
+      padding: 0.625rem;
+      border: 1px solid #e2e8f0;
+      border-radius: 0.375rem;
+      margin-bottom: 0.5rem;
+      transition: border-color 0.2s ease;
     }
 
-    .form-input:focus, .form-select:focus {
-      border-color: var(--color-primary);
+    .form-input:focus,
+    .form-select:focus {
       outline: none;
-      box-shadow: 0 0 0 2px rgba(255, 204, 0, 0.3);
+      border-color: var(--color-primary);
+      box-shadow: 0 0 0 3px rgba(255, 204, 0, 0.1);
     }
 
-    /* Options List */
-    .options-list li {
+    /* Espaciados para las opciones */
+    #optionsContainer {
+      margin-top: 1.5rem;
+    }
+
+    #optionsList {
+      margin-top: 1rem;
+    }
+
+    #optionsList li {
+      margin-bottom: 0.75rem;
+    }
+
+    /* Ajustes para los botones en las tarjetas */
+    .card-actions {
+      display: flex;
+      gap: 0.75rem;
+      margin-top: 1rem;
+    }
+
+    /* Espaciado para los elementos dentro de las tarjetas */
+    .card-content {
+      padding: 1.5rem;
+    }
+
+    .card-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 8px;
+      margin-bottom: 1rem;
     }
 
-    .options-list input {
-      flex: 1;
-      margin-right: 8px;
-    }
-    .hidden {
-      display: none;
+    /* Ajustes para las etiquetas de tipo */
+    .type-badge {
+      padding: 0.375rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      background-color: #f3f4f6;
+      color: #4b5563;
     }
   </style>
 {% endblock %}
@@ -158,89 +229,81 @@
 {% block content %}
   {{ block.super }}
 
-  <div class="mt-8 mb-4">
-    <h3 class="text-lg font-bold mb-4" style="color: var(--color-dark-700);">Formulario de Evaluación</h3>
-    <button id="openViewFormModal" class="btn btn-primary" style="background-color: var(--color-primary-400); color: var(--color-dark-700);">
-      Ver Formulario
-    </button>
-  </div>
-
-  <!-- Modal: Lista de Preguntas -->
-  <div id="viewFormModal" class="modal-overlay hidden">
+  <!-- Modal Unificado -->
+  <div id="formModal" class="modal-overlay hidden">
     <div class="modal-content">
-      <h2 class="modal-title">Preguntas del Formulario</h2>
-      
-      <div id="questionsList" class="space-y-4 overflow-y-auto max-h-[400px]">
-        {% for node in original.evaluation_form.question_nodes %}
-          <div class="bg-gray-100 shadow p-4 rounded-lg">
-            <div class="flex justify-between items-center">
-              <div>
-                <span class="text-sm font-semibold">{{ node.type }}</span>
-                <p class="text-md">{{ node.question }}</p>
-                {% if node.options %}
-                  <ul class="list-disc ml-6 mt-2 text-sm">
-                    {% for option in node.options %}
-                      <li>{{ option|safe }}</li>
-                    {% endfor %}
-                  </ul>
-                {% endif %}
-              </div>
-              <div class="flex space-x-2">
-                <button type="button" onclick="editQuestion({{ node|safe }})"
-                  class="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600">Editar</button>
-                <button type="button" onclick="deleteQuestion({{ node.id }})"
-                  class="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600">Eliminar</button>
-              </div>
-            </div>
-          </div>
-        {% endfor %}
+      <h2 id="modalTitle" class="modal-title">Gestión de Formulario</h2>
+
+      <!-- Contenedor de Preguntas -->
+      <div id="questionsList" class="overflow-y-auto max-h-[400px]">
+        <!-- El contenido se llenará dinámicamente via JavaScript -->
       </div>
-      
-      <!-- Botón Agregar Pregunta -->
-      <div class="mt-4">
-        <button id="openAddQuestionModal" class="btn" style="background-color: var(--color-primary-400); color: var(--color-dark-700);">
-          Agregar Pregunta
-        </button>
-        <button id="closeViewFormModal" class="btn btn-secondary">
-          Cerrar
-        </button>
+
+      <!-- Botones -->
+      <div class="flex justify-end gap-2 mt-4">
+        <button id="addQuestionBtn" class="btn btn-primary" onclick="openAddQuestionModal()">Agregar Pregunta</button>
+        <button class="btn btn-secondary" onclick="closeModal()">Cerrar</button>
       </div>
     </div>
   </div>
 
-  <!-- Modal: Formulario Pregunta -->
+  <!-- Modal: Editar Pregunta -->
   <div id="questionModal" class="modal-overlay hidden">
     <div class="modal-content">
       <h2 class="modal-title">Editar Pregunta</h2>
-      <form id="questionForm" method="POST">
+      <form id="questionForm">
         {% csrf_token %}
-        <input type="hidden" name="node_id" id="nodeId">
+        <input type="hidden" id="nodeId">
 
         <div class="form-group">
-          <label>Tipo de Pregunta</label>
-          <select id="questionType" name="questionType" class="form-select">
-            <option value="MULTIPLE_CHOICE_QUESTION">Múltiple</option>
-            <option value="SINGLE_CHOICE_QUESTION">Única</option>
+          <label for="contentType">Tipo de Contenido</label>
+          <select id="contentType" class="form-select" required>
+            <option value="">Seleccione el tipo</option>
+            <option value="EVALUATION">Evaluación</option>
+            <option value="TRAINING">Entrenamiento</option>
+          </select>
+        </div>
+
+        <!-- Tipos para Evaluación -->
+        <div id="evaluationTypes" class="form-group hidden">
+          <label for="questionType">Tipo de Pregunta</label>
+          <select id="questionType" class="form-select">
+            <option value="MULTIPLE_CHOICE_QUESTION">Selección Múltiple</option>
+            <option value="SINGLE_CHOICE_QUESTION">Selección Única</option>
             <option value="SCALE_QUESTION">Escala</option>
           </select>
         </div>
 
+        <!-- Tipos para Entrenamiento -->
+        <div id="trainingTypes" class="form-group hidden">
+          <label for="trainingType">Tipo de Entrenamiento</label>
+          <select id="trainingType" class="form-select">
+            <option value="VIDEO">Video</option>
+            <option value="TEXT">Texto</option>
+            <option value="IMAGE">Imagen</option>
+            <option value="DOCUMENT">Documento</option>
+          </select>
+        </div>
+
         <div class="form-group">
-          <label>Pregunta</label>
-          <input name="question" id="questionText" type="text" class="form-input" required>
+          <label for="questionText" id="contentLabel">Pregunta</label>
+          <input type="text" id="questionText" class="form-input" required>
         </div>
 
         <div id="optionsContainer" class="hidden">
           <label>Opciones</label>
           <div class="flex gap-2 mb-2">
-            <input type="text" id="newOption" placeholder="Nueva opción" class="form-input mb-0">
+            <input type="text" id="newOption" class="form-input" placeholder="Nueva opción">
             <button type="button" id="addOptionBtn" class="btn btn-primary">+</button>
           </div>
-          <ul id="optionsList"></ul>
+          <div id="optionsError" class="text-red-500 text-sm hidden">
+            Se requieren al menos 2 opciones para preguntas de selección
+          </div>
+          <ul id="optionsList" class="mt-2"></ul>
         </div>
 
         <div class="flex justify-end gap-2 mt-4">
-          <button type="button" id="closeQuestionModal" class="btn btn-secondary">Cancelar</button>
+          <button type="button" class="btn btn-secondary" onclick="closeQuestionModal()">Cancelar</button>
           <button type="submit" class="btn btn-primary">Guardar</button>
         </div>
       </form>
@@ -248,33 +311,51 @@
   </div>
 
 <script>
-  const viewFormModal = document.getElementById('viewFormModal');
+  // Variables
+  const formModal = document.getElementById('formModal');
   const questionModal = document.getElementById('questionModal');
   const optionsContainer = document.getElementById('optionsContainer');
+  const optionsList = document.getElementById('optionsList');
   let options = [];
+  function closeQuestionModal() {
+    questionModal.classList.add('hidden');
+  }
 
-  document.getElementById('openViewFormModal').onclick = () => viewFormModal.classList.remove('hidden');
-  document.getElementById('closeViewFormModal').onclick = () => viewFormModal.classList.add('hidden');
-  
-  document.getElementById('openAddQuestionModal').onclick = () => {
-    resetQuestionForm();
-    questionModal.classList.remove('hidden');
-  };
-  document.getElementById('closeQuestionModal').onclick = () => questionModal.classList.add('hidden');
+  function openViewFormModal() {
+    const nodes = {{ original.evaluation_form.question_nodes|safe }};
+    renderNodes(nodes, 'EVALUATION');
+    document.getElementById('formModal').classList.remove('hidden');
+  }
 
-  document.getElementById('questionType').onchange = (e) => {
-    optionsContainer.classList.toggle('hidden', e.target.value !== 'MULTIPLE_CHOICE_QUESTION' && e.target.value !== 'SINGLE_CHOICE_QUESTION');
-  };
+  function openTrainingFormModal() {
+    const nodes = {{ original.training_form.training_nodes|safe }};
+    renderNodes(nodes, 'TRAINING');
+    document.getElementById('formModal').classList.remove('hidden');
+  }
 
-  document.getElementById('addOptionBtn').onclick = () => {
-    const newOption = document.getElementById('newOption').value.trim();
-    if (newOption) {
-      options.push(newOption);
+  // Mostrar modal
+  function openModal(modal) {
+    modal.classList.remove('hidden');
+  }
+
+  // Cerrar modal
+  function closeModal() {
+    document.querySelectorAll('.modal-overlay').forEach(modal => modal.classList.add('hidden'));
+  }
+
+
+
+  // Agregar opción
+  function addOption() {
+    const optionText = document.getElementById('newOption').value.trim();
+    if (optionText) {
+      options.push(optionText);
       renderOptions();
       document.getElementById('newOption').value = '';
     }
-  };
+  }
 
+  // Renderizar opciones
   function renderOptions() {
     const optionsList = document.getElementById('optionsList');
     optionsList.innerHTML = options.map((opt, index) => `
@@ -296,145 +377,395 @@
     `).join('');
   }
 
-  function updateOption(index, value) {
-    options[index] = value.trim();
-    console.log('Updated options:', options); // For debugging
-  }
-
-  function removeOption(index) {
-    options.splice(index, 1);
-    renderOptions();
-    console.log('Options after removal:', options); // For debugging
-  }
-
   function resetQuestionForm() {
     document.getElementById('questionForm').reset();
     options = [];
     renderOptions();
   }
 
-  function editQuestion(node) {
+  function editNode(node, type = 'EVALUATION') {
+    console.log('Editing node:', node, 'Type:', type);
     resetQuestionForm();
-    document.getElementById('modalTitle').textContent = 'Editar Pregunta';
+    
     document.getElementById('nodeId').value = node.id;
-    document.getElementById('questionText').value = node.question;
-    document.getElementById('questionType').value = node.type;
+    document.getElementById('contentType').value = type;
     
-    // Show options container if it's a multiple choice question
-    const isChoiceQuestion = ['MULTIPLE_CHOICE_QUESTION', 'SINGLE_CHOICE_QUESTION'].includes(node.type);
-    optionsContainer.classList.toggle('hidden', !isChoiceQuestion);
+    if (type === 'TRAINING') {
+        // Configurar para entrenamiento
+        document.getElementById('trainingType').value = node.type;
+        document.getElementById('questionText').value = node.content;
+        document.getElementById('contentLabel').textContent = 'Contenido';
+        
+        // Mostrar/ocultar contenedores apropiados
+        document.getElementById('evaluationTypes').classList.add('hidden');
+        document.getElementById('trainingTypes').classList.remove('hidden');
+        document.getElementById('optionsContainer').classList.add('hidden');
+    } else {
+        // Configurar para evaluación
+        document.getElementById('questionType').value = node.type;
+        document.getElementById('questionText').value = node.question;
+        document.getElementById('contentLabel').textContent = 'Pregunta';
+        
+        // Mostrar/ocultar contenedores apropiados
+        document.getElementById('evaluationTypes').classList.remove('hidden');
+        document.getElementById('trainingTypes').classList.add('hidden');
+        
+        // Manejar opciones si es pregunta de selección
+        const isChoiceQuestion = ['MULTIPLE_CHOICE_QUESTION', 'SINGLE_CHOICE_QUESTION'].includes(node.type);
+        document.getElementById('optionsContainer').classList.toggle('hidden', !isChoiceQuestion);
+        options = node.options || [];
+        if (isChoiceQuestion) {
+            renderOptions();
+        }
+    }
     
-    // Set options and render them
-    options = node.options || [];
-    renderOptions();
-  
     questionModal.classList.remove('hidden');
   }
 
-  function deleteQuestion(nodeId) {
-    if (confirm("¿Estás seguro de eliminar esta pregunta?")) {
-        const currentForm = {{ original.evaluation_form|safe|default:"{}" }};
-        let currentNodes = currentForm.question_nodes || [];
-        
-        // Filter out the node to delete
-        currentNodes = currentNodes.filter(node => node.id !== nodeId);
-        
-        const updatedForm = {
-            question_nodes: currentNodes,
-        };
+  function deleteNode(nodeId, type) {
+    const confirmMessage = type === 'TRAINING' ? 
+        "¿Estás seguro de eliminar este contenido de entrenamiento?" : 
+        "¿Estás seguro de eliminar esta pregunta?";
 
-        fetch("{% url 'update_evaluation_form' original.id %}", {
-            method: "POST",
-            headers: { 
-                "X-CSRFToken": "{{ csrf_token }}"
+    if (confirm(confirmMessage)) {
+        // Obtener los nodos actuales según el tipo
+        let currentNodes = type === 'TRAINING' ? 
+            {{ original.training_nodes|default:"[]"|safe }} :
+            {{ original.evaluation_form.question_nodes|default:"[]"|safe }};
+
+        // Filtrar el nodo a eliminar
+        currentNodes = currentNodes.filter(node => node.id !== nodeId);
+
+        // Preparar datos y endpoint según el tipo
+        const endpoint = type === 'TRAINING' ?
+            "{% url 'update_training_form' original.id %}" :
+            "{% url 'update_evaluation_form' original.id %}";
+
+        // Preparar el body según el tipo
+        const formData = new FormData();
+        if (type === 'TRAINING') {
+            formData.append('training_form', JSON.stringify({
+                training_nodes: currentNodes
+            }));
+        } else {
+            formData.append('evaluation_form', JSON.stringify({
+                question_nodes: currentNodes
+            }));
+        }
+
+        // Debug
+        console.log('Deleting node:', {
+            type,
+            nodeId,
+            endpoint,
+            data: Object.fromEntries(formData)
+        });
+
+        fetch(endpoint, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
             },
-            body: new URLSearchParams({
-                "evaluation_form": JSON.stringify(updatedForm)
-            })
+            body: formData
         })
         .then(response => {
             if (!response.ok) {
-                throw new Error(`Error: ${response.statusText}`);
+                return response.text().then(text => {
+                    console.error('Server response:', text);
+                    throw new Error(`Error ${response.status}: ${text}`);
+                });
             }
             return response.json();
         })
-        .then(responseData => {
-            if (responseData.status === 'success') {
-                alert("Pregunta eliminada correctamente");
+        .then(data => {
+            if (data.status === 'success') {
+                alert(type === 'TRAINING' ? 
+                    'Contenido de entrenamiento eliminado correctamente' : 
+                    'Pregunta eliminada correctamente'
+                );
                 location.reload();
             } else {
-                throw new Error(responseData.message || 'Error desconocido');
+                throw new Error(data.message || 'Error desconocido');
             }
         })
         .catch(error => {
-            console.error("Error al eliminar la pregunta:", error);
+            console.error('Error al eliminar:', error);
             alert(`Error: ${error.message}`);
         });
     }
   }
 
-  function saveQuestion() {
-    const questionType = document.getElementById('questionType').value;
-    const isChoiceQuestion = ['MULTIPLE_CHOICE_QUESTION', 'SINGLE_CHOICE_QUESTION'].includes(questionType);
-    
-    if (isChoiceQuestion && (!options || options.length === 0)) {
-        alert('Debe agregar al menos una opción para preguntas de selección');
-        return;
-    }
+  // Actualizar opción
+  function updateOption(index, value) {
+    options[index] = value.trim();
+    console.log('Updated options:', options); // For debugging
+  }
 
+  // Eliminar opción
+  function removeOption(index) {
+    options.splice(index, 1);
+    renderOptions();
+  }
+
+
+
+  function openAddQuestionModal() {
+    options = [];
+    renderOptions();
+    openModal(questionModal);
+  }
+
+
+  function saveQuestion() {
+    const contentType = document.getElementById('contentType').value;
     const nodeId = document.getElementById('nodeId').value;
     const questionText = document.getElementById('questionText').value;
 
-    const newNode = {
-      id: nodeId ? parseInt(nodeId) : Date.now(),
-      question: questionText,
-      type: questionType,
-      options: options
+    let nodeData = {
+        id: nodeId ? parseInt(nodeId) : Date.now()
     };
 
-    const currentForm = {{ original.evaluation_form|safe|default:"{}" }};
-    let currentNodes = currentForm.question_nodes || [];
+    // Si es contenido de entrenamiento
+    if (contentType === 'TRAINING') {
+        nodeData.type = document.getElementById('trainingType').value;
+        nodeData.content = questionText;
+    } 
+    // Si es pregunta de evaluación
+    else {
+        const questionType = document.getElementById('questionType').value;
+        nodeData.type = questionType;
+        nodeData.question = questionText;
 
-    if (nodeId) {
-      const index = currentNodes.findIndex(node => node.id === parseInt(nodeId));
-      if (index !== -1) {
-        currentNodes[index] = newNode;
-      } else {
-        currentNodes.push(newNode);
-      }
-    } else {
-      currentNodes.push(newNode);
+        // Solo validar opciones para preguntas de selección
+        const isChoiceQuestion = ['MULTIPLE_CHOICE_QUESTION', 'SINGLE_CHOICE_QUESTION'].includes(questionType);
+        if (isChoiceQuestion) {
+            if (!options || options.length < 2) {
+                alert('Debe agregar al menos dos opciones para preguntas de selección');
+                return;
+            }
+            nodeData.options = options;
+        }
     }
 
-    const updatedForm = {
-      question_nodes: currentNodes,
-    };
+    // Obtener los nodos actuales según el tipo
+    const currentNodes = contentType === 'TRAINING' ? 
+        ({{ original.training_form.training_nodes|default:"[]"|safe }}) :
+        ({{ original.evaluation_form.question_nodes|default:"[]"|safe }});
 
-    fetch("{% url 'update_evaluation_form' original.id %}", {
-      method: "POST",
-      headers: { "X-CSRFToken": "{{ csrf_token }}" },
-      body: new URLSearchParams({ "evaluation_form": JSON.stringify(updatedForm) })
-    }).then(response => {
-      if (!response.ok) {
-        throw new Error(`Error: ${response.statusText}`);
-      }
-      return response.json();
-    }).then(responseData => {
-      if (responseData.status === 'success') {
-        alert("Formulario actualizado correctamente");
-        location.reload();
-      } else {
-        throw new Error(responseData.message || 'Error desconocido');
-      }
-    }).catch(error => {
-      console.error("Error al guardar el formulario:", error);
-      alert(`Error: ${error.message}`);
+    // Actualizar o agregar el nodo
+    let updatedNodes;
+    if (nodeId) {
+        const index = currentNodes.findIndex(n => n.id === parseInt(nodeId));
+        if (index !== -1) {
+            updatedNodes = [
+                ...currentNodes.slice(0, index),
+                nodeData,
+                ...currentNodes.slice(index + 1)
+            ];
+        } else {
+            updatedNodes = [...currentNodes, nodeData];
+        }
+    } else {
+        updatedNodes = [...currentNodes, nodeData];
+    }
+
+    // Determinar el endpoint y los datos según el tipo
+    const endpoint = contentType === 'TRAINING' ?
+        "{% url 'update_training_form' original.id %}" :
+        "{% url 'update_evaluation_form' original.id %}";
+
+    const formData = contentType === 'TRAINING' ?
+        { training_form: JSON.stringify({ training_nodes: updatedNodes }) } :
+        { evaluation_form: JSON.stringify({ question_nodes: updatedNodes }) };
+
+    // Enviar al servidor
+    fetch(endpoint, {
+        method: "POST",
+        headers: { 
+            "X-CSRFToken": "{{ csrf_token }}",
+            "Content-Type": "application/x-www-form-urlencoded"
+        },
+        body: new URLSearchParams(formData)
+    })
+    .then(response => {
+        if (!response.ok) throw new Error(`Error: ${response.statusText}`);
+        return response.json();
+    })
+    .then(responseData => {
+        if (responseData.status === 'success') {
+            alert(contentType === 'TRAINING' ? 
+                "Contenido de entrenamiento guardado correctamente" : 
+                "Pregunta guardada correctamente"
+            );
+            location.reload();
+        } else {
+            throw new Error(responseData.message || 'Error desconocido');
+        }
+    })
+    .catch(error => {
+        console.error("Error al guardar:", error);
+        alert(`Error: ${error.message}`);
     });
   }
 
+
+ 
+  // Guardar pregunta
   document.getElementById('questionForm').onsubmit = function(e) {
     e.preventDefault();
     saveQuestion();
   };
+
+  // Cambio de tipo de contenido
+  document.getElementById('contentType').addEventListener('change', function(e) {
+    const contentType = e.target.value;
+    const evaluationTypes = document.getElementById('evaluationTypes');
+    const trainingTypes = document.getElementById('trainingTypes');
+    const optionsContainer = document.getElementById('optionsContainer');
+    const contentLabel = document.getElementById('contentLabel');
+    
+    evaluationTypes.classList.toggle('hidden', contentType !== 'EVALUATION');
+    trainingTypes.classList.toggle('hidden', contentType !== 'TRAINING');
+    optionsContainer.classList.add('hidden');
+    
+    if (contentType === 'EVALUATION') {
+      contentLabel.textContent = 'Pregunta';
+    } else if (contentType === 'TRAINING') {
+      contentLabel.textContent = 'Contenido';
+    }
+  });
+
+  // Validación del tipo de pregunta
+  document.getElementById('questionType').addEventListener('change', function(e) {
+    const isChoiceQuestion = ['MULTIPLE_CHOICE_QUESTION', 'SINGLE_CHOICE_QUESTION'].includes(e.target.value);
+    const optionsContainer = document.getElementById('optionsContainer');
+    
+    optionsContainer.classList.toggle('hidden', !isChoiceQuestion);
+    
+    if (!isChoiceQuestion) {
+      options = [];
+      renderOptions();
+    }
+  });
+
+  // Validación del formulario
+  document.getElementById('questionForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const contentType = document.getElementById('contentType').value;
+    const questionType = contentType === 'EVALUATION' 
+      ? document.getElementById('questionType').value
+      : document.getElementById('trainingType').value;
+    
+    if (contentType === 'EVALUATION') {
+      const isChoiceQuestion = ['MULTIPLE_CHOICE_QUESTION', 'SINGLE_CHOICE_QUESTION'].includes(questionType);
+      if (isChoiceQuestion && options.length < 2) {
+        document.getElementById('optionsError').classList.remove('hidden');
+        return;
+      }
+    }
+    
+    saveQuestion();
+  });
+
+  // Agregar opción
+  document.getElementById('addOptionBtn').addEventListener('click', function() {
+    const newOption = document.getElementById('newOption');
+    const value = newOption.value.trim();
+    
+    if (value) {
+      options.push(value);
+      renderOptions();
+      newOption.value = '';
+      document.getElementById('optionsError').classList.add('hidden');
+    }
+  });
+
+  // Renderizar opciones
+  function renderOptions() {
+    const optionsList = document.getElementById('optionsList');
+    optionsList.innerHTML = options.map((opt, index) => `
+      <li class="flex items-center gap-2 mb-2">
+        <input 
+          type="text" 
+          value="${opt}" 
+          class="flex-1 form-input"
+          onchange="updateOption(${index}, this.value)"
+        >
+        <button 
+          type="button" 
+          class="btn btn-danger"
+          onclick="removeOption(${index})"
+        >
+          Eliminar
+        </button>
+      </li>
+    `).join('');
+  }
+
+  function renderNodes(nodes, type) {
+    const questionsList = document.getElementById('questionsList');
+    const typeLabels = {
+      'MULTIPLE_CHOICE_QUESTION': 'Selección Múltiple',
+      'SINGLE_CHOICE_QUESTION': 'Selección Única',
+      'SCALE_QUESTION': 'Escala',
+      'VIDEO': 'Video',
+      'TEXT': 'Texto',
+      'IMAGE': 'Imagen',
+      'DOCUMENT': 'Documento'
+    };
+
+    questionsList.innerHTML = nodes.map((node, index) => `
+      <div class="p-6 bg-white rounded-lg shadow-md mb-4 border border-gray-200 hover:shadow-lg transition-shadow duration-200">
+        <div class="card-header">
+          <div class="flex items-center gap-3">
+            <span class="inline-flex items-center justify-center h-7 w-7 rounded-full bg-primary text-dark font-semibold text-sm">
+              ${index + 1}
+            </span>
+            <span class="type-badge">
+              ${typeLabels[node.type] || node.type}
+            </span>
+          </div>
+          <div class="btn-container">
+            <button class="btn btn-primary" 
+                    onclick='editNode(${JSON.stringify(node).replace(/'/g, "&#39;")}, "${type}")'>
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+              </svg>
+              Editar
+            </button>
+            <button class="btn btn-danger" 
+                    onclick="deleteNode(${node.id}, '${type}')">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+              </svg>
+              Eliminar
+            </button>
+          </div>
+        </div>
+
+        <div class="card-content">
+          <p class="text-gray-800 font-medium mb-3">
+            ${type === 'TRAINING' ? node.content : node.question}
+          </p>
+          ${node.options ? `
+            <div class="mt-4 pl-4 border-l-2 border-gray-200">
+              <p class="text-sm text-gray-600 mb-3">Opciones:</p>
+              <ul class="space-y-3">
+                ${node.options.map((option, idx) => `
+                  <li class="flex items-center gap-3">
+                    <span class="w-6 h-6 flex items-center justify-center rounded-full bg-gray-100 text-xs text-gray-600 font-medium">
+                      ${idx + 1}
+                    </span>
+                    <span class="text-gray-700">${option}</span>
+                  </li>
+                `).join('')}
+              </ul>
+            </div>
+          ` : ''}
+        </div>
+      </div>
+    `).join('');
+  }
 </script>
 {% endblock %}
