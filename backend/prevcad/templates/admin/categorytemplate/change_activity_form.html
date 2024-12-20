@@ -369,7 +369,7 @@
             <button 
                 type="button" 
                 onclick="removeOption(${index})" 
-                class="bg-red-500 text-white px-3 py-2 rounded hover:bg-red-600"
+                class=" text-white px-3 py-2"
             >
                 Eliminar
             </button>
@@ -694,7 +694,7 @@
         >
         <button 
           type="button" 
-          class="btn btn-danger"
+          class="text-white px-3 py-2 bg-red-500 rounded-lg font-medium transition-colors"
           onclick="removeOption(${index})"
         >
           Eliminar
@@ -704,68 +704,61 @@
   }
 
   function renderNodes(nodes, type) {
-    const questionsList = document.getElementById('questionsList');
-    const typeLabels = {
-      'MULTIPLE_CHOICE_QUESTION': 'Selección Múltiple',
-      'SINGLE_CHOICE_QUESTION': 'Selección Única',
-      'SCALE_QUESTION': 'Escala',
-      'VIDEO': 'Video',
-      'TEXT': 'Texto',
-      'IMAGE': 'Imagen',
-      'DOCUMENT': 'Documento'
-    };
+  const questionsList = document.getElementById('questionsList');
+  const typeLabels = {
+    'MULTIPLE_CHOICE_QUESTION': 'Selección Múltiple',
+    'SINGLE_CHOICE_QUESTION': 'Selección Única',
+    'SCALE_QUESTION': 'Escala',
+    'VIDEO': 'Video',
+    'TEXT': 'Texto',
+    'IMAGE': 'Imagen',
+    'DOCUMENT': 'Documento'
+  };
 
-    questionsList.innerHTML = nodes.map((node, index) => `
-      <div class="p-6 bg-white rounded-lg shadow-md mb-4 border border-gray-200 hover:shadow-lg transition-shadow duration-200">
-        <div class="card-header">
+  questionsList.innerHTML = nodes.map((node, index) => `
+    <div class="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+      <div class="p-6">
+        <div class="flex items-center justify-between mb-6">
           <div class="flex items-center gap-3">
-            <span class="inline-flex items-center justify-center h-7 w-7 rounded-full bg-primary text-dark font-semibold text-sm">
-              ${index + 1}
-            </span>
-            <span class="type-badge">
+            <span class="text-lg font-semibold">${index + 1}</span>
+            <span class="px-4 py-1 bg-gray-100 rounded-full text-sm font-medium text-gray-600">
               ${typeLabels[node.type] || node.type}
             </span>
           </div>
-          <div class="btn-container">
-            <button class="btn btn-primary" 
-                    onclick='editNode(${JSON.stringify(node).replace(/'/g, "&#39;")}, "${type}")'>
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-              </svg>
+          <div class="flex gap-2">
+            <button 
+              onclick='editNode(${JSON.stringify(node).replace(/'/g, "&#39;")}, "${type}")'
+              class="px-6 py-2 bg-[#ffcc00] hover:bg-[#e6b800] rounded-lg font-medium transition-colors"
+            >
               Editar
             </button>
-            <button class="btn btn-danger" 
-                    onclick="deleteNode(${node.id}, '${type}')">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-              </svg>
+            <button 
+              onclick="deleteNode(${node.id}, '${type}')"
+              class="px-6 py-2 bg-[#ffcc00] hover:bg-[#e6b800] rounded-lg font-medium transition-colors"
+            >
               Eliminar
             </button>
           </div>
         </div>
 
-        <div class="card-content">
-          <p class="text-gray-800 font-medium mb-3">
-            ${type === 'TRAINING' ? node.content : node.question}
-          </p>
-          ${node.options ? `
-            <div class="mt-4 pl-4 border-l-2 border-gray-200">
-              <p class="text-sm text-gray-600 mb-3">Opciones:</p>
-              <ul class="space-y-3">
-                ${node.options.map((option, idx) => `
-                  <li class="flex items-center gap-3">
-                    <span class="w-6 h-6 flex items-center justify-center rounded-full bg-gray-100 text-xs text-gray-600 font-medium">
-                      ${idx + 1}
-                    </span>
-                    <span class="text-gray-700">${option}</span>
-                  </li>
-                `).join('')}
-              </ul>
-            </div>
-          ` : ''}
-        </div>
+        <p class="text-lg mb-4">
+          ${type === 'TRAINING' ? node.content : node.question}
+        </p>
+
+        ${node.options ? `
+          <div class="space-y-3">
+            <p class="font-medium">Opciones:</p>
+            ${node.options.map((option, idx) => `
+              <div class="flex items-center gap-2">
+                <span class="text-lg">×</span>
+                <span>${option}</span>
+              </div>
+            `).join('')}
+          </div>
+        ` : ''}
       </div>
-    `).join('');
-  }
+    </div>
+  `).join('');
+}
 </script>
 {% endblock %}
