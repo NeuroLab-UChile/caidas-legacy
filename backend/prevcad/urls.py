@@ -8,6 +8,7 @@ from prevcad.views.health_categories import HealthCategoryListView, save_evaluat
 from django.conf import settings
 from django.conf.urls.static import static
 from .views import admin_views
+from .views.appointment_view import AppointmentViewSet
 
 
 router = routers.DefaultRouter(trailing_slash=False)
@@ -15,7 +16,7 @@ router = routers.DefaultRouter(trailing_slash=False)
 router.register('prevcad/text_recommendations/', TextRecomendationsView, basename='text_recommendations')
 router.register('prevcad/text_recommendations/<int:pk>/register_click', TextRecomendationsView, basename='recommendation-register-click')
 
-
+router.register('prevcad/appointments/', AppointmentViewSet, basename='appointments')
 # Rutas de la API
 urlpatterns = [
   path('prevcad/', include(router.urls)),
@@ -28,6 +29,7 @@ urlpatterns = [
   path('prevcad/health-categories/create', 
        create_health_category, 
        name='create_health_category'),
+  
   path('admin/update-evaluation-form/<int:template_id>/', admin_views.update_evaluation_form, name='update_evaluation_form'),
   path('admin/update-training-form/<int:template_id>/', admin_views.update_training_form, name='update_training_form'),
 ]

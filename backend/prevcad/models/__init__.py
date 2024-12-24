@@ -4,6 +4,7 @@ from .health_category import CategoryTemplate, HealthCategory
 from .activity_node import ActivityNode, ActivityNodeDescription, ActivityNodeQuestion, TextQuestion, SingleChoiceQuestion, MultipleChoiceQuestion, ScaleQuestion, ImageQuestion, ResultNode, WeeklyRecipeNode
 from .user_recommendation_interaction import UserRecommendationInteraction
 from .profile import Profile
+from .appointment import Appointment
 
 __all__ = [
   'CategoryTemplate',
@@ -21,4 +22,5 @@ __all__ = [
   'ScaleQuestion',
   'ImageQuestion',
   'UserRecommendationInteraction',
+  'Appointment'
 ]

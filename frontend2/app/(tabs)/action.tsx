@@ -1,5 +1,4 @@
-// frontend2/app/(tabs)/ActionScreen.tsx
-import React from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -9,65 +8,27 @@ import {
   ActivityIndicator,
   Dimensions,
   Image,
+  StatusBar,
   ScrollView,
 } from "react-native";
 import { useCategories } from "../contexts/categories";
 import { theme } from "@/src/theme";
 import { Category } from "../types/category";
 import { router } from "expo-router";
+import { IconSymbol } from "@/components/ui/IconSymbol";
 
 const { width } = Dimensions.get("window");
-const COLUMN_COUNT = 2;
 const SPACING = 16;
-const ITEM_WIDTH = (width - SPACING * (COLUMN_COUNT + 1)) / COLUMN_COUNT;
+const CARD_WIDTH = (width - SPACING * 3) / 2;
 
 export default function ActionScreen() {
   const { categories, selectedCategory, setSelectedCategory, loading, error } =
     useCategories();
+  const [isCategoriesExpanded, setIsCategoriesExpanded] = useState(false);
 
   const handleCategoryPress = (category: Category) => {
     setSelectedCategory(category);
-    router.push({
-      pathname: "/(tabs)/category-detail",
-    });
-  };
-
-  const renderIcon = (base64Icon: string) => {
-    try {
-      // Validar que tenemos un string no vacío
-      if (!base64Icon || typeof base64Icon !== "string") {
-        return null;
-      }
-
-      // Limpiar el string base64 de posibles espacios o saltos de línea
-      const cleanBase64 = base64Icon.trim();
-
-      // Debug logs detallados
-
-      // Construir URI según el formato
-      let imageUri = cleanBase64;
-      if (!cleanBase64.startsWith("data:") && !cleanBase64.startsWith("http")) {
-        // Si no empieza con data: o http, asumimos que es base64 puro
-        imageUri = `data:image/png;base64,${cleanBase64}`;
-      }
-
-      return (
-        <Image
-          source={{ uri: imageUri }}
-          style={styles.iconImage}
-          resizeMode="contain"
-          onError={(e) => {
-            console.error("Image loading error:", {
-              error: e.nativeEvent.error,
-              uri: imageUri.substring(0, 100) + "...",
-            });
-          }}
-        />
-      );
-    } catch (error) {
-      console.error("Error in renderIcon:", error);
-      return null;
-    }
+    router.push("/(tabs)/category-detail");
   };
 
   if (loading) {
@@ -82,52 +43,144 @@ export default function ActionScreen() {
     return (
       <View style={styles.errorContainer}>
         <Text style={styles.errorText}>{error}</Text>
+        <TouchableOpacity
+          style={styles.retryButton}
+          onPress={() => window.location.reload()}
+        >
+          <Text style={styles.retryText}>Reintentar</Text>
+        </TouchableOpacity>
       </View>
     );
   }
 
+  const renderIcon = (base64Icon: string) => {
+    try {
+      if (!base64Icon) return null;
+      const imageUri = base64Icon.startsWith("data:")
+        ? base64Icon
+        : `data:image/png;base64,${base64Icon}`;
+      return (
+        <Image
+          source={{ uri: imageUri }}
+          style={styles.iconImage}
+          resizeMode="contain"
+        />
+      );
+    } catch (error) {
+      return null;
+    }
+  };
+
+  const renderCategoryCard = (item: Category) => {
+    const isSelected = selectedCategory?.id === item.id;
+
+    return (
+      <TouchableOpacity
+        key={item.id}
+        style={[
+          styles.categoryCard,
+          isSelected && { borderColor: theme.colors.primary },
+        ]}
+        onPress={() => handleCategoryPress(item)}
+      >
+        <View style={styles.iconContainer}>
+          {item.icon ? (
+            renderIcon(item.icon)
+          ) : (
+            <IconSymbol
+              name="category"
+              size={24}
+              color={theme.colors.primary}
+            />
+          )}
+        </View>
+        <Text style={styles.categoryCardTitle}>{item.name}</Text>
+      </TouchableOpacity>
+    );
+  };
+
   return (
     <View style={styles.container}>
-      <View style={styles.selectedCategoryContainer}>
-        <Text style={styles.selectedCategoryTitle}>
-          {selectedCategory
-            ? `Categoría seleccionada: ${selectedCategory.name}`
-            : "No hay categoría seleccionada"}
-        </Text>
+      <StatusBar barStyle="light-content" />
+
+      {/* Header */}
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>WE-FLOW</Text>
       </View>
 
-      <FlatList
-        data={categories}
-        numColumns={COLUMN_COUNT}
-        contentContainerStyle={styles.listContainer}
-        ListHeaderComponent={null}
-        showsVerticalScrollIndicator={true}
-        bounces={true}
-        renderItem={({ item }) => {
-          return (
+      {/* Wrap everything in a ScrollView */}
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        {/* Main Actions */}
+        <View style={styles.mainActions}>
+          <TouchableOpacity
+            style={[
+              styles.actionCard,
+              { backgroundColor: theme.colors.primary },
+            ]}
+            onPress={() => router.push("/(tabs)/events")}
+          >
+            <IconSymbol name="calendar" size={32} color={theme.colors.text} />
+            <Text style={styles.actionTitle}>Eventos</Text>
+            <Text style={styles.actionSubtitle}>Ver próximos eventos</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[
+              styles.actionCard,
+              { backgroundColor: theme.colors.accent },
+            ]}
+            onPress={() => setIsCategoriesExpanded(!isCategoriesExpanded)}
+          >
+            <IconSymbol name="category" size={32} color={theme.colors.text} />
+            <Text style={styles.actionTitle}>Categorías</Text>
+            <Text style={styles.actionSubtitle}>
+              Explorar o Elegir categorías
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Expanded Categories Section */}
+        {isCategoriesExpanded && (
+          <View style={styles.expandedCategories}>
+            <Text style={styles.sectionTitle}>Todas las Categorías</Text>
+            <View style={styles.categoriesGrid}>
+              {categories.map(renderCategoryCard)}
+            </View>
+          </View>
+        )}
+      </ScrollView>
+
+      {/* Siempre mostrar el banner, pero con diferente contenido */}
+      <View style={styles.selectedBanner}>
+        {selectedCategory ? (
+          <>
+            <View style={styles.selectedIconContainer}>
+              {selectedCategory.icon ? (
+                renderIcon(selectedCategory.icon)
+              ) : (
+                <IconSymbol
+                  name="category"
+                  size={24}
+                  color={theme.colors.primary}
+                />
+              )}
+            </View>
+            <Text style={styles.selectedBannerText}>
+              Categoría seleccionada: {selectedCategory.name}
+            </Text>
             <TouchableOpacity
-              style={[
-                styles.categoryCard,
-                selectedCategory?.id === item.id && styles.selectedCard,
-                { backgroundColor: theme.colors.background },
-              ]}
-              onPress={() => handleCategoryPress(item)}
+              style={styles.clearButton}
+              onPress={() => setSelectedCategory(null)}
             >
-              <View style={styles.iconContainer}>
-                {item.icon ? (
-                  renderIcon(item.icon)
-                ) : (
-                  <Text style={styles.categoryName}>No Icon</Text>
-                )}
-              </View>
-              <Text style={[styles.categoryName, { color: theme.colors.text }]}>
-                {item.name}
-              </Text>
+              <IconSymbol name="close" size={20} color={theme.colors.text} />
             </TouchableOpacity>
-          );
-        }}
-        keyExtractor={(item) => item.id.toString()}
-      />
+          </>
+        ) : (
+          <Text style={styles.selectedBannerText}>
+            No hay categoría seleccionada
+          </Text>
+        )}
+      </View>
     </View>
   );
 }
@@ -137,29 +190,120 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: theme.colors.background,
   },
-  contentContainer: {
-    flexGrow: 1,
-    paddingBottom: 100, // Espacio extra al final para el scroll
-  },
-  content: {
-    padding: 16,
-  },
-  selectedCategoryContainer: {
+  header: {
     padding: SPACING,
+    paddingTop: SPACING * 3,
+    backgroundColor: theme.colors.primary,
+    alignItems: "center",
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: theme.colors.text,
+  },
+  mainActions: {
+    flexDirection: "column",
+    padding: SPACING,
+    gap: SPACING,
+  },
+  actionCard: {
+    padding: SPACING * 1.5,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    elevation: 4,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+  },
+  actionTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: theme.colors.text,
+    marginTop: SPACING,
+  },
+  actionSubtitle: {
+    fontSize: 14,
+    color: theme.colors.text,
+    opacity: 0.8,
+    marginTop: 4,
+    textAlign: "center",
+  },
+  recentSection: {
+    padding: SPACING,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: "600",
+    color: theme.colors.text,
     marginBottom: SPACING,
-    backgroundColor: theme.colors.background,
-    borderRadius: 8,
+  },
+  recentList: {
+    paddingRight: SPACING,
+  },
+  recentCard: {
+    width: 120,
+    marginRight: SPACING,
+    padding: SPACING,
+    backgroundColor: theme.colors.card,
+    borderRadius: 12,
+    alignItems: "center",
+    elevation: 2,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
-    elevation: 3,
   },
-  selectedCategoryTitle: {
+  iconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: theme.colors.background,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  iconImage: {
+    width: "70%",
+    height: "70%",
+  },
+  recentCardTitle: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: theme.colors.text,
+    textAlign: "center",
+  },
+  selectedBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    margin: SPACING,
+    padding: SPACING,
+    backgroundColor: theme.colors.card,
+    borderRadius: 12,
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  selectedIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: theme.colors.background,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 12,
+  },
+  selectedBannerText: {
+    flex: 1,
     fontSize: 16,
     fontWeight: "600",
     color: theme.colors.text,
-    textAlign: "center",
+  },
+  clearButton: {
+    padding: 8,
   },
   loadingContainer: {
     flex: 1,
@@ -170,46 +314,54 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    padding: 20,
+    padding: SPACING * 2,
   },
   errorText: {
-    color: theme.colors.text,
+    fontSize: 16,
+    color: theme.colors.error,
     textAlign: "center",
+    marginBottom: 16,
   },
-  listContainer: {
-    paddingBottom: SPACING,
+  retryButton: {
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    backgroundColor: theme.colors.primary,
+    borderRadius: 8,
+  },
+  retryText: {
+    color: theme.colors.text,
+    fontWeight: "600",
+  },
+  expandedCategories: {
+    padding: SPACING,
+  },
+  categoriesGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: SPACING,
   },
   categoryCard: {
-    width: ITEM_WIDTH,
-    margin: SPACING / 2,
+    width: CARD_WIDTH,
     padding: SPACING,
+    backgroundColor: theme.colors.card,
     borderRadius: 12,
     alignItems: "center",
-    justifyContent: "center",
+    elevation: 2,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
-    elevation: 3,
-  },
-  selectedCard: {
     borderWidth: 2,
-    borderColor: theme.colors.primary,
+    borderColor: "transparent",
   },
-  iconContainer: {
-    width: 80,
-    height: 80,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  iconImage: {
-    width: "100%",
-    height: "100%",
-  },
-  categoryName: {
-    marginTop: 8,
-    fontSize: 16,
-    fontWeight: "600",
+  categoryCardTitle: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: theme.colors.text,
     textAlign: "center",
+    marginTop: 8,
+  },
+  scrollContent: {
+    flexGrow: 1,
   },
 });

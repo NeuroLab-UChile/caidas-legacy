@@ -280,6 +280,18 @@ class ApiClient {
       return data;
     }
   };
+
+  public events = {
+    getAll: async (): Promise<ApiResponse<any>> => {
+      const response = await fetch(
+        this.getUrl('/appointments/'),
+        {
+          headers: await this.getHeaders(),
+        }
+      );
+      return this.handleResponse(response);
+    }
+  }
 }
 
 export const apiService = new ApiClient();

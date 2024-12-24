@@ -65,6 +65,11 @@ const hiddenItems: MenuItem[] = [
     title: "Detalle de Categoría",
     icon: "folder",
   },
+  {
+    name: "events",
+    title: "Eventos",
+    icon: "calendar",
+  },
 ];
 
 export default function TabLayout() {

@@ -14,6 +14,8 @@ from django.contrib.admin import SimpleListFilter
 from django.utils.safestring import mark_safe
 from django.template.loader import render_to_string
 from django.utils import timezone
+from django.db import models
+from django import forms
 
 from .models import (
   TextRecomendation,
@@ -28,7 +30,8 @@ from .models import (
   ScaleQuestion,
   ImageQuestion,
   ResultNode,
-  WeeklyRecipeNode
+  WeeklyRecipeNode,
+  Appointment
 )
 
 # Define an inline admin descriptor for Profile model
@@ -370,6 +373,62 @@ class TextRecomendationAdmin(admin.ModelAdmin):
 
     def get_queryset(self, request):
         return super().get_queryset(request).select_related()
+
+class AppointmentForm(forms.ModelForm):
+    date = forms.DateField(
+        widget=admin.widgets.AdminDateWidget(),
+        help_text="Seleccione la fecha de la cita"
+    )
+    time = forms.TimeField(
+        widget=admin.widgets.AdminTimeWidget(),
+        required=False
+    )
+
+    class Meta:
+        model = Appointment
+        fields = ['title', 'date', 'description', 'user']
+
+    def clean(self):
+        cleaned_data = super().clean()
+        return cleaned_data
+
+class AppointmentInline(admin.TabularInline):
+    model = Appointment
+    form = AppointmentForm
+    extra = 1
+    template = 'admin/appointment/edit_inline/tabular.html'
+    fields = ('title', 'date', 'description')
+    
+    class Media:
+        css = {
+            'all': ('admin/css/forms.css', 'admin/css/widgets.css')
+        }
+        js = ('admin/js/calendar.js', 'admin/js/admin/DateTimeShortcuts.js')
+
+@admin.register(Appointment)
+class AppointmentAdmin(admin.ModelAdmin):
+    form = AppointmentForm
+    list_display = ('title', 'user', 'date', 'created_at')
+    list_filter = ('date', 'created_at', 'user')
+    search_fields = ('title', 'description', 'user__username')
+    date_hierarchy = 'date'
+    ordering = ('-date',)
+    
+    # Especifica los templates personalizados
+    change_form_template = 'admin/appointment/change_form.html'
+    change_list_template = 'admin/appointment/change_list.html'
+
+    class Media:
+        css = {
+            'all': ('admin/css/forms.css', 'admin/css/widgets.css')
+        }
+        js = ('admin/js/calendar.js', 'admin/js/admin/DateTimeShortcuts.js')
+
+class CustomUserAdmin(UserAdmin):
+    inlines = [AppointmentInline]
+
+admin.site.unregister(User)
+admin.site.register(User, CustomUserAdmin)
 
 
 
