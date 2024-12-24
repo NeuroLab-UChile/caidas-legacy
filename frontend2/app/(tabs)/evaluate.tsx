@@ -238,7 +238,6 @@ const EvaluateScreen = () => {
 
       if (isCompleted && selectedCategory?.id) {
         setLoading(true);
-        console.log("newResponses", newResponses);
         try {
           await apiService.categories.saveResponses(
             selectedCategory.id,

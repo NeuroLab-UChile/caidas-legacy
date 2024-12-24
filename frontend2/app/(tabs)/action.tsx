@@ -19,7 +19,8 @@ import { IconSymbol } from "@/components/ui/IconSymbol";
 
 const { width } = Dimensions.get("window");
 const SPACING = 16;
-const CARD_WIDTH = (width - SPACING * 3) / 2;
+const COLUMNS = 2;
+const CARD_WIDTH = (width - SPACING * (COLUMNS + 1)) / COLUMNS;
 
 export default function ActionScreen() {
   const { categories, selectedCategory, setSelectedCategory, loading, error } =
@@ -87,26 +88,27 @@ export default function ActionScreen() {
           {item.icon ? (
             renderIcon(item.icon)
           ) : (
-            <IconSymbol
-              name="category"
-              size={24}
-              color={theme.colors.primary}
-            />
+            <IconSymbol name="folder" size={24} color={theme.colors.primary} />
           )}
         </View>
-        <Text style={styles.categoryCardTitle}>{item.name}</Text>
+        <Text style={styles.categoryCardTitle}>{item.name || ""}</Text>
       </TouchableOpacity>
+    );
+  };
+
+  const renderCategoryPair = (categories: Category[], startIndex: number) => {
+    const pair = categories.slice(startIndex, startIndex + 2);
+    return (
+      <View key={startIndex} style={styles.categoryRow}>
+        {pair.map((item) => renderCategoryCard(item))}
+        {pair.length === 1 && <View style={styles.categoryCard} />}
+      </View>
     );
   };
 
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" />
-
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>WE-FLOW</Text>
-      </View>
 
       {/* Wrap everything in a ScrollView */}
       <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -115,7 +117,7 @@ export default function ActionScreen() {
           <TouchableOpacity
             style={[
               styles.actionCard,
-              { backgroundColor: theme.colors.primary },
+              { backgroundColor: theme.colors.background },
             ]}
             onPress={() => router.push("/(tabs)/events")}
           >
@@ -124,30 +126,53 @@ export default function ActionScreen() {
             <Text style={styles.actionSubtitle}>Ver próximos eventos</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity
-            style={[
-              styles.actionCard,
-              { backgroundColor: theme.colors.accent },
-            ]}
-            onPress={() => setIsCategoriesExpanded(!isCategoriesExpanded)}
+          <View
+            style={{
+              flex: 1,
+              flexDirection: "row",
+              justifyContent: "space-between",
+              padding: 10,
+            }}
           >
-            <IconSymbol name="category" size={32} color={theme.colors.text} />
-            <Text style={styles.actionTitle}>Categorías</Text>
-            <Text style={styles.actionSubtitle}>
-              Explorar o Elegir categorías
-            </Text>
-          </TouchableOpacity>
-        </View>
+            <TouchableOpacity
+              style={[
+                styles.actionCard,
+                { backgroundColor: theme.colors.background },
+              ]}
+              onPress={() => setIsCategoriesExpanded(!isCategoriesExpanded)}
+            >
+              <Text style={styles.actionTitle}>Categorías</Text>
+              <Text style={styles.actionSubtitle}>
+                Explorar o Elegir categorías
+              </Text>
 
-        {/* Expanded Categories Section */}
-        {isCategoriesExpanded && (
-          <View style={styles.expandedCategories}>
-            <Text style={styles.sectionTitle}>Todas las Categorías</Text>
-            <View style={styles.categoriesGrid}>
-              {categories.map(renderCategoryCard)}
-            </View>
+              <View style={styles.expandIconContainer}>
+                <IconSymbol
+                  name="chevron.down"
+                  size={24}
+                  color={theme.colors.text}
+                  style={[
+                    styles.expandIcon,
+                    isCategoriesExpanded && styles.expandIconRotated,
+                  ]}
+                />
+              </View>
+
+              {/* Expanded Categories Section */}
+              {isCategoriesExpanded && (
+                <View style={styles.expandedCategories}>
+                  <Text style={styles.sectionTitle}>Todas las Categorías</Text>
+                  <View style={styles.categoriesGrid}>
+                    {Array.from(
+                      { length: Math.ceil(categories.length / 2) },
+                      (_, index) => renderCategoryPair(categories, index * 2)
+                    )}
+                  </View>
+                </View>
+              )}
+            </TouchableOpacity>
           </View>
-        )}
+        </View>
       </ScrollView>
 
       {/* Siempre mostrar el banner, pero con diferente contenido */}
@@ -159,7 +184,7 @@ export default function ActionScreen() {
                 renderIcon(selectedCategory.icon)
               ) : (
                 <IconSymbol
-                  name="category"
+                  name="folder"
                   size={24}
                   color={theme.colors.primary}
                 />
@@ -328,14 +353,19 @@ const styles = StyleSheet.create({
   },
   expandedCategories: {
     padding: SPACING,
+    width: "100%",
   },
   categoriesGrid: {
+    width: "100%",
+  },
+  categoryRow: {
     flexDirection: "row",
-    flexWrap: "wrap",
-    gap: SPACING,
+    justifyContent: "space-between",
+    marginBottom: SPACING,
+    width: "100%",
   },
   categoryCard: {
-    width: CARD_WIDTH,
+    width: "48%", // Ligeramente menos que la mitad para dejar espacio entre cards
     padding: SPACING,
     backgroundColor: theme.colors.card,
     borderRadius: 12,
@@ -357,5 +387,15 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
+  },
+  expandIconContainer: {
+    marginTop: 8,
+    alignItems: "center",
+  },
+  expandIcon: {
+    opacity: 0.8,
+  },
+  expandIconRotated: {
+    transform: [{ rotate: "180deg" }],
   },
 });

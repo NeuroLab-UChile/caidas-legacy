@@ -116,11 +116,42 @@ export default function TabLayout() {
               return (
                 <View style={styles.headerContainer}>
                   <View style={styles.headerTopRow}>
+                    {(route.name === "events" ||
+                      route.name === "category-detail") && (
+                      <TouchableOpacity
+                        onPress={() => {
+                          if (route.name === "events") {
+                            router.push("/(tabs)/action");
+                          } else if (route.name === "category-detail") {
+                            router.push("/(tabs)/action");
+                          }
+                        }}
+                        style={styles.backArrowButton}
+                      >
+                        <IconSymbol
+                          name="chevron.left"
+                          size={24}
+                          color={theme.colors.text}
+                        />
+                      </TouchableOpacity>
+                    )}
+
                     <Text
-                      style={[styles.headerTitle, { color: theme.colors.text }]}
+                      style={[
+                        styles.headerTitle,
+                        {
+                          color: theme.colors.text,
+                          marginLeft:
+                            route.name === "events" ||
+                            route.name === "category-detail"
+                              ? 0
+                              : 8,
+                        },
+                      ]}
                     >
                       {item?.title || route.name}
                     </Text>
+
                     <TouchableOpacity
                       onPress={() => {
                         Alert.alert(
@@ -180,21 +211,6 @@ export default function TabLayout() {
                       </View>
                     </TouchableOpacity>
                   </View>
-                  {route.name === "category-detail" && (
-                    <TouchableOpacity
-                      onPress={() => router.replace("/(tabs)/action")}
-                      style={[styles.backButton, { marginTop: 8 }]}
-                    >
-                      <Text
-                        style={[
-                          styles.backButtonText,
-                          { color: theme.colors.text },
-                        ]}
-                      >
-                        {"< Volver"}
-                      </Text>
-                    </TouchableOpacity>
-                  )}
                 </View>
               );
             },
@@ -354,24 +370,6 @@ export default function TabLayout() {
                     />
                   );
                 },
-                headerLeft:
-                  item.name === "category-detail"
-                    ? () => (
-                        <TouchableOpacity
-                          onPress={() => router.replace("/(tabs)/action")}
-                          style={styles.backButton}
-                        >
-                          <Text
-                            style={[
-                              styles.backButtonText,
-                              { color: theme.colors.text },
-                            ]}
-                          >
-                            {"< Volver"}
-                          </Text>
-                        </TouchableOpacity>
-                      )
-                    : undefined,
               }}
             />
           ))}
@@ -545,5 +543,12 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "600",
     flex: 1,
+  },
+  backArrowButton: {
+    padding: 8,
+    marginRight: 8,
+    borderRadius: 8,
+    justifyContent: "center",
+    alignItems: "center",
   },
 });
