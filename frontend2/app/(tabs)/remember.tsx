@@ -30,29 +30,70 @@ const RememberScreen = () => {
     []
   );
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<number | null>(null);
+
+  const [clickCount, setClickCount] = useState(0);
 
   useEffect(() => {
     fetchRecommendations();
   }, []);
 
-  const fetchRecommendations = async () => {
+  const fetchRecommendations = async (refresh = false) => {
     try {
       setLoading(true);
-      const { data } = await apiService.recommendations.getAll();
+      const response = await apiService.recommendations.getAll();
 
-      setRecommendations(data as TextRecommendation[]);
+      if (refresh) {
+        setRecommendations(response.data.recommendations);
+      } else {
+        setRecommendations((prev) => [
+          ...prev,
+          ...response.data.recommendations,
+        ]);
+      }
     } catch (err) {
       console.error("Error fetching recommendations:", err);
       setError("Error al cargar las recomendaciones");
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
-  const handleRecommendationPress = (id: number) => {
+  const handleRefresh = () => {
+    setRefreshing(true);
+    fetchRecommendations(true);
+  };
+
+  const handleLoadMore = () => {
+    if (!loading) {
+      fetchRecommendations();
+    }
+  };
+
+  const handleRecommendationPress = async (id: number) => {
     setExpandedId(expandedId === id ? null : id);
+
+    try {
+      if (expandedId !== id) {
+        const newClickCount = clickCount + 1;
+        setClickCount(newClickCount);
+
+        const response = await apiService.recommendations.registerClick(id);
+
+        if (newClickCount >= 5) {
+          console.log("Reached 5 clicks, fetching new recommendations");
+          handleRefresh();
+          setClickCount(0);
+        } else if (response.data && response.data.more_recommendations) {
+          setRecommendations(response.data.more_recommendations);
+        }
+      }
+    } catch (err) {
+      console.error("Error registering click:", err);
+    }
   };
 
   const renderRecommendation = ({
@@ -186,6 +227,19 @@ const RememberScreen = () => {
         keyExtractor={(item) => item.id.toString()}
         contentContainerStyle={styles.listContainer}
         style={{ backgroundColor: theme.colors.primary }}
+        refreshing={refreshing}
+        onRefresh={handleRefresh}
+        onEndReached={handleLoadMore}
+        onEndReachedThreshold={0.5}
+        ListFooterComponent={() =>
+          loading ? (
+            <ActivityIndicator
+              size="large"
+              color={theme.colors.text}
+              style={styles.loader}
+            />
+          ) : null
+        }
       />
     </View>
   );
@@ -279,6 +333,9 @@ const styles = StyleSheet.create({
     marginTop: 16,
     fontWeight: "400",
     opacity: 0.8,
+  },
+  loader: {
+    marginTop: 16,
   },
 });
 

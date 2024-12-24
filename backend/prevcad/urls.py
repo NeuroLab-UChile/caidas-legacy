@@ -13,17 +13,18 @@ from .views import admin_views
 router = routers.DefaultRouter(trailing_slash=False)
 
 router.register('prevcad/text_recommendations/', TextRecomendationsView, basename='text_recommendations')
-
+router.register('prevcad/text_recommendations/<int:pk>/register_click', TextRecomendationsView, basename='recommendation-register-click')
 
 
 # Rutas de la API
 urlpatterns = [
+  path('prevcad/', include(router.urls)),
   path('', include(router.urls)),
   path('prevcad/user/profile/', getProfile, name='get_profile'),
   path('prevcad/user/profile/upload_image/', uploadProfileImage, name='upload_profile_image'),
   path('prevcad/health_categories/', HealthCategoryListView.as_view(), name='health-categories'),
   path('prevcad/health-categories/<int:category_id>/responses/', save_evaluation_responses, name='save_responses'),
- 
+  path('prevcad/text_recommendations/<int:pk>/register_click', TextRecomendationsView.as_view({'post': 'register_click'}), name='recommendation-register-click'),
   path('prevcad/health-categories/create', 
        create_health_category, 
        name='create_health_category'),

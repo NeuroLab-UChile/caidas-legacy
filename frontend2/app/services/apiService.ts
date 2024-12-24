@@ -184,37 +184,37 @@ class ApiClient {
       return this.handleResponse<UserProfile>(response);
     },
 
-    uploadProfileImage: async (base64Image: string): Promise<ApiResponse<UserProfile>> => {
+    uploadProfileImage: async (imageUri: string): Promise<ApiResponse<UserProfile>> => {
       try {
         console.log("Starting image upload...");
 
-        const headers = await this.getHeaders();
-        console.log("Headers prepared:", headers);
+        // Crear un FormData
+        const formData = new FormData();
+
+        // Agregar la imagen al FormData
+        formData.append('profile_image', {
+          uri: imageUri,
+          type: 'image/jpeg', // o determinar el tipo dinámicamente
+          name: 'profile-image.jpg',
+        } as any);
 
         const response = await fetch(
           this.getUrl('/user/profile/upload_image/'),
           {
             method: 'POST',
             headers: {
-              ...headers,
-              'Accept': 'application/json',
-              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${await AsyncStorage.getItem('auth_token')}`,
+              // No establecer Content-Type, se establecerá automáticamente con el boundary del FormData
             },
-            body: JSON.stringify({
-              image: base64Image
-            })
+            body: formData,
           }
         );
 
-        console.log("Response status:", response.status);
-        const responseText = await response.text();
-        console.log("Response text:", responseText);
-
         if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}, message: ${responseText}`);
+          throw new Error(`HTTP error! status: ${response.status}`);
         }
 
-        return JSON.parse(responseText);
+        return this.handleResponse<UserProfile>(response);
       } catch (error) {
         console.error("Error uploading image:", error);
         throw error;
@@ -242,7 +242,7 @@ class ApiClient {
         }
 
         const response = await fetch(
-          this.getUrl('/text_recommendations'),
+          this.getUrl('/text_recommendations/'),
           {
             headers: await this.getHeaders(),
           }
@@ -252,6 +252,32 @@ class ApiClient {
         console.error('Error fetching recommendations:', error);
         throw error;
       }
+    },
+    registerClick: async (recommendationId: number): Promise<ApiResponse<any>> => {
+      const response = await fetch(
+        this.getUrl(`/text_recommendations/${recommendationId}/register_click`),
+        {
+          method: 'POST',
+          headers: {
+            ...(await this.getHeaders()),
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Error Response:', {
+          status: response.status,
+          statusText: response.statusText,
+          body: errorText
+        });
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      return data;
     }
   };
 }

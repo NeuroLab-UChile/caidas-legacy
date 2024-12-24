@@ -45,13 +45,17 @@ export default function ProfileScreen() {
       console.log("Subiendo imagen:", uri);
 
       const response = await apiService.user.uploadProfileImage(uri);
-      console.log("Imagen subida:", response.data);
 
       // Actualizar el usuario con los nuevos datos
-      setUser(response.data);
+      if (response.data) {
+        setUser(response.data);
+      }
     } catch (error) {
       console.error("Error al subir la imagen:", error);
-      alert("Error al subir la imagen. Por favor, intenta de nuevo.");
+      Alert.alert(
+        "Error",
+        "No se pudo subir la imagen. Por favor, intenta de nuevo."
+      );
     } finally {
       setIsLoading(false);
     }

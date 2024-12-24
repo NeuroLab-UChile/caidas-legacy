@@ -15,9 +15,11 @@ import { Category, TrainingNode } from "@/app/types/category";
 import apiService from "../services/apiService";
 import { getCategoryStatus } from "@/utils/categoryHelpers";
 import { CategoryHeader } from "@/components/CategoryHeader";
-import { renderActivityNode } from "@/utils/nodeRenderers";
+
 import ActivityNodeContainer from "@/components/ActivityNodes/ActivityNodeContainer";
 import { ActivityNodeType } from "@/components/ActivityNodes";
+import { useRouter } from "expo-router";
+import EmptyState from "../containers/EmptyState";
 
 interface NodeResponse {
   nodeId: number;
@@ -36,6 +38,7 @@ interface TrainingState {
 
 const TrainingScreen = () => {
   const { selectedCategory, fetchCategories } = useCategories();
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
 
@@ -155,13 +158,7 @@ const TrainingScreen = () => {
   }
 
   if (!selectedCategory) {
-    return (
-      <View style={styles.container}>
-        <Text style={styles.buttonText}>
-          Selecciona una categoría para comenzar
-        </Text>
-      </View>
-    );
+    return <EmptyState view="training" />;
   }
 
   return (
@@ -336,6 +333,21 @@ const styles = StyleSheet.create({
     color: theme.colors.text,
     fontSize: 16,
     fontWeight: "600",
+  },
+  emptyStateContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: theme.spacing.xl,
+  },
+  emptyStateTitle: {
+    marginBottom: theme.spacing.md,
+    textAlign: "center",
+  },
+  emptyStateText: {
+    textAlign: "center",
+    marginBottom: theme.spacing.xl,
+    color: theme.colors.textSecondary,
   },
 });
 

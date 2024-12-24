@@ -3,26 +3,17 @@ from django.utils.encoding import smart_str
 
 from prevcad.models import (
   TextRecomendation,
+  UserRecommendationInteraction,
 )
 
 
 class TextRecomendationSerializer(serializers.ModelSerializer):
+  user_clicks = serializers.IntegerField(read_only=True, default=0)
+  last_interaction = serializers.DateTimeField(read_only=True, allow_null=True)
+
   class Meta:
     model = TextRecomendation
-    fields = [
-      'id',
-      'theme',
-      'category',
-      'sub_category',
-      'learn',
-      'remember',
-      'data',
-      'practic_data',
-      'context_explanation',
-      'quote_link',
-      'keywords',
-
-    ]
+    fields = '__all__'
 
   def to_representation(self, instance):
     instance.theme = smart_str(instance.theme)

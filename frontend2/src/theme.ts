@@ -498,6 +498,25 @@ export const theme = {
         justifyContent: "center",
       },
     },
+
+    emptyState: {
+      container: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: spacing.xl,
+      },
+      title: {
+        marginBottom: spacing.md,
+        textAlign: 'center',
+      },
+      text: {
+        textAlign: 'center',
+        marginBottom: spacing.xl,
+        color: palette.grey[600], // textSecondary
+      },
+
+    },
   },
 } as const;
 

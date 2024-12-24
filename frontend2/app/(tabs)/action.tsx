@@ -34,10 +34,8 @@ export default function ActionScreen() {
 
   const renderIcon = (base64Icon: string) => {
     try {
-      console.log("Base64 icon:", base64Icon);
       // Validar que tenemos un string no vacío
       if (!base64Icon || typeof base64Icon !== "string") {
-        console.log("Invalid icon data:", base64Icon);
         return null;
       }
 
@@ -45,13 +43,6 @@ export default function ActionScreen() {
       const cleanBase64 = base64Icon.trim();
 
       // Debug logs detallados
-      console.log("Icon processing:", {
-        originalLength: base64Icon.length,
-        cleanedLength: cleanBase64.length,
-        startsWithData: cleanBase64.startsWith("data:"),
-        startsWithSlash: cleanBase64.startsWith("/"),
-        first50Chars: cleanBase64.substring(0, 50),
-      });
 
       // Construir URI según el formato
       let imageUri = cleanBase64;
@@ -59,11 +50,6 @@ export default function ActionScreen() {
         // Si no empieza con data: o http, asumimos que es base64 puro
         imageUri = `data:image/png;base64,${cleanBase64}`;
       }
-
-      console.log(
-        "Final image URI (first 100 chars):",
-        imageUri.substring(0, 100)
-      );
 
       return (
         <Image
@@ -76,7 +62,6 @@ export default function ActionScreen() {
               uri: imageUri.substring(0, 100) + "...",
             });
           }}
-          onLoad={() => console.log("Image loaded successfully")}
         />
       );
     } catch (error) {
@@ -119,13 +104,6 @@ export default function ActionScreen() {
         showsVerticalScrollIndicator={true}
         bounces={true}
         renderItem={({ item }) => {
-          console.log("Rendering category:", {
-            id: item.id,
-            name: item.name,
-            hasIcon: !!item.icon,
-            iconLength: item.icon?.length,
-          });
-
           return (
             <TouchableOpacity
               style={[

@@ -7,6 +7,7 @@ import {
   StyleSheet,
   Dimensions,
   Alert,
+  Image,
 } from "react-native";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { router } from "expo-router";
@@ -16,11 +17,18 @@ import authService from "../services/authService";
 import { ScrollLayout } from "@/components/ScrollLayout";
 
 const BOTTOM_TAB_HEIGHT = 83;
-const MIDDLE_BUTTON_SIZE = 65;
+const MIDDLE_BUTTON_SIZE = 76;
 const { width } = Dimensions.get("window");
 const SCREEN_WIDTH = width * 0.95;
 
-const leftMenuItems = [
+interface MenuItem {
+  name: string;
+  title: string;
+  icon?: string;
+  customIcon?: any;
+}
+
+const leftMenuItems: MenuItem[] = [
   {
     name: "remember",
     title: "RECORDAR",
@@ -33,7 +41,7 @@ const leftMenuItems = [
   },
 ];
 
-const rightMenuItems = [
+const rightMenuItems: MenuItem[] = [
   {
     name: "training",
     title: "ENTRENAR",
@@ -46,11 +54,11 @@ const rightMenuItems = [
   },
 ];
 
-const hiddenItems = [
+const hiddenItems: MenuItem[] = [
   {
     name: "action",
-    title: "WE-FLOW",
-    icon: "plus.circle",
+    title: "WE-TRAIN",
+    customIcon: require("@/assets/images/logo_color.png"),
   },
   {
     name: "category-detail",
@@ -71,8 +79,8 @@ export default function TabLayout() {
       <ScrollLayout>
         <Tabs
           screenOptions={({ route }) => ({
-            tabBarActiveTintColor: theme.colors.text,
-            tabBarInactiveTintColor: theme.colors.text + "80",
+            tabBarActiveTintColor: "#FFFFFF",
+            tabBarInactiveTintColor: "#FFFFFF80",
             headerShown: true,
             tabBarButton: HapticTab,
             headerTitle: () => {
@@ -82,15 +90,13 @@ export default function TabLayout() {
                 ...hiddenItems,
               ].find((item) => item.name === route.name);
               return (
-                <Text
-                  style={[styles.headerTitle, { color: theme.colors.text }]}
-                >
+                <Text style={[styles.headerTitle, { color: "#FFFFFF" }]}>
                   {item?.title || route.name}
                 </Text>
               );
             },
             headerStyle: {
-              backgroundColor: theme.colors.primary,
+              backgroundColor: "#000000",
               elevation: 0,
               shadowOpacity: 0,
               height: route.name === "category-detail" ? 100 : 60,
@@ -189,12 +195,11 @@ export default function TabLayout() {
             },
             headerLeft: undefined,
             tabBarStyle: {
-              ...styles.tabBar,
-              backgroundColor: theme.colors.card,
+              backgroundColor: "#000000",
               borderTopWidth: 2,
               borderLeftWidth: 2,
               borderRightWidth: 2,
-              borderColor: theme.colors.border,
+              borderColor: "#000000",
               borderBottomWidth: 0,
             },
             tabBarItemStyle: {
@@ -203,7 +208,7 @@ export default function TabLayout() {
               paddingTop: 4,
             },
             tabBarLabelStyle: {
-              fontSize: 10,
+              fontSize: 9,
               fontWeight: "600",
               position: "relative",
               top: 0,
@@ -223,11 +228,22 @@ export default function TabLayout() {
                     focused && styles.activeIconContainer,
                   ]}
                 >
-                  <IconSymbol
-                    size={24}
-                    name={item.icon as any}
-                    color={focused ? theme.colors.text : color}
-                  />
+                  {item.customIcon ? (
+                    <Image
+                      source={item.customIcon}
+                      style={{
+                        width: 24,
+                        height: 24,
+                      }}
+                      resizeMode="contain"
+                    />
+                  ) : (
+                    <IconSymbol
+                      size={24}
+                      name={item.icon as any}
+                      color={focused ? theme.colors.text : color}
+                    />
+                  )}
                 </View>
               );
             },
@@ -310,6 +326,28 @@ export default function TabLayout() {
                 title: item.title,
                 headerTitle: item.title,
                 tabBarButton: () => null,
+                tabBarIcon: ({ color, focused }) => {
+                  if (item.customIcon) {
+                    return (
+                      <Image
+                        source={item.customIcon}
+                        style={{
+                          width: 24,
+                          height: 24,
+                          tintColor: focused ? theme.colors.text : color,
+                        }}
+                        resizeMode="contain"
+                      />
+                    );
+                  }
+                  return (
+                    <IconSymbol
+                      size={24}
+                      name={item.icon as any}
+                      color={focused ? theme.colors.text : color}
+                    />
+                  );
+                },
                 headerLeft:
                   item.name === "category-detail"
                     ? () => (
@@ -351,10 +389,11 @@ export default function TabLayout() {
 
       <TouchableOpacity
         onPress={handleMiddleButtonPress}
+        activeOpacity={0.8}
         style={[
           styles.middleButton,
           {
-            backgroundColor: theme.colors.background,
+            backgroundColor: "#000000",
           },
         ]}
       >
@@ -368,29 +407,26 @@ export default function TabLayout() {
             borderTopLeftRadius: MIDDLE_BUTTON_SIZE / 2,
             borderTopRightRadius: MIDDLE_BUTTON_SIZE / 2,
             borderWidth: 2,
+            borderColor: "#000000",
             borderBottomWidth: 0,
-            borderColor: theme.colors.border,
           }}
         />
-        <IconSymbol
-          name="figure.walk"
-          size={28}
-          color={theme.colors.text}
-          style={[styles.buttonIcon, { marginBottom: 2 }]}
-        />
-        <Text
-          style={[
-            styles.logoText,
-            {
-              color: theme.colors.text,
-              fontSize: 10,
-              fontWeight: "bold",
-              marginTop: 2,
-            },
-          ]}
+        <View
+          style={{
+            marginTop: 10,
+            alignItems: "center",
+          }}
         >
-          WE-FLOW
-        </Text>
+          <Image
+            source={require("@/assets/images/logo_color.png")}
+            style={{
+              width: 40,
+              height: 40,
+            }}
+            resizeMode="contain"
+          />
+          <Text style={[styles.logoText, { color: "#FFFFFF" }]}>WE-TRAIN</Text>
+        </View>
       </TouchableOpacity>
     </View>
   );
@@ -420,8 +456,7 @@ const styles = StyleSheet.create({
     height: BOTTOM_TAB_HEIGHT - 10,
     elevation: 0,
     shadowColor: "transparent",
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+
     flexDirection: "row",
     justifyContent: "space-between",
     paddingHorizontal: 20,
@@ -429,26 +464,28 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   middleButton: {
+    backgroundColor: "#000000",
     position: "absolute",
     bottom: 40,
     left: (width - MIDDLE_BUTTON_SIZE) / 2,
     width: MIDDLE_BUTTON_SIZE,
     height: MIDDLE_BUTTON_SIZE,
-    borderRadius: MIDDLE_BUTTON_SIZE / 2,
+    borderTopLeftRadius: MIDDLE_BUTTON_SIZE / 2,
+    borderTopRightRadius: MIDDLE_BUTTON_SIZE / 2,
     justifyContent: "center",
     alignItems: "center",
     zIndex: 1000,
     elevation: 8,
-    overflow: "hidden",
   },
   buttonIcon: {
     marginBottom: 2,
   },
   logoText: {
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: "bold",
     textAlign: "center",
     letterSpacing: 0.5,
+    marginTop: 10,
   },
   activeIconContainer: {
     backgroundColor: theme.colors.text + "20",

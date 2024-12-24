@@ -19,6 +19,8 @@ import { CategoryHeader } from "@/components/CategoryHeader";
 import { ActivityNodeType } from "@/components/ActivityNodes";
 import ActivityNodeContainer from "@/components/ActivityNodes/ActivityNodeContainer";
 import { DoctorRecommendations } from "@/components/DoctorRecommendations";
+import { router } from "expo-router";
+import EmptyState from "../containers/EmptyState";
 
 interface NodeResponse {
   nodeId: number;
@@ -398,15 +400,8 @@ const EvaluateScreen = () => {
   }
 
   if (!selectedCategory) {
-    return (
-      <View style={styles.container}>
-        <Text style={styles.buttonText}>
-          Selecciona una categoría para comenzar
-        </Text>
-      </View>
-    );
+    return <EmptyState view="evaluate" />;
   }
-
   return (
     <View style={styles.container}>
       <ScrollView
