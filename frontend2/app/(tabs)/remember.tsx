@@ -96,6 +96,12 @@ const RememberScreen = () => {
     }
   };
 
+  // Función auxiliar para capitalizar la primera letra
+  const capitalizeFirstLetter = (text: string) => {
+    if (!text) return text;
+    return text.charAt(0).toUpperCase() + text.slice(1);
+  };
+
   const renderRecommendation = ({
     item,
     index,
@@ -104,6 +110,15 @@ const RememberScreen = () => {
     index: number;
   }) => {
     const isExpanded = expandedId === item.id;
+
+    // Determinar el tamaño de fuente basado en la longitud del texto
+    const getFontSize = (text: string) => {
+      if (text.length > 300) return 20; // Textos muy largos
+      if (text.length > 200) return 24; // Textos largos
+      if (text.length > 100) return 28; // Textos medianos
+      if (text.length > 50) return 32; // Textos cortos
+      return 36; // Textos muy cortos
+    };
 
     return (
       <View style={styles.itemContainer}>
@@ -114,21 +129,41 @@ const RememberScreen = () => {
           ]}
           onPress={() => handleRecommendationPress(item.id)}
         >
-          <Text
-            style={[styles.recommendationText, { color: theme.colors.text }]}
-          >
-            {item.data}
-          </Text>
-          <Text style={[styles.categoryText, { color: theme.colors.text }]}>
-            //{item.category}/
-            {item.sub_category !== "nan" ? item.sub_category : ""}
-          </Text>
+          <View style={styles.alignRight}>
+            <Text
+              style={[
+                styles.recommendationText,
+                {
+                  color: theme.colors.text,
+                  fontSize: getFontSize(item.data),
+                  textAlign: "right",
+                },
+              ]}
+            >
+              {capitalizeFirstLetter(item.data)}
+            </Text>
+
+            <Text
+              style={[
+                styles.categoryText,
+                {
+                  color: theme.colors.text,
+                  textAlign: "right",
+                },
+              ]}
+            >
+              //{capitalizeFirstLetter(item.category)}/
+              {item.sub_category !== "nan"
+                ? capitalizeFirstLetter(item.sub_category)
+                : ""}
+            </Text>
+          </View>
 
           {isExpanded ? (
             <View
               style={[
                 styles.explanationContainer,
-                { backgroundColor: theme.colors.text },
+                { backgroundColor: theme.colors.background },
               ]}
             >
               {item.context_explanation &&
@@ -136,7 +171,8 @@ const RememberScreen = () => {
                   <Text
                     style={[
                       styles.explanationText,
-                      { color: theme.colors.primary },
+                      { color: theme.colors.text },
+                      { textAlign: "center" },
                     ]}
                   >
                     {item.context_explanation}
@@ -147,7 +183,8 @@ const RememberScreen = () => {
                 <Text
                   style={[
                     styles.practicalText,
-                    { color: theme.colors.primary },
+                    { color: theme.colors.text },
+                    { textAlign: "center" },
                   ]}
                 >
                   {"\n"}Práctica: {item.practic_data}
@@ -156,16 +193,14 @@ const RememberScreen = () => {
 
               {item.keywords && item.keywords !== "nan" && (
                 <Text
-                  style={[styles.keywordsText, { color: theme.colors.primary }]}
+                  style={[styles.keywordsText, { color: theme.colors.text }]}
                 >
                   {"\n"}Palabras clave: {item.keywords}
                 </Text>
               )}
 
               {item.quote_link && item.quote_link !== "nan" && (
-                <Text
-                  style={[styles.sourceText, { color: theme.colors.primary }]}
-                >
+                <Text style={[styles.sourceText, { color: theme.colors.text }]}>
                   {"\n"}Fuente: {item.quote_link}
                 </Text>
               )}
@@ -224,7 +259,7 @@ const RememberScreen = () => {
       <FlatList
         data={recommendations}
         renderItem={renderRecommendation}
-        keyExtractor={(item) => item.id.toString()}
+        keyExtractor={(item, index) => `recommendation-${item.id}-${index}`}
         contentContainerStyle={styles.listContainer}
         style={{ backgroundColor: theme.colors.primary }}
         refreshing={refreshing}
@@ -257,11 +292,11 @@ const styles = StyleSheet.create({
   },
   recommendationCard: {
     padding: 32,
-    alignItems: "center",
+  },
+  alignRight: {
+    paddingLeft: "20%",
   },
   recommendationText: {
-    fontSize: 32,
-    textAlign: "center",
     fontFamily: "System",
     fontWeight: "bold",
     marginBottom: 24,
@@ -269,7 +304,6 @@ const styles = StyleSheet.create({
   },
   categoryText: {
     fontSize: 20,
-    textAlign: "center",
     fontFamily: "System",
     fontWeight: "600",
     marginBottom: 32,
@@ -278,6 +312,7 @@ const styles = StyleSheet.create({
   instructionContainer: {
     alignItems: "center",
     marginTop: 24,
+    width: "100%",
   },
   instructionText: {
     fontSize: 20,

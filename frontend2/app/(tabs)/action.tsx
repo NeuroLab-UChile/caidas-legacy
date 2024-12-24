@@ -168,12 +168,6 @@ export default function ActionScreen() {
             <Text style={styles.selectedBannerText}>
               Categoría seleccionada: {selectedCategory.name}
             </Text>
-            <TouchableOpacity
-              style={styles.clearButton}
-              onPress={() => setSelectedCategory(null)}
-            >
-              <IconSymbol name="close" size={20} color={theme.colors.text} />
-            </TouchableOpacity>
           </>
         ) : (
           <Text style={styles.selectedBannerText}>

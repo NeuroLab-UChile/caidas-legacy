@@ -207,8 +207,9 @@ export default function TabLayout() {
               borderColor: "#000000",
               borderBottomWidth: 0,
             },
+
             tabBarItemStyle: {
-              width: SCREEN_WIDTH / 4,
+              width: SCREEN_WIDTH / 5, // Reducir ancho proporcional de cada botón
               height: BOTTOM_TAB_HEIGHT - 20,
               paddingTop: 4,
             },
@@ -458,14 +459,13 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    height: BOTTOM_TAB_HEIGHT - 10,
+    height: BOTTOM_TAB_HEIGHT - 15, // Altura ajustada si es necesario
     elevation: 0,
     shadowColor: "transparent",
-
     flexDirection: "row",
-    justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingBottom: 8,
+    justifyContent: "space-around", // Reducir espacio horizontal
+    paddingHorizontal: 10, // Margen horizontal reducido
+    paddingBottom: 12,
     overflow: "hidden",
   },
   middleButton: {
