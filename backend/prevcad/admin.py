@@ -13,6 +13,7 @@ from django.urls import reverse
 from django.contrib.admin import SimpleListFilter
 from django.utils.safestring import mark_safe
 from django.template.loader import render_to_string
+from django.utils import timezone
 
 from .models import (
   TextRecomendation,
@@ -40,7 +41,8 @@ class ProfileInline(admin.StackedInline):
 # Add HealthCategory inline to show categories in user admin
 class HealthCategoryInline(admin.TabularInline):
   model = HealthCategory
-  extra = 0  # Don't show empty forms
+  fk_name = 'user'
+  extra = 0
   readonly_fields = ['template']  # Make them read-only
   can_delete = True
   verbose_name_plural = 'Health Categories'
@@ -181,6 +183,10 @@ class HealthCategoryAdmin(admin.ModelAdmin):
             'fields': ('get_detailed_responses',),
             'classes': ('collapse',)
         }),
+        ('Respuestas del Doctor', {
+            'fields': ('doctor_recommendations','status_color'),
+            'classes': ('collapse',)
+        }),
     )
     class Media:
         css = {
@@ -260,7 +266,7 @@ class HealthCategoryAdmin(admin.ModelAdmin):
 
     def get_detailed_responses(self, obj):
         if not obj.responses:
-            return "No hay respuestas registradas"
+            return "No hay respuestas registradas por el paciente"
 
         html = ["""
             <table style='width:100%; border-collapse: collapse; margin-top: 10px;'>
@@ -275,27 +281,31 @@ class HealthCategoryAdmin(admin.ModelAdmin):
 
         for node_id, response_data in obj.responses.items():
             try:
-                # Extraer datos del nuevo formato de respuesta
                 question = response_data.get('question', 'Sin pregunta')
                 response_type = response_data.get('type', 'Desconocido')
                 answer_data = response_data.get('answer', {})
                 timestamp = response_data.get('metadata', {}).get('timestamp', '')
                 
                 # Formatear la respuesta según el tipo
-                formatted_answer = ""
+                formatted_answer = "Sin respuesta"
+                
                 if response_type == 'SINGLE_CHOICE_QUESTION':
-                    selected_idx = answer_data.get('selectedOption')
+                    selected_option = answer_data.get('selectedOption')
                     options = answer_data.get('options', [])
-                    formatted_answer = options[selected_idx] if selected_idx is not None and options else "No seleccionada"
+                    if selected_option is not None and options and selected_option < len(options):
+                        formatted_answer = options[selected_option]
                 
                 elif response_type == 'MULTIPLE_CHOICE_QUESTION':
-                    selected_indices = answer_data.get('selectedOptions', [])
+                    selected_options = answer_data.get('selectedOptions', [])
                     options = answer_data.get('options', [])
-                    selected_options = [options[i] for i in selected_indices if i < len(options)]
-                    formatted_answer = ", ".join(selected_options) if selected_options else "No seleccionada"
+                    selected = [options[i] for i in selected_options if i < len(options)]
+                    formatted_answer = ", ".join(selected) if selected else "No seleccionada"
                 
                 elif response_type == 'TEXT_QUESTION':
-                    formatted_answer = answer_data.get('text', 'Sin respuesta')
+                    formatted_answer = answer_data.get('value', 'Sin respuesta')
+                
+                elif response_type == 'SCALE_QUESTION':
+                    formatted_answer = str(answer_data.get('value', 'Sin respuesta'))
 
                 # Formatear la fecha
                 formatted_date = timestamp.split('T')[0] if timestamp else ''
@@ -325,6 +335,17 @@ class HealthCategoryAdmin(admin.ModelAdmin):
         return mark_safe(''.join(html))
     get_detailed_responses.short_description = "Detalle de Respuestas"
 
+    def save_model(self, request, obj, form, change):
+        """
+        Sobreescribe el método save_model para incluir el usuario que realiza los cambios.
+        """
+        if 'doctor_recommendations' in form.changed_data or 'status_color' in form.changed_data:
+            print(request.user, "user")
+            obj.doctor_recommendations_updated_by = request.user
+            obj.doctor_recommendations_updated_at = timezone.now()
+        
+        obj.save()
+
 @admin.register(TextRecomendation)
 class TextRecomendationAdmin(admin.ModelAdmin):
     list_display = ('theme', 'category', 'sub_category')
@@ -349,4 +370,7 @@ class TextRecomendationAdmin(admin.ModelAdmin):
 
     def get_queryset(self, request):
         return super().get_queryset(request).select_related()
+
+
+
 

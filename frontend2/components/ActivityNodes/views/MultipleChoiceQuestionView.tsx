@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -12,35 +12,35 @@ import { theme } from "@/src/theme";
 
 interface MultipleChoiceQuestionProps {
   data: {
-    data: {
-      question: string;
-      options: Array<string>;
-      image?: string;
-    };
+    question: string;
+    options: Array<string>;
+    image?: string;
   };
-  onNext?: (response: { selectedOptions: number[] }) => void;
+  setResponse: (response: { selectedOptions: number[] } | null) => void;
 }
 
 export function MultipleChoiceQuestionView({
   data,
-  onNext,
+  setResponse,
 }: MultipleChoiceQuestionProps) {
   const [selectedOptions, setSelectedOptions] = useState<number[]>([]);
 
-  const formattedOptions = data.data.options.map(
+  const toggleOption = (optionId: number) => {
+    const newSelection = selectedOptions.includes(optionId) ? [] : [optionId];
+
+    setSelectedOptions(newSelection);
+    // Enviamos la respuesta al padre
+    setResponse(
+      newSelection.length > 0 ? { selectedOptions: newSelection } : null
+    );
+  };
+
+  const formattedOptions = data.options.map(
     (option: string, index: number) => ({
       id: index,
       text: option,
     })
   );
-
-  const toggleOption = (optionId: number) => {
-    if (selectedOptions.includes(optionId)) {
-      setSelectedOptions([]);
-    } else {
-      setSelectedOptions([optionId]);
-    }
-  };
 
   return (
     <ScrollView
@@ -51,7 +51,7 @@ export function MultipleChoiceQuestionView({
       alwaysBounceVertical={true}
     >
       <View>
-        <Text style={styles.questionText}>{data.data.question}</Text>
+        <Text style={styles.questionText}>{data.question}</Text>
       </View>
 
       <View style={styles.optionsContainer}>
@@ -87,20 +87,6 @@ export function MultipleChoiceQuestionView({
           );
         })}
       </View>
-
-      <TouchableOpacity
-        style={[
-          styles.continueButton,
-          selectedOptions.length === 0 && styles.disabledButton,
-        ]}
-        onPress={() =>
-          selectedOptions.length > 0 && onNext?.({ selectedOptions })
-        }
-        disabled={selectedOptions.length === 0}
-        activeOpacity={0.8}
-      >
-        <Text style={styles.continueButtonText}>Continuar</Text>
-      </TouchableOpacity>
     </ScrollView>
   );
 }
@@ -166,32 +152,5 @@ const styles = StyleSheet.create({
   selectedOptionText: {
     color: theme.colors.primary,
     fontWeight: "500",
-  },
-  continueButton: {
-    backgroundColor: theme.colors.primary,
-    padding: 16,
-    borderRadius: 12,
-    alignItems: "center",
-    marginTop: 8,
-    ...Platform.select({
-      ios: {
-        shadowColor: theme.colors.primary,
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 4,
-      },
-      android: {
-        elevation: 4,
-      },
-    }),
-  },
-  disabledButton: {
-    backgroundColor: theme.colors.border,
-    opacity: 0.7,
-  },
-  continueButtonText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: theme.colors.text,
   },
 });

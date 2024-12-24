@@ -348,6 +348,7 @@
 
   function openTrainingFormModal() {
     const nodes = {{ original.training_form.training_nodes|safe }};
+    console.log(nodes);
     renderNodes(nodes, 'TRAINING');
     document.getElementById('formModal').classList.remove('hidden');
   }

@@ -14,13 +14,17 @@ def populate_category_templates_from_file(file_path):
             data = json.load(json_file)
 
         for template_info in data:
+            # Construct the icon path relative to assets folder
+            icon_path = f"{template_info['icon']}" if template_info.get('icon') else None
+            
             template, created = CategoryTemplate.objects.update_or_create(
                 name=template_info['name'],
                 defaults={
                     'description': template_info['description'],
                     'is_active': True,
                     'evaluation_form': template_info['evaluation_form'],
-                    'training_form': template_info['training_form']
+                    'training_form': template_info['training_form'],
+                    'icon': icon_path
                 }
             )
 

@@ -34,28 +34,53 @@ export default function ActionScreen() {
 
   const renderIcon = (base64Icon: string) => {
     try {
-      console.log("Icon data:", {
-        hasIcon: !!base64Icon,
-        iconLength: base64Icon?.length,
-        iconPreview: base64Icon?.substring(0, 50) + "...",
+      console.log("Base64 icon:", base64Icon);
+      // Validar que tenemos un string no vacío
+      if (!base64Icon || typeof base64Icon !== "string") {
+        console.log("Invalid icon data:", base64Icon);
+        return null;
+      }
+
+      // Limpiar el string base64 de posibles espacios o saltos de línea
+      const cleanBase64 = base64Icon.trim();
+
+      // Debug logs detallados
+      console.log("Icon processing:", {
+        originalLength: base64Icon.length,
+        cleanedLength: cleanBase64.length,
+        startsWithData: cleanBase64.startsWith("data:"),
+        startsWithSlash: cleanBase64.startsWith("/"),
+        first50Chars: cleanBase64.substring(0, 50),
       });
 
-      const imageUri = base64Icon.includes("data:image")
-        ? base64Icon
-        : `data:image/png;base64,${base64Icon}`;
+      // Construir URI según el formato
+      let imageUri = cleanBase64;
+      if (!cleanBase64.startsWith("data:") && !cleanBase64.startsWith("http")) {
+        // Si no empieza con data: o http, asumimos que es base64 puro
+        imageUri = `data:image/png;base64,${cleanBase64}`;
+      }
+
+      console.log(
+        "Final image URI (first 100 chars):",
+        imageUri.substring(0, 100)
+      );
 
       return (
         <Image
           source={{ uri: imageUri }}
           style={styles.iconImage}
           resizeMode="contain"
-          onError={(e) =>
-            console.log("Error loading image:", e.nativeEvent.error)
-          }
+          onError={(e) => {
+            console.error("Image loading error:", {
+              error: e.nativeEvent.error,
+              uri: imageUri.substring(0, 100) + "...",
+            });
+          }}
+          onLoad={() => console.log("Image loaded successfully")}
         />
       );
     } catch (error) {
-      console.log("Error processing icon:", error);
+      console.error("Error in renderIcon:", error);
       return null;
     }
   };
@@ -93,23 +118,36 @@ export default function ActionScreen() {
         ListHeaderComponent={null}
         showsVerticalScrollIndicator={true}
         bounces={true}
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            style={[
-              styles.categoryCard,
-              selectedCategory?.id === item.id && styles.selectedCard,
-              { backgroundColor: theme.colors.background },
-            ]}
-            onPress={() => handleCategoryPress(item)}
-          >
-            <View style={styles.iconContainer}>
-              {item.icon && renderIcon(item.icon)}
-            </View>
-            <Text style={[styles.categoryName, { color: theme.colors.text }]}>
-              {item.name}
-            </Text>
-          </TouchableOpacity>
-        )}
+        renderItem={({ item }) => {
+          console.log("Rendering category:", {
+            id: item.id,
+            name: item.name,
+            hasIcon: !!item.icon,
+            iconLength: item.icon?.length,
+          });
+
+          return (
+            <TouchableOpacity
+              style={[
+                styles.categoryCard,
+                selectedCategory?.id === item.id && styles.selectedCard,
+                { backgroundColor: theme.colors.background },
+              ]}
+              onPress={() => handleCategoryPress(item)}
+            >
+              <View style={styles.iconContainer}>
+                {item.icon ? (
+                  renderIcon(item.icon)
+                ) : (
+                  <Text style={styles.categoryName}>No Icon</Text>
+                )}
+              </View>
+              <Text style={[styles.categoryName, { color: theme.colors.text }]}>
+                {item.name}
+              </Text>
+            </TouchableOpacity>
+          );
+        }}
         keyExtractor={(item) => item.id.toString()}
       />
     </View>

@@ -3,11 +3,11 @@ import { ActivityNodeType } from "@/components/ActivityNodes";
 export interface QuestionNode {
   id: number;
   type: ActivityNodeType;
-  data: {
-    question: string;
-    options?: string[];
-    image?: string;
-  };
+
+  question: string;
+  options?: string[];
+  image?: string;
+
   next_node_id: number | null;
 }
 
@@ -51,8 +51,16 @@ export interface Category {
   completion_date?: string;
   status_color?: 'green' | 'yellow' | 'red';
   doctor_recommendations?: string;
+  doctor_recommendations_updated_by?: {
+    id: number;
+    username: string;
+    first_name: string;
+    last_name: string;
+  };
+  doctor_recommendations_updated_at?: string;
   status?: {
     color: string;
     text: string;
   };
-} 
+}
+

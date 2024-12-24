@@ -1,11 +1,14 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   ScrollView,
+  SafeAreaView,
+  Platform,
   Image,
+  KeyboardAvoidingView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { theme } from "@/src/theme";
@@ -25,32 +28,34 @@ interface ActivityNodeContainerProps {
     | "WEEKLY_RECIPE_NODE"
     | "RESULT_NODE"
     | "IMAGE_QUESTION";
+
   data: any;
-  onNext: ((response?: any) => void) &
-    ((response: { answer: string }) => void) &
-    ((response: { selectedOption: number }) => void) &
-    ((response: { selectedOptions: number[] }) => void) &
-    ((response: { value: number }) => void);
+  onNext: (response?: any) => void;
   onBack: () => void;
   responses: { [key: number]: any };
   categoryId?: number;
 }
 
-const ActivityNodeContainer: React.FC<ActivityNodeContainerProps> = ({
+export function ActivityNodeContainer({
   type,
   data,
   onNext,
   onBack,
   responses,
   categoryId,
-}) => {
+}: ActivityNodeContainerProps) {
+  const [currentResponse, setCurrentResponse] = useState<any>(null);
+
   const NodeComponent =
     ActivityNodeViews[type as keyof typeof ActivityNodeViews];
 
-  console.log(data);
-
-  const handleNext = (response?: any) => {
-    onNext(response);
+  const handleNext = () => {
+    if (currentResponse && data.question) {
+      console.log("currentResponse", currentResponse);
+      onNext(currentResponse);
+    } else if (!data.question) {
+      onNext();
+    }
   };
 
   const renderHeader = () => (
@@ -62,19 +67,34 @@ const ActivityNodeContainer: React.FC<ActivityNodeContainerProps> = ({
 
   const renderContent = () => {
     switch (type) {
+      case "RESULT_NODE":
+        return (
+          <ResultNodeView
+            data={data}
+            onNext={handleNext}
+            responses={responses}
+            categoryId={categoryId}
+          />
+        );
+      case "VIDEO_NODE":
+        return <VideoNodeView data={data} />;
+      case "IMAGE_NODE":
+        return (
+          <View style={styles.contentContainer}>
+            <Image
+              source={{ uri: data.image_url }}
+              style={styles.image}
+              resizeMode="cover"
+            />
+            <Text style={styles.title}>{data.title}</Text>
+            <Text style={styles.description}>{data.description}</Text>
+          </View>
+        );
       default:
         if (NodeComponent) {
           return (
             <View style={styles.questionContainer}>
-              <View style={styles.questionHeader}>
-                <Text style={styles.questionType}>
-                  {type === "SINGLE_CHOICE_QUESTION" && "Selección Únic"}
-                  {type === "MULTIPLE_CHOICE_QUESTION" && "Selección Múltiple"}
-                  {type === "TEXT_QUESTION" && "Respuesta Abierta"}
-                  {type === "SCALE_QUESTION" && "Escala"}
-                </Text>
-              </View>
-              <NodeComponent data={data} onNext={handleNext} />
+              <NodeComponent data={data} setResponse={setCurrentResponse} />
             </View>
           );
         }
@@ -90,90 +110,144 @@ const ActivityNodeContainer: React.FC<ActivityNodeContainerProps> = ({
   };
 
   return (
-    <ScrollView style={styles.container}>
-      {renderHeader()}
-      <View style={styles.card}>{renderContent()}</View>
-      <TouchableOpacity style={styles.nextButton} onPress={() => onNext()}>
-        <Text style={styles.nextText}>Siguiente</Text>
-      </TouchableOpacity>
-    </ScrollView>
+    <SafeAreaView style={styles.safeArea}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={styles.container}
+      >
+        <View style={styles.mainContainer}>
+          {renderHeader()}
+          <ScrollView
+            style={styles.scrollView}
+            contentContainerStyle={styles.scrollViewContent}
+            showsVerticalScrollIndicator={false}
+          >
+            {renderContent()}
+          </ScrollView>
+          <TouchableOpacity
+            style={[
+              styles.nextButton,
+              data.question && !currentResponse && styles.nextButtonDisabled,
+            ]}
+            onPress={handleNext}
+            disabled={data.question && !currentResponse}
+          >
+            <Text
+              style={[
+                styles.nextText,
+                data.question && !currentResponse && styles.nextTextDisabled,
+              ]}
+            >
+              Siguiente
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
-};
+}
+
+const BUTTON_HEIGHT = 70;
+const BOTTOM_NAV_HEIGHT = 90;
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
     flex: 1,
     backgroundColor: theme.colors.background,
+  },
+  container: {
+    flex: 1,
+  },
+  mainContainer: {
+    flex: 1,
+    backgroundColor: theme.colors.background,
+  },
+  disabledButton: {
+    backgroundColor: theme.colors.disabled,
+  },
+  nextButtonDisabled: {
+    backgroundColor: theme.colors.disabled,
+  },
+  nextTextDisabled: {
+    color: theme.colors.background,
   },
   backButton: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 16,
-    padding: 10,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
   },
   backText: {
     marginLeft: 8,
     fontSize: 16,
     color: theme.colors.text,
   },
-  card: {
-    backgroundColor: theme.colors.card,
-    borderRadius: 12,
-    padding: 16,
-    margin: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+  scrollView: {
+    flex: 1,
   },
-  contentContainer: {
-    alignItems: "center",
+  scrollViewContent: {
+    paddingBottom: BUTTON_HEIGHT + 80,
   },
-  title: {
-    fontSize: 20,
-    fontWeight: "600",
-    marginBottom: 12,
-    textAlign: "center",
-    color: theme.colors.text,
-  },
-  description: {
-    fontSize: 16,
-    textAlign: "center",
-    color: theme.colors.textSecondary,
-  },
-  image: {
-    width: "100%",
-    height: 200,
-    marginBottom: 16,
-    borderRadius: 8,
-  },
-  questionContainer: {
-    gap: 16,
-  },
-  questionHeader: {
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
-    paddingBottom: 12,
-    marginBottom: 16,
-  },
-  questionType: {
-    fontSize: 14,
-    color: theme.colors.textSecondary,
-    fontWeight: "600",
-    textTransform: "uppercase",
+  buttonContainer: {
+    position: "absolute",
+    bottom: BOTTOM_NAV_HEIGHT, // Posición justo encima del menú
+    left: 0,
+    right: 0,
+    height: BUTTON_HEIGHT,
+    backgroundColor: theme.colors.background,
+    paddingHorizontal: 16,
+    justifyContent: "center",
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.border,
   },
   nextButton: {
+    position: "absolute",
+    bottom: 24,
+    left: 16,
+    right: 16,
     alignItems: "center",
+    justifyContent: "center",
     padding: 16,
-    margin: 16,
     backgroundColor: theme.colors.primary,
-    borderRadius: 8,
+    borderRadius: 12,
+    height: BUTTON_HEIGHT - 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4,
+    zIndex: 1000,
   },
   nextText: {
     fontSize: 16,
     fontWeight: "600",
     color: theme.colors.text,
+  },
+  contentContainer: {
+    alignItems: "center",
+    padding: 16,
+  },
+  image: {
+    width: "100%",
+    height: 200,
+    borderRadius: 8,
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: "600",
+    marginTop: 16,
+    textAlign: "center",
+  },
+  description: {
+    fontSize: 16,
+    textAlign: "center",
+    marginTop: 8,
+  },
+  questionContainer: {
+    paddingHorizontal: 20,
+    paddingTop: 16,
   },
 });
 

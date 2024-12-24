@@ -2,41 +2,36 @@
   {
     "name": "Riesgo Domiciliario",
     "description": "Evalúe los riesgos comunes dentro del hogar, como caídas, problemas de iluminación o desorden. Identifique oportunidades para mejorar la seguridad y crear un ambiente más seguro para usted y su familia.",
+    "icon": "health_categories_icons/home_safety.png",
     "evaluation_form": {
       "question_nodes": [
         {
           "id": 1,
           "type": "SINGLE_CHOICE_QUESTION",
-          "data": {
-            "question": "¿En qué tipo de vivienda reside actualmente?",
-            "options": [
-              "Casa",
-              "Departamento",
-              "Otro"
-            ]
-          }
+          "question": "¿En qué tipo de vivienda reside actualmente?",
+          "options": [
+            "Casa",
+            "Departamento",
+            "Otro"
+          ]
         },
         {
           "id": 2,
           "type": "MULTIPLE_CHOICE_QUESTION",
-          "data": {
-            "question": "¿Qué áreas de su hogar utiliza con mayor frecuencia?",
-            "options": [
-              "Cocina",
-              "Living",
-              "Baño",
-              "Habitación",
-              "Escaleras",
-              "Exterior"
-            ]
-          }
+          "question": "¿Qué áreas de su hogar utiliza con mayor frecuencia?",
+          "options": [
+            "Cocina",
+            "Living",
+            "Baño",
+            "Habitación",
+            "Escaleras",
+            "Exterior"
+          ]
         },
         {
           "id": 3,
           "type": "TEXT_QUESTION",
-          "data": {
-            "question": "Describa problemas de seguridad que haya notado en su hogar."
-          }
+          "question": "Describa problemas de seguridad que haya notado en su hogar."
         }
       ]
     },
@@ -47,14 +42,14 @@
           "type": "DESCRIPTION_NODE",
           "title": "Introducción al Riesgo Domiciliario",
           "description": "Aprenda a identificar y reducir los riesgos más comunes en su hogar, desde evitar tropiezos hasta mejorar la iluminación en pasillos y escaleras.",
-          "media_url": "/assets/training/home-safety.jpg"
+          "media_url": "/training/home-safety.jpg"
         },
         {
           "id": 2,
           "type": "VIDEO_NODE",
           "title": "Prevención de Caídas",
           "description": "Este video le enseñará técnicas prácticas para minimizar riesgos de caídas, como el uso de barandillas y alfombras antideslizantes.",
-          "media_url": "/assets/training/fall-prevention.mp4"
+          "media_url": "/training/fall-prevention.mp4"
         }
       ]
     }
@@ -62,36 +57,31 @@
   {
     "name": "Actividad Física",
     "description": "Manténgase activo y prevenga la pérdida de movilidad con rutinas adaptadas a sus necesidades. La actividad física mejora la fuerza, la coordinación y la confianza para desplazarse de manera segura.",
+    "icon": "health_categories_icons/exercise.png",
     "evaluation_form": {
       "question_nodes": [
         {
           "id": 1,
           "type": "SINGLE_CHOICE_QUESTION",
-          "data": {
-            "question": "¿Realiza actividad física regularmente?",
-            "options": [
-              "Sí, diariamente",
-              "Algunas veces por semana",
-              "No realizo"
-            ]
-          }
+          "question": "¿Realiza actividad física regularmente?",
+          "options": [
+            "Sí, diariamente",
+            "Algunas veces por semana",
+            "No realizo"
+          ]
         },
         {
           "id": 2,
           "type": "SCALE_QUESTION",
-          "data": {
-            "question": "En una escala del 1 al 10, ¿qué tan activo se siente?",
-            "min_value": 1,
-            "max_value": 10,
-            "step": 1
-          }
+          "question": "En una escala del 1 al 10, ¿qué tan activo se siente?",
+          "min_value": 1,
+          "max_value": 10,
+          "step": 1
         },
         {
           "id": 3,
           "type": "TEXT_QUESTION",
-          "data": {
-            "question": "¿Qué le impide realizar actividad física con más frecuencia?"
-          }
+          "question": "¿Qué le impide realizar actividad física con más frecuencia?"
         }
       ]
     },
@@ -102,14 +92,14 @@
           "type": "VIDEO_NODE",
           "title": "Rutinas Básicas de Ejercicio",
           "description": "Descubra rutinas simples y efectivas que puede hacer desde casa, diseñadas para personas de cualquier nivel de condición física.",
-          "media_url": "/assets/training/exercise-routine.mp4"
+          "media_url": "/training/exercise-routine.mp4"
         },
         {
           "id": 2,
           "type": "IMAGE_NODE",
           "title": "Ejercicios Ilustrativos",
           "description": "Galería de ejercicios con instrucciones detalladas para fortalecer sus músculos y mantener la movilidad.",
-          "media_url": "/assets/training/exercise-examples.jpg"
+          "media_url": "/training/exercise-examples.jpg"
         }
       ]
     }
@@ -117,25 +107,22 @@
   {
     "name": "Alimentación Saludable",
     "description": "Una dieta balanceada es esencial para el bienestar. Evalúe sus hábitos alimenticios y aprenda estrategias para mejorar su nutrición y prevenir enfermedades asociadas a una dieta inadecuada.",
+    "icon": "health_categories_icons/healthy_diet.png",
     "evaluation_form": {
       "question_nodes": [
         {
           "id": 1,
           "type": "SINGLE_CHOICE_QUESTION",
-          "data": {
-            "question": "¿Consume frutas y verduras diariamente?",
-            "options": [
-              "Sí",
-              "No"
-            ]
-          }
+          "question": "¿Consume frutas y verduras diariamente?",
+          "options": [
+            "Sí",
+            "No"
+          ]
         },
         {
           "id": 2,
           "type": "TEXT_QUESTION",
-          "data": {
-            "question": "¿Qué alimentos considera esenciales en su dieta diaria?"
-          }
+          "question": "¿Qué alimentos considera esenciales en su dieta diaria?"
         }
       ]
     },
@@ -146,7 +133,7 @@
           "type": "DESCRIPTION_NODE",
           "title": "Importancia de una Dieta Balanceada",
           "description": "Descubra cómo una alimentación saludable puede mejorar su bienestar general y prevenir enfermedades.",
-          "media_url": "/assets/training/healthy-diet.jpg"
+          "media_url": "/training/healthy-diet.jpg"
         },
         {
           "id": 2,
@@ -186,29 +173,26 @@
   {
     "name": "Valoración Sensorial",
     "description": "Detecte problemas de visión o audición que puedan aumentar el riesgo de caídas. Mantenga sus sentidos en óptimas condiciones con ejercicios y consultas médicas regulares.",
+    "icon": "health_categories_icons/sensory_health.png",
     "evaluation_form": {
       "question_nodes": [
         {
           "id": 1,
           "type": "SINGLE_CHOICE_QUESTION",
-          "data": {
-            "question": "¿Ha notado dificultades para ver objetos a corta distancia?",
-            "options": [
-              "Sí",
-              "No"
-            ]
-          }
+          "question": "¿Ha notado dificultades para ver objetos a corta distancia?",
+          "options": [
+            "Sí",
+            "No"
+          ]
         },
         {
           "id": 2,
           "type": "SINGLE_CHOICE_QUESTION",
-          "data": {
-            "question": "¿Utiliza audífonos para mejorar su audición?",
-            "options": [
-              "Sí",
-              "No"
-            ]
-          }
+          "question": "¿Utiliza audífonos para mejorar su audición?",
+          "options": [
+            "Sí",
+            "No"
+          ]
         }
       ]
     },
@@ -219,7 +203,7 @@
           "type": "VIDEO_NODE",
           "title": "Consejos para Mejorar la Visión y Audición",
           "description": "Aprenda ejercicios y hábitos para mantener la salud de sus sentidos.",
-          "media_url": "/assets/training/sensory-health.mp4"
+          "media_url": "/training/sensory-health.mp4"
         }
       ]
     }
@@ -227,25 +211,22 @@
   {
     "name": "Fármacos y Medicación",
     "description": "Asegúrese de que su medicación no interfiera con su equilibrio o coordinación. Identifique formas de gestionar mejor su tratamiento.",
+    "icon": "health_categories_icons/medication.png",
     "evaluation_form": {
       "question_nodes": [
         {
           "id": 1,
           "type": "SINGLE_CHOICE_QUESTION",
-          "data": {
-            "question": "¿Toma más de tres medicamentos diferentes diariamente?",
-            "options": [
-              "Sí",
-              "No"
-            ]
-          }
+          "question": "¿Toma más de tres medicamentos diferentes diariamente?",
+          "options": [
+            "Sí",
+            "No"
+          ]
         },
         {
           "id": 2,
           "type": "TEXT_QUESTION",
-          "data": {
-            "question": "¿Alguna vez ha olvidado tomar su medicación? Si es así, ¿por qué?"
-          }
+          "question": "¿Alguna vez ha olvidado tomar su medicación? Si es así, ¿por qué?"
         }
       ]
     },
@@ -256,7 +237,7 @@
           "type": "DESCRIPTION_NODE",
           "title": "Guía para un Uso Seguro de Medicamentos",
           "description": "Descubra cómo evitar interacciones adversas y efectos secundarios con un uso adecuado de medicamentos.",
-          "media_url": "/assets/training/medication-safety.jpg"
+          "media_url": "/training/medication-safety.jpg"
         }
       ]
     }
@@ -264,25 +245,22 @@
   {
     "name": "Cognición y Ánimo",
     "description": "Evalúe su estado cognitivo y emocional. La mente y el estado de ánimo desempeñan un papel crucial en la prevención de accidentes.",
+    "icon": "health_categories_icons/mind_health.png",
     "evaluation_form": {
       "question_nodes": [
         {
           "id": 1,
           "type": "SINGLE_CHOICE_QUESTION",
-          "data": {
-            "question": "¿Se siente generalmente enfocado durante el día?",
-            "options": [
-              "Sí",
-              "No"
-            ]
-          }
+          "question": "¿Se siente generalmente enfocado durante el día?",
+          "options": [
+            "Sí",
+            "No"
+          ]
         },
         {
           "id": 2,
           "type": "TEXT_QUESTION",
-          "data": {
-            "question": "¿Cuáles son las principales distracciones que enfrenta?"
-          }
+          "question": "¿Cuáles son las principales distracciones que enfrenta?"
         }
       ]
     },
@@ -293,7 +271,7 @@
           "type": "VIDEO_NODE",
           "title": "Técnicas para Mejorar la Atención",
           "description": "Aprenda estrategias prácticas para mantener la concentración y un estado de ánimo positivo.",
-          "media_url": "/assets/training/mind-techniques.mp4"
+          "media_url": "/training/mind-techniques.mp4"
         }
       ]
     }
@@ -301,25 +279,22 @@
   {
     "name": "Historia de Caídas",
     "description": "Identifique patrones de incidentes pasados para prevenir futuras caídas y adoptar medidas correctivas en su día a día.",
+    "icon": "health_categories_icons/falls.png",
     "evaluation_form": {
       "question_nodes": [
         {
           "id": 1,
           "type": "SINGLE_CHOICE_QUESTION",
-          "data": {
-            "question": "¿Ha sufrido alguna caída en el último año?",
-            "options": [
-              "Sí",
-              "No"
-            ]
-          }
+          "question": "¿Ha sufrido alguna caída en el último año?",
+          "options": [
+            "Sí",
+            "No"
+          ]
         },
         {
           "id": 2,
           "type": "TEXT_QUESTION",
-          "data": {
-            "question": "Describa brevemente las circunstancias de su caída más reciente."
-          }
+          "question": "Describa brevemente las circunstancias de su caída más reciente."
         }
       ]
     },
@@ -330,7 +305,7 @@
           "type": "DESCRIPTION_NODE",
           "title": "Cómo Evitar Caídas Futuras",
           "description": "Guía práctica con recomendaciones personalizadas para reducir incidentes relacionados con caídas.",
-          "media_url": "/assets/training/prevent-falls.jpg"
+          "media_url": "/training/prevent-falls.jpg"
         }
       ]
     }
@@ -338,25 +313,22 @@
   {
     "name": "Estado Óseo y Muscular",
     "description": "Fortalezca sus huesos y músculos para mantener el equilibrio y reducir el riesgo de fracturas en caso de caídas.",
+    "icon": "health_categories_icons/bone_muscle_health.png",
     "evaluation_form": {
       "question_nodes": [
         {
           "id": 1,
           "type": "SINGLE_CHOICE_QUESTION",
-          "data": {
-            "question": "¿Realiza ejercicios de fortalecimiento muscular regularmente?",
-            "options": [
-              "Sí",
-              "No"
-            ]
-          }
+          "question": "¿Realiza ejercicios de fortalecimiento muscular regularmente?",
+          "options": [
+            "Sí",
+            "No"
+          ]
         },
         {
           "id": 2,
           "type": "TEXT_QUESTION",
-          "data": {
-            "question": "¿Ha sufrido fracturas en el pasado? Si es así, ¿en qué zonas?"
-          }
+          "question": "¿Ha sufrido fracturas en el pasado? Si es así, ¿en qué zonas?"
         }
       ]
     },
@@ -367,7 +339,7 @@
           "type": "VIDEO_NODE",
           "title": "Ejercicios para Fortalecer Huesos y Músculos",
           "description": "Videos enfocados en ejercicios para mejorar la densidad ósea y la fuerza muscular.",
-          "media_url": "/assets/training/bone-muscle-health.mp4"
+          "media_url": "/training/bone-muscle-health.mp4"
         }
       ]
     }

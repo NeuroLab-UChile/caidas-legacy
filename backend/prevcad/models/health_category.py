@@ -4,12 +4,19 @@ from django.utils.encoding import smart_str
 from django.contrib.auth.models import User
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from django.utils import timezone
 from .activity_node import ActivityNode, ActivityNodeDescription
 import base64
+import os
+from django.conf import settings
 
 
 class CategoryTemplate(models.Model):
-  icon = models.ImageField(upload_to='health_categories_icons/')
+  icon = models.ImageField(
+    upload_to='health_categories_icons',
+    null=True,
+    blank=True
+  )
   name = models.TextField()
   description = models.TextField()
   is_active = models.BooleanField(default=True)
@@ -35,15 +42,44 @@ class CategoryTemplate(models.Model):
   )
 
   def get_icon_base64(self):
-    if self.icon:
-      try:
-        with self.icon.open('rb') as image_file:
-          encoded_string = base64.b64encode(image_file.read())
-          return encoded_string.decode('utf-8')
-      except Exception as e:
-        print(f"Error encoding image: {e}")
+    try:
+      if not self.icon:
         return None
-    return None
+        
+      # Construir la ruta correcta usando MEDIA_ROOT
+      relative_path = str(self.icon).lstrip('/')  # Eliminar slash inicial si existe
+      icon_path = os.path.join(settings.MEDIA_ROOT, relative_path)
+      
+      print(f"Debug - Icon paths:")
+      print(f"MEDIA_ROOT: {settings.MEDIA_ROOT}")
+      print(f"Relative path: {relative_path}")
+      print(f"Full path: {icon_path}")
+      
+      # Verificar que el archivo existe
+      if not os.path.exists(icon_path):
+        print(f"Icon file not found at: {icon_path}")
+        return None
+        
+      # Leer y codificar el archivo
+      with open(icon_path, 'rb') as image_file:
+        encoded_string = base64.b64encode(image_file.read()).decode('utf-8')
+        
+      # Determinar el tipo MIME
+      extension = os.path.splitext(icon_path)[1].lower()
+      mime_type = {
+        '.png': 'image/png',
+        '.jpg': 'image/jpeg',
+        '.jpeg': 'image/jpeg',
+        '.gif': 'image/gif'
+      }.get(extension, 'image/png')
+        
+      return f"data:{mime_type};base64,{encoded_string}"
+      
+    except Exception as e:
+      print(f"Error encoding image: {str(e)}")
+      print(f"Icon type: {type(self.icon)}")
+      print(f"Icon value: {self.icon}")
+      return None
   def get_ordered_training_nodes(self):
     """Retorna los nodos de entrenamiento ordenados"""
     if not self.training_form:
@@ -63,6 +99,9 @@ class CategoryTemplate(models.Model):
         description=self.description
       )
   
+    # Si el icono tiene una ruta con slash inicial, corregirlo
+    if self.icon and isinstance(self.icon, str) and self.icon.startswith('/'):
+      self.icon = self.icon.lstrip('/')
     super().save(*args, **kwargs)
 
   def update_evaluation_form(self, data):
@@ -124,6 +163,17 @@ class HealthCategory(models.Model):
     blank=True,
     verbose_name="Recomendaciones del Doctor"
   )
+  doctor_recommendations_updated_by = models.ForeignKey(
+    User,
+    on_delete=models.SET_NULL,
+    null=True,
+    blank=True,
+    related_name='updated_recommendations'
+  )
+  doctor_recommendations_updated_at = models.DateTimeField(
+    null=True,
+    blank=True
+  )
 
 
   class Meta:
@@ -147,6 +197,23 @@ class HealthCategory(models.Model):
         user=user,
         template=template,
       )
+
+  def save(self, *args, **kwargs):
+        # Obtener el usuario que realiza la actualización
+        updated_by = kwargs.pop('updated_by', None)
+        
+        if self.pk:  # Si el objeto ya existe
+            old_instance = HealthCategory.objects.get(pk=self.pk)
+            # Si las recomendaciones cambiaron
+            if old_instance.doctor_recommendations != self.doctor_recommendations:
+                self.doctor_recommendations_updated_at = timezone.now()
+                if updated_by:
+                    self.doctor_recommendations_updated_by = updated_by
+
+        super().save(*args, **kwargs)
+
+
+
 
 
 @receiver(post_save, sender=User)

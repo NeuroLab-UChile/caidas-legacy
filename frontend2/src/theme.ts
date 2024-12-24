@@ -192,7 +192,6 @@ const spacing = {
   xxl: 48,
   xxxl: 64,
 } as const;
-
 // Tema principal
 export const theme = {
   ...DefaultTheme,
@@ -390,38 +389,33 @@ export const theme = {
         color: '#000000',
         marginBottom: 16,
       },
+      optionsContainer: {
+        gap: 8,
+      },
       option: {
-        backgroundColor: '#FFFFFF',
         padding: 16,
         borderRadius: 8,
         borderWidth: 1,
         borderColor: '#E0E0E0',
-        marginBottom: 12,
-        flexDirection: 'row',
-        alignItems: 'center',
-        color: '#000000',
+      },
+      optionSelected: {
+        backgroundColor: '#E8F0FE',
+        borderColor: '#4285F4',
       },
       optionText: {
         fontSize: 16,
         color: '#000000',
-        flex: 1,
-        marginLeft: 12,
-      },
-      selectedOption: {
-        backgroundColor: '#F2FF2A20',
-        borderColor: '#F2FF2A',
-        borderWidth: 2,
       },
       button: {
-        backgroundColor: '#F2FF2A',
+        backgroundColor: '#4285F4',
         padding: 16,
         borderRadius: 8,
         alignItems: 'center',
         marginTop: 16,
       },
       buttonText: {
+        color: '#FFFFFF',
         fontSize: 16,
-        color: '#000000',
         fontWeight: '600',
       },
       input: {
@@ -431,6 +425,77 @@ export const theme = {
         padding: 12,
         color: '#000000',
         backgroundColor: '#FFFFFF',
+      },
+    },
+
+    node: {
+      container: {
+        flex: 1,
+        backgroundColor: palette.background,
+        padding: 20,
+      },
+      question: {
+        fontSize: 20,
+        fontWeight: "600",
+        color: palette.accent,
+        marginBottom: 24,
+        lineHeight: 28,
+      },
+      optionButton: {
+        backgroundColor: palette.background,
+        borderRadius: 12,
+        padding: 16,
+        borderWidth: 2,
+        borderColor: palette.grey[300],
+        marginBottom: 12,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 2,
+      },
+      selectedOption: {
+        borderColor: palette.primary,
+        textColor: palette.background,
+        backgroundColor: `${palette.primary}80`,
+      },
+      optionContent: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 12,
+      },
+      optionText: {
+        fontSize: 16,
+        color: palette.accent,
+        flex: 1,
+        lineHeight: 24,
+      },
+      selectedOptionText: {
+        color: palette.accent,
+        fontWeight: "500",
+
+      },
+
+      radioButtonSelected: {
+        backgroundColor: palette.background,
+        borderColor: palette.background,
+
+      },
+      radioButtonInner: {
+        width: 12,
+        height: 12,
+        borderRadius: 6,
+        backgroundColor: palette.grey[300],
+      },
+
+      radioButton: {
+        width: 24,
+        height: 24,
+        borderRadius: 12,
+        borderWidth: 2,
+        borderColor: palette.grey[300],
+        alignItems: "center",
+        justifyContent: "center",
       },
     },
   },

@@ -15,6 +15,7 @@ import { Redirect } from "expo-router";
 import { AuthProvider } from "./contexts/auth";
 import { theme } from "@/src/theme";
 import { CategoriesProvider } from "./contexts/categories";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -35,33 +36,35 @@ export default function RootLayout() {
   }
 
   return (
-    <AuthProvider>
-      <ThemeProvider value={theme}>
-        <CategoriesProvider>
-          <ScrollLayout>
-            <Stack
-              screenOptions={{
-                headerStyle: {
-                  backgroundColor: theme.colors.background,
-                },
-                headerTintColor: theme.colors.text,
-                headerTitleStyle: {
-                  fontSize: theme.typography.sizes.title,
-                  fontFamily: theme.typography.fonts.primary.regular,
-                },
-              }}
-            >
-              <Stack.Screen
-                name="(auth)/sign-in"
-                options={{ headerShown: false }}
-              />
-              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-              <Stack.Screen name="+not-found" />
-            </Stack>
-            <StatusBar style="auto" />
-          </ScrollLayout>
-        </CategoriesProvider>
-      </ThemeProvider>
-    </AuthProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <AuthProvider>
+        <ThemeProvider value={theme}>
+          <CategoriesProvider>
+            <ScrollLayout>
+              <Stack
+                screenOptions={{
+                  headerStyle: {
+                    backgroundColor: theme.colors.background,
+                  },
+                  headerTintColor: theme.colors.text,
+                  headerTitleStyle: {
+                    fontSize: theme.typography.sizes.title,
+                    fontFamily: theme.typography.fonts.primary.regular,
+                  },
+                }}
+              >
+                <Stack.Screen
+                  name="(auth)/sign-in"
+                  options={{ headerShown: false }}
+                />
+                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                <Stack.Screen name="+not-found" />
+              </Stack>
+              <StatusBar style="auto" />
+            </ScrollLayout>
+          </CategoriesProvider>
+        </ThemeProvider>
+      </AuthProvider>
+    </GestureHandlerRootView>
   );
 }

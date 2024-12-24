@@ -29,7 +29,6 @@ interface RecipeNodeViewProps {
         weekly_plan: WeeklyPlan;
       }
     | Array<any>;
-  onNext: () => void;
 }
 
 const DAY_NAMES = {

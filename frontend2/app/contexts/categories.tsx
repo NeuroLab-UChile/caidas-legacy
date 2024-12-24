@@ -40,6 +40,27 @@ export function CategoriesProvider({
       setLoading(true);
       const response = await apiService.categories.getAll();
       setCategories(response.data);
+
+      // Si hay una categoría seleccionada, actualizar sus datos
+      if (selectedCategory) {
+        const updatedCategory = response.data.find(
+          (c) => c.id === selectedCategory.id
+        );
+        if (
+          updatedCategory &&
+          JSON.stringify(updatedCategory) !== JSON.stringify(selectedCategory)
+        ) {
+          setSelectedCategory(updatedCategory);
+        }
+      }
+
+      // Retornar los datos actualizados para uso externo
+      return {
+        categories: response.data,
+        updatedSelectedCategory: selectedCategory
+          ? response.data.find((c) => c.id === selectedCategory.id)
+          : null,
+      };
     } catch (error) {
       console.error("Error fetching categories:", error);
       setError("Error al cargar las categorías");
@@ -60,7 +81,7 @@ export function CategoriesProvider({
         setSelectedCategory: handleSetSelectedCategory,
         loading,
         error,
-        fetchCategories,
+        fetchCategories: fetchCategories as () => Promise<void>,
       }}
     >
       {children}

@@ -159,6 +159,7 @@ class ApiClient {
     },
   };
 
+
   // User Management
   public user = {
     getProfile: async (): Promise<ApiResponse<UserProfile>> => {
@@ -183,26 +184,49 @@ class ApiClient {
       return this.handleResponse<UserProfile>(response);
     },
 
-    uploadProfileImage: async (uri: string): Promise<ApiResponse<UserProfile>> => {
-      const formData = new FormData();
-      const filename = uri.split('/').pop() || 'image';
-      const match = /\.(\w+)$/.exec(filename);
-      const type = match ? `image/${match[1]}` : 'image';
+    uploadProfileImage: async (base64Image: string): Promise<ApiResponse<UserProfile>> => {
+      try {
+        console.log("Starting image upload...");
 
-      formData.append('profile_image', {
-        uri,
-        name: filename,
-        type,
-      } as any);
+        const headers = await this.getHeaders();
+        console.log("Headers prepared:", headers);
 
+        const response = await fetch(
+          this.getUrl('/user/profile/upload_image/'),
+          {
+            method: 'POST',
+            headers: {
+              ...headers,
+              'Accept': 'application/json',
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              image: base64Image
+            })
+          }
+        );
+
+        console.log("Response status:", response.status);
+        const responseText = await response.text();
+        console.log("Response text:", responseText);
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}, message: ${responseText}`);
+        }
+
+        return JSON.parse(responseText);
+      } catch (error) {
+        console.error("Error uploading image:", error);
+        throw error;
+      }
+    },
+
+    deleteProfileImage: async (): Promise<ApiResponse<UserProfile>> => {
       const response = await fetch(
-        this.getUrl('/user/profile/upload_image'),
+        this.getUrl('/user/profile/delete_image/'),
         {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-          body: formData as any,
+          method: 'DELETE',
+          headers: await this.getHeaders(),
         }
       );
       return this.handleResponse<UserProfile>(response);

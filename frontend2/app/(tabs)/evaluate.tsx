@@ -15,9 +15,10 @@ import { Category, QuestionNode } from "@/app/types/category";
 import apiService from "../services/apiService";
 import { getCategoryStatus } from "@/utils/categoryHelpers";
 import { CategoryHeader } from "@/components/CategoryHeader";
-import { renderActivityNode } from "@/utils/nodeRenderers";
+
 import { ActivityNodeType } from "@/components/ActivityNodes";
 import ActivityNodeContainer from "@/components/ActivityNodes/ActivityNodeContainer";
+import { DoctorRecommendations } from "@/components/DoctorRecommendations";
 
 interface NodeResponse {
   nodeId: number;
@@ -43,6 +44,54 @@ interface EvaluationState {
 const EvaluateScreen = () => {
   const { selectedCategory, fetchCategories } = useCategories();
   const [loading, setLoading] = useState(false);
+
+  // Añadir useEffect para actualizar datos al montar el componente
+  useEffect(() => {
+    const refreshData = async () => {
+      setLoading(true);
+      try {
+        await fetchCategories();
+      } catch (error) {
+        console.error("Error refreshing categories:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    refreshData();
+  }, []); // Se ejecuta al montar el componente
+
+  // Añadir useEffect para actualizar el estado cuando cambie selectedCategory
+  useEffect(() => {
+    if (selectedCategory) {
+      const nodes = selectedCategory.evaluation_form?.question_nodes || [];
+      const existingResponses = Object.entries(
+        selectedCategory.responses || {}
+      ).map(
+        ([key, value]): NodeResponse => ({
+          nodeId: parseInt(key),
+          response: value,
+        })
+      );
+
+      const isFullyCompleted =
+        selectedCategory.responses &&
+        selectedCategory.evaluation_form?.question_nodes &&
+        Object.keys(selectedCategory.responses || {}).length ===
+          selectedCategory.evaluation_form.question_nodes.length;
+
+      setEvaluationState({
+        currentNodeId: Boolean(isFullyCompleted) ? null : nodes[0]?.id || null,
+        responses: existingResponses,
+        completed: Boolean(isFullyCompleted),
+        history: [],
+        evaluationResult: {
+          initial_node_id: nodes[0]?.id || null,
+          nodes: nodes,
+        },
+      });
+    }
+  }, [selectedCategory]); // Se ejecuta cuando cambia selectedCategory
 
   // Determinar si esta categoría específica está completada
   const hasDocterReview =
@@ -83,31 +132,21 @@ const EvaluateScreen = () => {
     }
   );
 
-  useEffect(() => {
-    if (selectedCategory) {
-      const status = getCategoryStatus(selectedCategory);
-      const nodes = selectedCategory.evaluation_form?.question_nodes || [];
-      const existingResponses = selectedCategory.responses || {};
-      const isCompleted =
-        status?.status === "completed" || status?.status === "reviewed";
+  const handleStartNewEvaluation = () => {
+    // Reiniciar el estado local
+    const nodes = selectedCategory?.evaluation_form?.question_nodes || [];
 
-      setEvaluationState({
-        currentNodeId: isCompleted ? null : nodes[0]?.id || null,
-        responses: Object.entries(existingResponses).map(
-          ([key, value]): NodeResponse => ({
-            nodeId: parseInt(key),
-            response: value,
-          })
-        ),
-        completed: isCompleted,
-        history: [],
-        evaluationResult: {
-          initial_node_id: nodes[0]?.id || null,
-          nodes: nodes,
-        },
-      });
-    }
-  }, [selectedCategory]);
+    setEvaluationState({
+      currentNodeId: nodes[0]?.id || null,
+      responses: [], // Reiniciar respuestas
+      completed: false,
+      history: [],
+      evaluationResult: {
+        initial_node_id: nodes[0]?.id || null,
+        nodes: nodes,
+      },
+    });
+  };
 
   const getNextNodeId = (currentNodeId: number): number | null => {
     if (!selectedCategory?.evaluation_form?.question_nodes) {
@@ -136,7 +175,7 @@ const EvaluateScreen = () => {
       let formattedResponse = {
         id: nodeId,
         type: node.type,
-        question: node.data.question,
+        question: node.question,
         answer: null as any,
         metadata: {
           timestamp: new Date().toISOString(),
@@ -148,18 +187,29 @@ const EvaluateScreen = () => {
         case "SINGLE_CHOICE_QUESTION":
           formattedResponse.answer = {
             selectedOption: response.selectedOption,
-            options: node.data.options,
+            options: node.options,
           };
           break;
         case "MULTIPLE_CHOICE_QUESTION":
           formattedResponse.answer = {
             selectedOptions: response.selectedOptions,
-            options: node.data.options,
+            options: node.options,
           };
           break;
         case "TEXT_QUESTION":
+          console.log("response", response);
           formattedResponse.answer = {
-            text: response.answer || response.value || "",
+            value: response.answer || "",
+          };
+          break;
+        case "IMAGE_QUESTION":
+          formattedResponse.answer = {
+            image: response.image || "",
+          };
+          break;
+        case "SCALE_QUESTION":
+          formattedResponse.answer = {
+            value: response.answer.value,
           };
           break;
         default:
@@ -186,6 +236,7 @@ const EvaluateScreen = () => {
 
       if (isCompleted && selectedCategory?.id) {
         setLoading(true);
+        console.log("newResponses", newResponses);
         try {
           await apiService.categories.saveResponses(
             selectedCategory.id,
@@ -237,7 +288,7 @@ const EvaluateScreen = () => {
         }));
       }
     } catch (error) {
-      Alert.alert("Error", "No se pudo procesar la respuesta");
+      Alert.alert("Error", "No se pudo procesar la respuesta, " + error);
     }
   };
 
@@ -272,174 +323,70 @@ const EvaluateScreen = () => {
   const renderDoctorReview = () => {
     if (!selectedCategory?.status_color) return null;
 
-    const statusColors = {
-      green: theme.colors.success,
-      yellow: theme.colors.warning,
-      red: theme.colors.error,
-    };
-
     return (
-      <View style={styles.reviewContainer}>
-        <Text
-          style={[
-            styles.statusText,
-            { color: statusColors[selectedCategory.status_color] },
-          ]}
-        >
-          {selectedCategory.status_color === "green" && "✅ Estado Saludable"}
-          {selectedCategory.status_color === "yellow" && "⚠️ Requiere Atención"}
-          {selectedCategory.status_color === "red" && "🚨 Atención Urgente"}
-        </Text>
-        {selectedCategory.doctor_recommendations && (
-          <View style={styles.recommendationsContainer}>
-            <Text style={styles.recommendationsTitle}>
-              Recomendaciones del Doctor:
-            </Text>
-            <Text style={styles.recommendationsText}>
-              {selectedCategory.doctor_recommendations}
-            </Text>
-          </View>
-        )}
-      </View>
+      <DoctorRecommendations
+        statusColor={selectedCategory.status_color}
+        recommendations={selectedCategory.doctor_recommendations || ""}
+        updatedBy={selectedCategory.doctor_recommendations_updated_by}
+        updatedAt={selectedCategory.doctor_recommendations_updated_at}
+      />
     );
   };
 
   const renderResponsesList = () => {
     if (!selectedCategory?.responses) return null;
-    if (!selectedCategory?.evaluation_form?.question_nodes) {
-      console.log("No hay question_nodes disponibles:", selectedCategory);
+
+    try {
+      const responsesArray = Object.values(selectedCategory.responses);
+
+      return (
+        <View style={styles.responsesList}>
+          {responsesArray.map((response: any, index: number) => {
+            // Validación de datos
+            if (!response) return null;
+
+            return (
+              <View key={index} style={styles.responseItem}>
+                <Text style={styles.questionText}>
+                  {response.question || `Pregunta ${index + 1}`}
+                </Text>
+                <Text style={styles.answerText}>{renderAnswer(response)}</Text>
+              </View>
+            );
+          })}
+        </View>
+      );
+    } catch (error) {
+      console.error("Error rendering responses:", error);
       return null;
     }
-
-    const formatResponse = (response: any, node: QuestionNode) => {
-      switch (node.type) {
-        case "SINGLE_CHOICE_QUESTION":
-          if (response.selectedOption !== undefined && node.data?.options) {
-            return node.data.options[response.selectedOption];
-          }
-          break;
-        case "MULTIPLE_CHOICE_QUESTION":
-          if (response.selectedOptions && node.data?.options) {
-            return response.selectedOptions
-              .map((index: number) => node.data.options?.[index] || "")
-              .join(", ");
-          }
-          break;
-        case "TEXT_QUESTION":
-          return response.answer || response.value;
-      }
-      return "Sin respuesta";
-    };
-
-    return (
-      <View style={styles.responsesList}>
-        {selectedCategory.evaluation_form.question_nodes.map((node, index) => {
-          const response = selectedCategory.responses
-            ? selectedCategory.responses[node.id]
-            : undefined;
-          return (
-            <View key={node.id} style={styles.responseItem}>
-              <Text style={styles.questionText}>
-                {index + 1}. {node?.data?.question}
-              </Text>
-              <Text style={styles.answerText}>
-                {response ? formatResponse(response, node) : "Sin respuesta"}
-              </Text>
-            </View>
-          );
-        })}
-      </View>
-    );
   };
 
-  const renderCompletionActions = () => {
-    if (!selectedCategory?.evaluation_form?.question_nodes?.length) {
-      return (
-        <View style={styles.completedContainer}>
-          <Text style={styles.completedText}>No hay evaluación disponible</Text>
-          <Text style={styles.infoText}>
-            Esta categoría no tiene preguntas configuradas
-          </Text>
-        </View>
-      );
+  const renderAnswer = (response: any): string => {
+    try {
+      if (!response.answer) return "Sin respuesta";
+
+      switch (response.type) {
+        case "SCALE_QUESTION":
+          return String(response.answer.value || "Sin valor");
+
+        case "SINGLE_CHOICE_QUESTION":
+          return String(
+            response.answer.selectedOption !== undefined
+              ? `Opción ${response.answer.selectedOption + 1}`
+              : "Sin selección"
+          );
+
+        case "TEXT_QUESTION":
+          return String(response.answer.value || "Sin texto");
+
+        default:
+          return String(response.answer || "Sin respuesta");
+      }
+    } catch (error) {
+      console.error("Error rendering answer:", error);
+      return "Error al mostrar respuesta";
     }
-
-    const status = getCategoryStatus(selectedCategory);
-
-    if (selectedCategory?.doctor_recommendations) {
-      return (
-        <View style={styles.completedContainer}>
-          <Text style={styles.completedText}>
-            {status?.text || "✅ Evaluación Completada"}
-          </Text>
-          <Text style={styles.infoText}>
-            El doctor ha revisado tus respuestas
-          </Text>
-          {renderDoctorReview()}
-          {renderResponsesList()}
-          <TouchableOpacity
-            style={[styles.startButton, { marginTop: 24 }]}
-            onPress={() => {
-              setEvaluationState((prev) => ({
-                ...prev,
-                completed: false,
-                responses: [],
-                currentNodeId:
-                  selectedCategory?.evaluation_form?.question_nodes[0]?.id ||
-                  null,
-              }));
-            }}
-          >
-            <Text style={styles.startButtonText}>
-              Realizar Nueva Evaluación
-            </Text>
-          </TouchableOpacity>
-        </View>
-      );
-    }
-
-    if (status?.status === "completed" || evaluationState.completed) {
-      return (
-        <View style={styles.completedContainer}>
-          <Text style={styles.completedText}>
-            {status?.text || "✅ Evaluación Completada"}
-          </Text>
-          <Text style={styles.infoText}>
-            Por favor, espera a que el doctor revise tus respuestas
-          </Text>
-          {renderResponsesList()}
-        </View>
-      );
-    }
-
-    return (
-      <View style={styles.completedContainer}>
-        <Text style={styles.completedText}>
-          {status?.text || "Estado desconocido"}
-        </Text>
-        {status?.status === "in_progress" && (
-          <Text style={styles.infoText}>Continúa donde lo dejaste</Text>
-        )}
-        <TouchableOpacity
-          style={styles.startButton}
-          onPress={() => {
-            setEvaluationState((prev) => ({
-              ...prev,
-              completed: false,
-              currentNodeId:
-                selectedCategory?.evaluation_form?.question_nodes[0]?.id ||
-                null,
-            }));
-          }}
-        >
-          <Text style={styles.startButtonText}>
-            {status?.status === "in_progress"
-              ? "Continuar Evaluación"
-              : "Comenzar Evaluación"}
-          </Text>
-        </TouchableOpacity>
-      </View>
-    );
   };
 
   if (loading) {
@@ -461,12 +408,43 @@ const EvaluateScreen = () => {
   }
 
   return (
-    <ScrollView style={styles.container}>
-      {selectedCategory && <CategoryHeader name={selectedCategory.name} />}
+    <View style={styles.container}>
+      <ScrollView
+        contentContainerStyle={styles.contentContainer}
+        showsVerticalScrollIndicator={false}
+      >
+        {selectedCategory && <CategoryHeader name={selectedCategory.name} />}
 
-      {evaluationState.completed
-        ? renderCompletionActions()
-        : renderNode(evaluationState.currentNodeId, () => {
+        {evaluationState.completed ? (
+          <View style={styles.completedContainer}>
+            <Text style={styles.completedText}>
+              {getCategoryStatus(selectedCategory)?.text ||
+                "✅ Evaluación Completada"}
+            </Text>
+            {hasDocterReview ? (
+              <>
+                <Text style={styles.infoText}>
+                  El doctor ha revisado tus respuestas
+                </Text>
+                {renderDoctorReview()}
+              </>
+            ) : (
+              <Text style={styles.infoText}>
+                El doctor no ha revisado tus respuestas
+              </Text>
+            )}
+            {renderResponsesList()}
+            <TouchableOpacity
+              style={[styles.startButton, { marginTop: 24 }]}
+              onPress={handleStartNewEvaluation}
+            >
+              <Text style={styles.startButtonText}>
+                Iniciar Nueva Evaluación
+              </Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          renderNode(evaluationState.currentNodeId, () => {
             if (evaluationState.history.length > 0) {
               const previousNodes = [...evaluationState.history];
               const previousNodeId = previousNodes.pop();
@@ -476,35 +454,33 @@ const EvaluateScreen = () => {
                 history: previousNodes,
               }));
             }
-          })}
-    </ScrollView>
+          })
+        )}
+      </ScrollView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: theme.colors.background,
+  },
+  contentContainer: {
     padding: 16,
-  },
-  descriptionContainer: {
-    backgroundColor: theme.colors.card,
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 24,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  descriptionText: {
-    fontSize: 16,
-    color: theme.colors.text,
-    lineHeight: 24,
+    paddingBottom: 100, // Espacio extra para el botón flotante
   },
   completedContainer: {
     alignItems: "center",
     padding: 24,
+    backgroundColor: theme.colors.card,
+    borderRadius: 16,
+    margin: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
   },
   completedText: {
     fontSize: 22,
@@ -522,21 +498,20 @@ const styles = StyleSheet.create({
   },
   responsesList: {
     width: "100%",
-    backgroundColor: theme.colors.card,
+    backgroundColor: theme.colors.background,
     borderRadius: 12,
-    padding: 20,
     marginTop: 24,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
   },
   responseItem: {
     marginBottom: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
-    paddingBottom: 16,
+    padding: 16,
+    backgroundColor: theme.colors.card,
+    borderRadius: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
   },
   questionText: {
     fontSize: 16,
@@ -546,71 +521,25 @@ const styles = StyleSheet.create({
   },
   answerText: {
     fontSize: 15,
-    color: theme.colors.text,
+    color: theme.colors.textSecondary,
     marginLeft: 16,
     lineHeight: 22,
   },
   startButton: {
     backgroundColor: theme.colors.primary,
     padding: 16,
-    borderRadius: 8,
+    borderRadius: 12,
     width: "100%",
     alignItems: "center",
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4,
   },
   startButtonText: {
     color: theme.colors.text,
     fontSize: 18,
-    fontWeight: "600",
-  },
-  reviewContainer: {
-    padding: 16,
-    backgroundColor: theme.colors.card,
-    borderRadius: 8,
-    marginVertical: 16,
-  },
-  statusText: {
-    fontSize: 18,
-    fontWeight: "600",
-    textAlign: "center",
-    marginBottom: 8,
-  },
-  recommendationsContainer: {
-    marginTop: 16,
-  },
-  recommendationsTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: theme.colors.text,
-    marginBottom: 8,
-  },
-  recommendationsText: {
-    fontSize: 16,
-    color: theme.colors.text,
-    lineHeight: 24,
-  },
-  actionButton: {
-    backgroundColor: theme.colors.primary,
-    padding: 16,
-    borderRadius: 8,
-    marginTop: 16,
-  },
-  actionButtonText: {
-    color: theme.colors.text,
-    fontSize: 16,
-    fontWeight: "600",
-    textAlign: "center",
-  },
-  viewButton: {
-    backgroundColor: theme.colors.primary,
-  },
-  buttonText: {
-    color: theme.colors.text,
-    fontSize: 16,
     fontWeight: "600",
   },
 });

@@ -13,11 +13,17 @@ interface TextQuestionProps {
     question: string;
     image?: string;
   };
-  onNext?: (response: { answer: string }) => void;
+  setResponse: (response: { answer: string } | null) => void;
 }
 
-export function TextQuestionView({ data, onNext }: TextQuestionProps) {
+export function TextQuestionView({ data, setResponse }: TextQuestionProps) {
   const [answer, setAnswer] = useState("");
+
+  const handleTextChange = (text: string) => {
+    setAnswer(text);
+    // Enviamos la respuesta al padre
+    setResponse(text.trim() ? { answer: text.trim() } : null);
+  };
 
   return (
     <View style={theme.components.activityNode.container}>
@@ -28,19 +34,11 @@ export function TextQuestionView({ data, onNext }: TextQuestionProps) {
       <TextInput
         style={theme.components.activityNode.input}
         value={answer}
-        onChangeText={setAnswer}
+        onChangeText={handleTextChange}
         placeholder="Escribe tu respuesta aquí"
         placeholderTextColor={theme.colors.text}
         multiline
       />
-
-      <TouchableOpacity
-        style={theme.components.activityNode.button}
-        onPress={() => onNext?.({ answer })}
-        disabled={!answer.trim()}
-      >
-        <Text style={theme.components.activityNode.buttonText}>Continuar</Text>
-      </TouchableOpacity>
     </View>
   );
 }

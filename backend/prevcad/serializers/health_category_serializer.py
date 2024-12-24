@@ -12,6 +12,8 @@ class HealthCategorySerializer(serializers.ModelSerializer):
     evaluation_form = serializers.SerializerMethodField()
     training_form = serializers.SerializerMethodField()
     status = serializers.SerializerMethodField()
+    doctor_recommendations_updated_by = serializers.SerializerMethodField()
+    doctor_recommendations_updated_at = serializers.DateTimeField(read_only=True)
 
     class Meta:
         model = HealthCategory
@@ -26,7 +28,9 @@ class HealthCategorySerializer(serializers.ModelSerializer):
             'completion_date',
             'status_color',
             'doctor_recommendations',
-            'status'
+            'status',
+            'doctor_recommendations_updated_by',
+            'doctor_recommendations_updated_at'
         ]
 
     def get_name(self, obj):
@@ -34,14 +38,12 @@ class HealthCategorySerializer(serializers.ModelSerializer):
 
     def get_icon(self, obj):
         if obj.template and obj.template.icon:
+            print("Icon:", obj.template.icon)
             return obj.template.get_icon_base64()
         return None
 
     def get_evaluation_form(self, obj):
-        print(f"\nSerializando evaluation_form para categoría {obj.id}")
         if obj.template:
-            print(f"Template encontrado: {obj.template.id}")
-            print(f"Evaluation form: {obj.template.evaluation_form}")
             return obj.template.evaluation_form
         print("No se encontró template")
         return None
@@ -67,10 +69,8 @@ class HealthCategorySerializer(serializers.ModelSerializer):
         """Obtener la descripción del template"""
         print(f"Getting description for category {obj.id}")
         if obj.template and obj.template.root_node:
-            print(f"Root node description: {obj.template.root_node.description}")
             return obj.template.root_node.description
         if obj.template:
-            print(f"Template description: {obj.template.description}")
             return obj.template.description
         print("No description found")
         return None
@@ -78,3 +78,13 @@ class HealthCategorySerializer(serializers.ModelSerializer):
 
     def get_responses(self, obj):
         return obj.responses
+
+    def get_doctor_recommendations_updated_by(self, obj):
+        if obj.doctor_recommendations_updated_by:
+            return {
+                'id': obj.doctor_recommendations_updated_by.id,
+                'username': obj.doctor_recommendations_updated_by.username,
+                'first_name': obj.doctor_recommendations_updated_by.first_name,
+                'last_name': obj.doctor_recommendations_updated_by.last_name
+            }
+        return None

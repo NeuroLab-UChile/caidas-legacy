@@ -1,33 +1,38 @@
 import React, { useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
-
+import { View, Text, StyleSheet } from "react-native";
 import Slider from "@react-native-community/slider";
 import { theme } from "@/src/theme";
 
 interface ScaleQuestionProps {
   data: {
+    id: number;
     question: string;
     min_value: number;
     max_value: number;
     step: number;
     image?: string;
   };
-  onNext?: (response: { value: number }) => void;
+  setResponse: (response: { answer: { value: number } } | null) => void;
 }
 
-export function ScaleQuestionView({ data, onNext }: ScaleQuestionProps) {
+export function ScaleQuestionView({ data, setResponse }: ScaleQuestionProps) {
   const [value, setValue] = useState(data.min_value);
 
+  const handleValueChange = (newValue: number) => {
+    setValue(newValue);
+    setResponse({
+      answer: {
+        value: newValue,
+      },
+    });
+  };
+
   return (
-    <View style={styles.container}>
-      <Text style={[styles.question, { color: theme.colors.text }]}>
-        {data.question}
-      </Text>
+    <View style={theme.components.node.container}>
+      <Text style={theme.components.node.question}>{data.question}</Text>
 
       <View style={styles.scaleContainer}>
-        <Text style={[styles.valueText, { color: theme.colors.text }]}>
-          {value}
-        </Text>
+        <Text style={styles.valueText}>{value}</Text>
 
         <Slider
           style={styles.slider}
@@ -35,21 +40,17 @@ export function ScaleQuestionView({ data, onNext }: ScaleQuestionProps) {
           maximumValue={data.max_value}
           step={data.step}
           value={value}
-          onValueChange={setValue}
+          onValueChange={handleValueChange}
           minimumTrackTintColor={theme.colors.primary}
           maximumTrackTintColor={theme.colors.border}
           thumbTintColor={theme.colors.primary}
         />
-      </View>
 
-      <TouchableOpacity
-        style={styles.button}
-        onPress={() => onNext?.({ value })}
-      >
-        <Text style={[styles.buttonText, { color: theme.colors.text }]}>
-          Continuar
-        </Text>
-      </TouchableOpacity>
+        <View style={styles.labelsContainer}>
+          <Text style={styles.labelText}>{data.min_value}</Text>
+          <Text style={styles.labelText}>{data.max_value}</Text>
+        </View>
+      </View>
     </View>
   );
 }
@@ -80,15 +81,14 @@ const styles = StyleSheet.create({
   slider: {
     width: "100%",
   },
-  button: {
-    backgroundColor: theme.colors.primary,
-    padding: 16,
-    borderRadius: 8,
-    alignItems: "center",
+  labelsContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 8,
   },
-  buttonText: {
-    color: "white",
-    fontSize: 16,
-    fontWeight: "600",
+  labelText: {
+    fontSize: 14,
+    color: theme.colors.text,
+    opacity: 0.7,
   },
 });
