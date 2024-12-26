@@ -16,6 +16,7 @@ from ..models import (
 
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
+from django.conf import settings
 
 # Serializador base para ActivityNode
 class ActivityNodeSerializer(serializers.Serializer):
@@ -37,6 +38,12 @@ class ActivityNodeSerializer(serializers.Serializer):
             return ResultNodeSerializer(instance).data
         elif isinstance(instance, WeeklyRecipeNode):
             return WeeklyRecipeNodeSerializer(instance).data
+        elif isinstance(instance, VideoNode):
+            return VideoNodeSerializer(instance).data
+        elif isinstance(instance, ImageNode):
+            return ImageNodeSerializer(instance).data
+        elif isinstance(instance, TextNode):
+            return TextNodeSerializer(instance).data
 
         return super().to_representation(instance)
 
@@ -124,9 +131,16 @@ class WeeklyRecipeNodeSerializer(serializers.ModelSerializer):
 
 
 class VideoNodeSerializer(serializers.ModelSerializer):
+    media_url = serializers.SerializerMethodField()
+
     class Meta:
         model = VideoNode
         fields = '__all__'
+
+    def get_media_url(self, obj):
+        if obj.media_url:
+            return f"{settings.MEDIA_URL}{obj.media_url}"
+        return None
 
 class TextNodeSerializer(serializers.ModelSerializer):
     class Meta:
@@ -135,8 +149,15 @@ class TextNodeSerializer(serializers.ModelSerializer):
 
 
 class ImageNodeSerializer(serializers.ModelSerializer):
+    media_url = serializers.SerializerMethodField()
+
     class Meta:
         model = ImageNode
         fields = '__all__'
+
+    def get_media_url(self, obj):
+        if obj.media_url:
+            return f"{settings.MEDIA_URL}{obj.media_url}"
+        return None
 
 

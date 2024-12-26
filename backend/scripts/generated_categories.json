@@ -90,16 +90,62 @@
         {
           "id": 1,
           "type": "VIDEO_NODE",
-          "title": "Rutinas Básicas de Ejercicio",
-          "description": "Descubra rutinas simples y efectivas que puede hacer desde casa, diseñadas para personas de cualquier nivel de condición física.",
-          "media_url": "/training/exercise-routine.mp4"
+          "title": "Calentamiento Básico",
+          "description": "Aprende la rutina de calentamiento esencial antes de cualquier actividad física",
+          "media_url": "/training/warmup.mp4"
         },
         {
           "id": 2,
           "type": "IMAGE_NODE",
-          "title": "Ejercicios Ilustrativos",
-          "description": "Galería de ejercicios con instrucciones detalladas para fortalecer sus músculos y mantener la movilidad.",
-          "media_url": "/training/exercise-examples.jpg"
+          "title": "Ejercicios de Equilibrio",
+          "description": "Serie de ejercicios ilustrados para mejorar tu equilibrio y estabilidad",
+          "media_url": "/training/balance-exercises.jpg"
+        },
+        {
+          "id": 3,
+          "type": "DESCRIPTION_NODE",
+          "title": "Guía de Progresión",
+          "description": "Aprende cómo aumentar gradualmente la intensidad de tus ejercicios de manera segura",
+          "media_url": "/training/progression-guide.jpg"
+        },
+        {
+          "id": 4,
+          "type": "WEEKLY_RECIPE_NODE",
+          "title": "Plan Semanal de Ejercicios",
+          "description": "Plan estructurado para mantener una rutina constante",
+          "weekly_plan": {
+            "MON": {
+              "MORNING": {
+                "activity": "Caminata suave",
+                "duration": "20 minutos",
+                "intensity": "Baja"
+              },
+              "AFTERNOON": {
+                "activity": "Ejercicios de equilibrio",
+                "duration": "15 minutos",
+                "intensity": "Moderada"
+              }
+            },
+            "WED": {
+              "MORNING": {
+                "activity": "Estiramientos",
+                "duration": "15 minutos",
+                "intensity": "Baja"
+              },
+              "AFTERNOON": {
+                "activity": "Ejercicios de fuerza",
+                "duration": "20 minutos",
+                "intensity": "Moderada"
+              }
+            },
+            "FRI": {
+              "MORNING": {
+                "activity": "Yoga suave",
+                "duration": "30 minutos",
+                "intensity": "Baja-Moderada"
+              }
+            }
+          }
         }
       ]
     }
@@ -130,42 +176,59 @@
       "training_nodes": [
         {
           "id": 1,
-          "type": "DESCRIPTION_NODE",
-          "title": "Importancia de una Dieta Balanceada",
-          "description": "Descubra cómo una alimentación saludable puede mejorar su bienestar general y prevenir enfermedades.",
-          "media_url": "/training/healthy-diet.jpg"
+          "type": "VIDEO_NODE",
+          "title": "Preparación de Comidas Saludables",
+          "description": "Aprende a preparar platos nutritivos y balanceados",
+          "media_url": "/training/healthy-cooking.mp4"
         },
         {
           "id": 2,
           "type": "WEEKLY_RECIPE_NODE",
-          "title": "Plan Semanal WeTrain",
-          "description": "EVALUAR\nRECORDAR ENTRENAR MIS DATOS",
+          "title": "Plan Nutricional Semanal",
+          "description": "Menú balanceado para toda la semana",
           "weekly_plan": {
             "MON": {
               "BREAKFAST": {
-                "meal": "1 vaso de leche\n2 rebanadas de pan integral con queso fresco",
-                "proteins": "18g",
-                "notes": "8g proteínas (leche) + 10g proteínas (queso fresco)"
+                "meal": "Avena con frutas y nueces",
+                "proteins": "15g",
+                "notes": "Rica en fibra y omega-3"
+              },
+              "LUNCH": {
+                "meal": "Ensalada de quinoa con pollo",
+                "proteins": "25g",
+                "notes": "Alta en proteínas y hierro"
               },
               "DINNER": {
-                "meal": "Salmón a la plancha con arroz integral y espinacas",
-                "proteins": "120g",
-                "notes": "100g proteínas (salmón) + 20g proteínas (acompañamientos)"
+                "meal": "Pescado al horno con verduras",
+                "proteins": "22g",
+                "notes": "Omega-3 y vitaminas"
               }
             },
             "TUE": {
               "BREAKFAST": {
-                "meal": "1 vaso de leche\n2 rebanadas de pan integral con queso fresco",
-                "proteins": "18g",
-                "notes": "8g proteínas (leche) + 10g proteínas (queso fresco)"
+                "meal": "Yogur con granola y miel",
+                "proteins": "12g",
+                "notes": "Probióticos y energía"
+              },
+              "LUNCH": {
+                "meal": "Wrap de pavo con aguacate",
+                "proteins": "20g",
+                "notes": "Grasas saludables"
               },
               "DINNER": {
-                "meal": "Salmón a la plancha con arroz integral y espinacas",
-                "proteins": "120g",
-                "notes": "100g proteínas (salmón) + 20g proteínas (acompañamientos)"
+                "meal": "Sopa de lentejas",
+                "proteins": "18g",
+                "notes": "Rica en hierro y fibra"
               }
             }
           }
+        },
+        {
+          "id": 3,
+          "type": "IMAGE_NODE",
+          "title": "Guía de Porciones",
+          "description": "Aprende a medir las porciones adecuadas de cada grupo alimenticio",
+          "media_url": "/training/portion-guide.jpg"
         }
       ]
     }

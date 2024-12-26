@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
+from django.core.validators import FileExtensionValidator
 
 
 class ActivityNode(models.Model):
@@ -152,8 +153,57 @@ class WeeklyRecipeNode(ActivityNode):
 
 
 class VideoNode(ActivityNode):
-    content = models.FileField(upload_to='videos/', null=True, blank=True)
+    title = models.CharField(max_length=200)
+    video = models.FileField(
+        upload_to='training_videos/',
+        validators=[
+            FileExtensionValidator(
+                allowed_extensions=['mp4', 'webm', 'mov']
+            )
+        ]
+    )
+    thumbnail = models.ImageField(
+        upload_to='video_thumbnails/',
+        null=True,
+        blank=True
+    )
     description = models.TextField(null=True, blank=True)
+    duration = models.DurationField(null=True, blank=True)
+    
+    def save(self, *args, **kwargs):
+        if not self.pk and not self.thumbnail and self.video:  # Si es nuevo y no tiene thumbnail
+            try:
+                # Generar thumbnail del video
+                from moviepy.editor import VideoFileClip
+                clip = VideoFileClip(self.video.path)
+                
+                # Guardar duración
+                self.duration = clip.duration
+                
+                # Generar y guardar thumbnail
+                thumbnail_path = f'video_thumbnails/{self.video.name.split("/")[-1]}.jpg'
+                clip.save_frame(thumbnail_path, t=1.0)  # Captura el frame al segundo 1
+                self.thumbnail = thumbnail_path
+                
+                clip.close()
+            except Exception as e:
+                print(f"Error generating thumbnail: {e}")
+                
+        super().save(*args, **kwargs)
+
+    def get_video_url(self):
+        if self.video:
+            return self.video.url
+        return None
+
+    def get_thumbnail_url(self):
+        if self.thumbnail:
+            return self.thumbnail.url
+        return None
+
+    class Meta:
+        verbose_name = "Video"
+        verbose_name_plural = "Videos"
 
 
 class TextNode(ActivityNode):

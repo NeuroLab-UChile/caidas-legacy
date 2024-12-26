@@ -2,7 +2,7 @@ from typing import Any
 from django.db import models
 from django.utils.encoding import smart_str
 from django.contrib.auth.models import User
-from django.db.models.signals import post_save
+from django.db.models.signals import post_save, pre_delete
 from django.dispatch import receiver
 from django.utils import timezone
 from .activity_node import ActivityNode, ActivityNodeDescription
@@ -237,3 +237,9 @@ def create_user_health_categories(sender, instance, created, **kwargs):
 def create_health_categories_for_template(sender, instance, created, **kwargs):
   if created:
     HealthCategory.create_categories_for_template(instance)
+
+
+@receiver(pre_delete, sender=CategoryTemplate)
+def delete_related_health_categories(sender, instance, **kwargs):
+    """Eliminar todas las categorías de salud asociadas cuando se elimina un template"""
+    HealthCategory.objects.filter(template=instance).delete()
