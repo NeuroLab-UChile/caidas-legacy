@@ -17,6 +17,7 @@ from ..models import (
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.conf import settings
+import os
 
 # Serializador base para ActivityNode
 class ActivityNodeSerializer(serializers.Serializer):
@@ -130,17 +131,25 @@ class WeeklyRecipeNodeSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class VideoNodeSerializer(serializers.ModelSerializer):
+class VideoNodeSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    type = serializers.CharField()
+    content = serializers.CharField()
     media_url = serializers.SerializerMethodField()
 
-    class Meta:
-        model = VideoNode
-        fields = '__all__'
-
     def get_media_url(self, obj):
-        if obj.media_url:
-            return f"{settings.MEDIA_URL}{obj.media_url}"
-        return None
+        if not obj.get('media'):
+            return None
+            
+        # Limpiar la ruta y asegurar formato correcto
+        path = obj['media'].replace('/media/', '').lstrip('/')
+        base_url = getattr(settings, 'BASE_URL', 'http://localhost:8000')
+        return f"{base_url.rstrip('/')}/media/{path}"
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data['type'] = 'VIDEO_NODE'
+        return data
 
 class TextNodeSerializer(serializers.ModelSerializer):
     class Meta:

@@ -1,86 +1,148 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   View,
   Text,
   StyleSheet,
-  Dimensions,
-  TouchableOpacity,
   ActivityIndicator,
+  Dimensions,
 } from "react-native";
-import { Video, ResizeMode, AVPlaybackStatus } from "expo-av";
-import { MaterialIcons } from "@expo/vector-icons";
+import { Video } from "expo-av";
+import * as FileSystem from "expo-file-system";
+import { theme } from "@/src/theme";
 
 interface VideoNodeViewProps {
   data: {
-    title: string;
-    description: string;
-    video: string;
-    thumbnail: string;
-    duration?: number;
+    id: number;
+    content: string;
+    type: string;
+    media?: {
+      id: number;
+      name: string;
+      type: string;
+      file: {
+        uri?: string;
+        url?: string;
+      };
+    }[];
+    media_url?: string;
   };
 }
 
-interface VideoStatus {
-  isPlaying?: boolean;
-  // Otros campos que puedas necesitar del estado del video
-}
-
 export const VideoNodeView: React.FC<VideoNodeViewProps> = ({ data }) => {
-  const videoRef = useRef<Video | null>(null);
-  const [status, setStatus] = useState<VideoStatus>({});
+  const videoRef = useRef<Video>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [localVideoUri, setLocalVideoUri] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const onPlaybackStatusUpdate = (status: AVPlaybackStatus) => {
-    if (status.isLoaded) {
-      setStatus({
-        isPlaying: status.isPlaying,
-      });
+  const getVideoUrl = () => {
+    if (!data.media_url) return null;
+    return data.media_url.startsWith("http")
+      ? data.media_url
+      : `${process.env.BASE_URL || "http://localhost:8000"}${data.media_url}`;
+  };
+
+  const downloadVideo = async (url: string) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      console.log("Downloading video from:", url);
+
+      const fileName = url.split("/").pop() || "video.mp4";
+      const fileUri = `${FileSystem.cacheDirectory}${fileName}`;
+
+      const fileInfo = await FileSystem.getInfoAsync(fileUri);
+      if (fileInfo.exists) {
+        console.log("Video found in cache");
+        setLocalVideoUri(fileUri);
+        setIsLoading(false);
+        return;
+      }
+
+      const downloadResult = await FileSystem.downloadAsync(url, fileUri);
+      console.log("Download completed:", downloadResult);
+
+      if (downloadResult.status === 200) {
+        setLocalVideoUri(downloadResult.uri);
+      } else {
+        throw new Error(`Download failed with status ${downloadResult.status}`);
+      }
+    } catch (err) {
+      console.error("Error downloading video:", err);
+      setError(err instanceof Error ? err.message : "Error downloading video");
+    } finally {
       setIsLoading(false);
     }
   };
 
-  const handlePlayPause = async () => {
-    if (!videoRef.current) return;
-
-    if (status.isPlaying) {
-      await videoRef.current.pauseAsync();
-    } else {
-      await videoRef.current.playAsync();
+  useEffect(() => {
+    const videoUrl = getVideoUrl();
+    if (videoUrl) {
+      downloadVideo(videoUrl);
     }
-  };
+
+    // Limpiar caché al desmontar
+    return () => {
+      if (localVideoUri) {
+        FileSystem.deleteAsync(localVideoUri, { idempotent: true }).catch(
+          console.error
+        );
+      }
+    };
+  }, [data]);
+
+  const finalVideoUri = localVideoUri || getVideoUrl();
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>{data.title}</Text>
+      <Text style={styles.title}>{data.content}</Text>
 
       <View style={styles.videoContainer}>
+        {finalVideoUri && !error && (
+          <Video
+            ref={videoRef}
+            style={styles.video}
+            source={{ uri: finalVideoUri }}
+            useNativeControls
+            shouldPlay={false}
+            isMuted={true}
+            resizeMode="contain"
+            isLooping={false}
+            onLoadStart={() => {
+              console.log("Video load started");
+              setIsLoading(true);
+            }}
+            onLoad={() => {
+              console.log("Video loaded successfully");
+              setIsLoading(false);
+            }}
+            onError={(error) => {
+              console.error("Video playback error:", error);
+              setError("Error playing video");
+              setIsLoading(false);
+            }}
+          />
+        )}
+
         {isLoading && (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#FFCC00" />
+          <View style={styles.loadingOverlay}>
+            <ActivityIndicator size="large" color={theme.colors.primary} />
+            <Text style={styles.loadingText}>Cargando video...</Text>
           </View>
         )}
 
-        <Video
-          ref={videoRef}
-          style={styles.video}
-          source={{ uri: data.video }}
-          useNativeControls
-          resizeMode={ResizeMode.CONTAIN}
-          onPlaybackStatusUpdate={onPlaybackStatusUpdate}
-        />
-
-        <View style={styles.controls}>
-          <TouchableOpacity onPress={handlePlayPause}>
-            <MaterialIcons
-              name={status.isPlaying ? "pause" : "play-arrow"}
-              size={32}
-              color="#FFCC00"
-            />
-          </TouchableOpacity>
-        </View>
+        {error && (
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>Error: {error}</Text>
+            {__DEV__ && (
+              <Text style={styles.debugText}>
+                Original URL: {getVideoUrl() || "No URL"}
+                {"\n"}
+                Local URI: {localVideoUri || "No local file"}
+              </Text>
+            )}
+          </View>
+        )}
       </View>
-
-      <Text style={styles.description}>{data.description}</Text>
     </View>
   );
 };
@@ -91,45 +153,47 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   title: {
-    fontSize: 20,
-    fontWeight: "bold",
+    fontSize: 16,
+    fontWeight: "500",
     marginBottom: 16,
+    color: theme.colors.text,
   },
   videoContainer: {
-    width: "100%",
+    width: Dimensions.get("window").width - 32,
     aspectRatio: 16 / 9,
     backgroundColor: "#000",
     borderRadius: 8,
     overflow: "hidden",
-    marginBottom: 16,
+    position: "relative",
   },
   video: {
-    flex: 1,
     width: "100%",
+    height: "100%",
   },
-  poster: {
-    resizeMode: "cover",
-  },
-  loadingContainer: {
+  loadingOverlay: {
     ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0,0,0,0.3)",
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.3)",
   },
-  controls: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    flexDirection: "row",
+  loadingText: {
+    color: "#fff",
+    marginTop: 8,
+  },
+  errorContainer: {
+    flex: 1,
     justifyContent: "center",
     alignItems: "center",
     padding: 16,
-    backgroundColor: "rgba(0,0,0,0.5)",
   },
-  description: {
-    fontSize: 16,
-    lineHeight: 24,
-    color: "#666",
+  errorText: {
+    color: theme.colors.error,
+    textAlign: "center",
+    marginBottom: 8,
+  },
+  debugText: {
+    color: theme.colors.text,
+    fontSize: 12,
+    textAlign: "center",
   },
 });

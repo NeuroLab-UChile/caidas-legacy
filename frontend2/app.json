@@ -44,7 +44,8 @@
           "photosPermission": "La aplicación necesita acceso a tus fotos para subir imágenes de perfil.",
           "cameraPermission": "La aplicación necesita acceso a la cámara para tomar fotos de perfil."
         }
-      ]
+      ],
+      "expo-video"
     ],
     "scheme": "frontend2",
     "developmentClient": {

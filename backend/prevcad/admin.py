@@ -112,9 +112,12 @@ class CategoryTemplateAdmin(admin.ModelAdmin):
 
   def training_nodes_button(self, obj):
     return mark_safe(f"""
-      <button type="button" class="btn btn-primary" onclick="openTrainingFormModal({obj.id})">
-        Ver Nodos de Entrenamiento
-      </button>
+     <div class="form-row field-training_form">
+    <label for="id_training_form">Formulario de Entrenamiento</label>
+    <button type="button" class="btn btn-primary" onclick="openTrainingFormModal({obj.id})">
+      Ver Formulario
+    </button>
+  </div>
     """)
   training_nodes_button.short_description = "Nodos de Entrenamiento"
 
