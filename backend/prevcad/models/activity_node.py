@@ -14,6 +14,10 @@ class ActivityNode(models.Model):
         IMAGE_QUESTION = 'IMAGE_QUESTION', 'Image Question'
         RESULT_NODE = 'RESULT_NODE', 'Result Node',
         WEEKLY_RECIPE_NODE = 'WEEKLY_RECIPE_NODE', 'Weekly Recipe Node'
+        VIDEO_NODE = 'VIDEO_NODE', 'Video Node'
+        TEXT_NODE = 'TEXT_NODE', 'Text Node'
+        IMAGE_NODE = 'IMAGE_NODE', 'Image Node'
+
 
     type = models.TextField(choices=NodeType.choices)
     next_node = models.ForeignKey(
@@ -87,6 +91,7 @@ class ImageQuestion(ActivityNodeQuestion):
     pass
 
 
+
 class ResultNode(ActivityNode):
     response = models.JSONField(null=True, blank=True)
 
@@ -144,4 +149,18 @@ class WeeklyRecipeNode(ActivityNode):
         day_meals = self.get_day_meals(day_code)
         return day_meals.get(meal_type, {})
 
+
+
+class VideoNode(ActivityNode):
+    content = models.FileField(upload_to='videos/', null=True, blank=True)
+    description = models.TextField(null=True, blank=True)
+
+
+class TextNode(ActivityNode):
+    content = models.TextField(null=True, blank=True)
+
+
+class ImageNode(ActivityNode):
+    content = models.ImageField(upload_to='images/', null=True, blank=True)
  
+

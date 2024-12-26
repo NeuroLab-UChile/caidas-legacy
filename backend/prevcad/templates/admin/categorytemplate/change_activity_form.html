@@ -32,6 +32,7 @@
       z-index: 1000;
       opacity: 0;
       animation: fadeIn 0.3s forwards;
+      overflow: scroll;
     }
 
     .modal-content {
@@ -182,17 +183,22 @@
       width: 100%;
       padding: 0.625rem;
       border: 1px solid #e2e8f0;
-      border-radius: 0.375rem;
+      border-radius: 0.5rem;
       margin-bottom: 0.5rem;
-      transition: border-color 0.2s ease;
+      transition: all 0.2s ease;
+      font-size: 0.95rem;
     }
+
+    
 
     .form-input:focus,
     .form-select:focus {
       outline: none;
       border-color: var(--color-primary);
-      box-shadow: 0 0 0 3px rgba(255, 204, 0, 0.1);
+   
     }
+
+    .form-input 
 
     /* Espaciados para las opciones */
     #optionsContainer {
@@ -235,6 +241,127 @@
       background-color: #f3f4f6;
       color: #4b5563;
     }
+
+    .btn {
+      padding: 0.625rem 1.25rem;
+      font-size: 0.95rem;
+      border: none;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-weight: 500;
+    }
+
+    .btn-primary {
+      background-color: var(--color-primary);
+      color: var(--color-dark);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .btn-primary:hover {
+      background-color: #e6b800;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .btn-danger {
+      background-color: #fee2e2;
+      color: #dc2626;
+      border: 1px solid #fecaca;
+    }
+
+    .btn-danger:hover {
+      background-color: #fecaca;
+      transform: translateY(-1px);
+    }
+
+    /* Estilos adicionales */
+    .form-input,
+    .form-select {
+      width: 100%;
+      padding: 0.75rem;
+      border-radius: 0.5rem;
+      border: 1px solid #e2e8f0;
+      transition: all 0.2s;
+    }
+
+    .form-input:focus,
+    .form-select:focus {
+      border-color: var(--color-primary);
+
+      outline: none;
+    }
+
+    .btn {
+      padding: 0.75rem 1.5rem;
+      border-radius: 0.5rem;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+
+    .btn-secondary {
+      background-color: #f3f4f6;
+      color: #374151;
+      border: 1px solid #e5e7eb;
+    }
+
+    .btn-secondary:hover {
+      background-color: #e5e7eb;
+    }
+
+    #planStructureTooltip {
+        transition: opacity 0.2s ease-in-out;
+        opacity: 0;
+    }
+
+    #planStructureTooltip.visible {
+        opacity: 1;
+    }
+
+    #planStructureTooltip pre {
+        white-space: pre-wrap;
+        word-wrap: break-word;
+    }
+
+    @keyframes tooltipFade {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .tooltip-animate {
+        animation: tooltipFade 0.2s ease-out forwards;
+    }
+
+    /* Estilos adicionales para el modal */
+    .modal-open {
+        overflow: hidden;
+    }
+
+    #structureModal {
+        backdrop-filter: blur(4px);
+    }
+
+    #structureModal pre {
+        scrollbar-width: thin;
+        scrollbar-color: #CBD5E0 #EDF2F7;
+    }
+
+    #structureModal pre::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+
+    #structureModal pre::-webkit-scrollbar-track {
+        background: #EDF2F7;
+    }
+
+    #structureModal pre::-webkit-scrollbar-thumb {
+        background-color: #CBD5E0;
+        border-radius: 4px;
+    }
   </style>
       {% with VERSION='VERSION'|get_context %}
       {% with href="/django_admin_tailwind/"|add:VERSION|add:'/css/base.css' %}
@@ -258,7 +385,12 @@
 
       <!-- Botones -->
       <div class="flex justify-end gap-2 mt-4">
-        <button id="addQuestionBtn" class="btn btn-primary" onclick="openAddQuestionModal()">Agregar Pregunta</button>
+        <button id="addQuestionBtn" class="btn btn-primary" onclick="openAddQuestionModal()">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"/>
+          </svg>
+          <span id="addButtonText">Agregar Pregunta</span>
+        </button>
         <button class="btn btn-secondary" onclick="closeModal()">Cerrar</button>
       </div>
     </div>
@@ -294,14 +426,155 @@
         </div>
 
         <!-- Tipos para Entrenamiento -->
-        <div id="trainingTypes" class="form-group hidden">
-          <label for="trainingType">Tipo de Entrenamiento</label>
-          <select id="trainingType" class="form-select">
-            <option value="VIDEO">Video</option>
-            <option value="TEXT">Texto</option>
-            <option value="IMAGE">Imagen</option>
-            <option value="DOCUMENT">Documento</option>
-          </select>
+        <div id="trainingTypes" class="hidden space-y-6">
+            <div class="form-group bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
+                <label for="trainingType" class="block text-lg font-semibold text-gray-700 mb-3">
+                    Tipo de Entrenamiento
+                </label>
+                <select id="trainingType" class="form-select w-full bg-gray-50 border-gray-300 rounded-lg focus:ring-primary focus:border-primary">
+                    <option value="">Seleccione el tipo de contenido</option>
+                    <option value="VIDEO_NODE">📹 Video</option>
+                    <option value="IMAGE_NODE">🖼️ Imagen</option>
+                    <option value="TEXT_NODE">📝 Texto</option>
+                    <option value="WEEKLY_RECIPE_NODE">📅 Plan Semanal</option>
+                </select>
+            </div>
+
+            <div class="form-group bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
+                <label for="trainingTitle" class="block text-lg font-semibold text-gray-700 mb-3">
+                    Título del Contenido
+                </label>
+                <input 
+                    type="text" 
+                    id="trainingTitle" 
+                    class="form-input w-full bg-gray-50 border-gray-300 rounded-lg focus:ring-primary focus:border-primary"
+                    placeholder="Ingrese un título descriptivo..."
+                    required
+                >
+            </div>
+
+            <div class="form-group bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
+                <label for="trainingDescription" class="block text-lg font-semibold text-gray-700 mb-3">
+                    Descripción
+                </label>
+                <textarea 
+                    id="trainingDescription" 
+                    class="form-input w-full bg-gray-50 border-gray-300 rounded-lg focus:ring-primary focus:border-primary min-h-[120px]"
+                    placeholder="Describa el contenido del entrenamiento..."
+                    required
+                ></textarea>
+            </div>
+
+            <!-- Contenedor para URL de media -->
+            <div id="mediaUrlContainer" class="form-group bg-white p-6 rounded-lg border border-gray-200 shadow-sm hidden">
+                <label id="mediaUrlLabel" class="block text-lg font-semibold text-gray-700 mb-3">
+                    URL del Contenido
+                </label>
+                <div class="space-y-2">
+                    <input 
+                        type="text" 
+                        id="mediaUrl" 
+                        class="form-input w-full bg-gray-50 border-gray-300 rounded-lg focus:ring-primary focus:border-primary"
+                        placeholder="https://"
+                    >
+                    <p class="text-sm text-gray-500">Ingrese la URL completa del recurso multimedia</p>
+                </div>
+            </div>
+
+            <!-- Contenedor para Plan Semanal -->
+            <div id="weeklyPlanContainer" class="form-group bg-white p-6 rounded-lg border border-gray-200 shadow-sm hidden">
+                <div class="flex items-center justify-between mb-4">
+                    <label class="block text-lg font-semibold text-gray-700">
+                        Plan Semanal de Alimentación
+                    </label>
+                    <button 
+                        type="button"
+                        class="tooltip-trigger text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-full hover:bg-gray-100"
+                        onclick="toggleTooltip()"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                        </svg>
+                    </button>
+                </div>
+                
+                <div class="space-y-6">
+                    <!-- Selector de día y comida -->
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Día</label>
+                            <select id="weekDay" class="form-select w-full bg-gray-50 border-gray-300 rounded-lg">
+                                <option value="MON">Lunes</option>
+                                <option value="TUE">Martes</option>
+                                <option value="WED">Miércoles</option>
+                                <option value="THU">Jueves</option>
+                                <option value="FRI">Viernes</option>
+                                <option value="SAT">Sábado</option>
+                                <option value="SUN">Domingo</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Comida</label>
+                            <select id="mealType" class="form-select w-full bg-gray-50 border-gray-300 rounded-lg">
+                                <option value="BREAKFAST">Desayuno</option>
+                                <option value="LUNCH">Almuerzo</option>
+                                <option value="DINNER">Cena</option>
+                                <option value="SNACK">Colación</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Detalles de la comida -->
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Descripción de la Comida</label>
+                            <input 
+                                type="text" 
+                                id="mealDescription" 
+                                class="form-input w-full bg-gray-50 border-gray-300 rounded-lg"
+                                placeholder="Ej: Ensalada de pollo con verduras"
+                            >
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Proteínas</label>
+                            <input 
+                                type="text" 
+                                id="proteins" 
+                                class="form-input w-full bg-gray-50 border-gray-300 rounded-lg"
+                                placeholder="Ej: 20g"
+                            >
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Notas Adicionales</label>
+                            <textarea 
+                                id="mealNotes" 
+                                class="form-input w-full bg-gray-50 border-gray-300 rounded-lg min-h-[80px]"
+                                placeholder="Detalles adicionales sobre la preparación o ingredientes..."
+                            ></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Botón Agregar Comida -->
+                    <button 
+                        type="button" 
+                        id="addMealBtn" 
+                        class="btn btn-secondary w-full flex items-center justify-center gap-2"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"/>
+                        </svg>
+                        Agregar Comida al Plan
+                    </button>
+
+                    <!-- Vista previa del plan -->
+                    <div class="mt-6 bg-gray-50 rounded-lg p-4">
+                        <h4 class="font-medium text-gray-700 mb-3">Plan Actual:</h4>
+                        <div class="overflow-auto max-h-[200px]">
+                            <pre id="weeklyPlanJson" class="text-sm text-gray-600 whitespace-pre-wrap"></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div class="form-group">
@@ -310,15 +583,29 @@
         </div>
 
         <div id="optionsContainer" class="hidden">
-          <label>Opciones</label>
-          <div class="flex gap-2 mb-2">
-            <input type="text" id="newOption" class="form-input" placeholder="Nueva opción">
-            <button type="button" id="addOptionBtn" class="btn btn-primary">+</button>
+          <label class="block mb-3 font-medium text-gray-700">Opciones de Respuesta</label>
+          <div class="flex gap-3 mb-4">
+              <input 
+                  type="text" 
+                  id="newOption" 
+                  class="form-input flex-1 border-gray-300 rounded-lg shadow-sm focus:border-primary focus:ring-2 focus:ring-primary-light" 
+                  placeholder="Escriba una nueva opción..."
+              >
+              <button 
+                  type="button" 
+                  id="addOptionBtn" 
+                  class="btn btn-primary px-6 flex items-center gap-2 hover:shadow-lg"
+              >
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                      <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
+                  </svg>
+                  Agregar
+              </button>
           </div>
-          <div id="optionsError" class="text-red-500 text-sm hidden">
-            Se requieren al menos 2 opciones para preguntas de selección
+          <div id="optionsError" class="text-red-500 text-sm hidden mb-3">
+              Se requieren al menos 2 opciones para preguntas de selección
           </div>
-          <ul id="optionsList" class="mt-2"></ul>
+          <ul id="optionsList" class="space-y-3"></ul>
         </div>
 
         <div class="flex justify-end gap-2 mt-4">
@@ -326,6 +613,93 @@
           <button type="submit" class="btn btn-primary">Guardar</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- Agregar el modal del tooltip (fuera del contenedor principal) -->
+  <div id="structureModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
+    <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] flex flex-col">
+      <!-- Encabezado -->
+      <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+        <h3 class="text-lg font-semibold text-gray-800">Estructura del Plan Semanal</h3>
+        <button onclick="toggleTooltip()" class="text-gray-400 hover:text-gray-600">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+      
+      <!-- Contenido con scroll -->
+      <div class="p-6 overflow-y-auto flex-1">
+        <div class="space-y-6">
+          <!-- Estructura -->
+          <div>
+            <h4 class="font-medium text-gray-800 mb-2">Estructura JSON</h4>
+            <pre class="bg-gray-50 p-4 rounded-lg text-sm font-mono overflow-x-auto">
+{
+  "MON": {              // Lunes
+    "BREAKFAST": {      // Desayuno
+      "meal": "string", // Descripción
+      "proteins": "20g",// Proteínas
+      "notes": "string" // Notas
+    },
+    "LUNCH": { ... },   // Almuerzo
+    "DINNER": { ... },  // Cena
+    "SNACK": { ... }    // Colación
+  },
+  "TUE": { ... },      // Martes
+  // ... resto de días
+}</pre>
+          </div>
+
+          <!-- Instrucciones -->
+          <div>
+            <h4 class="font-medium text-gray-800 mb-2">Instrucciones de Uso</h4>
+            <ul class="space-y-2 text-gray-600">
+              <li class="flex items-start gap-2">
+                <span class="text-primary">1.</span>
+                <span>Seleccione el día de la semana y el tipo de comida</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <span class="text-primary">2.</span>
+                <span>Complete la descripción, proteínas y notas opcionales</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <span class="text-primary">3.</span>
+                <span>Haga clic en "Agregar Comida" para incluirla en el plan</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <span class="text-primary">4.</span>
+                <span>Repita el proceso para cada comida del día</span>
+              </li>
+            </ul>
+          </div>
+
+          <!-- Ejemplo -->
+          <div>
+            <h4 class="font-medium text-gray-800 mb-2">Ejemplo de Entrada</h4>
+            <div class="bg-gray-50 p-4 rounded-lg">
+              <p class="text-sm text-gray-600">
+                <strong>Día:</strong> Lunes<br>
+                <strong>Comida:</strong> Desayuno<br>
+                <strong>Descripción:</strong> Avena con frutas y nueces<br>
+                <strong>Proteínas:</strong> 15g<br>
+                <strong>Notas:</strong> Agregar miel al gusto
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pie del modal -->
+      <div class="px-6 py-4 border-t border-gray-200 bg-gray-50">
+        <button 
+          onclick="toggleTooltip()" 
+          class="w-full px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors"
+        >
+          Cerrar
+        </button>
+      </div>
     </div>
   </div>
 
@@ -343,13 +717,14 @@
   function openViewFormModal() {
     const nodes = {{ original.evaluation_form.question_nodes|safe }};
     renderNodes(nodes, 'EVALUATION');
+    document.getElementById('addButtonText').textContent = 'Agregar Pregunta';
     document.getElementById('formModal').classList.remove('hidden');
   }
 
   function openTrainingFormModal() {
     const nodes = {{ original.training_form.training_nodes|safe }};
-    console.log(nodes);
     renderNodes(nodes, 'TRAINING');
+    document.getElementById('addButtonText').textContent = 'Agregar Entrenamiento';
     document.getElementById('formModal').classList.remove('hidden');
   }
 
@@ -377,21 +752,25 @@
 
   // Renderizar opciones
   function renderOptions() {
+    console.log('Rendering options:', options);
     const optionsList = document.getElementById('optionsList');
     optionsList.innerHTML = options.map((opt, index) => `
-        <li class="flex items-center gap-2 mb-2">
+        <li class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors">
+            <span class="font-medium text-gray-500 w-8">${index + 1}.</span>
             <input 
                 type="text" 
                 value="${opt}" 
-                onchange="updateOption(${index}, this.value)" 
-                class="flex-1 border rounded p-2"
+                class="flex-1 form-input border-gray-300 bg-white"
+                onchange="updateOption(${index}, this.value)"
             >
             <button 
                 type="button" 
-                onclick="removeOption(${index})" 
-                class=" text-white px-3 py-2"
+                class="btn btn-danger"
+                onclick="removeOption(${index})"
             >
-                Eliminar
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                </svg>
             </button>
         </li>
     `).join('');
@@ -401,10 +780,12 @@
     document.getElementById('questionForm').reset();
     options = [];
     renderOptions();
+    // Ocultar el contenedor de opciones por defecto
+    document.getElementById('optionsContainer').classList.add('hidden');
   }
 
   function editNode(node, type = 'EVALUATION') {
-    console.log('Editing node:', node, 'Type:', type);
+    console.log('Editing node:', node, 'Type:', type); // Debug
     resetQuestionForm();
     
     document.getElementById('nodeId').value = node.id;
@@ -412,30 +793,50 @@
     
     if (type === 'TRAINING') {
         // Configurar para entrenamiento
-        document.getElementById('trainingType').value = node.type;
-        document.getElementById('questionText').value = node.content;
-        document.getElementById('contentLabel').textContent = 'Contenido';
-        
-        // Mostrar/ocultar contenedores apropiados
-        document.getElementById('evaluationTypes').classList.add('hidden');
         document.getElementById('trainingTypes').classList.remove('hidden');
+        document.getElementById('evaluationTypes').classList.add('hidden');
+        document.getElementById('trainingType').value = node.type;
         document.getElementById('optionsContainer').classList.add('hidden');
+
+        // Ajustar el label y valor según el tipo de nodo
+        switch (node.type) {
+            case 'VIDEO_NODE':
+                document.getElementById('contentLabel').textContent = 'URL del Video';
+                document.getElementById('questionText').value = node.content || '';
+                break;
+            case 'TEXT_NODE':
+                document.getElementById('contentLabel').textContent = 'Contenido de Texto';
+                document.getElementById('questionText').value = node.content || '';
+                break;
+            case 'IMAGE_NODE':
+                document.getElementById('contentLabel').textContent = 'URL de la Imagen';
+                document.getElementById('questionText').value = node.content || '';
+                break;
+            case 'WEEKLY_RECIPE_NODE':
+                document.getElementById('contentLabel').textContent = 'Plan Semanal';
+                document.getElementById('questionText').value = JSON.stringify(node.weekly_plan || {}, null, 2);
+                break;
+        }
     } else {
         // Configurar para evaluación
+        document.getElementById('evaluationTypes').classList.remove('hidden');
+        document.getElementById('trainingTypes').classList.add('hidden');
         document.getElementById('questionType').value = node.type;
         document.getElementById('questionText').value = node.question;
         document.getElementById('contentLabel').textContent = 'Pregunta';
         
-        // Mostrar/ocultar contenedores apropiados
-        document.getElementById('evaluationTypes').classList.remove('hidden');
-        document.getElementById('trainingTypes').classList.add('hidden');
-        
-        // Manejar opciones si es pregunta de selección
+        // Manejar opciones para preguntas de selección
         const isChoiceQuestion = ['MULTIPLE_CHOICE_QUESTION', 'SINGLE_CHOICE_QUESTION'].includes(node.type);
-        document.getElementById('optionsContainer').classList.toggle('hidden', !isChoiceQuestion);
-        options = node.options || [];
+        console.log('Is choice question in editNode:', isChoiceQuestion); // Debug
+        
+        const optionsContainer = document.getElementById('optionsContainer');
         if (isChoiceQuestion) {
+            optionsContainer.classList.remove('hidden');
+            options = node.options || [];
             renderOptions();
+        } else {
+            optionsContainer.classList.add('hidden');
+            options = [];
         }
     }
     
@@ -532,9 +933,96 @@
   function openAddQuestionModal() {
     options = [];
     renderOptions();
+    const modalTitle = document.getElementById('modalTitle');
+    const isTraining = document.getElementById('addButtonText').textContent.includes('Entrenamiento');
+    const contentType = document.getElementById('contentType');
+    const evaluationTypes = document.getElementById('evaluationTypes');
+    const trainingTypes = document.getElementById('trainingTypes');
+    const optionsContainer = document.getElementById('optionsContainer');
+    
+    if (isTraining) {
+        contentType.value = 'TRAINING';
+        modalTitle.textContent = 'Agregar Entrenamiento';
+        evaluationTypes.classList.add('hidden');
+        trainingTypes.classList.remove('hidden');
+        optionsContainer.classList.add('hidden');
+        
+        // Establecer un valor por defecto para el tipo de entrenamiento
+        const trainingType = document.getElementById('trainingType');
+        if (trainingType.value === '') {
+            trainingType.value = 'VIDEO_NODE';
+        }
+        
+        // Actualizar el label según el tipo de entrenamiento
+        updateContentLabel(trainingType.value);
+    } else {
+        contentType.value = 'EVALUATION';
+        modalTitle.textContent = 'Agregar Pregunta';
+        evaluationTypes.classList.remove('hidden');
+        trainingTypes.classList.add('hidden');
+        document.getElementById('contentLabel').textContent = 'Pregunta';
+        
+        // Verificar si es pregunta de selección
+        const questionType = document.getElementById('questionType');
+        const isChoiceQuestion = ['MULTIPLE_CHOICE_QUESTION', 'SINGLE_CHOICE_QUESTION'].includes(questionType.value);
+        optionsContainer.classList.toggle('hidden', !isChoiceQuestion);
+    }
+    
     openModal(questionModal);
   }
 
+  // Función auxiliar para actualizar el label según el tipo de contenido
+  function updateContentLabel(nodeType) {
+    const contentLabel = document.getElementById('contentLabel');
+    switch (nodeType) {
+        case 'VIDEO_NODE':
+            contentLabel.textContent = 'URL del Video';
+            break;
+        case 'TEXT_NODE':
+            contentLabel.textContent = 'Contenido de Texto';
+            break;
+        case 'IMAGE_NODE':
+            contentLabel.textContent = 'URL de la Imagen';
+            break;
+        case 'WEEKLY_RECIPE_NODE':
+            contentLabel.textContent = 'Plan Semanal';
+            break;
+        default:
+            contentLabel.textContent = 'Contenido';
+    }
+  }
+
+  // Actualizar el event listener del contentType
+  document.getElementById('contentType').addEventListener('change', function(e) {
+    const contentType = e.target.value;
+    const evaluationTypes = document.getElementById('evaluationTypes');
+    const trainingTypes = document.getElementById('trainingTypes');
+    const optionsContainer = document.getElementById('optionsContainer');
+    
+    if (contentType === 'TRAINING') {
+        evaluationTypes.classList.add('hidden');
+        trainingTypes.classList.remove('hidden');
+        optionsContainer.classList.add('hidden');
+        
+        // Actualizar el label según el tipo de entrenamiento seleccionado
+        const trainingType = document.getElementById('trainingType').value;
+        updateContentLabel(trainingType);
+    } else {
+        evaluationTypes.classList.remove('hidden');
+        trainingTypes.classList.add('hidden');
+        document.getElementById('contentLabel').textContent = 'Pregunta';
+        
+        // Verificar si es pregunta de selección
+        const questionType = document.getElementById('questionType').value;
+        const isChoiceQuestion = ['MULTIPLE_CHOICE_QUESTION', 'SINGLE_CHOICE_QUESTION'].includes(questionType);
+        optionsContainer.classList.toggle('hidden', !isChoiceQuestion);
+    }
+  });
+
+  // Asegurarse de que el event listener del tipo de entrenamiento esté actualizado
+  document.getElementById('trainingType').addEventListener('change', function(e) {
+    updateContentLabel(e.target.value);
+  });
 
   function saveQuestion() {
     const contentType = document.getElementById('contentType').value;
@@ -545,20 +1033,32 @@
         id: nodeId ? parseInt(nodeId) : Date.now()
     };
 
-    // Si es contenido de entrenamiento
     if (contentType === 'TRAINING') {
-        nodeData.type = document.getElementById('trainingType').value;
-        nodeData.content = questionText;
-    } 
-    // Si es pregunta de evaluación
-    else {
+        const nodeType = document.getElementById('trainingType').value;
+        nodeData.type = nodeType;
+
+        switch (nodeType) {
+            case 'VIDEO_NODE':
+            case 'TEXT_NODE':
+            case 'IMAGE_NODE':
+                nodeData.content = questionText;
+                break;
+            case 'WEEKLY_RECIPE_NODE':
+                try {
+                    nodeData.weekly_plan = JSON.parse(questionText);
+                } catch (e) {
+                    alert('El formato del plan semanal no es válido. Debe ser un JSON válido.');
+                    return;
+                }
+                break;
+        }
+    } else {
+        // Lógica existente para preguntas de evaluación
         const questionType = document.getElementById('questionType').value;
         nodeData.type = questionType;
         nodeData.question = questionText;
 
-        // Solo validar opciones para preguntas de selección
-        const isChoiceQuestion = ['MULTIPLE_CHOICE_QUESTION', 'SINGLE_CHOICE_QUESTION'].includes(questionType);
-        if (isChoiceQuestion) {
+        if (['MULTIPLE_CHOICE_QUESTION', 'SINGLE_CHOICE_QUESTION'].includes(questionType)) {
             if (!options || options.length < 2) {
                 alert('Debe agregar al menos dos opciones para preguntas de selección');
                 return;
@@ -646,25 +1146,34 @@
     
     evaluationTypes.classList.toggle('hidden', contentType !== 'EVALUATION');
     trainingTypes.classList.toggle('hidden', contentType !== 'TRAINING');
-    optionsContainer.classList.add('hidden');
     
     if (contentType === 'EVALUATION') {
-      contentLabel.textContent = 'Pregunta';
-    } else if (contentType === 'TRAINING') {
-      contentLabel.textContent = 'Contenido';
+        contentLabel.textContent = 'Pregunta';
+        // Verificar si es pregunta de selección
+        const questionType = document.getElementById('questionType').value;
+        const isChoiceQuestion = ['MULTIPLE_CHOICE_QUESTION', 'SINGLE_CHOICE_QUESTION'].includes(questionType);
+        optionsContainer.classList.toggle('hidden', !isChoiceQuestion);
+    } else {
+        contentLabel.textContent = 'Contenido';
+        optionsContainer.classList.add('hidden');
     }
   });
 
-  // Validación del tipo de pregunta
+  // Actualizar el event listener del tipo de pregunta
   document.getElementById('questionType').addEventListener('change', function(e) {
-    const isChoiceQuestion = ['MULTIPLE_CHOICE_QUESTION', 'SINGLE_CHOICE_QUESTION'].includes(e.target.value);
+    console.log('Question type changed to:', e.target.value); // Debug
+    const questionType = e.target.value;
     const optionsContainer = document.getElementById('optionsContainer');
+    const isChoiceQuestion = ['MULTIPLE_CHOICE_QUESTION', 'SINGLE_CHOICE_QUESTION'].includes(questionType);
     
-    optionsContainer.classList.toggle('hidden', !isChoiceQuestion);
+    console.log('Is choice question:', isChoiceQuestion); // Debug
     
-    if (!isChoiceQuestion) {
-      options = [];
-      renderOptions();
+    if (isChoiceQuestion) {
+        optionsContainer.classList.remove('hidden');
+    } else {
+        optionsContainer.classList.add('hidden');
+        options = [];
+        renderOptions();
     }
   });
 
@@ -694,34 +1203,12 @@
     const value = newOption.value.trim();
     
     if (value) {
-      options.push(value);
-      renderOptions();
-      newOption.value = '';
-      document.getElementById('optionsError').classList.add('hidden');
+        options.push(value);
+        renderOptions();
+        newOption.value = '';
+        document.getElementById('optionsError').classList.add('hidden');
     }
   });
-
-  // Renderizar opciones
-  function renderOptions() {
-    const optionsList = document.getElementById('optionsList');
-    optionsList.innerHTML = options.map((opt, index) => `
-      <li class="flex items-center gap-2 mb-2">
-        <input 
-          type="text" 
-          value="${opt}" 
-          class="flex-1 form-input"
-          onchange="updateOption(${index}, this.value)"
-        >
-        <button 
-          type="button" 
-          class="text-white px-3 py-2 bg-red-500 rounded-lg font-medium transition-colors"
-          onclick="removeOption(${index})"
-        >
-          Eliminar
-        </button>
-      </li>
-    `).join('');
-  }
 
   function renderNodes(nodes, type) {
   const questionsList = document.getElementById('questionsList');
@@ -729,10 +1216,10 @@
     'MULTIPLE_CHOICE_QUESTION': 'Selección Múltiple',
     'SINGLE_CHOICE_QUESTION': 'Selección Única',
     'SCALE_QUESTION': 'Escala',
-    'VIDEO': 'Video',
-    'TEXT': 'Texto',
-    'IMAGE': 'Imagen',
-    'DOCUMENT': 'Documento'
+    'VIDEO_NODE': 'Video',
+    'TEXT_NODE': 'Texto',
+    'IMAGE_NODE': 'Imagen',
+    'WEEKLY_RECIPE_NODE': 'Receta Semanal'
   };
 
   questionsList.innerHTML = nodes.map((node, index) => `
@@ -780,5 +1267,168 @@
     </div>
   `).join('');
 }
+
+// Actualizar el script para manejar los tipos de entrenamiento
+document.getElementById('trainingType').addEventListener('change', function(e) {
+    const type = e.target.value;
+    const mediaUrlContainer = document.getElementById('mediaUrlContainer');
+    const weeklyPlanContainer = document.getElementById('weeklyPlanContainer');
+    const mediaUrlLabel = document.getElementById('mediaUrlLabel');
+
+    // Ocultar todos los contenedores especiales
+    mediaUrlContainer.classList.add('hidden');
+    weeklyPlanContainer.classList.add('hidden');
+
+    switch (type) {
+        case 'VIDEO_NODE':
+            mediaUrlContainer.classList.remove('hidden');
+            mediaUrlLabel.textContent = '📹 URL del Video';
+            break;
+        case 'IMAGE_NODE':
+            mediaUrlContainer.classList.remove('hidden');
+            mediaUrlLabel.textContent = '🖼️ URL de la Imagen';
+            break;
+        case 'TEXT_NODE':
+            mediaUrlContainer.classList.remove('hidden');
+            mediaUrlLabel.textContent = '📝 Contenido de Texto';
+            break;
+        case 'WEEKLY_RECIPE_NODE':
+            weeklyPlanContainer.classList.remove('hidden');
+            break;
+    }
+});
+
+// Mejorar la visualización del plan semanal
+let weeklyPlan = {};
+
+document.getElementById('addMealBtn').addEventListener('click', function() {
+    const day = document.getElementById('weekDay').value;
+    const mealType = document.getElementById('mealType').value;
+    const mealDescription = document.getElementById('mealDescription').value;
+    const proteins = document.getElementById('proteins').value;
+    const notes = document.getElementById('mealNotes').value;
+
+    if (!mealDescription) {
+        alert('Por favor, ingrese una descripción de la comida');
+        return;
+    }
+
+    if (!weeklyPlan[day]) {
+        weeklyPlan[day] = {};
+    }
+
+    weeklyPlan[day][mealType] = {
+        meal: mealDescription,
+        proteins: proteins,
+        notes: notes
+    };
+
+    // Actualizar la vista previa con formato mejorado
+    const formattedPlan = JSON.stringify(weeklyPlan, null, 2)
+        .replace(/"MON"/g, '"Lunes"')
+        .replace(/"TUE"/g, '"Martes"')
+        .replace(/"WED"/g, '"Miércoles"')
+        .replace(/"THU"/g, '"Jueves"')
+        .replace(/"FRI"/g, '"Viernes"')
+        .replace(/"SAT"/g, '"Sábado"')
+        .replace(/"SUN"/g, '"Domingo"')
+        .replace(/"BREAKFAST"/g, '"Desayuno"')
+        .replace(/"LUNCH"/g, '"Almuerzo"')
+        .replace(/"DINNER"/g, '"Cena"')
+        .replace(/"SNACK"/g, '"Colación"');
+
+    document.getElementById('weeklyPlanJson').textContent = formattedPlan;
+
+    // Limpiar los campos
+    document.getElementById('mealDescription').value = '';
+    document.getElementById('proteins').value = '';
+    document.getElementById('mealNotes').value = '';
+
+    // Mostrar mensaje de éxito
+    const toast = document.createElement('div');
+    toast.className = 'fixed bottom-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg';
+    toast.textContent = '✅ Comida agregada al plan';
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+});
+
+// Agregar estas funciones para manejar el tooltip
+function showTooltip() {
+    const tooltip = document.getElementById('planStructureTooltip');
+    tooltip.classList.remove('hidden');
+    tooltip.classList.add('tooltip-animate');
+    
+    // Asegurarse de que el tooltip no se salga de la pantalla
+    const tooltipRect = tooltip.getBoundingClientRect();
+    const viewportWidth = window.innerWidth;
+    
+    if (tooltipRect.right > viewportWidth) {
+        tooltip.style.right = '0';
+        tooltip.style.left = 'auto';
+    }
+}
+
+function hideTooltip() {
+    const tooltip = document.getElementById('planStructureTooltip');
+    tooltip.classList.add('hidden');
+    tooltip.classList.remove('tooltip-animate');
+}
+
+// Cerrar el tooltip al hacer clic fuera de él
+document.addEventListener('click', function(event) {
+    const tooltip = document.getElementById('planStructureTooltip');
+    const tooltipButton = event.target.closest('button');
+    
+    if (!tooltip.contains(event.target) && !tooltipButton) {
+        hideTooltip();
+    }
+});
+
+// Mejorar el formato del JSON en el tooltip
+function formatJsonExample() {
+    const example = {
+        "MON": {
+            "BREAKFAST": {
+                "meal": "Ejemplo de desayuno",
+                "proteins": "20g",
+                "notes": "Notas adicionales"
+            }
+        }
+    };
+    return JSON.stringify(example, null, 2);
+}
+
+// Actualizar el contenido del tooltip al cargar
+document.addEventListener('DOMContentLoaded', function() {
+    const tooltipPre = document.querySelector('#planStructureTooltip pre');
+    if (tooltipPre) {
+        tooltipPre.textContent = tooltipPre.textContent.trim();
+    }
+});
+
+function toggleTooltip() {
+    const modal = document.getElementById('structureModal');
+    modal.classList.toggle('hidden');
+    
+    // Bloquear/desbloquear scroll del body
+    document.body.style.overflow = modal.classList.contains('hidden') ? 'auto' : 'hidden';
+}
+
+// Cerrar modal con Escape
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        const modal = document.getElementById('structureModal');
+        if (!modal.classList.contains('hidden')) {
+            toggleTooltip();
+        }
+    }
+});
+
+// Cerrar modal al hacer clic fuera
+document.getElementById('structureModal').addEventListener('click', function(event) {
+    if (event.target === this) {
+        toggleTooltip();
+    }
+});
 </script>
 {% endblock %}

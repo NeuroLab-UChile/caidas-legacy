@@ -8,7 +8,10 @@ from ..models import (
     ScaleQuestion,
     ImageQuestion,
     ResultNode,
-    WeeklyRecipeNode
+    WeeklyRecipeNode,
+    VideoNode,
+    TextNode,
+    ImageNode
 )
 
 from django.contrib.contenttypes.models import ContentType
@@ -118,3 +121,22 @@ class WeeklyRecipeNodeSerializer(serializers.ModelSerializer):
     class Meta:
         model = WeeklyRecipeNode
         fields = '__all__'
+
+
+class VideoNodeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = VideoNode
+        fields = '__all__'
+
+class TextNodeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TextNode
+        fields = '__all__'
+
+
+class ImageNodeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ImageNode
+        fields = '__all__'
+
+

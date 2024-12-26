@@ -161,7 +161,6 @@ export default function ActionScreen() {
               {/* Expanded Categories Section */}
               {isCategoriesExpanded && (
                 <View style={styles.expandedCategories}>
-                  <Text style={styles.sectionTitle}>Todas las Categorías</Text>
                   <View style={styles.categoriesGrid}>
                     {Array.from(
                       { length: Math.ceil(categories.length / 2) },

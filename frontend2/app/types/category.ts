@@ -28,7 +28,7 @@ export interface RootNode {
 
 export interface TrainingNode {
   id: number;
-  type: 'DESCRIPTION_NODE' | 'VIDEO_NODE' | 'IMAGE_NODE' | 'WEEKLY_RECIPE_NODE';
+  type: 'TEXT_NODE' | 'VIDEO_NODE' | 'IMAGE_NODE' | 'WEEKLY_RECIPE_NODE';
   title: string;
   description: string;
   media_url?: string;

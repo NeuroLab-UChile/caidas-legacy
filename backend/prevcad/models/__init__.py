@@ -1,7 +1,7 @@
 
 from .text_recomendation import TextRecomendation
 from .health_category import CategoryTemplate, HealthCategory
-from .activity_node import ActivityNode, ActivityNodeDescription, ActivityNodeQuestion, TextQuestion, SingleChoiceQuestion, MultipleChoiceQuestion, ScaleQuestion, ImageQuestion, ResultNode, WeeklyRecipeNode
+from .activity_node import ActivityNode, ActivityNodeDescription, ActivityNodeQuestion, TextQuestion, SingleChoiceQuestion, MultipleChoiceQuestion, ScaleQuestion, ImageQuestion, ResultNode, WeeklyRecipeNode, VideoNode, TextNode, ImageNode
 from .user_recommendation_interaction import UserRecommendationInteraction
 from .profile import Profile
 from .appointment import Appointment
@@ -22,5 +22,9 @@ __all__ = [
   'ScaleQuestion',
   'ImageQuestion',
   'UserRecommendationInteraction',
-  'Appointment'
+  'Appointment',
+  'VideoNode',
+  'TextNode',
+  'ImageNode',
+  'WeeklyRecipeNode'
 ]
