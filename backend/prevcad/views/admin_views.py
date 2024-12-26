@@ -60,57 +60,97 @@ def update_evaluation_form(request, template_id):
 def update_training_form(request, template_id):
     """
     Actualiza el formulario de entrenamiento de una plantilla de categoría.
-    Maneja la subida de archivos multimedia para nodos de tipo video.
     """
     try:
-        print("Request data:", request.POST)
-        print("Files:", request.FILES)
-        
         obj = get_object_or_404(CategoryTemplate, id=template_id)
+        new_form_data = request.POST.get('training_form')
+        media_file = request.FILES.get('media_file')
         
-        # Inicializar o obtener el training_form
+        if not new_form_data:
+            return JsonResponse({
+                'status': 'error', 
+                'message': 'No se recibieron datos del formulario'
+            }, status=400)
+        
+        new_form = json.loads(new_form_data)
+        if "training_nodes" not in new_form or not isinstance(new_form["training_nodes"], list):
+            return JsonResponse({
+                'status': 'error', 
+                'message': 'Estructura de datos inválida'
+            }, status=400)
+
+        # Manejar archivo multimedia si existe
+        if media_file:
+            file_name = handle_uploaded_file(media_file)
+            
+            # Actualizar el nodo correspondiente con la URL del archivo
+            for node in new_form["training_nodes"]:
+                if node.get('media_pending'):
+                    node['media_url'] = file_name
+                    del node['media_pending']
+
+        # Actualizar o agregar los nodos de entrenamiento
         if not obj.training_form:
-            obj.training_form = {'training_nodes': []}
+            obj.training_form = {}
         
-        nodes = obj.training_form['training_nodes']
+        existing_nodes = obj.training_form.get('training_nodes', [])
         
-        # Obtener el ID del nodo si estamos editando
-        node_id = request.POST.get('node_id')
-        content = request.POST.get('content')
-        node_type = request.POST.get('type', 'TEXT_NODE')  # Tipo por defecto
+        # Actualizar nodos existentes o agregar nuevos
+        updated_nodes = []
+        new_node_ids = {node['id'] for node in new_form['training_nodes']}
         
-        # Buscar el nodo existente o crear uno nuevo
-        if node_id:
-            node_id = int(node_id)
-            node_index = next((i for i, node in enumerate(nodes) 
-                             if node.get('id') == node_id), None)
-            if node_index is not None:
-                node = nodes[node_index]
-            else:
-                node = {'id': node_id}
-                nodes.append(node)
-        else:
-            node = {'id': int(time.time() * 1000)}
-            nodes.append(node)
+        # Mantener nodos existentes que no están siendo actualizados
+        for node in existing_nodes:
+            if node['id'] not in new_node_ids:
+                updated_nodes.append(node)
         
-        # Actualizar el contenido del nodo
-        node.update({
-            'type': node_type,
-            'content': content
-        })
+        # Agregar los nuevos nodos
+        updated_nodes.extend(new_form['training_nodes'])
         
-        # Guardar los cambios
-        obj.save(update_fields=['training_form'])
+        # Actualizar el formulario
+        obj.training_form = {
+            'training_nodes': updated_nodes
+        }
+        
+        obj.save(update_fields=["training_form"])
         
         return JsonResponse({
             'status': 'success',
-            'message': 'Contenido actualizado correctamente',
-            'node': node
+            'message': 'Formulario de entrenamiento actualizado correctamente'
         })
         
+    except json.JSONDecodeError:
+        return JsonResponse({
+            'status': 'error',
+            'message': 'Error al decodificar JSON'
+        }, status=400)
     except Exception as e:
-        print(f"Error in update_training_form: {str(e)}")
+        logger.error(f"Error updating training form: {str(e)}", exc_info=True)
         return JsonResponse({
             'status': 'error',
             'message': str(e)
-        }, status=500) 
+        }, status=500)
+
+def handle_uploaded_file(file):
+    """
+    Maneja la subida de archivos y retorna la URL relativa.
+    """
+    import os
+    import uuid
+    from django.conf import settings
+
+    # Crear directorio si no existe
+    upload_dir = os.path.join(settings.MEDIA_ROOT, 'uploads')
+    os.makedirs(upload_dir, exist_ok=True)
+    
+    # Generar nombre único para el archivo
+    file_name = f"{uuid.uuid4()}_{file.name}"
+    file_path = os.path.join(upload_dir, file_name)
+    
+    # Guardar el archivo
+    with open(file_path, 'wb+') as destination:
+        for chunk in file.chunks():
+            destination.write(chunk)
+    
+    # Retornar la ruta relativa con el formato correcto
+    return f'/media/uploads/{file_name}'  # Añadimos /media/ al inicio 

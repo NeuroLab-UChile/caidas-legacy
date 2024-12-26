@@ -160,6 +160,18 @@
           <ul id="optionsList" class="mt-2"></ul>
         </div>
 
+        <div id="mediaContainer" class="form-group hidden">
+          <label for="mediaFile">Archivo Multimedia</label>
+          <input type="file" 
+                 id="mediaFile" 
+                 class="form-input" 
+                 accept=".jpg,.jpeg,.png,.gif,.mp4,.webm"
+                 onchange="handleFileSelect(event)">
+          <div id="mediaPreview" class="mt-2 hidden">
+            <!-- Preview del archivo seleccionado -->
+          </div>
+        </div>
+
         <div class="flex justify-end gap-2 mt-4">
           <button type="button" class="btn btn-secondary" onclick="closeQuestionModal()">Cancelar</button>
           <button type="submit" class="btn btn-primary">Guardar</button>
@@ -211,22 +223,29 @@
     const evaluationTypes = document.getElementById('evaluationTypes');
     const trainingTypes = document.getElementById('trainingTypes');
     const optionsContainer = document.getElementById('optionsContainer');
+    const mediaContainer = document.getElementById('mediaContainer');
     const contentLabel = document.getElementById('contentLabel');
 
     evaluationTypes.classList.toggle('hidden', contentType !== 'EVALUATION');
     trainingTypes.classList.toggle('hidden', contentType !== 'TRAINING');
     
-    // Actualizar el label según el tipo
+    // Actualizar etiqueta según el tipo
     contentLabel.textContent = contentType === 'TRAINING' ? 'Contenido' : 'Pregunta';
     
-    // Mostrar opciones solo para preguntas de selección en evaluación
-    const questionType = document.getElementById('questionType').value;
-    if (contentType === 'EVALUATION' && ['MULTIPLE_CHOICE_QUESTION', 'SINGLE_CHOICE_QUESTION'].includes(questionType)) {
-        optionsContainer.classList.remove('hidden');
-    } else {
-        optionsContainer.classList.add('hidden');
-    }
+    // Mostrar/ocultar contenedor multimedia según el tipo
+    const trainingType = document.getElementById('trainingType').value;
+    const showMedia = contentType === 'TRAINING' && 
+                     ['VIDEO_NODE', 'IMAGE_NODE'].includes(trainingType);
+    
+    mediaContainer.classList.toggle('hidden', !showMedia);
   }
+
+  // Agregar listener para el cambio de tipo de entrenamiento
+  document.getElementById('trainingType').addEventListener('change', function() {
+    const mediaContainer = document.getElementById('mediaContainer');
+    const showMedia = ['VIDEO_NODE', 'IMAGE_NODE'].includes(this.value);
+    mediaContainer.classList.toggle('hidden', !showMedia);
+  });
 
   // Mostrar el modal de agregar pregunta
   function openAddQuestionModal() {
@@ -282,31 +301,45 @@
     const contentType = document.getElementById('contentType').value;
     const nodeId = document.getElementById('nodeId').value;
     const questionText = document.getElementById('questionText').value;
+    const mediaFile = document.getElementById('mediaFile').files[0];
     
-    // Crear el nodo base
+    // Crear FormData para manejar archivos
+    const formData = new FormData();
+    
+    // Preparar los datos base del nodo
     let nodeData = {
         id: nodeId ? parseInt(nodeId) : Date.now()
     };
 
-    // Preparar los datos según el tipo
     if (contentType === 'TRAINING') {
         nodeData.type = document.getElementById('trainingType').value;
         nodeData.content = questionText;
         
-        // Preparar el objeto de formulario para training
-        const formData = new FormData();
+        if (mediaFile && ['VIDEO_NODE', 'IMAGE_NODE'].includes(nodeData.type)) {
+            formData.append('media_file', mediaFile);
+            nodeData.media_pending = true;
+        }
+
+        // Obtener los nodos existentes
+        const existingNodes = {{ original.training_form.training_nodes|default:"[]"|safe }} || [];
+        const updatedNodes = nodeId ? 
+            existingNodes.map(node => node.id === parseInt(nodeId) ? nodeData : node) :
+            [...existingNodes, nodeData];
+        
         formData.append('training_form', JSON.stringify({
-            training_nodes: [nodeData]
+            training_nodes: updatedNodes
         }));
         
-        // Enviar al endpoint de training
-        submitForm(formData, "{% url 'update_training_form' original.id %}");
+        submitFormWithMedia(formData, "{% url 'update_training_form' original.id %}");
     } else {
-        // Configuración para evaluación
         nodeData.type = document.getElementById('questionType').value;
         nodeData.question = questionText;
         
-        // Agregar opciones si es una pregunta de selección
+        if (mediaFile && nodeData.type === 'IMAGE_QUESTION') {
+            formData.append('media_file', mediaFile);
+            nodeData.media_pending = true;
+        }
+        
         if (['MULTIPLE_CHOICE_QUESTION', 'SINGLE_CHOICE_QUESTION'].includes(nodeData.type)) {
             if (options.length < 2) {
                 document.getElementById('optionsError').classList.remove('hidden');
@@ -315,27 +348,16 @@
             nodeData.options = options;
         }
 
-        // Obtener los nodos existentes
         const existingNodes = {{ original.evaluation_form.question_nodes|default:"[]"|safe }} || [];
-        
-        // Actualizar o agregar el nuevo nodo
-        let updatedNodes;
-        if (nodeId) {
-            updatedNodes = existingNodes.map(node => 
-                node.id === parseInt(nodeId) ? nodeData : node
-            );
-        } else {
-            updatedNodes = [...existingNodes, nodeData];
-        }
+        const updatedNodes = nodeId ? 
+            existingNodes.map(node => node.id === parseInt(nodeId) ? nodeData : node) :
+            [...existingNodes, nodeData];
 
-        // Preparar el objeto de formulario para evaluación
-        const formData = new FormData();
         formData.append('evaluation_form', JSON.stringify({
             question_nodes: updatedNodes
         }));
 
-        // Enviar al endpoint de evaluación
-        submitForm(formData, "{% url 'update_evaluation_form' original.id %}");
+        submitFormWithMedia(formData, "{% url 'update_evaluation_form' original.id %}");
     }
   }
 
@@ -362,18 +384,39 @@
     });
   }
 
+  function handleFileSelect(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const preview = document.getElementById('mediaPreview');
+    const reader = new FileReader();
+
+    reader.onload = function(e) {
+        preview.classList.remove('hidden');
+        
+        if (file.type.startsWith('image/')) {
+            preview.innerHTML = `
+                <img src="${e.target.result}" 
+                     alt="Preview" 
+                     style="max-width: 200px; max-height: 200px;">
+            `;
+        } else if (file.type.startsWith('video/')) {
+            preview.innerHTML = `
+                <video controls style="max-width: 200px;">
+                    <source src="${e.target.result}" type="${file.type}">
+                    Tu navegador no soporta el elemento video.
+                </video>
+            `;
+        }
+    };
+
+    reader.readAsDataURL(file);
+  }
+
   // Renderizar los nodos de preguntas
   function renderNodes(nodes, type) {
     const questionsList = document.getElementById('questionsList');
     
-    const evaluationLabels = {
-        'MULTIPLE_CHOICE_QUESTION': 'Selección Múltiple',
-        'SINGLE_CHOICE_QUESTION': 'Selección Única',
-        'SCALE_QUESTION': 'Escala',
-        'TEXT_QUESTION': 'Texto',
-        'IMAGE_QUESTION': 'Imagen'
-    };
-
     const trainingLabels = {
         'WEEKLY_RECIPE_NODE': 'Receta Semanal',
         'VIDEO_NODE': 'Video',
@@ -381,11 +424,28 @@
         'IMAGE_NODE': 'Imagen'
     };
 
-    const typeLabels = type === 'TRAINING' ? trainingLabels : evaluationLabels;
-
     questionsList.innerHTML = nodes.map((node, index) => {
         const safeNode = JSON.stringify(node).replace(/"/g, '&quot;');
+        const hasMedia = node.media_url && ['VIDEO_NODE', 'IMAGE_NODE'].includes(node.type);
         
+        let mediaPreview = '';
+        if (hasMedia) {
+            if (node.type === 'VIDEO_NODE') {
+                mediaPreview = `
+                    <video controls style="max-width: 200px; margin-top: 10px;">
+                        <source src="${node.media_url}" type="video/mp4">
+                        Tu navegador no soporta el elemento video.
+                    </video>
+                `;
+            } else if (node.type === 'IMAGE_NODE') {
+                mediaPreview = `
+                    <img src="${node.media_url}" 
+                         alt="Preview" 
+                         style="max-width: 200px; margin-top: 10px;">
+                `;
+            }
+        }
+
         return `
           <div class="bg-white rounded-2xl border border-gray-200 overflow-hidden">
             <div class="p-6">
@@ -393,7 +453,7 @@
                 <div class="flex items-center gap-3">
                   <span class="text-lg font-semibold">${index + 1}</span>
                   <span class="px-4 py-1 bg-gray-100 rounded-full text-sm font-medium text-gray-600">
-                    ${typeLabels[node.type] || node.type}
+                    ${trainingLabels[node.type] || node.type}
                   </span>
                 </div>
                 <div class="flex gap-2 btn-container">
@@ -401,15 +461,8 @@
                   <button onclick="deleteNode(${node.id}, '${type}')" class="delete-btn btn btn-danger">Eliminar</button>
                 </div>
               </div>
-              <p class="text-lg mb-4">${type === 'TRAINING' ? node.content : node.question}</p>
-              ${(type === 'EVALUATION' && node.options) ? `
-                <div class="mt-2">
-                  <strong>Opciones:</strong>
-                  <ul class="list-disc pl-5">
-                    ${node.options.map(opt => `<li>${opt}</li>`).join('')}
-                  </ul>
-                </div>
-              ` : ''}
+              <p class="text-lg mb-4">${node.content}</p>
+              ${mediaPreview}
             </div>
           </div>
         `;
@@ -479,6 +532,66 @@
   // Asegúrate de que el botón de agregar opción funcione
   document.getElementById('addOptionBtn').addEventListener('click', function() {
     addOption();
+  });
+
+  function submitFormWithMedia(formData, url) {
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: formData
+    })
+    .then(response => {
+        if (!response.ok) {
+            return response.json().then(data => {
+                throw new Error(data.message || 'Error en el servidor');
+            });
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.status === 'success') {
+            alert('Guardado correctamente');
+            location.reload();
+        } else {
+            throw new Error(data.message || 'Error desconocido');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert(`Error: ${error.message}`);
+    });
+  }
+
+  // Asegurarse de que el formulario maneje el submit correctamente
+  document.getElementById('questionForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    saveQuestion();
+  });
+
+  // Asegurarse de que el input de archivo actualice la previsualización
+  document.getElementById('mediaFile').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const preview = document.getElementById('mediaPreview');
+    preview.classList.remove('hidden');
+
+    if (file.type.startsWith('image/')) {
+        preview.innerHTML = `
+            <img src="${URL.createObjectURL(file)}" 
+                 alt="Preview" 
+                 style="max-width: 200px; max-height: 200px;">
+        `;
+    } else if (file.type.startsWith('video/')) {
+        preview.innerHTML = `
+            <video controls style="max-width: 200px;">
+                <source src="${URL.createObjectURL(file)}" type="${file.type}">
+                Tu navegador no soporta el elemento video.
+            </video>
+        `;
+    }
   });
 </script>
 {% endblock %}
