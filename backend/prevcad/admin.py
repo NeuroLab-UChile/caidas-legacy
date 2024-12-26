@@ -101,7 +101,7 @@ class CategoryTemplateAdmin(admin.ModelAdmin):
     return mark_safe(f"""
   <div class="form-row field-evaluation_form">
     <label for="id_evaluation_form">Formulario de Evaluación</label>
-    <button type="button" class="btn btn-primary" onclick="openViewFormModal({obj.id})">
+    <button type="button" class="btn btn-primary" onclick="openFormModal('EVALUATION')">
       Ver Formulario
     </button>
   </div>
@@ -114,7 +114,7 @@ class CategoryTemplateAdmin(admin.ModelAdmin):
     return mark_safe(f"""
      <div class="form-row field-training_form">
     <label for="id_training_form">Formulario de Entrenamiento</label>
-    <button type="button" class="btn btn-primary" onclick="openTrainingFormModal({obj.id})">
+    <button type="button" class="btn btn-primary" onclick="openFormModal('TRAINING')">
       Ver Formulario
     </button>
   </div>

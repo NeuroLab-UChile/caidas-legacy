@@ -1,13 +1,10 @@
 {% extends "admin/change_form.html" %}
 {% load i18n static context %}
 
-
-
 {% block extrahead %}
   {{ block.super }}
   <style>
-
-
+    /* Tu código CSS aquí */
     :root {
       --color-primary: #ffcc00;
       --color-secondary: #333333;
@@ -18,6 +15,7 @@
       --color-overlay: rgba(0, 0, 0, 0.5);
     }
 
+    /* Modal Styles */
     .modal-overlay {
       position: fixed;
       top: 0;
@@ -37,11 +35,9 @@
     .modal-content {
       background-color: var(--color-light);
       border-radius: 1rem;
-      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
       padding: 1.5rem;
       width: 90%;
       max-width: 600px;
-      text-align: left;
       animation: slideUp 0.4s forwards;
     }
 
@@ -55,13 +51,17 @@
       to { transform: translateY(0); opacity: 1; }
     }
 
+    .hidden {
+      display: none;
+    }
+
+    /* Botón y Formato */
     .btn {
       padding: 0.5rem 1rem;
       font-size: 0.875rem;
       border: none;
       border-radius: 0.5rem;
       cursor: pointer;
-      transition: all 0.2s;
       display: inline-flex;
       align-items: center;
       gap: 0.5rem;
@@ -72,175 +72,16 @@
       color: var(--color-dark);
     }
 
-    .btn-primary:hover {
-      background-color: #e6b800;
-      transform: translateY(-1px);
+    .btn-secondary {
+      background-color: var(--color-secondary);
+      color: var(--color-light);
     }
 
     .btn-danger {
       background-color: var(--color-danger);
       color: var(--color-light);
     }
-
-    .btn-danger:hover {
-      background-color: var(--color-danger-hover);
-      transform: translateY(-1px);
-    }
-
-    .btn-secondary {
-      background-color: var(--color-secondary);
-      color: var(--color-light);
-    }
-
-    .btn-secondary:hover {
-      background-color: #404040;
-      transform: translateY(-1px);
-    }
-
-    .hidden {
-      display: none;
-    }
-
-    /* Espaciados y estilos de botones */
-    .btn-container {
-      display: flex;
-      gap: 0.75rem;
-      margin-top: 1.5rem;
-      justify-content: flex-end;
-    }
-
-    .btn {
-      padding: 0.625rem 1.25rem;
-      font-size: 0.875rem;
-      border: none;
-      border-radius: 0.5rem;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      font-weight: 500;
-      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-    }
-
-    .btn:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    }
-
-    .btn:active {
-      transform: translateY(0);
-    }
-
-    .btn svg {
-      width: 1rem;
-      height: 1rem;
-    }
-
-    .edit-btn {
-      @apply px-6 py-2 bg-[#ffcc00] hover:bg-[#e6b800] rounded-lg font-medium transition-colors;
-    }
-
-    .delete-btn {
-      @apply px-6 py-2 bg-[#ffcc00] hover:bg-[#e6b800] rounded-lg font-medium transition-colors;
-    }
-
-    /* Espaciados para el contenedor de preguntas */
-    #questionsList {
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-      padding: 1rem 0;
-    }
-
-    /* Espaciados para el modal */
-    .modal-content {
-      padding: 2rem;
-    }
-
-    .modal-title {
-      margin-bottom: 1.5rem;
-      font-size: 1.25rem;
-      font-weight: 600;
-      color: var(--color-dark);
-    }
-
-    /* Espaciados para el formulario */
-    .form-group {
-      margin-bottom: 1.5rem;
-    }
-
-    .form-group label {
-      display: block;
-      margin-bottom: 0.5rem;
-      font-weight: 500;
-      color: var(--color-dark);
-    }
-
-    .form-input,
-    .form-select {
-      width: 100%;
-      padding: 0.625rem;
-      border: 1px solid #e2e8f0;
-      border-radius: 0.375rem;
-      margin-bottom: 0.5rem;
-      transition: border-color 0.2s ease;
-    }
-
-    .form-input:focus,
-    .form-select:focus {
-      outline: none;
-      border-color: var(--color-primary);
-      box-shadow: 0 0 0 3px rgba(255, 204, 0, 0.1);
-    }
-
-    /* Espaciados para las opciones */
-    #optionsContainer {
-      margin-top: 1.5rem;
-    }
-
-    #optionsList {
-      margin-top: 1rem;
-    }
-
-    #optionsList li {
-      margin-bottom: 0.75rem;
-    }
-
-    /* Ajustes para los botones en las tarjetas */
-    .card-actions {
-      display: flex;
-      gap: 0.75rem;
-      margin-top: 1rem;
-    }
-
-    /* Espaciado para los elementos dentro de las tarjetas */
-    .card-content {
-      padding: 1.5rem;
-    }
-
-    .card-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 1rem;
-    }
-
-    /* Ajustes para las etiquetas de tipo */
-    .type-badge {
-      padding: 0.375rem 0.75rem;
-      border-radius: 9999px;
-      font-size: 0.875rem;
-      font-weight: 500;
-      background-color: #f3f4f6;
-      color: #4b5563;
-    }
   </style>
-      {% with VERSION='VERSION'|get_context %}
-      {% with href="/django_admin_tailwind/"|add:VERSION|add:'/css/base.css' %}
-          <link rel="stylesheet" type="text/css" href="{% static href %}">
-      {% endwith %}
-  {% endwith %}
 {% endblock %}
 
 {% block content %}
@@ -250,9 +91,7 @@
   <div id="formModal" class="modal-overlay hidden">
     <div class="modal-content">
       <h2 id="modalTitle" class="modal-title">Gestión de Formulario</h2>
-
-      <!-- Contenedor de Preguntas -->
-      <div id="questionsList" class="overflow-y-auto max-h-[400px]">
+      <div id="questionsList">
         <!-- El contenido se llenará dinámicamente via JavaScript -->
       </div>
 
@@ -274,7 +113,7 @@
 
         <div class="form-group">
           <label for="contentType">Tipo de Contenido</label>
-          <select id="contentType" class="form-select" required>
+          <select id="contentType" class="form-select" required onchange="toggleContentType()">
             <option value="">Seleccione el tipo</option>
             <option value="EVALUATION">Evaluación</option>
             <option value="TRAINING">Entrenamiento</option>
@@ -301,7 +140,6 @@
             <option value="VIDEO_NODE">Video</option>
             <option value="TEXT_NODE">Texto</option>
             <option value="IMAGE_NODE">Imagen</option>
-  
           </select>
         </div>
 
@@ -322,18 +160,6 @@
           <ul id="optionsList" class="mt-2"></ul>
         </div>
 
-        <div id="mediaContainer" class="hidden">
-          <label>Archivos Multimedia</label>
-          <div class="flex gap-2 mb-2">
-            <input type="file" id="newMedia" class="form-input" accept="image/*,video/*">
-            <button type="button" id="addMediaBtn" class="btn btn-primary">+</button>
-          </div>
-          <div id="mediaError" class="text-red-500 text-sm hidden">
-            Por favor seleccione un archivo válido
-          </div>
-          <ul id="mediaList" class="mt-2"></ul>
-        </div>
-
         <div class="flex justify-end gap-2 mt-4">
           <button type="button" class="btn btn-secondary" onclick="closeQuestionModal()">Cancelar</button>
           <button type="submit" class="btn btn-primary">Guardar</button>
@@ -343,28 +169,70 @@
   </div>
 
 <script>
-  // Variables
-  const formModal = document.getElementById('formModal');
-  const questionModal = document.getElementById('questionModal');
-  const optionsContainer = document.getElementById('optionsContainer');
-  const optionsList = document.getElementById('optionsList');
   let options = [];
   let mediaFiles = [];
-  function closeQuestionModal() {
-    questionModal.classList.add('hidden');
+
+  // Abre el modal de formulario para gestionar preguntas
+  function openFormModal(type) {
+    const modal = document.getElementById('formModal');
+    const modalTitle = document.getElementById('modalTitle');
+    modalTitle.textContent = type === 'TRAINING' ? 'Gestión de Contenido de Entrenamiento' : 'Gestión de Evaluación';
+
+    modal.classList.remove('hidden');
+    
+    // Asegurarnos de obtener los nodos correctos según el tipo y manejar valores nulos
+    let nodes;
+    if (type === 'TRAINING') {
+        nodes = {{ original.training_form.training_nodes|default:"[]"|safe }} || [];
+    } else {
+        nodes = {{ original.evaluation_form.question_nodes|default:"[]"|safe }} || [];
+    }
+    
+    // Filtrar los nodos según el tipo
+    const filteredNodes = nodes.filter(node => {
+        if (!node || !node.type) return false;
+        return type === 'TRAINING' ? 
+            node.type.endsWith('_NODE') : 
+            node.type.endsWith('_QUESTION');
+    });
+    
+    console.log(`Abriendo modal de tipo ${type} con nodos filtrados:`, filteredNodes);
+    renderNodes(filteredNodes, type);
   }
 
-  function openViewFormModal() {
-    const nodes = {{ original.evaluation_form.question_nodes|safe }};
-    renderNodes(nodes, 'EVALUATION');
-    document.getElementById('formModal').classList.remove('hidden');
+  // Cierra el modal
+  function closeModal() {
+    document.querySelectorAll('.modal-overlay').forEach(modal => modal.classList.add('hidden'));
   }
 
-  function openTrainingFormModal() {
-    const nodes = {{ original.training_form.training_nodes|safe }};
-    console.log(nodes);
-    renderNodes(nodes, 'TRAINING');
-    document.getElementById('formModal').classList.remove('hidden');
+  // Función para manejar el cambio entre tipos de contenido (Evaluación / Entrenamiento)
+  function toggleContentType() {
+    const contentType = document.getElementById('contentType').value;
+    const evaluationTypes = document.getElementById('evaluationTypes');
+    const trainingTypes = document.getElementById('trainingTypes');
+    const optionsContainer = document.getElementById('optionsContainer');
+    const contentLabel = document.getElementById('contentLabel');
+
+    evaluationTypes.classList.toggle('hidden', contentType !== 'EVALUATION');
+    trainingTypes.classList.toggle('hidden', contentType !== 'TRAINING');
+    
+    // Actualizar el label según el tipo
+    contentLabel.textContent = contentType === 'TRAINING' ? 'Contenido' : 'Pregunta';
+    
+    // Mostrar opciones solo para preguntas de selección en evaluación
+    const questionType = document.getElementById('questionType').value;
+    if (contentType === 'EVALUATION' && ['MULTIPLE_CHOICE_QUESTION', 'SINGLE_CHOICE_QUESTION'].includes(questionType)) {
+        optionsContainer.classList.remove('hidden');
+    } else {
+        optionsContainer.classList.add('hidden');
+    }
+  }
+
+  // Mostrar el modal de agregar pregunta
+  function openAddQuestionModal() {
+    options = [];
+    renderOptions();
+    openModal(questionModal);
   }
 
   // Mostrar modal
@@ -372,14 +240,23 @@
     modal.classList.remove('hidden');
   }
 
-  // Cerrar modal
-  function closeModal() {
-    document.querySelectorAll('.modal-overlay').forEach(modal => modal.classList.add('hidden'));
+  // Cerrar modal de pregunta
+  function closeQuestionModal() {
+    questionModal.classList.add('hidden');
   }
 
+  // Renderizar las opciones de la pregunta
+  function renderOptions() {
+    const optionsList = document.getElementById('optionsList');
+    optionsList.innerHTML = options.map((opt, index) => `
+      <li class="flex items-center gap-2 mb-2">
+        <input type="text" value="${opt}" onchange="updateOption(${index}, this.value)" class="form-input">
+        <button type="button" onclick="removeOption(${index})" class="text-white px-3 py-2 bg-red-500 rounded-lg font-medium transition-colors">Eliminar</button>
+      </li>
+    `).join('');
+  }
 
-
-  // Agregar opción
+  // Función para agregar una nueva opción
   function addOption() {
     const optionText = document.getElementById('newOption').value.trim();
     if (optionText) {
@@ -389,236 +266,91 @@
     }
   }
 
-  // Renderizar opciones
-  function renderOptions() {
-    const optionsList = document.getElementById('optionsList');
-    optionsList.innerHTML = options.map((opt, index) => `
-        <li class="flex items-center gap-2 mb-2">
-            <input 
-                type="text" 
-                value="${opt}" 
-                onchange="updateOption(${index}, this.value)" 
-                class="flex-1 border rounded p-2"
-            >
-            <button 
-                type="button" 
-                onclick="removeOption(${index})" 
-                class=" text-white px-3 py-2"
-            >
-                Eliminar
-            </button>
-        </li>
-    `).join('');
-  }
-
-  function resetQuestionForm() {
-    document.getElementById('questionForm').reset();
-    options = [];
-    mediaFiles = [];
-    renderOptions();
-    renderMedia();
-  }
-
-  function editNode(node, type = 'EVALUATION') {
-    console.log('Editing node:', node, 'Type:', type);
-    resetQuestionForm();
-    
-    document.getElementById('nodeId').value = node.id;
-    document.getElementById('contentType').value = type;
-    
-    if (type === 'TRAINING') {
-        // Configurar para entrenamiento
-        document.getElementById('trainingType').value = node.type;
-        document.getElementById('questionText').value = node.content;
-        document.getElementById('contentLabel').textContent = 'Contenido';
-        
-        // Mostrar/ocultar contenedores apropiados
-        document.getElementById('evaluationTypes').classList.add('hidden');
-        document.getElementById('trainingTypes').classList.remove('hidden');
-        document.getElementById('optionsContainer').classList.add('hidden');
-        
-        // Reset media files
-        mediaFiles = [];
-        
-        // If node has media, add it to mediaFiles
-        if (node.media) {
-          mediaFiles = Array.isArray(node.media) ? node.media : [node.media];
-        }
-        renderMedia();
-        updateContentTypeUI();
-    } else {
-        // Configurar para evaluación
-        document.getElementById('questionType').value = node.type;
-        document.getElementById('questionText').value = node.question;
-        document.getElementById('contentLabel').textContent = 'Pregunta';
-        
-        // Mostrar/ocultar contenedores apropiados
-        document.getElementById('evaluationTypes').classList.remove('hidden');
-        document.getElementById('trainingTypes').classList.add('hidden');
-        
-        // Manejar opciones si es pregunta de selección
-        const isChoiceQuestion = ['MULTIPLE_CHOICE_QUESTION', 'SINGLE_CHOICE_QUESTION'].includes(node.type);
-        document.getElementById('optionsContainer').classList.toggle('hidden', !isChoiceQuestion);
-        options = node.options || [];
-        if (isChoiceQuestion) {
-            renderOptions();
-        }
-    }
-    
-    questionModal.classList.remove('hidden');
-  }
-
-  function deleteNode(nodeId, type) {
-    const confirmMessage = type === 'TRAINING' ? 
-        "¿Estás seguro de eliminar este contenido de entrenamiento?" : 
-        "¿Estás seguro de eliminar esta pregunta?";
-
-    if (confirm(confirmMessage)) {
-        // Obtener los nodos actuales según el tipo
-        let currentNodes = type === 'TRAINING' ? 
-            {{ original.training_nodes|default:"[]"|safe }} :
-            {{ original.evaluation_form.question_nodes|default:"[]"|safe }};
-
-        // Filtrar el nodo a eliminar
-        currentNodes = currentNodes.filter(node => node.id !== nodeId);
-
-        // Preparar datos y endpoint según el tipo
-        const endpoint = type === 'TRAINING' ?
-            "{% url 'update_training_form' original.id %}" :
-            "{% url 'update_evaluation_form' original.id %}";
-
-        // Preparar el body según el tipo
-        const formData = new FormData();
-        if (type === 'TRAINING') {
-            formData.append('training_form', JSON.stringify({
-                training_nodes: currentNodes
-            }));
-        } else {
-            formData.append('evaluation_form', JSON.stringify({
-                question_nodes: currentNodes
-            }));
-        }
-
-        // Debug
-        console.log('Deleting node:', {
-            type,
-            nodeId,
-            endpoint,
-            data: Object.fromEntries(formData)
-        });
-
-        fetch(endpoint, {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': '{{ csrf_token }}'
-            },
-            body: formData
-        })
-        .then(response => {
-            if (!response.ok) {
-                return response.text().then(text => {
-                    console.error('Server response:', text);
-                    throw new Error(`Error ${response.status}: ${text}`);
-                });
-            }
-            return response.json();
-        })
-        .then(data => {
-            if (data.status === 'success') {
-                alert(type === 'TRAINING' ? 
-                    'Contenido de entrenamiento eliminado correctamente' : 
-                    'Pregunta eliminada correctamente'
-                );
-                location.reload();
-            } else {
-                throw new Error(data.message || 'Error desconocido');
-            }
-        })
-        .catch(error => {
-            console.error('Error al eliminar:', error);
-            alert(`Error: ${error.message}`);
-        });
-    }
-  }
-
-  // Actualizar opción
+  // Función para actualizar una opción
   function updateOption(index, value) {
     options[index] = value.trim();
-    console.log('Updated options:', options); // For debugging
   }
 
-  // Eliminar opción
+  // Función para eliminar una opción
   function removeOption(index) {
     options.splice(index, 1);
     renderOptions();
   }
 
-
-
-  function openAddQuestionModal() {
-    options = [];
-    renderOptions();
-    openModal(questionModal);
-  }
-
-
+  // Función para guardar la pregunta o contenido
   function saveQuestion() {
     const contentType = document.getElementById('contentType').value;
     const nodeId = document.getElementById('nodeId').value;
     const questionText = document.getElementById('questionText').value;
-
-    // Crear FormData para manejar archivos
-    const formData = new FormData();
     
+    // Crear el nodo base
     let nodeData = {
         id: nodeId ? parseInt(nodeId) : Date.now()
     };
 
-    // Si es contenido de entrenamiento
+    // Preparar los datos según el tipo
     if (contentType === 'TRAINING') {
         nodeData.type = document.getElementById('trainingType').value;
         nodeData.content = questionText;
         
-        // Si es VIDEO_NODE y hay un archivo nuevo
-        if (nodeData.type === 'VIDEO_NODE' && mediaFiles.length > 0) {
-            const videoFile = mediaFiles[0];
-            console.log('Video file to upload:', videoFile); // Debug log
-            formData.append('video', videoFile);
+        // Preparar el objeto de formulario para training
+        const formData = new FormData();
+        formData.append('training_form', JSON.stringify({
+            training_nodes: [nodeData]
+        }));
+        
+        // Enviar al endpoint de training
+        submitForm(formData, "{% url 'update_training_form' original.id %}");
+    } else {
+        // Configuración para evaluación
+        nodeData.type = document.getElementById('questionType').value;
+        nodeData.question = questionText;
+        
+        // Agregar opciones si es una pregunta de selección
+        if (['MULTIPLE_CHOICE_QUESTION', 'SINGLE_CHOICE_QUESTION'].includes(nodeData.type)) {
+            if (options.length < 2) {
+                document.getElementById('optionsError').classList.remove('hidden');
+                return;
+            }
+            nodeData.options = options;
         }
+
+        // Obtener los nodos existentes
+        const existingNodes = {{ original.evaluation_form.question_nodes|default:"[]"|safe }} || [];
+        
+        // Actualizar o agregar el nuevo nodo
+        let updatedNodes;
+        if (nodeId) {
+            updatedNodes = existingNodes.map(node => 
+                node.id === parseInt(nodeId) ? nodeData : node
+            );
+        } else {
+            updatedNodes = [...existingNodes, nodeData];
+        }
+
+        // Preparar el objeto de formulario para evaluación
+        const formData = new FormData();
+        formData.append('evaluation_form', JSON.stringify({
+            question_nodes: updatedNodes
+        }));
+
+        // Enviar al endpoint de evaluación
+        submitForm(formData, "{% url 'update_evaluation_form' original.id %}");
     }
+  }
 
-    // Agregar el resto de los datos al FormData
-    formData.append('node_data', JSON.stringify(nodeData));
-    formData.append('training_form', JSON.stringify({
-        training_nodes: getUpdatedNodes(nodeData)
-    }));
-
-    // Debug: ver contenido del FormData
-    for (let pair of formData.entries()) {
-        console.log(pair[0], pair[1]);
-    }
-
-    // Enviar al servidor
-    fetch("{% url 'update_training_form' original.id %}", {
+  function submitForm(formData, url) {
+    fetch(url, {
         method: 'POST',
         headers: {
             'X-CSRFToken': '{{ csrf_token }}'
         },
         body: formData
     })
-    .then(response => {
-        if (!response.ok) {
-            return response.text().then(text => {
-                console.error('Server response:', text);
-                throw new Error(`Error ${response.status}: ${text}`);
-            });
-        }
-        return response.json();
-    })
+    .then(response => response.json())
     .then(data => {
-        console.log('Server response:', data); // Debug log
         if (data.status === 'success') {
-            alert('Contenido guardado correctamente');
+            alert('Guardado correctamente');
             location.reload();
         } else {
             throw new Error(data.message || 'Error desconocido');
@@ -630,231 +362,123 @@
     });
   }
 
-  // Función auxiliar para obtener los nodos actualizados
-  function getUpdatedNodes(nodeData) {
-    const currentNodes = {{ original.training_form.training_nodes|default:"[]"|safe }};
-    if (nodeData.id) {
-        const index = currentNodes.findIndex(n => n.id === nodeData.id);
-        if (index !== -1) {
-            return [
-                ...currentNodes.slice(0, index),
-                nodeData,
-                ...currentNodes.slice(index + 1)
-            ];
-        }
-    }
-    return [...currentNodes, nodeData];
+  // Renderizar los nodos de preguntas
+  function renderNodes(nodes, type) {
+    const questionsList = document.getElementById('questionsList');
+    
+    const evaluationLabels = {
+        'MULTIPLE_CHOICE_QUESTION': 'Selección Múltiple',
+        'SINGLE_CHOICE_QUESTION': 'Selección Única',
+        'SCALE_QUESTION': 'Escala',
+        'TEXT_QUESTION': 'Texto',
+        'IMAGE_QUESTION': 'Imagen'
+    };
+
+    const trainingLabels = {
+        'WEEKLY_RECIPE_NODE': 'Receta Semanal',
+        'VIDEO_NODE': 'Video',
+        'TEXT_NODE': 'Texto',
+        'IMAGE_NODE': 'Imagen'
+    };
+
+    const typeLabels = type === 'TRAINING' ? trainingLabels : evaluationLabels;
+
+    questionsList.innerHTML = nodes.map((node, index) => {
+        const safeNode = JSON.stringify(node).replace(/"/g, '&quot;');
+        
+        return `
+          <div class="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+            <div class="p-6">
+              <div class="flex items-center justify-between mb-6">
+                <div class="flex items-center gap-3">
+                  <span class="text-lg font-semibold">${index + 1}</span>
+                  <span class="px-4 py-1 bg-gray-100 rounded-full text-sm font-medium text-gray-600">
+                    ${typeLabels[node.type] || node.type}
+                  </span>
+                </div>
+                <div class="flex gap-2 btn-container">
+                  <button onclick='editNode(${safeNode}, "${type}")' class="edit-btn btn btn-primary">Editar</button>
+                  <button onclick="deleteNode(${node.id}, '${type}')" class="delete-btn btn btn-danger">Eliminar</button>
+                </div>
+              </div>
+              <p class="text-lg mb-4">${type === 'TRAINING' ? node.content : node.question}</p>
+              ${(type === 'EVALUATION' && node.options) ? `
+                <div class="mt-2">
+                  <strong>Opciones:</strong>
+                  <ul class="list-disc pl-5">
+                    ${node.options.map(opt => `<li>${opt}</li>`).join('')}
+                  </ul>
+                </div>
+              ` : ''}
+            </div>
+          </div>
+        `;
+    }).join('');
   }
 
-  // Guardar pregunta
-  document.getElementById('questionForm').onsubmit = function(e) {
-    e.preventDefault();
-    saveQuestion();
-  };
-
-  // Cambio de tipo de contenido
-  document.getElementById('contentType').addEventListener('change', function(e) {
-    const contentType = e.target.value;
-    const evaluationTypes = document.getElementById('evaluationTypes');
-    const trainingTypes = document.getElementById('trainingTypes');
-    const optionsContainer = document.getElementById('optionsContainer');
-    const contentLabel = document.getElementById('contentLabel');
-    
-    evaluationTypes.classList.toggle('hidden', contentType !== 'EVALUATION');
-    trainingTypes.classList.toggle('hidden', contentType !== 'TRAINING');
-    optionsContainer.classList.add('hidden');
-    
-    if (contentType === 'EVALUATION') {
-      contentLabel.textContent = 'Pregunta';
-    } else if (contentType === 'TRAINING') {
-      contentLabel.textContent = 'Contenido';
+  function editNode(node, type) {
+    try {
+        // Si el nodo viene como string, parsearlo
+        if (typeof node === 'string') {
+            node = JSON.parse(node);
+        }
+        
+        const form = document.getElementById('questionForm');
+        const contentType = document.getElementById('contentType');
+        const nodeId = document.getElementById('nodeId');
+        const questionText = document.getElementById('questionText');
+        const contentLabel = document.getElementById('contentLabel');
+        const optionsContainer = document.getElementById('optionsContainer');
+        
+        // Limpiar estado previo
+        form.reset();
+        options = [];
+        
+        // Establecer tipo de contenido
+        contentType.value = type;
+        toggleContentType();
+        
+        // Establecer ID del nodo
+        nodeId.value = node.id;
+        
+        if (type === 'TRAINING') {
+            // Configurar campos para entrenamiento
+            const trainingType = document.getElementById('trainingType');
+            trainingType.value = node.type;
+            contentLabel.textContent = 'Contenido';
+            questionText.value = node.content;
+        } else {
+            // Configurar campos para evaluación
+            const questionType = document.getElementById('questionType');
+            questionType.value = node.type;
+            contentLabel.textContent = 'Pregunta';
+            questionText.value = node.question;
+            
+            // Manejar opciones si es pregunta de selección
+            if (['MULTIPLE_CHOICE_QUESTION', 'SINGLE_CHOICE_QUESTION'].includes(node.type)) {
+                optionsContainer.classList.remove('hidden');
+                options = [...(node.options || [])];
+                renderOptions();
+            }
+        }
+        
+        // Mostrar el modal
+        openModal(document.getElementById('questionModal'));
+    } catch (error) {
+        console.error('Error al editar el nodo:', error);
+        alert('Error al editar el elemento');
     }
-  });
+  }
 
-  // Validación del tipo de pregunta
-  document.getElementById('questionType').addEventListener('change', function(e) {
-    const isChoiceQuestion = ['MULTIPLE_CHOICE_QUESTION', 'SINGLE_CHOICE_QUESTION'].includes(e.target.value);
-    const optionsContainer = document.getElementById('optionsContainer');
-    
-    optionsContainer.classList.toggle('hidden', !isChoiceQuestion);
-    
-    if (!isChoiceQuestion) {
-      options = [];
-      renderOptions();
-    }
-  });
-
-  // Validación del formulario
+  // Asegúrate de que el formulario maneje el submit correctamente
   document.getElementById('questionForm').addEventListener('submit', function(e) {
     e.preventDefault();
-    
-    const contentType = document.getElementById('contentType').value;
-    const questionType = contentType === 'EVALUATION' 
-      ? document.getElementById('questionType').value
-      : document.getElementById('trainingType').value;
-    
-    if (contentType === 'EVALUATION') {
-      const isChoiceQuestion = ['MULTIPLE_CHOICE_QUESTION', 'SINGLE_CHOICE_QUESTION'].includes(questionType);
-      if (isChoiceQuestion && options.length < 2) {
-        document.getElementById('optionsError').classList.remove('hidden');
-        return;
-      }
-    }
-    
     saveQuestion();
   });
 
-  // Agregar opción
+  // Asegúrate de que el botón de agregar opción funcione
   document.getElementById('addOptionBtn').addEventListener('click', function() {
-    const newOption = document.getElementById('newOption');
-    const value = newOption.value.trim();
-    
-    if (value) {
-      options.push(value);
-      renderOptions();
-      newOption.value = '';
-      document.getElementById('optionsError').classList.add('hidden');
-    }
+    addOption();
   });
-
-  // Renderizar opciones
-  function renderOptions() {
-    const optionsList = document.getElementById('optionsList');
-    optionsList.innerHTML = options.map((opt, index) => `
-      <li class="flex items-center gap-2 mb-2">
-        <input 
-          type="text" 
-          value="${opt}" 
-          class="flex-1 form-input"
-          onchange="updateOption(${index}, this.value)"
-        >
-        <button 
-          type="button" 
-          class="text-white px-3 py-2 bg-red-500 rounded-lg font-medium transition-colors"
-          onclick="removeOption(${index})"
-        >
-          Eliminar
-        </button>
-      </li>
-    `).join('');
-  }
-
-  function renderMedia() {
-    const mediaList = document.getElementById('mediaList');
-    mediaList.innerHTML = mediaFiles.map((media, index) => `
-      <li class="flex items-center gap-2 mb-2">
-        <div class="flex-1 border rounded p-2">
-          <span>${media.name}</span>
-          ${media.type.startsWith('image/') ? 
-            `<img src="${URL.createObjectURL(media)}" class="h-20 object-cover mt-2">` :
-            media.type.startsWith('video/') ?
-            `<video src="${URL.createObjectURL(media)}" class="h-20 mt-2" controls></video>` :
-            ''
-          }
-        </div>
-        <button 
-          type="button" 
-          onclick="removeMedia(${index})" 
-          class="btn btn-danger"
-        >
-          Eliminar
-        </button>
-      </li>
-    `).join('');
-  }
-
-  function removeMedia(index) {
-    mediaFiles.splice(index, 1);
-    renderMedia();
-  }
-
-  function updateContentTypeUI() {
-    const contentType = document.getElementById('contentType').value;
-    const trainingType = document.getElementById('trainingType').value;
-    const mediaContainer = document.getElementById('mediaContainer');
-    
-    if (contentType === 'TRAINING') {
-      // Mostrar contenedor de media solo para tipos video e imagen
-      mediaContainer.classList.toggle('hidden', 
-        !['VIDEO_NODE', 'IMAGE_NODE'].includes(trainingType));
-    } else {
-      mediaContainer.classList.add('hidden');
-    }
-  }
-
-  function addMedia() {
-    const mediaInput = document.getElementById('newMedia');
-    const file = mediaInput.files[0];
-    
-    if (file) {
-      mediaFiles.push(file);
-      renderMedia();
-      mediaInput.value = '';
-    }
-  }
-
-  function renderNodes(nodes, type) {
-  const questionsList = document.getElementById('questionsList');
-  const typeLabels = {
-    'MULTIPLE_CHOICE_QUESTION': 'Selección Múltiple',
-    'SINGLE_CHOICE_QUESTION': 'Selección Única',
-    'SCALE_QUESTION': 'Escala',
-    'VIDEO': 'Video',
-    'TEXT': 'Texto',
-    'IMAGE': 'Imagen',
-    'DOCUMENT': 'Documento'
-  };
-
-  questionsList.innerHTML = nodes.map((node, index) => `
-    <div class="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-      <div class="p-6">
-        <div class="flex items-center justify-between mb-6">
-          <div class="flex items-center gap-3">
-            <span class="text-lg font-semibold">${index + 1}</span>
-            <span class="px-4 py-1 bg-gray-100 rounded-full text-sm font-medium text-gray-600">
-              ${typeLabels[node.type] || node.type}
-            </span>
-          </div>
-          <div class="flex gap-2 btn-container">
-            <button 
-              onclick='editNode(${JSON.stringify(node).replace(/'/g, "&#39;")}, "${type}")'
-              class="edit-btn btn btn-primary"
-            >
-              Editar
-            </button>
-            <button 
-              onclick="deleteNode(${node.id}, '${type}')"
-              class="delete-btn btn btn-danger"
-            >
-              Eliminar
-            </button>
-          </div>
-        </div>
-
-        <p class="text-lg mb-4">
-          ${type === 'TRAINING' ? node.content : node.question}
-        </p>
-
-        ${node.options ? `
-          <div class="space-y-3">
-            <p class="font-medium">Opciones:</p>
-            ${node.options.map((option, idx) => `
-              <div class="flex items-center gap-2">
-                <span class="text-lg">×</span>
-                <span>${option}</span>
-              </div>
-            `).join('')}
-          </div>
-        ` : ''}
-      </div>
-    </div>
-  `).join('');
-}
-
-// Add these event listeners
-document.getElementById('addMediaBtn').addEventListener('click', addMedia);
-
-document.getElementById('trainingType').addEventListener('change', updateContentTypeUI);
 </script>
 {% endblock %}
-
