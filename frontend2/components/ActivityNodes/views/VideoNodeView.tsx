@@ -13,7 +13,7 @@ import { theme } from "@/src/theme";
 interface VideoNodeViewProps {
   data: {
     id: number;
-    content: string;
+    description: string;
     type: string;
     media?: {
       id: number;
@@ -38,7 +38,9 @@ export const VideoNodeView: React.FC<VideoNodeViewProps> = ({ data }) => {
     if (!data.media_url) return null;
     return data.media_url.startsWith("http")
       ? data.media_url
-      : `${process.env.BASE_URL || "http://localhost:8000"}${data.media_url}`;
+      : `${process.env.BASE_URL || "http://localhost:8000"}/media/${
+          data.media_url
+        }`;
   };
 
   const downloadVideo = async (url: string) => {
@@ -46,6 +48,7 @@ export const VideoNodeView: React.FC<VideoNodeViewProps> = ({ data }) => {
       setIsLoading(true);
       setError(null);
       console.log("Downloading video from:", url);
+      console.log("Downloading video from:", data);
 
       const fileName = url.split("/").pop() || "video.mp4";
       const fileUri = `${FileSystem.cacheDirectory}${fileName}`;
@@ -53,6 +56,7 @@ export const VideoNodeView: React.FC<VideoNodeViewProps> = ({ data }) => {
       const fileInfo = await FileSystem.getInfoAsync(fileUri);
       if (fileInfo.exists) {
         console.log("Video found in cache");
+
         setLocalVideoUri(fileUri);
         setIsLoading(false);
         return;
@@ -94,7 +98,7 @@ export const VideoNodeView: React.FC<VideoNodeViewProps> = ({ data }) => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>{data.content}</Text>
+      <Text style={styles.title}>{data.description}</Text>
 
       <View style={styles.videoContainer}>
         {finalVideoUri && !error && (

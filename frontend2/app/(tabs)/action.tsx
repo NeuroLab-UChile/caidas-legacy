@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  FlatList,
   TouchableOpacity,
   ActivityIndicator,
   Dimensions,
@@ -78,17 +77,14 @@ export default function ActionScreen() {
     return (
       <TouchableOpacity
         key={item.id}
-        style={[
-          styles.categoryCard,
-          isSelected && { borderColor: theme.colors.primary },
-        ]}
+        style={[styles.categoryCard, isSelected && styles.selectedCategoryCard]}
         onPress={() => handleCategoryPress(item)}
       >
         <View style={styles.iconContainer}>
           {item.icon ? (
             renderIcon(item.icon)
           ) : (
-            <IconSymbol name="folder" size={24} color={theme.colors.primary} />
+            <IconSymbol name="folder" size={24} color={theme.colors.text} />
           )}
         </View>
         <Text style={styles.categoryCardTitle}>{item.name || ""}</Text>
@@ -109,16 +105,10 @@ export default function ActionScreen() {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" />
-
-      {/* Wrap everything in a ScrollView */}
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* Main Actions */}
         <View style={styles.mainActions}>
           <TouchableOpacity
-            style={[
-              styles.actionCard,
-              { backgroundColor: theme.colors.background },
-            ]}
+            style={styles.actionCard}
             onPress={() => router.push("/(tabs)/events")}
           >
             <IconSymbol name="calendar" size={32} color={theme.colors.text} />
@@ -126,55 +116,41 @@ export default function ActionScreen() {
             <Text style={styles.actionSubtitle}>Ver próximos eventos</Text>
           </TouchableOpacity>
 
-          <View
-            style={{
-              flex: 1,
-              flexDirection: "row",
-              justifyContent: "space-between",
-              padding: 10,
-            }}
+          <TouchableOpacity
+            style={styles.actionCard}
+            onPress={() => setIsCategoriesExpanded(!isCategoriesExpanded)}
           >
-            <TouchableOpacity
-              style={[
-                styles.actionCard,
-                { backgroundColor: theme.colors.background },
-              ]}
-              onPress={() => setIsCategoriesExpanded(!isCategoriesExpanded)}
-            >
-              <Text style={styles.actionTitle}>Categorías</Text>
-              <Text style={styles.actionSubtitle}>
-                Explorar o Elegir categorías
-              </Text>
+            <IconSymbol name="folder" size={32} color={theme.colors.text} />
+            <Text style={styles.actionTitle}>Categorías</Text>
+            <Text style={styles.actionSubtitle}>
+              Explorar o Elegir categorías
+            </Text>
+            <View style={styles.expandIconContainer}>
+              <IconSymbol
+                name="chevron.down"
+                size={24}
+                color={theme.colors.text}
+                style={[
+                  styles.expandIcon,
+                  isCategoriesExpanded && styles.expandIconRotated,
+                ]}
+              />
+            </View>
+          </TouchableOpacity>
 
-              <View style={styles.expandIconContainer}>
-                <IconSymbol
-                  name="chevron.down"
-                  size={24}
-                  color={theme.colors.text}
-                  style={[
-                    styles.expandIcon,
-                    isCategoriesExpanded && styles.expandIconRotated,
-                  ]}
-                />
+          {isCategoriesExpanded && (
+            <View style={styles.expandedCategories}>
+              <View style={styles.categoriesGrid}>
+                {Array.from(
+                  { length: Math.ceil(categories.length / 2) },
+                  (_, index) => renderCategoryPair(categories, index * 2)
+                )}
               </View>
-
-              {/* Expanded Categories Section */}
-              {isCategoriesExpanded && (
-                <View style={styles.expandedCategories}>
-                  <View style={styles.categoriesGrid}>
-                    {Array.from(
-                      { length: Math.ceil(categories.length / 2) },
-                      (_, index) => renderCategoryPair(categories, index * 2)
-                    )}
-                  </View>
-                </View>
-              )}
-            </TouchableOpacity>
-          </View>
+            </View>
+          )}
         </View>
       </ScrollView>
 
-      {/* Siempre mostrar el banner, pero con diferente contenido */}
       <View style={styles.selectedBanner}>
         {selectedCategory ? (
           <>
@@ -182,11 +158,7 @@ export default function ActionScreen() {
               {selectedCategory.icon ? (
                 renderIcon(selectedCategory.icon)
               ) : (
-                <IconSymbol
-                  name="folder"
-                  size={24}
-                  color={theme.colors.primary}
-                />
+                <IconSymbol name="folder" size={24} color={theme.colors.text} />
               )}
             </View>
             <Text style={styles.selectedBannerText}>
@@ -209,88 +181,106 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.background,
   },
   header: {
-    padding: SPACING,
+    padding: SPACING * 2,
     paddingTop: SPACING * 3,
     backgroundColor: theme.colors.primary,
     alignItems: "center",
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: "bold",
-    color: theme.colors.text,
+    color: theme.colors.background,
+    textTransform: "uppercase",
+    letterSpacing: 2,
   },
   mainActions: {
-    flexDirection: "column",
     padding: SPACING,
-    gap: SPACING,
+    gap: SPACING * 1.5,
   },
   actionCard: {
-    padding: SPACING * 1.5,
+    backgroundColor: theme.colors.card,
     borderRadius: 16,
+    padding: SPACING * 2,
     alignItems: "center",
     justifyContent: "center",
     elevation: 4,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-  },
-  actionTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: theme.colors.text,
-    marginTop: SPACING,
-  },
-  actionSubtitle: {
-    fontSize: 14,
-    color: theme.colors.text,
-    opacity: 0.8,
-    marginTop: 4,
-    textAlign: "center",
-  },
-  recentSection: {
-    padding: SPACING,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: "600",
-    color: theme.colors.text,
-    marginBottom: SPACING,
-  },
-  recentList: {
-    paddingRight: SPACING,
-  },
-  recentCard: {
-    width: 120,
-    marginRight: SPACING,
-    padding: SPACING,
-    backgroundColor: theme.colors.card,
-    borderRadius: 12,
-    alignItems: "center",
-    elevation: 2,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
   },
+  actionTitle: {
+    fontSize: 22,
+    fontWeight: "bold",
+    color: theme.colors.text,
+    marginTop: SPACING,
+  },
+  actionSubtitle: {
+    fontSize: 16,
+    color: theme.colors.textSecondary,
+    marginTop: 4,
+    textAlign: "center",
+  },
+  expandedCategories: {
+    marginTop: SPACING,
+  },
+  categoriesGrid: {
+    width: "100%",
+  },
+  categoryRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: SPACING,
+    width: "100%",
+  },
+  categoryCard: {
+    width: "48%",
+    backgroundColor: theme.colors.card,
+    borderRadius: 12,
+    padding: SPACING,
+    alignItems: "center",
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+  },
+  selectedCategoryCard: {
+    borderWidth: 2,
+    borderColor: theme.colors.primary,
+  },
   iconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     backgroundColor: theme.colors.background,
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 8,
   },
   iconImage: {
-    width: "70%",
-    height: "70%",
+    width: "90%",
+    height: "90%",
   },
-  recentCardTitle: {
+  categoryCardTitle: {
     fontSize: 14,
-    fontWeight: "500",
+    fontWeight: "600",
     color: theme.colors.text,
     textAlign: "center",
+    marginTop: 8,
+  },
+  scrollContent: {
+    flexGrow: 1,
+  },
+  expandIconContainer: {
+    marginTop: SPACING,
+    alignItems: "center",
+  },
+  expandIcon: {
+    opacity: 0.8,
+  },
+  expandIconRotated: {
+    transform: [{ rotate: "180deg" }],
   },
   selectedBanner: {
     flexDirection: "row",
@@ -320,9 +310,6 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: theme.colors.text,
   },
-  clearButton: {
-    padding: 8,
-  },
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
@@ -347,54 +334,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   retryText: {
-    color: theme.colors.text,
+    color: theme.colors.background,
     fontWeight: "600",
-  },
-  expandedCategories: {
-    padding: SPACING,
-    width: "100%",
-  },
-  categoriesGrid: {
-    width: "100%",
-  },
-  categoryRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: SPACING,
-    width: "100%",
-  },
-  categoryCard: {
-    width: "48%", // Ligeramente menos que la mitad para dejar espacio entre cards
-    padding: SPACING,
-    backgroundColor: theme.colors.card,
-    borderRadius: 12,
-    alignItems: "center",
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    borderWidth: 2,
-    borderColor: "transparent",
-  },
-  categoryCardTitle: {
-    fontSize: 14,
-    fontWeight: "500",
-    color: theme.colors.text,
-    textAlign: "center",
-    marginTop: 8,
-  },
-  scrollContent: {
-    flexGrow: 1,
-  },
-  expandIconContainer: {
-    marginTop: 8,
-    alignItems: "center",
-  },
-  expandIcon: {
-    opacity: 0.8,
-  },
-  expandIconRotated: {
-    transform: [{ rotate: "180deg" }],
   },
 });

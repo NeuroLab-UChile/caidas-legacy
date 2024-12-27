@@ -46,9 +46,20 @@ export default function ProfileScreen() {
 
       const response = await apiService.user.uploadProfileImage(uri);
 
-      // Actualizar el usuario con los nuevos datos
-      if (response.data) {
-        setUser(response.data);
+      // Forzar una recarga completa del perfil
+      await loadProfile();
+
+      // Agregar un timestamp a la URL de la imagen para forzar la recarga
+      if (response.data?.profile?.profile_image) {
+        const timestamp = new Date().getTime();
+        const imageUrlWithTimestamp = `${response.data.profile.profile_image}?t=${timestamp}`;
+        setUser((prev: any) => ({
+          ...prev,
+          profile: {
+            ...prev.profile,
+            profile_image: imageUrlWithTimestamp,
+          },
+        }));
       }
     } catch (error) {
       console.error("Error al subir la imagen:", error);
@@ -180,7 +191,11 @@ export default function ProfileScreen() {
             {user?.profile?.profile_image ? (
               <>
                 <Image
-                  source={{ uri: user.profile.profile_image }}
+                  key={user?.profile?.profile_image}
+                  source={{
+                    uri: user?.profile?.profile_image,
+                    cache: "reload",
+                  }}
                   style={styles.existingImage}
                 />
                 <View style={styles.editButton}>
