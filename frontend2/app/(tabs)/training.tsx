@@ -20,6 +20,7 @@ import ActivityNodeContainer from "@/components/ActivityNodes/ActivityNodeContai
 import { ActivityNodeType } from "@/components/ActivityNodes";
 import { useRouter } from "expo-router";
 import EmptyState from "../containers/EmptyState";
+import Ionicons from "react-native-vector-icons/Ionicons";
 
 interface NodeResponse {
   nodeId: number;
@@ -37,10 +38,14 @@ interface TrainingState {
 }
 
 const TrainingScreen = () => {
-  const { selectedCategory, fetchCategories } = useCategories();
+  const { selectedCategory, fetchCategories, updateCategory } = useCategories();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
+
+  useEffect(() => {
+    fetchCategories();
+  }, []);
 
   const [trainingState, setTrainingState] = useState<TrainingState>(() => {
     const nodes = selectedCategory?.training_form?.training_nodes || [];
@@ -149,6 +154,27 @@ const TrainingScreen = () => {
     );
   };
 
+  const handleSaveResponses = async () => {
+    try {
+      setLoading(true);
+      const result = await apiService.categories.saveResponses(
+        selectedCategory.id,
+        responses
+      );
+
+      // Actualizar el estado global de las categorías
+      updateCategory(result.data);
+
+      // Marcar como completado si es necesario
+      setIsCompleted(true);
+    } catch (error) {
+      console.error("Error saving responses:", error);
+      Alert.alert("Error", "No se pudieron guardar las respuestas");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <View style={styles.container}>
@@ -167,17 +193,30 @@ const TrainingScreen = () => {
 
       {isCompleted ? (
         <View style={styles.completedContainer}>
-          <Text style={styles.completedTitle}>¡Entrenamiento Completado!</Text>
-          <Text style={styles.completedText}>
-            Has completado el entrenamiento de esta categoría. ¿Deseas
-            realizarlo nuevamente?
-          </Text>
-          <TouchableOpacity
-            style={styles.restartButton}
-            onPress={handleRestart}
-          >
-            <Text style={styles.restartButtonText}>Realizar nuevamente</Text>
-          </TouchableOpacity>
+          <View style={styles.completedContent}>
+            <View style={styles.iconContainer}>
+              <Ionicons name="checkmark-circle" size={80} color="#4CAF50" />
+            </View>
+            <Text style={styles.completedTitle}>
+              ¡Entrenamiento Completado!
+            </Text>
+            <Text style={styles.completedText}>
+              Has completado el entrenamiento de esta categoría. ¿Deseas
+              realizarlo nuevamente?
+            </Text>
+            <TouchableOpacity
+              style={styles.restartButton}
+              onPress={handleRestart}
+            >
+              <Ionicons
+                name="refresh"
+                size={24}
+                color="white"
+                style={styles.buttonIcon}
+              />
+              <Text style={styles.restartButtonText}>Realizar nuevamente</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       ) : (
         renderNode(trainingState.currentNodeId, () => {
@@ -202,30 +241,69 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   completedContainer: {
+    flex: 1,
+    backgroundColor: "#fff",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+  completedContent: {
+    width: "100%",
+    maxWidth: 400,
+    backgroundColor: "#fff",
+    borderRadius: 20,
+    padding: 24,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  iconContainer: {
+    marginBottom: 20,
     padding: 16,
+    borderRadius: 50,
+    backgroundColor: "rgba(76, 175, 80, 0.1)",
   },
   completedTitle: {
     fontSize: 24,
-    fontWeight: "bold",
+    fontWeight: "700",
+    color: "#2E3A59",
     textAlign: "center",
     marginBottom: 16,
   },
   completedText: {
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    fontSize: 16,
+    color: "#6B7280",
+    textAlign: "center",
+    marginBottom: 32,
+    lineHeight: 24,
   },
   restartButton: {
-    backgroundColor: theme.colors.primary,
-    padding: 16,
-    borderRadius: 8,
-    width: "100%",
+    flexDirection: "row",
     alignItems: "center",
+    backgroundColor: "#4CAF50",
+    paddingVertical: 16,
+    paddingHorizontal: 32,
+    borderRadius: 12,
+    width: "100%",
+    justifyContent: "center",
+    shadowColor: "#4CAF50",
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 4,
   },
   restartButtonText: {
-    color: theme.colors.text,
-    fontSize: 18,
+    color: "#fff",
+    fontSize: 16,
     fontWeight: "600",
   },
   descriptionText: {
@@ -348,6 +426,9 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginBottom: theme.spacing.xl,
     color: theme.colors.textSecondary,
+  },
+  buttonIcon: {
+    marginRight: 8,
   },
 });
 
