@@ -72,6 +72,7 @@ def save_evaluation_responses(request, category_id):
             # Validar respuesta según el tipo
             is_valid = False
             answer = response_data.get('answer', {})
+            print(f"Answer: {answer}")  
             
             if response_type == 'SINGLE_CHOICE_QUESTION':
                 if isinstance(answer, dict):
@@ -109,6 +110,12 @@ def save_evaluation_responses(request, category_id):
             elif response_type == 'TEXT_QUESTION':
                 if isinstance(answer, dict) and isinstance(answer.get('value'), str):
                     validated_response['answer'] = {'value': answer['value']}
+                    is_valid = True
+
+            elif response_type == 'IMAGE_QUESTION':
+                print(f"Processing image question for node {node_id}")
+                if isinstance(answer, dict) and isinstance(answer.get('image'), str):
+                    validated_response['answer'] = {'image': answer['image']}
                     is_valid = True
             
             if is_valid:

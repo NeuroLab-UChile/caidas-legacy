@@ -32,6 +32,16 @@
           "id": 3,
           "type": "TEXT_QUESTION",
           "question": "Describa problemas de seguridad que haya notado en su hogar."
+        },
+        {
+          "id": 4,
+          "type": "TEXT_QUESTION",
+          "question": "¿Qué medidas de seguridad considera esenciales para su hogar?"
+        },
+        {
+          "id": 5,
+          "type": "IMAGE_QUESTION",
+          "question": "Capture imágenes que permitan analizar su espacio y detectar posibles riesgos."
         }
       ]
     },

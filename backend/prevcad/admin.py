@@ -313,6 +313,9 @@ class HealthCategoryAdmin(admin.ModelAdmin):
                 elif response_type == 'SCALE_QUESTION':
                     formatted_answer = str(answer_data.get('value', 'Sin respuesta'))
 
+                elif response_type == 'IMAGE_QUESTION':
+                    formatted_answer = answer_data.get('image','Sin respuesta')
+
                 # Formatear la fecha
                 formatted_date = timestamp.split('T')[0] if timestamp else ''
 

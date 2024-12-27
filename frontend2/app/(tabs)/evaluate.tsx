@@ -47,68 +47,6 @@ const EvaluateScreen = () => {
   const { selectedCategory, fetchCategories } = useCategories();
   const [loading, setLoading] = useState(false);
 
-  // Añadir useEffect para actualizar datos al montar el componente
-  useEffect(() => {
-    const refreshData = async () => {
-      setLoading(true);
-      try {
-        await fetchCategories();
-      } catch (error) {
-        console.error("Error refreshing categories:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    refreshData();
-  }, []); // Se ejecuta al montar el componente
-
-  // Añadir useEffect para actualizar el estado cuando cambie selectedCategory
-  useEffect(() => {
-    if (selectedCategory) {
-      const nodes = selectedCategory.evaluation_form?.question_nodes || [];
-      const existingResponses = Object.entries(
-        selectedCategory.responses || {}
-      ).map(
-        ([key, value]): NodeResponse => ({
-          nodeId: parseInt(key),
-          response: value,
-        })
-      );
-
-      const isFullyCompleted =
-        selectedCategory.responses &&
-        selectedCategory.evaluation_form?.question_nodes &&
-        Object.keys(selectedCategory.responses || {}).length ===
-          selectedCategory.evaluation_form.question_nodes.length;
-
-      setEvaluationState({
-        currentNodeId: Boolean(isFullyCompleted) ? null : nodes[0]?.id || null,
-        responses: existingResponses,
-        completed: Boolean(isFullyCompleted),
-        history: [],
-        evaluationResult: {
-          initial_node_id: nodes[0]?.id || null,
-          nodes: nodes,
-        },
-      });
-    }
-  }, [selectedCategory]); // Se ejecuta cuando cambia selectedCategory
-
-  // Determinar si esta categoría específica está completada
-  const hasDocterReview =
-    selectedCategory?.status_color && selectedCategory?.doctor_recommendations;
-
-  const hasCompletedEvaluation =
-    selectedCategory?.responses &&
-    selectedCategory?.evaluation_form?.question_nodes &&
-    Object.keys(selectedCategory.responses || {}).length > 0;
-
-  const isFullyCompleted =
-    selectedCategory?.responses &&
-    selectedCategory?.evaluation_form?.question_nodes &&
-    Object.keys(selectedCategory.responses || {}).length ===
-      selectedCategory.evaluation_form.question_nodes.length;
   const [evaluationState, setEvaluationState] = useState<EvaluationState>(
     () => {
       const nodes = selectedCategory?.evaluation_form?.question_nodes || [];
@@ -122,40 +60,92 @@ const EvaluateScreen = () => {
       );
 
       return {
-        currentNodeId: Boolean(isFullyCompleted) ? null : nodes[0]?.id || null,
+        currentNodeId: nodes[0]?.id || null,
         responses: existingResponses,
-        completed: Boolean(isFullyCompleted),
+        completed:
+          nodes.length === existingResponses.length && nodes.length > 0,
         history: [],
         evaluationResult: {
           initial_node_id: nodes[0]?.id || null,
-          nodes: nodes,
+          nodes,
         },
       };
     }
   );
 
-  const handleStartNewEvaluation = () => {
-    // Reiniciar el estado local
-    const nodes = selectedCategory?.evaluation_form?.question_nodes || [];
+  useEffect(() => {
+    const refreshData = async () => {
+      setLoading(true);
+      try {
+        await fetchCategories();
+      } catch (error) {
+        console.error("Error refreshing categories:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-    setEvaluationState({
-      currentNodeId: nodes[0]?.id || null,
-      responses: [], // Reiniciar respuestas
-      completed: false,
-      history: [],
-      evaluationResult: {
-        initial_node_id: nodes[0]?.id || null,
-        nodes: nodes,
-      },
-    });
+    refreshData();
+  }, []);
+
+  useEffect(() => {
+    if (selectedCategory) {
+      const nodes = selectedCategory.evaluation_form?.question_nodes || [];
+      const existingResponses = Object.entries(
+        selectedCategory.responses || {}
+      ).map(
+        ([key, value]): NodeResponse => ({
+          nodeId: parseInt(key),
+          response: value,
+        })
+      );
+
+      setEvaluationState({
+        currentNodeId: nodes[0]?.id || null,
+        responses: existingResponses,
+        completed:
+          nodes.length === existingResponses.length && nodes.length > 0,
+        history: [],
+        evaluationResult: {
+          initial_node_id: nodes[0]?.id || null,
+          nodes,
+        },
+      });
+    }
+  }, [selectedCategory]);
+
+  const handleStartNewEvaluation = () => {
+    Alert.alert(
+      "Nueva Evaluación",
+      "¿Estás seguro de que deseas iniciar una nueva evaluación?",
+      [
+        {
+          text: "Cancelar",
+          style: "cancel",
+        },
+        {
+          text: "Sí, iniciar",
+          onPress: () => {
+            const nodes =
+              selectedCategory?.evaluation_form?.question_nodes || [];
+            setEvaluationState({
+              currentNodeId: nodes[0]?.id || null,
+              responses: [],
+              completed: false,
+              history: [],
+              evaluationResult: {
+                initial_node_id: nodes[0]?.id || null,
+                nodes,
+              },
+            });
+          },
+        },
+      ]
+    );
   };
 
   const getNextNodeId = (currentNodeId: number): number | null => {
-    if (!selectedCategory?.evaluation_form?.question_nodes) {
-      return null;
-    }
-
-    const nodes = selectedCategory.evaluation_form.question_nodes;
+    const nodes = selectedCategory?.evaluation_form?.question_nodes || [];
     const currentIndex = nodes.findIndex((node) => node.id === currentNodeId);
 
     if (currentIndex === -1 || currentIndex === nodes.length - 1) {
@@ -173,8 +163,7 @@ const EvaluateScreen = () => {
         return;
       }
 
-      // Formato más completo de respuesta
-      let formattedResponse = {
+      const formattedResponse = {
         id: nodeId,
         type: node.type,
         question: node.question,
@@ -199,7 +188,6 @@ const EvaluateScreen = () => {
           };
           break;
         case "TEXT_QUESTION":
-          console.log("response", response);
           formattedResponse.answer = {
             value: response.answer || "",
           };
@@ -218,23 +206,18 @@ const EvaluateScreen = () => {
           formattedResponse.answer = response;
       }
 
-      // Obtener respuestas existentes y formatearlas
-      const existingResponses = evaluationState.responses.reduce<
-        Record<number, any>
-      >((acc, curr) => {
-        if (Object.keys(curr.response).length > 0) {
-          acc[curr.nodeId] = curr.response;
-        }
-        return acc;
-      }, {});
-
       const newResponses = {
-        ...existingResponses,
+        ...Object.fromEntries(
+          evaluationState.responses.map((r) => [r.nodeId, r.response])
+        ),
         [nodeId]: formattedResponse,
       };
 
       const nextNodeId = getNextNodeId(nodeId);
-      const isCompleted = !nextNodeId;
+      const isCompleted =
+        !nextNodeId ||
+        Object.keys(newResponses).length ===
+          selectedCategory?.evaluation_form?.question_nodes.length;
 
       if (isCompleted && selectedCategory?.id) {
         setLoading(true);
@@ -243,8 +226,8 @@ const EvaluateScreen = () => {
             selectedCategory.id,
             newResponses
           );
-
           await fetchCategories();
+          console.log("newResponses", newResponses);
 
           setEvaluationState({
             currentNodeId: null,
@@ -263,9 +246,8 @@ const EvaluateScreen = () => {
           Alert.alert("Éxito", "Evaluación guardada correctamente", [
             {
               text: "OK",
-              onPress: async () => {
-                await fetchCategories();
-                setEvaluationState((prev) => ({ ...prev }));
+              onPress: () => {
+                // No hacer nada aquí para mantener el estado completado
               },
             },
           ]);
@@ -276,7 +258,6 @@ const EvaluateScreen = () => {
           setLoading(false);
         }
       } else {
-        // Actualizar el estado solo con respuestas válidas
         setEvaluationState((prev) => ({
           ...prev,
           responses: Object.entries(newResponses).map(([key, value]) => ({
@@ -294,15 +275,8 @@ const EvaluateScreen = () => {
   };
 
   const getCurrentNode = (nodeId: number | null): QuestionNode | null => {
-    if (!nodeId || !selectedCategory?.evaluation_form?.question_nodes) {
-      return null;
-    }
-
-    return (
-      selectedCategory.evaluation_form.question_nodes.find(
-        (node) => node.id === nodeId
-      ) || null
-    );
+    const nodes = selectedCategory?.evaluation_form?.question_nodes || [];
+    return nodes.find((node) => node.id === nodeId) || null;
   };
 
   const renderNode = (nodeId: number | null, handleBack: () => void) => {
@@ -322,7 +296,12 @@ const EvaluateScreen = () => {
   };
 
   const renderDoctorReview = () => {
-    if (!selectedCategory?.status_color) return null;
+    if (!selectedCategory?.status_color)
+      return (
+        <View style={{ padding: 16 }}>
+          <Text>Espera a que el doctor revise tu evaluación</Text>
+        </View>
+      );
 
     return (
       <DoctorRecommendations
@@ -332,62 +311,6 @@ const EvaluateScreen = () => {
         updatedAt={selectedCategory.doctor_recommendations_updated_at}
       />
     );
-  };
-
-  const renderResponsesList = () => {
-    if (!selectedCategory?.responses) return null;
-
-    try {
-      const responsesArray = Object.values(selectedCategory.responses);
-
-      return (
-        <View style={styles.responsesList}>
-          {responsesArray.map((response: any, index: number) => {
-            // Validación de datos
-            if (!response) return null;
-
-            return (
-              <View key={index} style={styles.responseItem}>
-                <Text style={styles.questionText}>
-                  {response.question || `Pregunta ${index + 1}`}
-                </Text>
-                <Text style={styles.answerText}>{renderAnswer(response)}</Text>
-              </View>
-            );
-          })}
-        </View>
-      );
-    } catch (error) {
-      console.error("Error rendering responses:", error);
-      return null;
-    }
-  };
-
-  const renderAnswer = (response: any): string => {
-    try {
-      if (!response.answer) return "Sin respuesta";
-
-      switch (response.type) {
-        case "SCALE_QUESTION":
-          return String(response.answer.value || "Sin valor");
-
-        case "SINGLE_CHOICE_QUESTION":
-          return String(
-            response.answer.selectedOption !== undefined
-              ? `Opción ${response.answer.selectedOption + 1}`
-              : "Sin selección"
-          );
-
-        case "TEXT_QUESTION":
-          return String(response.answer.value || "Sin texto");
-
-        default:
-          return String(response.answer || "Sin respuesta");
-      }
-    } catch (error) {
-      console.error("Error rendering answer:", error);
-      return "Error al mostrar respuesta";
-    }
   };
 
   if (loading) {
@@ -401,6 +324,7 @@ const EvaluateScreen = () => {
   if (!selectedCategory) {
     return <EmptyState view="evaluate" />;
   }
+
   return (
     <View style={styles.container}>
       <ScrollView
@@ -415,19 +339,7 @@ const EvaluateScreen = () => {
               {getCategoryStatus(selectedCategory)?.text ||
                 "✅ Evaluación Completada"}
             </Text>
-            {hasDocterReview ? (
-              <>
-                <Text style={styles.infoText}>
-                  El doctor ha revisado tus respuestas
-                </Text>
-                {renderDoctorReview()}
-              </>
-            ) : (
-              <Text style={styles.infoText}>
-                El doctor no ha revisado tus respuestas
-              </Text>
-            )}
-            {renderResponsesList()}
+            {renderDoctorReview()}
             <TouchableOpacity
               style={[styles.startButton, { marginTop: 24 }]}
               onPress={handleStartNewEvaluation}
@@ -462,7 +374,7 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     padding: 16,
-    paddingBottom: 100, // Espacio extra para el botón flotante
+    paddingBottom: 100,
   },
   completedContainer: {
     alignItems: "center",
@@ -482,42 +394,6 @@ const styles = StyleSheet.create({
     color: theme.colors.text,
     marginBottom: 12,
     textAlign: "center",
-  },
-  infoText: {
-    fontSize: 16,
-    color: theme.colors.textSecondary,
-    textAlign: "center",
-    marginBottom: 24,
-    lineHeight: 22,
-  },
-  responsesList: {
-    width: "100%",
-    backgroundColor: theme.colors.background,
-    borderRadius: 12,
-    marginTop: 24,
-  },
-  responseItem: {
-    marginBottom: 20,
-    padding: 16,
-    backgroundColor: theme.colors.card,
-    borderRadius: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  questionText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: theme.colors.text,
-    marginBottom: 8,
-  },
-  answerText: {
-    fontSize: 15,
-    color: theme.colors.textSecondary,
-    marginLeft: 16,
-    lineHeight: 22,
   },
   startButton: {
     backgroundColor: theme.colors.primary,

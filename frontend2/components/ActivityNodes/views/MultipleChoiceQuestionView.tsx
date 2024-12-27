@@ -150,7 +150,7 @@ const styles = StyleSheet.create({
     lineHeight: 24,
   },
   selectedOptionText: {
-    color: theme.colors.primary,
+    color: theme.colors.text,
     fontWeight: "500",
   },
 });

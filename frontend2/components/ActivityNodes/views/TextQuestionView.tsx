@@ -1,17 +1,13 @@
-import React, { useState } from "react";
-import {
-  View,
-  Text,
-  TextInput,
-  StyleSheet,
-  TouchableOpacity,
-} from "react-native";
+import React, { useState, useEffect } from "react";
+import { View, Text, TextInput, StyleSheet } from "react-native";
 
 import { theme } from "@/src/theme";
+
 interface TextQuestionProps {
   data: {
     question: string;
     image?: string;
+    id?: number;
   };
   setResponse: (response: { answer: string } | null) => void;
 }
@@ -19,9 +15,13 @@ interface TextQuestionProps {
 export function TextQuestionView({ data, setResponse }: TextQuestionProps) {
   const [answer, setAnswer] = useState("");
 
+  useEffect(() => {
+    setAnswer("");
+    setResponse(null);
+  }, [data.id, data.question]);
+
   const handleTextChange = (text: string) => {
     setAnswer(text);
-    // Enviamos la respuesta al padre
     setResponse(text.trim() ? { answer: text.trim() } : null);
   };
 
@@ -38,6 +38,7 @@ export function TextQuestionView({ data, setResponse }: TextQuestionProps) {
         placeholder="Escribe tu respuesta aquí"
         placeholderTextColor={theme.colors.text}
         multiline
+        key={data.id || data.question}
       />
     </View>
   );
