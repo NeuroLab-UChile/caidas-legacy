@@ -146,7 +146,10 @@ class HealthCategory(models.Model):
     ('yellow', 'Amarillo - Precaución'),
     ('red', 'Rojo - Atención Requerida'),
   ]
-
+  is_draft = models.BooleanField(
+    default=True,
+    help_text='Indica si las recomendaciones están en borrador'
+  )
   user = models.ForeignKey(User, on_delete=models.CASCADE)
   template = models.ForeignKey(CategoryTemplate, on_delete=models.SET_NULL, null=True)
   responses = models.JSONField(null=True, blank=True)

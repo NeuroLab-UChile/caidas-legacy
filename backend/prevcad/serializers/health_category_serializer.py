@@ -15,23 +15,19 @@ class HealthCategorySerializer(serializers.ModelSerializer):
     doctor_recommendations_updated_by = serializers.SerializerMethodField()
     doctor_recommendations_updated_at = serializers.DateTimeField(read_only=True)
 
+    def to_representation(self, instance):
+        ret = super().to_representation(instance)
+        # Solo incluir recomendaciones si no es borrador
+        if instance.is_draft:
+            ret['doctor_recommendations'] = None
+            ret['doctor_recommendations_updated_at'] = None
+            ret['doctor_recommendations_updated_by'] = None
+            ret['status_color'] = None
+        return ret
+
     class Meta:
         model = HealthCategory
-        fields = [
-            'id', 
-            'name', 
-            'icon', 
-            'description',
-            'evaluation_form',
-            'training_form',
-            'responses',
-            'completion_date',
-            'status_color',
-            'doctor_recommendations',
-            'status',
-            'doctor_recommendations_updated_by',
-            'doctor_recommendations_updated_at'
-        ]
+        fields = '__all__'
 
     def get_name(self, obj):
         return obj.template.name if obj.template else None

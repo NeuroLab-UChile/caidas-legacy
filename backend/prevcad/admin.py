@@ -16,6 +16,9 @@ from django.template.loader import render_to_string
 from django.utils import timezone
 from django.db import models
 from django import forms
+import os
+from django.conf import settings
+from django.contrib import messages
 
 from .models import (
   TextRecomendation,
@@ -194,6 +197,8 @@ class HealthCategoryAdmin(admin.ModelAdmin):
             'classes': ('collapse',)
         }),
     )
+    change_form_template = 'admin/healthcategory/change_form.html'
+    
     class Media:
         css = {
             'all': ('admin/css/custom_admin.css',)
@@ -273,7 +278,10 @@ class HealthCategoryAdmin(admin.ModelAdmin):
     def get_detailed_responses(self, obj):
         if not obj.responses:
             return "No hay respuestas registradas por el paciente"
-
+        
+        print("\n=== Debug Responses ===")
+        print(f"All responses: {obj.responses}")
+        
         html = ["""
             <table style='width:100%; border-collapse: collapse; margin-top: 10px;'>
                 <tr>
@@ -284,18 +292,91 @@ class HealthCategoryAdmin(admin.ModelAdmin):
                     <th style='border:1px solid #ddd; padding:12px; background-color:#f8f9fa;'>Fecha</th>
                 </tr>
         """]
-
+        
         for node_id, response_data in obj.responses.items():
             try:
+                print(f"\nProcessing node {node_id}:")
+                print(f"Response data: {response_data}")
+                
                 question = response_data.get('question', 'Sin pregunta')
                 response_type = response_data.get('type', 'Desconocido')
-                answer_data = response_data.get('answer', {})
+                answer_data = response_data.get('answer', [])
                 timestamp = response_data.get('metadata', {}).get('timestamp', '')
                 
-                # Formatear la respuesta según el tipo
+                print(f"Answer data: {answer_data}")
+                
                 formatted_answer = "Sin respuesta"
                 
-                if response_type == 'SINGLE_CHOICE_QUESTION':
+                if response_type == 'IMAGE_QUESTION':
+                        # Las imágenes vienen en answer.images
+                        images = answer_data.get('images', [])
+                        if images:
+                            formatted_answer = f"""
+                            <div style='
+                                display: flex;
+                                flex-wrap: wrap;
+                                gap: 8px;
+                                padding: 8px;
+                                background: #f8f9fa;
+                                border-radius: 6px;
+                                max-width: 440px;
+                                max-height: 300px;
+                                overflow-y: auto;
+                                align-content: flex-start;
+                            '>
+                            """
+                            
+                            for img in images:
+                                formatted_answer += f"""
+                                <div style='
+                                    position: relative;
+                                    width: 100px;
+                                    height: 100px;
+                                    flex: 0 0 auto;
+                                    border-radius: 6px;
+                                    overflow: hidden;
+                                    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+                                    transition: transform 0.2s;
+                                    cursor: pointer;
+                                    background: white;
+                                ' 
+                                onmouseover='this.style.transform="scale(1.05)"'
+                                onmouseout='this.style.transform="scale(1)"'
+                                onclick='window.open("{img}", "_blank")'>
+                                    <img src='{img}' 
+                                        style='
+                                            width: 100%;
+                                            height: 100%;
+                                            object-fit: cover;
+                                            border-radius: 6px;
+                                        '
+                                        title='Click para ver imagen completa'
+                                    />
+                                    <div style='
+                                        position: absolute;
+                                        bottom: 0;
+                                        left: 0;
+                                        right: 0;
+                                        padding: 3px;
+                                        background: rgba(0,0,0,0.5);
+                                        color: white;
+                                        font-size: 9px;
+                                        text-align: center;
+                                        overflow: hidden;
+                                        text-overflow: ellipsis;
+                                        white-space: nowrap;
+                                    '>
+                                        {img.split('/')[-1][:15]}...
+                                    </div>
+                                </div>
+                                """
+                            
+                            formatted_answer += "</div>"
+                        else:
+                            formatted_answer = "Sin imágenes"
+
+                            
+                elif response_type == 'SINGLE_CHOICE_QUESTION':
                     selected_option = answer_data.get('selectedOption')
                     options = answer_data.get('options', [])
                     if selected_option is not None and options and selected_option < len(options):
@@ -312,9 +393,6 @@ class HealthCategoryAdmin(admin.ModelAdmin):
                 
                 elif response_type == 'SCALE_QUESTION':
                     formatted_answer = str(answer_data.get('value', 'Sin respuesta'))
-
-                elif response_type == 'IMAGE_QUESTION':
-                    formatted_answer = answer_data.get('image','Sin respuesta')
 
                 # Formatear la fecha
                 formatted_date = timestamp.split('T')[0] if timestamp else ''
@@ -344,16 +422,50 @@ class HealthCategoryAdmin(admin.ModelAdmin):
         return mark_safe(''.join(html))
     get_detailed_responses.short_description = "Detalle de Respuestas"
 
-    def save_model(self, request, obj, form, change):
+    def response_change(self, request, obj):
         """
-        Sobreescribe el método save_model para incluir el usuario que realiza los cambios.
+        Override response_change to handle draft and publish actions
         """
-        if 'doctor_recommendations' in form.changed_data or 'status_color' in form.changed_data:
-            print(request.user, "user")
+        if "_sign_and_publish" in request.POST:
+            obj.is_draft = False
             obj.doctor_recommendations_updated_by = request.user
             obj.doctor_recommendations_updated_at = timezone.now()
-        
+            obj.status = 'reviewed'
+            obj.save()
+            
+            self.message_user(
+                request, 
+                "✓ Las recomendaciones han sido firmadas y publicadas. Ya son visibles para el paciente.",
+                level=messages.SUCCESS
+            )
+            return self.response_post_save_change(request, obj)
+            
+        elif "_save_draft" in request.POST:
+            obj.is_draft = True
+            obj.save()
+            
+            self.message_user(
+                request, 
+                "Las recomendaciones se han guardado como borrador y NO son visibles para el paciente.",
+                level=messages.WARNING
+            )
+            return self.response_post_save_change(request, obj)
+            
+        return super().response_change(request, obj)
+
+    def save_model(self, request, obj, form, change):
+        if 'doctor_recommendations' in form.changed_data or 'status_color' in form.changed_data:
+            if not obj.is_draft:
+                obj.doctor_recommendations_updated_by = request.user
+                obj.doctor_recommendations_updated_at = timezone.now()
         obj.save()
+
+    def get_form(self, request, obj=None, **kwargs):
+        form = super().get_form(request, obj, **kwargs)
+        form.base_fields['doctor_recommendations'].help_text = (
+            "Las recomendaciones serán visibles para el paciente solo cuando se firmen y publiquen."
+        )
+        return form
 
 @admin.register(TextRecomendation)
 class TextRecomendationAdmin(admin.ModelAdmin):

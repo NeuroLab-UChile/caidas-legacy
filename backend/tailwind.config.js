@@ -10,7 +10,6 @@ module.exports = {
         'primary-light': '#FFE066',
         'primary-dark': '#E6B800',
         secondary: '#333333',
-        // Colores para el modo light
         light: {
           bg: {
             primary: '#FFFFFF',

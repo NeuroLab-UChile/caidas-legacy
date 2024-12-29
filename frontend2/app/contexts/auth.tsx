@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import authService, { AuthResponse } from "../services/authService";
+import { UserProfile } from "../services/apiService";
 
 type AuthContextType = {
   token: string | null;
@@ -8,6 +9,7 @@ type AuthContextType = {
   signIn: (username: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   isLoading: boolean;
+  userProfile: UserProfile | null;
 };
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -15,6 +17,7 @@ const AuthContext = createContext<AuthContextType | null>(null);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
 
   const isAuthenticated = !!token; // Nueva lógica para determinar autenticación
 
@@ -48,8 +51,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       await AsyncStorage.setItem("auth_token", response.access);
       await AsyncStorage.setItem("refresh_token", response.refresh);
+
+      const profile = await authService.getUserInfo(response.access);
+      setUserProfile(profile);
+
+      return true;
     } catch (error) {
-      throw new Error("Error al iniciar sesión");
+      console.error("Login failed:", error);
+      return false;
     }
   };
 
@@ -61,7 +70,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ token, isAuthenticated, signIn, signOut, isLoading }}
+      value={{
+        token,
+        isAuthenticated,
+        signIn: (username: string, password: string) =>
+          signIn(username, password).then(() => {}),
+        signOut,
+        isLoading,
+        userProfile,
+      }}
     >
       {children}
     </AuthContext.Provider>

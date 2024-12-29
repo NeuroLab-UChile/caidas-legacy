@@ -25,11 +25,17 @@ export function MultipleChoiceQuestionView({
 }: MultipleChoiceQuestionProps) {
   const [selectedOptions, setSelectedOptions] = useState<number[]>([]);
 
+  useEffect(() => {
+    setSelectedOptions([]);
+    setResponse(null);
+  }, [data.question]);
+
   const toggleOption = (optionId: number) => {
-    const newSelection = selectedOptions.includes(optionId) ? [] : [optionId];
+    const newSelection = selectedOptions.includes(optionId)
+      ? selectedOptions.filter((id) => id !== optionId)
+      : [...selectedOptions, optionId];
 
     setSelectedOptions(newSelection);
-    // Enviamos la respuesta al padre
     setResponse(
       newSelection.length > 0 ? { selectedOptions: newSelection } : null
     );
@@ -87,6 +93,15 @@ export function MultipleChoiceQuestionView({
           );
         })}
       </View>
+
+      {selectedOptions.length > 0 && (
+        <Text style={styles.selectionCount}>
+          {selectedOptions.length}{" "}
+          {selectedOptions.length === 1
+            ? "opción seleccionada"
+            : "opciones seleccionadas"}
+        </Text>
+      )}
     </ScrollView>
   );
 }
@@ -114,12 +129,12 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   optionButton: {
-    backgroundColor: "#FFFFFF", // Color de fondo explícito
+    backgroundColor: "#FFFFFF",
     borderRadius: 12,
     padding: 16,
     borderWidth: 1,
     borderColor: theme.colors.border,
-    marginBottom: 8, // Añadir espacio entre opciones
+    marginBottom: 8,
     ...Platform.select({
       ios: {
         shadowColor: "#000",
@@ -145,12 +160,19 @@ const styles = StyleSheet.create({
   },
   optionText: {
     fontSize: 16,
-    color: "#000000", // Color de texto explícito
+    color: "#000000",
     flex: 1,
     lineHeight: 24,
   },
   selectedOptionText: {
     color: theme.colors.text,
     fontWeight: "500",
+  },
+  selectionCount: {
+    fontSize: 14,
+    color: theme.colors.text,
+    opacity: 0.7,
+    textAlign: "center",
+    marginTop: 16,
   },
 });

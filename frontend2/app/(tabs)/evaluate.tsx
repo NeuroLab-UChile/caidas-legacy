@@ -21,6 +21,8 @@ import ActivityNodeContainer from "@/components/ActivityNodes/ActivityNodeContai
 import { DoctorRecommendations } from "@/components/DoctorRecommendations";
 import { router } from "expo-router";
 import EmptyState from "../containers/EmptyState";
+import { useAuth } from "../contexts/auth";
+import { UserProfile } from "../services/apiService";
 
 interface NodeResponse {
   nodeId: number;
@@ -43,9 +45,56 @@ interface EvaluationState {
   };
 }
 
+const WelcomeScreen = ({
+  category,
+  onStart,
+  userName,
+}: {
+  category: Category;
+  onStart: () => void;
+  userName: string;
+}) => {
+  return (
+    <View style={styles.welcomeContainer}>
+      <Text style={styles.welcomeTitle}>¡Hola {userName}!</Text>
+
+      <Text style={styles.welcomeSubtitle}>
+        Bienvenido a la evaluación de {category.name}
+      </Text>
+
+      <Text style={styles.welcomeDescription}>
+        Esta evaluación nos ayudará a:
+      </Text>
+
+      <View style={styles.bulletPoints}>
+        <Text style={styles.bulletPoint}>
+          • Entender mejor tu estado de salud actual
+        </Text>
+        <Text style={styles.bulletPoint}>
+          • Proporcionar recomendaciones personalizadas
+        </Text>
+        <Text style={styles.bulletPoint}>
+          • Hacer un seguimiento de tu progreso
+        </Text>
+      </View>
+
+      <Text style={styles.noteText}>
+        Tómate tu tiempo para responder cada pregunta con sinceridad.
+      </Text>
+
+      <TouchableOpacity style={styles.startButton} onPress={onStart}>
+        <Text style={styles.startButtonText}>Comenzar Evaluación</Text>
+      </TouchableOpacity>
+    </View>
+  );
+};
+
 const EvaluateScreen = () => {
   const { selectedCategory, fetchCategories } = useCategories();
+  const { userProfile } = useAuth();
+
   const [loading, setLoading] = useState(false);
+  const [showWelcome, setShowWelcome] = useState(true);
 
   const [evaluationState, setEvaluationState] = useState<EvaluationState>(
     () => {
@@ -117,7 +166,7 @@ const EvaluateScreen = () => {
   const handleStartNewEvaluation = () => {
     Alert.alert(
       "Nueva Evaluación",
-      "¿Estás seguro de que deseas iniciar una nueva evaluación?",
+      "¿Estás seguro de que deseas iniciar una nueva evaluación? Se eliminarán las recomendaciones anteriores.",
       [
         {
           text: "Cancelar",
@@ -125,19 +174,34 @@ const EvaluateScreen = () => {
         },
         {
           text: "Sí, iniciar",
-          onPress: () => {
-            const nodes =
-              selectedCategory?.evaluation_form?.question_nodes || [];
-            setEvaluationState({
-              currentNodeId: nodes[0]?.id || null,
-              responses: [],
-              completed: false,
-              history: [],
-              evaluationResult: {
-                initial_node_id: nodes[0]?.id || null,
-                nodes,
-              },
-            });
+          onPress: async () => {
+            try {
+              setLoading(true);
+
+              // Limpiar las recomendaciones del doctor
+
+              // Reiniciar el estado de evaluación
+              const nodes =
+                selectedCategory?.evaluation_form?.question_nodes || [];
+              setEvaluationState({
+                currentNodeId: nodes[0]?.id || null,
+                responses: [],
+                completed: false,
+                history: [],
+                evaluationResult: {
+                  initial_node_id: nodes[0]?.id || null,
+                  nodes,
+                },
+              });
+
+              // Actualizar las categorías después de limpiar las recomendaciones
+              await fetchCategories();
+            } catch (error) {
+              console.error("Error al iniciar nueva evaluación:", error);
+              Alert.alert("Error", "No se pudo iniciar una nueva evaluación");
+            } finally {
+              setLoading(false);
+            }
           },
         },
       ]
@@ -194,7 +258,7 @@ const EvaluateScreen = () => {
           break;
         case "IMAGE_QUESTION":
           formattedResponse.answer = {
-            image: response.image || "",
+            images: response.answer || [],
           };
           break;
         case "SCALE_QUESTION":
@@ -233,7 +297,7 @@ const EvaluateScreen = () => {
             currentNodeId: null,
             responses: Object.entries(newResponses).map(([key, value]) => ({
               nodeId: parseInt(key),
-              response: value,
+              response: value as NodeResponse["response"], // Assuming NodeResponse is defined elsewhere with a 'response' property of the correct type
             })),
             completed: true,
             history: [],
@@ -262,7 +326,7 @@ const EvaluateScreen = () => {
           ...prev,
           responses: Object.entries(newResponses).map(([key, value]) => ({
             nodeId: parseInt(key),
-            response: value,
+            response: value as NodeResponse["response"], // Assuming NodeResponse is defined elsewhere with a 'response' property of the correct type
           })),
           currentNodeId: nextNodeId,
           completed: false,
@@ -285,7 +349,7 @@ const EvaluateScreen = () => {
 
     return (
       <ActivityNodeContainer
-        type={node.type as ActivityNodeType}
+        type={node.type}
         data={node}
         onNext={(response: any) => handleNodeResponse(node.id, response)}
         onBack={handleBack}
@@ -323,6 +387,26 @@ const EvaluateScreen = () => {
 
   if (!selectedCategory) {
     return <EmptyState view="evaluate" />;
+  }
+
+  if (showWelcome && !evaluationState.completed) {
+    return (
+      <View style={styles.container}>
+        <ScrollView
+          contentContainerStyle={styles.contentContainer}
+          showsVerticalScrollIndicator={false}
+        >
+          <CategoryHeader name={selectedCategory.name} />
+          <WelcomeScreen
+            category={selectedCategory}
+            userName={
+              userProfile?.first_name || userProfile?.username || "Usuario"
+            }
+            onStart={() => setShowWelcome(false)}
+          />
+        </ScrollView>
+      </View>
+    );
   }
 
   return (
@@ -411,6 +495,52 @@ const styles = StyleSheet.create({
     color: theme.colors.text,
     fontSize: 18,
     fontWeight: "600",
+  },
+  welcomeContainer: {
+    backgroundColor: theme.colors.card,
+    borderRadius: 16,
+    padding: 24,
+    margin: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  welcomeTitle: {
+    fontSize: 28,
+    fontWeight: "700",
+    color: theme.colors.text,
+    marginBottom: 8,
+    textAlign: "center",
+  },
+  welcomeSubtitle: {
+    fontSize: 20,
+    fontWeight: "600",
+    color: theme.colors.text,
+    marginBottom: 16,
+    textAlign: "center",
+  },
+  welcomeDescription: {
+    fontSize: 16,
+    color: theme.colors.text,
+    marginBottom: 12,
+  },
+  bulletPoints: {
+    marginBottom: 24,
+  },
+  bulletPoint: {
+    fontSize: 16,
+    color: theme.colors.text,
+    marginBottom: 8,
+    lineHeight: 24,
+  },
+  noteText: {
+    fontSize: 14,
+    color: theme.colors.textSecondary,
+    fontStyle: "italic",
+    marginBottom: 24,
+    textAlign: "center",
   },
 });
 

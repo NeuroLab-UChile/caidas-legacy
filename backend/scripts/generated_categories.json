@@ -12,11 +12,25 @@
           "options": [
             "Casa",
             "Departamento",
+            "Parcela/Terreno",
             "Otro"
           ]
         },
         {
           "id": 2,
+          "type": "SINGLE_CHOICE_QUESTION",
+          "question": "Si reside en Parcela/Terreno, ¿tiene caminos seguros para transitar por su terreno y llegar a casa?",
+          "options": [
+            "Sí",
+            "No"
+          ],
+          "conditional": {
+            "parent_id": 1,
+            "trigger_option": "Parcela/Terreno"
+          }
+        },
+        {
+          "id": 3,
           "type": "MULTIPLE_CHOICE_QUESTION",
           "question": "¿Qué áreas de su hogar utiliza con mayor frecuencia?",
           "options": [
@@ -25,23 +39,51 @@
             "Baño",
             "Habitación",
             "Escaleras",
-            "Exterior"
+            "Exterior",
+            "Pasillo",
+            "Otro"
           ]
         },
         {
-          "id": 3,
-          "type": "TEXT_QUESTION",
-          "question": "Describa problemas de seguridad que haya notado en su hogar."
-        },
-        {
           "id": 4,
-          "type": "TEXT_QUESTION",
-          "question": "¿Qué medidas de seguridad considera esenciales para su hogar?"
+          "type": "MULTIPLE_CHOICE_QUESTION",
+          "question": "¿En qué lugares de su hogar ha implementado medidas de seguridad para evitar caídas?",
+          "options": [
+            "Barandas",
+            "Alfombras antideslizantes",
+            "Iluminación adecuada",
+            "Retiro de objetos peligrosos",
+            "Otro"
+          ]
         },
         {
           "id": 5,
+          "type": "MULTIPLE_CHOICE_QUESTION",
+          "question": "¿Ha tenido caídas dentro de su casa? En caso afirmativo, ¿dónde ocurrieron?",
+          "options": [
+            "Cocina",
+            "Living",
+            "Baño",
+            "Habitación",
+            "Escaleras",
+            "Exterior",
+            "Pasillo",
+            "No me he caído en casa"
+          ]
+        },
+        {
+          "id": 6,
+          "type": "SINGLE_CHOICE_QUESTION",
+          "question": "¿Tiene especial preocupación de caer en algún lugar de su casa?",
+          "options": [
+            "Sí",
+            "No"
+          ]
+        },
+        {
+          "id": 7,
           "type": "IMAGE_QUESTION",
-          "question": "Capture imágenes que permitan analizar su espacio y detectar posibles riesgos."
+          "question": "Por favor capture fotos de los siguientes lugares de su hogar: entrada, dormitorio, baño, pasillo, living, desniveles en el suelo y otros lugares específicos que considere relevantes."
         }
       ]
     },

@@ -27,7 +27,8 @@ interface ActivityNodeContainerProps {
     | "IMAGE_NODE"
     | "WEEKLY_RECIPE_NODE"
     | "RESULT_NODE"
-    | "IMAGE_QUESTION";
+    | "IMAGE_QUESTION"
+    | "TEXT_NODE";
 
   data: any;
   onNext: (response?: any) => void;

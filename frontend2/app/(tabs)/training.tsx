@@ -20,7 +20,6 @@ import ActivityNodeContainer from "@/components/ActivityNodes/ActivityNodeContai
 import { ActivityNodeType } from "@/components/ActivityNodes";
 import { useRouter } from "expo-router";
 import EmptyState from "../containers/EmptyState";
-import Ionicons from "react-native-vector-icons/Ionicons";
 
 interface NodeResponse {
   nodeId: number;
