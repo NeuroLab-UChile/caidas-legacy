@@ -1,7 +1,7 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from ..models import HealthCategory, CategoryTemplate, ActivityNode
+from ..models import HealthCategory, CategoryTemplate, ActivityNode, UserProfile
 from ..serializers import HealthCategorySerializer
 from rest_framework.decorators import api_view
 from django.utils import timezone
@@ -13,6 +13,10 @@ from datetime import datetime
 import json
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authentication import TokenAuthentication
+from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
+
+from prevcad.models import UserProfile
 
 class HealthCategoryListView(APIView):
     permission_classes = [IsAuthenticated]
@@ -21,21 +25,17 @@ class HealthCategoryListView(APIView):
         try:
             print("\n=== Debug HealthCategoryListView ===")
             print(f"Usuario autenticado: {request.user}")
-            
-            # Obtener solo las categorías del usuario actual
-            categories = HealthCategory.objects.filter(
-                user=request.user,
-                template__is_active=True  # Solo templates activos
-            ).select_related('template')  # Optimizar consultas
 
-            for category in categories:
-                print(f"\nCategoría: {category.id}")
-                print(f"Template: {category.template}")
-                print(f"Evaluation Form: {category.template.evaluation_form if category.template else None}")
-            
+            # Obtener o crear el perfil del usuario
+            user_profile = get_object_or_404(UserProfile, user=request.user)
+
+            # Obtener las categorías activas del usuario    
+            categories = HealthCategory.objects.filter(
+                user=user_profile,
+                template__is_active=True
+            ).select_related('template')
+
             serialized = HealthCategorySerializer(categories, many=True).data
-            
-            
             return Response(serialized)
         except Exception as e:
             print(f"Error: {e}")
@@ -47,7 +47,13 @@ def save_evaluation_responses(request, category_id):
     print(f"Request data: {request.data}")
     
     try:
-        category = HealthCategory.objects.get(id=category_id, user=request.user)
+        user_profile = get_object_or_404(UserProfile, user=request.user)
+        category = get_object_or_404(
+            HealthCategory, 
+            id=category_id, 
+            user=user_profile
+        )
+        
         responses = request.data.get('responses', {})
         validated_responses = {}
         
@@ -99,23 +105,26 @@ def save_evaluation_responses(request, category_id):
             
             validated_responses[str(node_id)] = response_data
         
-        # Guardar las respuestas actualizadas
+        # Actualizar la categoría con la información del usuario
         category.responses = validated_responses
         category.completion_date = timezone.now()
         category.status = 'completed'
         
-        # Limpiar las recomendaciones del doctor cuando se envían nuevas respuestas
-        category.doctor_recommendations = None
-        category.doctor_recommendations_updated_at = None
-        category.doctor_recommendations_updated_by = None
-        category.status_color = None
+        # Limpiar las recomendaciones previas
+        category.professional_recommendations = None
+        category.professional_recommendations_updated_at = None
+        category.professional_recommendations_updated_by = None
+        category.status_color = None  
         
         category.save()
+        
+        # Serializar con información detallada
+        serializer = HealthCategorySerializer(category)
         
         return Response({
             'status': 'success',
             'message': 'Respuestas guardadas correctamente',
-            'data': HealthCategorySerializer(category).data
+            'data': serializer.data
         })
         
     except Exception as e:
@@ -128,13 +137,18 @@ def save_evaluation_responses(request, category_id):
 @api_view(['PATCH'])
 def update_health_category(request, category_id):
     try:
-        category = HealthCategory.objects.get(id=category_id, user=request.user)
+        user_profile = get_object_or_404(UserProfile, user=request.user)
+        category = get_object_or_404(
+            HealthCategory, 
+            id=category_id, 
+            user=user_profile
+        )
         
         # Actualizar los campos específicos
-        if 'doctor_recommendations' in request.data:
-            category.doctor_recommendations = request.data['doctor_recommendations']
-            category.doctor_recommendations_updated_at = None
-            category.doctor_recommendations_updated_by = None
+        if 'professional_recommendations' in request.data:
+            category.professional_recommendations = request.data['professional_recommendations']
+            category.professional_recommendations_updated_at = None
+            category.professional_recommendations_updated_by = None
         
         if 'status_color' in request.data:
             category.status_color = request.data['status_color']
@@ -183,31 +197,22 @@ def calculate_score(responses):
 @api_view(['POST'])
 def create_health_category(request):
     try:
-        print("Recibiendo request para crear health category:", request.data)  # Debug
+        print("Recibiendo request para crear health category:", request.data)
         
-        # Obtener datos del request
         template_id = request.data.get('template_id')
-        # Usar el usuario autenticado en lugar de recibir user_id
-        user = request.user
-        
         if not template_id:
             return Response({
                 'status': 'error',
                 'message': 'template_id es requerido'
             }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Obtener o crear el perfil del usuario
+        user_profile = get_object_or_404(UserProfile, user=request.user)
+        template = get_object_or_404(CategoryTemplate, id=template_id)
             
-        # Validar que existe el template
-        try:
-            template = CategoryTemplate.objects.get(id=template_id)
-        except CategoryTemplate.DoesNotExist:
-            return Response({
-                'status': 'error',
-                'message': f'Template con id {template_id} no encontrado'
-            }, status=status.HTTP_404_NOT_FOUND)
-            
-        # Verificar si ya existe una categoría para este usuario y template
+        # Verificar si ya existe una categoría
         existing_category = HealthCategory.objects.filter(
-            user=user,
+            user=user_profile,
             template=template
         ).first()
         
@@ -217,20 +222,16 @@ def create_health_category(request):
                 'status': 'success',
                 'message': 'Ya existe una evaluación para este usuario y template',
                 'data': serializer.data
-            }, status=status.HTTP_200_OK)
+            })
             
-        # Crear nueva categoría
+        # Crear nueva categoría con el perfil del usuario
         health_category = HealthCategory.objects.create(
-            user=user,
+            user=user_profile,
             template=template,
             evaluation_form=template.evaluation_form
         )
         
-        # Serializar y retornar la respuesta
         serializer = HealthCategorySerializer(health_category)
-        
-        print("Health category creada exitosamente:", health_category.id)  # Debug
-        
         return Response({
             'status': 'success',
             'message': 'Categoría creada exitosamente',
@@ -238,7 +239,28 @@ def create_health_category(request):
         }, status=status.HTTP_201_CREATED)
         
     except Exception as e:
-        print(f"Error al crear health category: {str(e)}")  # Debug
+        print(f"Error al crear health category: {str(e)}")
+        return Response({
+            'status': 'error',
+            'message': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['GET'])
+def get_health_category_detail(request, category_id):
+    try:
+        user_profile = get_object_or_404(UserProfile, user=request.user)
+        category = get_object_or_404(
+            HealthCategory, 
+            id=category_id, 
+            user=user_profile
+        )
+        
+        serializer = HealthCategorySerializer(category)
+        return Response({
+            'status': 'success',
+            'data': serializer.data
+        })
+    except Exception as e:
         return Response({
             'status': 'error',
             'message': str(e)

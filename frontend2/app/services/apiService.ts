@@ -29,10 +29,21 @@ export interface UserProfile {
 class ApiClient {
   private baseUrl: string;
   private prevcadPrefix: string;
+  private lastTokenValidation: number = 0;
+  private tokenValidationInterval: number = 60000; // 1 minuto
 
   constructor() {
     this.baseUrl = API_URL;
     this.prevcadPrefix = '/prevcad';
+  }
+
+  private shouldValidateToken(): boolean {
+    const now = Date.now();
+    if (now - this.lastTokenValidation > this.tokenValidationInterval) {
+      this.lastTokenValidation = now;
+      return true;
+    }
+    return false;
   }
 
   public async getHeaders(includeAuth: boolean = true): Promise<HeadersInit> {
@@ -42,11 +53,14 @@ class ApiClient {
 
     if (includeAuth) {
       const token = await AsyncStorage.getItem('auth_token');
-      if (token) {
-        // Validar token
+      if (!token) {
+        throw new Error('No auth token found');
+      }
+
+      // Solo validar el token si ha pasado el intervalo
+      if (this.shouldValidateToken()) {
         const isValid = await authService.validateToken(token);
         if (!isValid) {
-          // Intentar refrescar el token
           const refreshToken = await AsyncStorage.getItem('refresh_token');
           if (refreshToken) {
             const newToken = await authService.refreshToken(refreshToken);
@@ -57,8 +71,9 @@ class ApiClient {
           }
           throw new Error('Session expired');
         }
-        headers['Authorization'] = `Bearer ${token}`;
       }
+
+      headers['Authorization'] = `Bearer ${token}`;
     }
 
     return headers;
@@ -66,12 +81,10 @@ class ApiClient {
 
   private async handleResponse<T>(response: Response): Promise<ApiResponse<T>> {
     if (response.status === 401) {
-      // Token expirado o inválido
       const refreshToken = await AsyncStorage.getItem('refresh_token');
       if (refreshToken) {
         const newToken = await authService.refreshToken(refreshToken);
         if (newToken) {
-          // Reintentar la petición original con el nuevo token
           const newResponse = await fetch(response.url, {
             ...response,
             headers: {
@@ -85,12 +98,11 @@ class ApiClient {
       throw new Error('Session expired');
     }
 
-    const data = await response.json();
-
     if (!response.ok) {
-      throw new Error(data.message || `API error: ${response.status}`);
+      throw new Error(`API error: ${response.status}`);
     }
 
+    const data = await response.json();
     return {
       data,
       status: response.status,

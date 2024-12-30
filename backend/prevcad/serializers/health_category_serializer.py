@@ -11,23 +11,30 @@ class HealthCategorySerializer(serializers.ModelSerializer):
     description = serializers.SerializerMethodField()
     evaluation_form = serializers.SerializerMethodField()
     training_form = serializers.SerializerMethodField()
-    status = serializers.SerializerMethodField()
-    doctor_recommendations_updated_by = serializers.SerializerMethodField()
-    doctor_recommendations_updated_at = serializers.DateTimeField(read_only=True)
-
-    def to_representation(self, instance):
-        ret = super().to_representation(instance)
-        # Solo incluir recomendaciones si no es borrador
-        if instance.is_draft:
-            ret['doctor_recommendations'] = None
-            ret['doctor_recommendations_updated_at'] = None
-            ret['doctor_recommendations_updated_by'] = None
-            ret['status_color'] = None
-        return ret
+    status_color = serializers.SerializerMethodField()
+    status_display = serializers.SerializerMethodField()
+    professional_recommendations_updated_by = serializers.SerializerMethodField()
+    professional_recommendations_updated_at = serializers.DateTimeField(read_only=True)
+    is_draft = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = HealthCategory
-        fields = '__all__'
+        fields = [
+            'id', 
+            'name', 
+            'icon', 
+            'description',
+            'evaluation_form',
+            'training_form',
+            'responses',
+            'completion_date',
+            'status_color',
+            'professional_recommendations',
+            'is_draft',
+            'status_display',
+            'professional_recommendations_updated_by',
+            'professional_recommendations_updated_at'
+        ]
 
     def get_name(self, obj):
         return obj.template.name if obj.template else None
@@ -49,38 +56,64 @@ class HealthCategorySerializer(serializers.ModelSerializer):
             return obj.template.training_form
         return None
 
-    def get_status(self, obj):
+    def get_status_color(self, obj):
         if not obj.status_color:
             return None
             
         status_map = {
-            'green': {'color': 'green', 'text': 'Saludable'},
-            'yellow': {'color': 'yellow', 'text': 'Precaución'},
-            'red': {'color': 'red', 'text': 'Atención Requerida'}
+            'verde': {'color': 'green', 'text': 'Saludable'},
+            'amarillo': {'color': 'yellow', 'text': 'Precaución'},
+            'rojo': {'color': 'red', 'text': 'Atención Requerida'},
+            'gris': {'color': 'gray', 'text': 'Sin evaluar'}
         }
         
         return status_map.get(obj.status_color, None)
+    
+    def get_status_display(self, obj):
+        """
+        Devuelve el texto del estado de las recomendaciones usando el display del modelo
+        """
+        if hasattr(obj, 'get_is_draft_display'):
+            return obj.get_is_draft_display()
+        
+        # Fallback por si acaso
+        status_map = {
+            'borrador': 'Borrador',
+            'publicado': 'Publicado',
+            'archivado': 'Archivado'
+        }
+        return status_map.get(obj.is_draft, 'Borrador')  # Default a 'Borrador'
 
     def get_description(self, obj):
         """Obtener la descripción del template"""
-        print(f"Getting description for category {obj.id}")
-        if obj.template and obj.template.root_node:
-            return obj.template.root_node.description
-        if obj.template:
+        if obj and obj.template:
+            if obj.template.root_node:
+                return obj.template.root_node.description
             return obj.template.description
-        print("No description found")
         return None
-    
 
-    def get_responses(self, obj):
-        return obj.responses
-
-    def get_doctor_recommendations_updated_by(self, obj):
-        if obj.doctor_recommendations_updated_by:
+    def get_professional_recommendations_updated_by(self, obj):
+        """
+        Devuelve el nombre del usuario que actualizó las recomendaciones.
+        """
+        if obj.professional_recommendations_updated_by:
             return {
-                'id': obj.doctor_recommendations_updated_by.id,
-                'username': obj.doctor_recommendations_updated_by.username,
-                'first_name': obj.doctor_recommendations_updated_by.first_name,
-                'last_name': obj.doctor_recommendations_updated_by.last_name
+                'name': obj.professional_recommendations_updated_by,
+                'date': obj.professional_recommendations_updated_at.strftime('%d/%m/%Y %H:%M') if obj.professional_recommendations_updated_at else None
             }
         return None
+
+    def to_representation(self, instance):
+        """
+        Personaliza la representación final del objeto
+        """
+        data = super().to_representation(instance)
+        
+        # Asegura que los campos de recomendaciones estén presentes
+        if 'professional_recommendations' not in data:
+            data['professional_recommendations'] = None
+            
+        if 'is_draft' not in data:
+            data['is_draft'] = True
+            
+        return data

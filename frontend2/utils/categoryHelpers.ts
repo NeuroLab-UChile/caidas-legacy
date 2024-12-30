@@ -4,7 +4,7 @@ export const getCategoryStatus = (category: any) => {
   const totalQuestions = category.evaluation_form.question_nodes.length;
   const answeredQuestions = Object.keys(category?.responses || {}).length;
 
-  if (category.doctor_recommendations && category.status_color) {
+  if (category.professional_recommendations && category.status_color) {
     return {
       status: 'reviewed',
       text: '✅ Evaluación Revisada por Doctor'

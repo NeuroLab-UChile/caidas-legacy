@@ -1,36 +1,104 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
+from django.db import transaction
+import uuid
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
+
+
+
+
 class UserProfile(models.Model):
+    USER_ROLES = (
+        ('doctor', 'Doctor'),
+        ('admin', 'Administrador'),
+        ('patient', 'Paciente'),
+    )
+
     user = models.OneToOneField(
         User,
         on_delete=models.CASCADE,
-        related_name='profile'
+        related_name='profile',
+        blank=True,
+        null=True
+    )
+    username = models.CharField(
+        max_length=150,
+        unique=True,
+        help_text='Nombre de usuario para iniciar sesión'
+    )
+    email = models.EmailField(unique=True)
+    first_name = models.CharField(max_length=30, blank=True, null=True)
+    last_name = models.CharField(max_length=30, blank=True, null=True)
+    phone = models.CharField(max_length=20, blank=True, null=True)
+    birth_date = models.DateField(null=True, blank=True)
+    role = models.CharField(
+        max_length=50, 
+        choices=USER_ROLES,
+        default='patient'
     )
     profile_image = models.ImageField(
         upload_to='profile_images/',
         null=True,
         blank=True
     )
-    phone = models.CharField(
-        max_length=20,
-        blank=True,
-        null=True,
-        default=''
-    )
-    birth_date = models.DateField(
-        null=True,
-        blank=True
-    )
-    # ... otros campos que quieras agregar ...
+
+
+    def clean(self):
+        super().clean()
+        if User.objects.filter(username=self.username).exists() and (
+            not self.user or self.user.username != self.username
+        ):
+            raise ValidationError({'username': 'Este nombre de usuario ya está en uso.'})
+
+    @transaction.atomic
+    def save(self, *args, **kwargs):
+        creating = not self.pk
+        if creating and not self.user:
+            if User.objects.filter(username=self.username).exists():
+                raise ValidationError({'username': 'Este nombre de usuario ya está en uso.'})
+            
+            try:
+                user = User.objects.create(
+                    username=self.username,
+                    email=self.email,
+                    first_name=self.first_name or '',
+                    last_name=self.last_name or ''
+                )
+                
+                if self.role == 'admin':
+                    user.is_staff = True
+                    user.is_superuser = True
+                elif self.role == 'doctor':
+                    user.is_staff = True
+                
+                temp_password = str(uuid.uuid4())
+                user.set_password(temp_password)
+                user.save()
+                
+                self.user = user
+                
+            except Exception as e:
+                raise ValidationError(f'Error al crear el usuario: {str(e)}')
+        
+        super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"Perfil de {self.user.username}"
+        return f"{self.username} - {self.get_role_display()}"
 
     class Meta:
-        db_table = 'user_profile'
+        verbose_name = 'Perfil de Usuario'
+        verbose_name_plural = 'Perfiles de Usuario'
+
+
+
+
+
+    def __str__(self):
+        return f"{self.username} - {self.get_role_display()}" 
+
 
 # Señal para crear automáticamente el perfil
 @receiver(post_save, sender=User)

@@ -4,117 +4,121 @@ import { theme } from "@/src/theme";
 import { formatDate } from "date-fns";
 
 interface DoctorRecommendationsProps {
-  statusColor: "green" | "yellow" | "red";
-  recommendations: string;
-  updatedBy?: {
-    username: string;
-    first_name: string;
-    last_name: string;
+  statusColor: {
+    color: string;
+    text: string;
   };
-  updatedAt?: string;
+  recommendations: string;
+  updatedBy: string;
+  updatedAt: string;
 }
 
-export function DoctorRecommendations({
+export const DoctorRecommendations: React.FC<DoctorRecommendationsProps> = ({
   statusColor,
   recommendations,
   updatedBy,
   updatedAt,
-}: DoctorRecommendationsProps) {
-  const statusColors = {
-    green: theme.colors.success,
-    yellow: theme.colors.warning,
-    red: theme.colors.error,
-  };
-
-  const getStatusText = (color: string) => {
-    switch (color) {
-      case "green":
-        return "✅ Evaluación Revisada: Estado Saludable";
-      case "yellow":
-        return "⚠️ Evaluación Revisada: Requiere Atención";
-      case "red":
-        return "🚨 Evaluación Revisada: Atención Urgente";
-      default:
-        return "Estado Desconocido";
-    }
-  };
-
+}) => {
   return (
-    <View style={styles.cardContainer}>
-      {/* Estado General */}
-      <Text style={[styles.statusText, { color: statusColors[statusColor] }]}>
-        {getStatusText(statusColor)}
-      </Text>
-
-      {/* Detalles del Estado */}
-      <View style={styles.detailsContainer}>
-        {updatedBy && (
-          <Text style={styles.metaText}>
-            Revisado por: Dr.{" "}
-            {updatedBy.first_name
-              ? `${updatedBy.first_name} ${updatedBy.last_name}`
-              : updatedBy.username}
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <View style={styles.statusContainer}>
+          <View
+            style={[
+              styles.statusDot,
+              {
+                backgroundColor:
+                  statusColor?.color === "green"
+                    ? "#28a745"
+                    : statusColor?.color || "#gray",
+              },
+            ]}
+          />
+          <Text style={styles.statusText}>
+            {statusColor?.text || "Sin evaluar"}
           </Text>
-        )}
-        {updatedAt && (
-          <Text style={styles.metaText}>
-            Fecha: {formatDate(updatedAt, "dd/MM/yyyy")}
-          </Text>
-        )}
+        </View>
       </View>
 
-      {/* Recomendaciones */}
-      <Text style={styles.recommendationsTitle}>Recomendaciones Médicas</Text>
-      <Text style={styles.recommendationsText}>
-        {recommendations || "Sin recomendaciones específicas."}
-      </Text>
+      <View style={styles.recommendationsContainer}>
+        <Text style={styles.recommendationsTitle}>
+          Recomendaciones médicas:
+        </Text>
+        <Text style={styles.recommendationsText}>
+          {recommendations || "Sin recomendaciones"}
+        </Text>
+      </View>
+
+      {updatedBy && (
+        <View style={styles.updateInfo}>
+          <Text style={styles.updateInfoText}>
+            Actualizado por: {updatedBy}
+          </Text>
+          {updatedAt && (
+            <Text style={styles.updateInfoText}>Fecha: {updatedAt}</Text>
+          )}
+        </View>
+      )}
     </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
-  cardContainer: {
-    backgroundColor: theme.colors.card,
-    borderRadius: 16,
-    padding: 24,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
-    shadowRadius: 12,
-    marginVertical: 16,
+  container: {
     width: "100%",
-    elevation: 4,
+    padding: 16,
+    backgroundColor: theme.colors.card,
+    borderRadius: 12,
+    marginVertical: 8,
+  },
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  statusContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  statusDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    marginRight: 8,
+  },
+  statusLabel: {
+    fontSize: 16,
+    color: theme.colors.textSecondary,
   },
   statusText: {
-    fontSize: 20,
-    fontWeight: "800",
-    textAlign: "center",
-    marginBottom: 16,
-    letterSpacing: 0.5,
+    fontSize: 16,
+    fontWeight: "600",
+    color: theme.colors.text,
   },
-  detailsContainer: {
-    marginBottom: 20,
-    alignItems: "center",
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
-  },
-  metaText: {
-    fontSize: 15,
-    color: theme.colors.textSecondary,
-    marginBottom: 4,
+  recommendationsContainer: {
+    marginTop: 8,
   },
   recommendationsTitle: {
-    fontSize: 18,
-    fontWeight: "700",
+    fontSize: 16,
+    fontWeight: "600",
     color: theme.colors.text,
-    marginBottom: 12,
-    textAlign: "left",
+    marginBottom: 8,
   },
   recommendationsText: {
-    fontSize: 16,
+    fontSize: 14,
     color: theme.colors.text,
-    lineHeight: 24,
-    textAlign: "left",
+    lineHeight: 20,
+  },
+  updateInfo: {
+    marginTop: 16,
+    padding: 12,
+    backgroundColor: theme.colors.surface,
+    borderRadius: 8,
+  },
+  updateInfoText: {
+    fontSize: 12,
+    color: theme.colors.textSecondary,
+    marginBottom: 4,
   },
 });

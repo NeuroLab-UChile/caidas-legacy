@@ -1,7 +1,7 @@
 from typing import Any
 from django.db import models
 from django.utils.encoding import smart_str
-from django.contrib.auth.models import User
+
 from django.db.models.signals import post_save, pre_delete
 from django.dispatch import receiver
 from django.utils import timezone
@@ -9,6 +9,8 @@ from .activity_node import ActivityNode, ActivityNodeDescription
 import base64
 import os
 from django.conf import settings
+from .user_profile import UserProfile
+from django.utils.translation import gettext_lazy as _
 
 
 class CategoryTemplate(models.Model):
@@ -141,77 +143,88 @@ class CategoryTemplate(models.Model):
 
 
 class HealthCategory(models.Model):
-  COLOR_CHOICES = [
-    ('green', 'Verde - Saludable'),
-    ('yellow', 'Amarillo - Precaución'),
-    ('red', 'Rojo - Atención Requerida'),
-  ]
-  is_draft = models.BooleanField(
-    default=True,
-    help_text='Indica si las recomendaciones están en borrador'
-  )
-  user = models.ForeignKey(User, on_delete=models.CASCADE)
-  template = models.ForeignKey(CategoryTemplate, on_delete=models.SET_NULL, null=True)
-  responses = models.JSONField(null=True, blank=True)
-  completion_date = models.DateTimeField(null=True, blank=True)
-  status_color = models.CharField(
-    max_length=10, 
-    choices=COLOR_CHOICES,
-    null=True, 
-    blank=True,
-    verbose_name="Estado de Salud"
-  )
-  doctor_recommendations = models.TextField(
-    null=True, 
-    blank=True,
-    verbose_name="Recomendaciones del Doctor"
-  )
-  doctor_recommendations_updated_by = models.ForeignKey(
-    User,
-    on_delete=models.SET_NULL,
-    null=True,
-    blank=True,
-    related_name='updated_recommendations'
-  )
-  doctor_recommendations_updated_at = models.DateTimeField(
-    null=True,
-    blank=True
-  )
+    STATUS_CHOICES = [
+        ('borrador', 'Borrador'),
+        ('publicado', 'Publicado'),
+        ('archivado', 'Archivado')
+    ]
 
+    COLOR_CHOICES = [
+        ('verde', 'Verde'),
+        ('amarillo', 'Amarillo'),
+        ('rojo', 'Rojo'),
+        ('gris', 'Gris'),
+    ]
 
-  class Meta:
-    verbose_name = "Categoría de Salud"
-    verbose_name_plural = "Categorías de Salud"
+    user = models.ForeignKey(UserProfile, on_delete=models.CASCADE, verbose_name="Usuario")
+    template = models.ForeignKey(CategoryTemplate, on_delete=models.CASCADE, verbose_name="Plantilla")
+    completion_date = models.DateTimeField(null=True, blank=True, verbose_name="Fecha de completado")
+    responses = models.JSONField(null=True, blank=True, verbose_name="Respuestas")
+    professional_recommendations = models.TextField(null=True, blank=True, verbose_name="Recomendaciones médicas")
+    professional_recommendations_updated_at = models.DateTimeField(null=True, blank=True, verbose_name="Fecha de actualización")
+    professional_recommendations_updated_by = models.CharField(max_length=150, blank=True, null=True, verbose_name="Actualizado por")
+    status_color = models.CharField(
+        max_length=20,
+        choices=COLOR_CHOICES,
+        null=True,
+        blank=True,
+        verbose_name="Color de riesgo"
+    )
+    is_draft = models.BooleanField(
+        default=True,
+        verbose_name="Es borrador",
+        help_text="Si está marcado, las recomendaciones no serán visibles para el paciente"
+    )
+    evaluation_form = models.JSONField(null=True, blank=True, verbose_name="Formulario de evaluación")
 
-  @classmethod
-  def create_categories_for_user(cls, user):
-    templates = CategoryTemplate.objects.filter(is_active=True)
-    for template in templates:
-      cls.objects.create(
-        user=user,
-        template=template,
-      )
+    class Meta:
+        verbose_name = "Categoría de Salud"
+        verbose_name_plural = "Categorías de Salud"
+        ordering = ['-completion_date']
 
-  @classmethod
-  def create_categories_for_template(cls, template):
-    users = User.objects.all()
-    for user in users:
-      cls.objects.create(
-        user=user,
-        template=template,
-      )
+    @classmethod
+    def create_categories_for_user(cls, user):
+        templates = CategoryTemplate.objects.filter(is_active=True)
+        for template in templates:
+            cls.objects.create(
+                user=user,
+                template=template,
+            )
 
-  def save(self, *args, **kwargs):
-        # Obtener el usuario que realiza la actualización
+    @classmethod
+    def create_categories_for_template(cls, template):
+        users = UserProfile.objects.all()
+        for user in users:
+            cls.objects.create(
+                user=user,
+                template=template,
+              )
+
+    def can_edit_recommendations(self, user_profile):
+        """
+        Verifica si un usuario puede editar las recomendaciones
+        basado en su rol.
+        """
+        ALLOWED_ROLES = ['doctor', 'admin']  # Roles permitidos
+        return user_profile.role in ALLOWED_ROLES
+
+    def save(self, *args, **kwargs):
         updated_by = kwargs.pop('updated_by', None)
         
-        if self.pk:  # Si el objeto ya existe
+        if self.pk:
             old_instance = HealthCategory.objects.get(pk=self.pk)
-            # Si las recomendaciones cambiaron
-            if old_instance.doctor_recommendations != self.doctor_recommendations:
-                self.doctor_recommendations_updated_at = timezone.now()
-                if updated_by:
-                    self.doctor_recommendations_updated_by = updated_by
+            if (old_instance.professional_recommendations != self.professional_recommendations or 
+                old_instance.is_draft != self.is_draft):
+                
+                # Solo actualizar si el usuario tiene permisos
+                if updated_by and hasattr(updated_by, 'profile'):
+                    if self.can_edit_recommendations(updated_by.profile):
+                        self.professional_recommendations_updated_at = timezone.now()
+                        self.professional_recommendations_updated_by = (
+                            updated_by.get_full_name() or updated_by.username
+                        )
+                    else:
+                        raise PermissionError("No tienes permisos para editar recomendaciones")
 
         super().save(*args, **kwargs)
 
@@ -219,7 +232,7 @@ class HealthCategory(models.Model):
 
 
 
-@receiver(post_save, sender=User)
+@receiver(post_save, sender=UserProfile)
 def create_user_health_categories(sender, instance, created, **kwargs):
   """Crear categorías de salud para un nuevo usuario"""
   if created:

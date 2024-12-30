@@ -49,15 +49,18 @@ export interface Category {
   }
   responses?: Record<string, any>;
   completion_date?: string;
-  status_color?: 'green' | 'yellow' | 'red';
-  doctor_recommendations?: string;
-  doctor_recommendations_updated_by?: {
-    id: number;
-    username: string;
-    first_name: string;
-    last_name: string;
+  status_color?: {
+    color: string;
+    text: string;
   };
-  doctor_recommendations_updated_at?: string;
+  professional_recommendations?: string;
+  professional_recommendations_updated_by?: {
+    name: string;
+    date: string;
+  };
+  professional_recommendations_updated_at?: string;
+  is_draft?: boolean;
+  recommendations?: string;
   status?: {
     color: string;
     text: string;

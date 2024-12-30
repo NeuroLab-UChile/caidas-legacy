@@ -22,7 +22,7 @@ from django.contrib import messages
 
 from .models import (
   TextRecomendation,
-  Profile,
+
   CategoryTemplate,
   HealthCategory,
   ActivityNode,
@@ -34,15 +34,15 @@ from .models import (
   ImageQuestion,
   ResultNode,
   WeeklyRecipeNode,
-  Appointment
+  Appointment,
+  UserProfile
 )
 
 # Define an inline admin descriptor for Profile model
-class ProfileInline(admin.StackedInline):
-  model = Profile
-  can_delete = False
-  verbose_name_plural = 'Profiles'
-  fk_name = 'user'
+class UserProfileInline(admin.StackedInline):
+    model = UserProfile
+    can_delete = False
+    verbose_name_plural = 'Perfil'
 
 # Add HealthCategory inline to show categories in user admin
 class HealthCategoryInline(admin.TabularInline):
@@ -55,8 +55,8 @@ class HealthCategoryInline(admin.TabularInline):
 
 # Extend the existing UserAdmin
 class UserAdmin(BaseUserAdmin):
-  inlines = [ProfileInline, HealthCategoryInline]  # Add HealthCategoryInline
-  list_display = ('username', 'email', 'first_name', 'last_name', 'is_staff', 'is_superuser', 'is_active')
+  inlines = [UserProfileInline]  # Add HealthCategoryInline
+  list_display = ('username', 'email', 'first_name', 'last_name', 'is_staff', 'is_superuser', 'is_active', 'get_role')
   list_filter = ('is_staff', 'is_superuser', 'is_active')
 
   def get_inline_instances(self, request, obj=None):
@@ -64,6 +64,17 @@ class UserAdmin(BaseUserAdmin):
       return list()
     return super(UserAdmin, self).get_inline_instances(request, obj)
 
+  def get_role(self, obj):
+    try:
+      return obj.profile.get_role_display()  # Usando el related_name 'profile'
+    except (UserProfile.DoesNotExist, AttributeError):
+      return 'Sin perfil'  # Valor por defecto si no existe perfil
+  get_role.short_description = 'Rol'
+
+  def save_model(self, request, obj, form, change):
+    super().save_model(request, obj, form, change)
+    # Asegurarse de que el usuario tenga un perfil
+    UserProfile.objects.get_or_create(user=obj)
 
 @admin.register(CategoryTemplate)
 class CategoryTemplateAdmin(admin.ModelAdmin):
@@ -169,278 +180,175 @@ class HealthStatusFilter(SimpleListFilter):
 
 @admin.register(HealthCategory)
 class HealthCategoryAdmin(admin.ModelAdmin):
-    list_display = (
-        'user_info', 
-        'template_info', 
-        'status_badge', 
-        'completion_status',
-        'date_display'
-    )
-    readonly_fields = ['get_detailed_responses', 'completion_date']
-    list_filter = (
-        HealthStatusFilter, 
-        'template',
-        ('user', admin.RelatedOnlyFieldListFilter),
-        'completion_date'
-    )
+    # Display and ordering
+    list_display = [
+        'get_user_info',
+        'get_template_name',
+        'get_completion_status',
+        'completion_date',
+        'is_draft',
+        'get_status_color',
+    ]
     
+    list_filter = [
+        ('completion_date', admin.DateFieldListFilter),
+        ('template', admin.RelatedFieldListFilter),
+        ('user__user__username', admin.AllValuesFieldListFilter),
+    ]
+    
+    search_fields = [
+        'user__user__username',
+        'user__user__email',
+        'user__user__first_name',
+        'user__user__last_name',
+        'template__name',
+        'professional_recommendations'
+    ]
+    
+    ordering = ['-completion_date']
+    list_per_page = 20
+
+    # Fields and fieldsets configuration
+    readonly_fields = [
+        'completion_date',
+        'get_user_info',
+        'get_template_name',
+        'get_status_color',
+        'get_completion_status',
+        'is_draft',
+        'professional_recommendations_updated_at',
+        'professional_recommendations_updated_by',
+        'get_detailed_responses'
+    ]
+
     fieldsets = (
-        ('Información Básica', {
-            'fields': ('template', 'completion_date')
+        ('Información del Paciente', {
+            'fields': (
+                'get_user_info',
+                'get_template_name',
+                'template',
+            ),
+            'classes': ('wide',)
         }),
-        ('Respuestas', {
+        ('Estado y Fechas', {
+            'fields': (
+                'get_completion_status',
+                'completion_date',
+            ),
+        }),
+        ('Recomendaciones Médicas', {
+            'fields': (
+                'professional_recommendations',
+                ('status_color'),
+                ('professional_recommendations_updated_at', 'professional_recommendations_updated_by')
+            ),
+            'description': 'Estado y color de las recomendaciones médicas.',
+            'classes': ('wide',)
+        }),
+        ('Respuestas del Paciente', {
             'fields': ('get_detailed_responses',),
-            'classes': ('collapse',)
-        }),
-        ('Respuestas del Doctor', {
-            'fields': ('doctor_recommendations','status_color'),
-            'classes': ('collapse',)
+            'classes': ('collapse',),
+            'description': 'Historial completo de respuestas del paciente.'
         }),
     )
+
+    # Templates and Media
     change_form_template = 'admin/healthcategory/change_form.html'
     
     class Media:
         css = {
             'all': ('admin/css/custom_admin.css',)
         }
-    def user_info(self, obj):
-        return format_html(
-            '<div class="flex-cell" style="min-width:100px; flex: 1;">'
-            '<strong>{}</strong>'
-            '</div>',
-            obj.user.username
-        )
-    user_info.short_description = "Usuario"
 
-    def template_info(self, obj):
-        if obj.template:
-            return format_html(
-                '<div class="flex-cell" style="min-width:120px; flex: 1.5;">'
-                '<strong>{}</strong><br/>'
-                '<small style="color: #666">{}</small>'
-                '</div>',
-                obj.template.name,
-                Truncator(obj.template.description).chars(25)
-            )
-    template_info.short_description = 'Categoría'
-
-
-    def status_badge(self, obj):
-        colors = {
-            'green': ('#28a745', '✓'),
-            'yellow': ('#ffc107', '!'),
-            'red': ('#dc3545', '×'),
-        }
-        if obj.status_color:
-            color, symbol = colors.get(obj.status_color, ('#6c757d', '-'))
-            return format_html(
-                '<div class="flex-cell" style="flex: 0.5; text-align: center;">'
-                '<span style="'
-                'background-color: {};'
-                'color: white;'
-                'padding: 1px 6px;'
-                'border-radius: 10px;'
-                'display: inline-block;'
-                '">{}</span>'
-                '</div>',
-                color, symbol
-            )
-        return '-'
-    status_badge.short_description = 'Estado'
-
-    def completion_status(self, obj):
-        return format_html(
-            '<div class="flex-cell" style="flex: 0.5; text-align: center;">'
-            '<span style="color: {}">{}</span>'
-            '</div>',
-            '#28a745' if obj.completion_date else '#dc3545',
-            '✓' if obj.completion_date else '×'
-        )
-    completion_status.short_description = 'Completado'
-
-    def date_display(self, obj):
-        if obj.completion_date:
-            return format_html(
-                '<div class="flex-cell" style="flex: 1; text-align: right;">'
-                '<small style="color: #666">{}</small>'
-                '</div>',
-                obj.completion_date.strftime('%d/%m/%Y')
-            )
-        return ''
-    date_display.short_description = 'Fecha'
-
-    def get_response_summary(self, obj):
-        if not obj.responses:
-            return "Sin respuestas"
-        return f"{len(obj.responses)} respuestas registradas"
-    get_response_summary.short_description = "Respuestas"
-
+    # Helper methods for display
     def get_detailed_responses(self, obj):
+        from django.template.loader import render_to_string
+        
         if not obj.responses:
-            return "No hay respuestas registradas por el paciente"
+            responses = {}
+        else:
+            responses = {}
+            for node_id, response in obj.responses.items():
+                processed_response = response.copy()
+                
+                # Procesar respuestas de opción única
+                if response.get('type') == 'SINGLE_CHOICE_QUESTION':
+                    answer = response.get('answer', {})
+                    options = answer.get('options', [])
+                    selected = answer.get('selectedOption')
+                    if selected is not None and selected < len(options):
+                        processed_response['answer']['selected_text'] = options[selected]
+                        
+                # Procesar respuestas de opción múltiple
+                elif response.get('type') == 'MULTIPLE_CHOICE_QUESTION':
+                    answer = response.get('answer', {})
+                    options = answer.get('options', [])
+                    selected = answer.get('selectedOptions', [])
+                    selected_texts = []
+                    for idx in selected:
+                        if idx < len(options):
+                            selected_texts.append(options[idx])
+                    processed_response['answer']['selected_texts'] = selected_texts
+                    
+                responses[node_id] = processed_response
         
-        print("\n=== Debug Responses ===")
-        print(f"All responses: {obj.responses}")
-        
-        html = ["""
-            <table style='width:100%; border-collapse: collapse; margin-top: 10px;'>
-                <tr>
-                    <th style='border:1px solid #ddd; padding:12px; background-color:#f8f9fa;'>ID</th>
-                    <th style='border:1px solid #ddd; padding:12px; background-color:#f8f9fa;'>Tipo</th>
-                    <th style='border:1px solid #ddd; padding:12px; background-color:#f8f9fa;'>Pregunta</th>
-                    <th style='border:1px solid #ddd; padding:12px; background-color:#f8f9fa;'>Respuesta</th>
-                    <th style='border:1px solid #ddd; padding:12px; background-color:#f8f9fa;'>Fecha</th>
-                </tr>
-        """]
-        
-        for node_id, response_data in obj.responses.items():
-            try:
-                print(f"\nProcessing node {node_id}:")
-                print(f"Response data: {response_data}")
-                
-                question = response_data.get('question', 'Sin pregunta')
-                response_type = response_data.get('type', 'Desconocido')
-                answer_data = response_data.get('answer', [])
-                timestamp = response_data.get('metadata', {}).get('timestamp', '')
-                
-                print(f"Answer data: {answer_data}")
-                
-                formatted_answer = "Sin respuesta"
-                
-                if response_type == 'IMAGE_QUESTION':
-                        # Las imágenes vienen en answer.images
-                        images = answer_data.get('images', [])
-                        if images:
-                            formatted_answer = f"""
-                            <div style='
-                                display: flex;
-                                flex-wrap: wrap;
-                                gap: 8px;
-                                padding: 8px;
-                                background: #f8f9fa;
-                                border-radius: 6px;
-                                max-width: 440px;
-                                max-height: 300px;
-                                overflow-y: auto;
-                                align-content: flex-start;
-                            '>
-                            """
-                            
-                            for img in images:
-                                formatted_answer += f"""
-                                <div style='
-                                    position: relative;
-                                    width: 100px;
-                                    height: 100px;
-                                    flex: 0 0 auto;
-                                    border-radius: 6px;
-                                    overflow: hidden;
-                                    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-                                    transition: transform 0.2s;
-                                    cursor: pointer;
-                                    background: white;
-                                ' 
-                                onmouseover='this.style.transform="scale(1.05)"'
-                                onmouseout='this.style.transform="scale(1)"'
-                                onclick='window.open("{img}", "_blank")'>
-                                    <img src='{img}' 
-                                        style='
-                                            width: 100%;
-                                            height: 100%;
-                                            object-fit: cover;
-                                            border-radius: 6px;
-                                        '
-                                        title='Click para ver imagen completa'
-                                    />
-                                    <div style='
-                                        position: absolute;
-                                        bottom: 0;
-                                        left: 0;
-                                        right: 0;
-                                        padding: 3px;
-                                        background: rgba(0,0,0,0.5);
-                                        color: white;
-                                        font-size: 9px;
-                                        text-align: center;
-                                        overflow: hidden;
-                                        text-overflow: ellipsis;
-                                        white-space: nowrap;
-                                    '>
-                                        {img.split('/')[-1][:15]}...
-                                    </div>
-                                </div>
-                                """
-                            
-                            formatted_answer += "</div>"
-                        else:
-                            formatted_answer = "Sin imágenes"
+        context = {'responses': responses}
+        return mark_safe(render_to_string('admin/healthcategory/detailed_responses.html', context))
 
-                            
-                elif response_type == 'SINGLE_CHOICE_QUESTION':
-                    selected_option = answer_data.get('selectedOption')
-                    options = answer_data.get('options', [])
-                    if selected_option is not None and options and selected_option < len(options):
-                        formatted_answer = options[selected_option]
-                
-                elif response_type == 'MULTIPLE_CHOICE_QUESTION':
-                    selected_options = answer_data.get('selectedOptions', [])
-                    options = answer_data.get('options', [])
-                    selected = [options[i] for i in selected_options if i < len(options)]
-                    formatted_answer = ", ".join(selected) if selected else "No seleccionada"
-                
-                elif response_type == 'TEXT_QUESTION':
-                    formatted_answer = answer_data.get('value', 'Sin respuesta')
-                
-                elif response_type == 'SCALE_QUESTION':
-                    formatted_answer = str(answer_data.get('value', 'Sin respuesta'))
-
-                # Formatear la fecha
-                formatted_date = timestamp.split('T')[0] if timestamp else ''
-
-                html.append(f"""
-                    <tr>
-                        <td style='border:1px solid #ddd; padding:8px;'>{response_data.get('id', node_id)}</td>
-                        <td style='border:1px solid #ddd; padding:8px;'>{response_type}</td>
-                        <td style='border:1px solid #ddd; padding:8px;'>{question}</td>
-                        <td style='border:1px solid #ddd; padding:8px;'>{formatted_answer}</td>
-                        <td style='border:1px solid #ddd; padding:8px;'>{formatted_date}</td>
-                    </tr>
-                """)
-                
-            except Exception as e:
-                print(f"Error processing response {node_id}: {str(e)}")
-                html.append(f"""
-                    <tr>
-                        <td style='border:1px solid #ddd; padding:8px;'>{node_id}</td>
-                        <td colspan="4" style='border:1px solid #ddd; padding:8px; color: red;'>
-                            Error procesando respuesta: {str(e)}
-                        </td>
-                    </tr>
-                """)
-
-        html.append("</table>")
-        return mark_safe(''.join(html))
     get_detailed_responses.short_description = "Detalle de Respuestas"
 
-    def response_change(self, request, obj):
-        """
-        Override response_change to handle draft and publish actions
-        """
-        if "_sign_and_publish" in request.POST:
-            obj.is_draft = False
-            obj.doctor_recommendations_updated_by = request.user
-            obj.doctor_recommendations_updated_at = timezone.now()
-            obj.status = 'reviewed'
-            obj.save()
-            
-            self.message_user(
-                request, 
-                "✓ Las recomendaciones han sido firmadas y publicadas. Ya son visibles para el paciente.",
-                level=messages.SUCCESS
+    def get_user_info(self, obj):
+        if obj.user and obj.user.user:
+            user = obj.user.user
+            return format_html(
+                '<div style="min-width: 200px;">'
+                '<strong style="font-size: 14px;">{username}</strong><br>'
+                '<small style="color: #666;">{nombre} {apellido}</small><br>'
+                '<small style="color: #888;">{email}</small>'
+                '</div>',
+                username=user.username,
+                nombre=user.first_name or '',
+                apellido=user.last_name or '',
+                email=user.email or ''
             )
-            return self.response_post_save_change(request, obj)
-            
-        elif "_save_draft" in request.POST:
+        return "Usuario no disponible"
+    get_user_info.short_description = 'Usuario'
+
+    def get_template_name(self, obj):
+        return obj.template.name if obj.template else "Sin plantilla"
+    get_template_name.short_description = 'Plantilla'
+
+    def get_completion_status(self, obj):
+        if obj.completion_date:
+            return format_html(
+                '<span style="color: #28a745; font-weight: bold;">●</span> '
+                '<span style="color: #28a745;">Completado</span>'
+            )
+        return format_html(
+            '<span style="color: #ffc107; font-weight: bold;">●</span> '
+            '<span style="color: #ffc107;">Pendiente</span>'
+        )
+    get_completion_status.short_description = 'Estado'
+
+
+    def get_status_color(self, obj):
+        color_map = {
+            'verde': '#28a745',
+            'amarillo': '#ffc107',
+            'rojo': '#dc3545',
+            'gris': '#6c757d'
+        }
+        if obj.status_color:
+            return format_html(
+                '<span style="color: {}; font-weight: bold;">●</span> {}',
+                color_map.get(obj.status_color, '#6c757d'),
+                obj.get_status_color_display()
+            )
+        return "Sin asignar"
+    get_status_color.short_description = 'Color de riesgo'
+
+    def response_change(self, request, obj):
+        if "_save_draft" in request.POST:
             obj.is_draft = True
             obj.save()
             
@@ -450,47 +358,33 @@ class HealthCategoryAdmin(admin.ModelAdmin):
                 level=messages.WARNING
             )
             return self.response_post_save_change(request, obj)
-            
+        
+        # Si no es borrador, se guarda como firmado
+        obj.is_draft = False
+        obj.professional_recommendations_updated_by = request.user.get_full_name() or request.user.username
+        obj.professional_recommendations_updated_at = timezone.now()
+        obj.save()
+        
+        self.message_user(
+            request, 
+            "✓ Las recomendaciones han sido firmadas y son visibles para el paciente.",
+            level=messages.SUCCESS
+        )
         return super().response_change(request, obj)
 
     def save_model(self, request, obj, form, change):
         if 'doctor_recommendations' in form.changed_data or 'status_color' in form.changed_data:
             if not obj.is_draft:
-                obj.doctor_recommendations_updated_by = request.user
-                obj.doctor_recommendations_updated_at = timezone.now()
+                obj.professional_recommendations_updated_by = request.user.get_full_name() or request.user.username
+                obj.professional_recommendations_updated_at = timezone.now()
         obj.save()
 
     def get_form(self, request, obj=None, **kwargs):
         form = super().get_form(request, obj, **kwargs)
-        form.base_fields['doctor_recommendations'].help_text = (
-            "Las recomendaciones serán visibles para el paciente solo cuando se firmen y publiquen."
+        form.base_fields['professional_recommendations'].help_text = (
+            "Las recomendaciones serán visibles para el paciente cuando se guarden sin marcar como borrador."
         )
         return form
-
-@admin.register(TextRecomendation)
-class TextRecomendationAdmin(admin.ModelAdmin):
-    list_display = ('theme', 'category', 'sub_category')
-    list_filter = ('theme', 'category', 'sub_category')
-    search_fields = ('theme', 'category', 'sub_category', 'learn', 'remember', 'data', 'context_explanation')
-    ordering = ('theme', 'category')
-    
-    fieldsets = (
-        ('Información Básica', {
-            'fields': ('theme', 'category', 'sub_category')
-        }),
-        ('Contenido', {
-            'fields': ('learn', 'remember', 'data', 'practic_data', 'context_explanation'),
-            'classes': ('wide',)
-        }),
-        ('Metadatos', {
-            'fields': ('quote_link', 'keywords'),
-            'classes': ('collapse',),
-            'description': 'Información adicional'
-        }),
-    )
-
-    def get_queryset(self, request):
-        return super().get_queryset(request).select_related()
 
 class AppointmentForm(forms.ModelForm):
     date = forms.DateField(
@@ -547,6 +441,13 @@ class CustomUserAdmin(UserAdmin):
 
 admin.site.unregister(User)
 admin.site.register(User, CustomUserAdmin)
+
+# 1. Primero, registra UserProfile directamente
+@admin.register(UserProfile)
+class UserProfileAdmin(admin.ModelAdmin):
+    list_display = ('user', 'role', 'phone')
+    list_filter = ('role',)
+    search_fields = ('user__username', 'user__email', 'phone')
 
 
 

@@ -87,7 +87,7 @@ export default function CategoryDetailScreen() {
         <Text style={[styles.statusText, { color: theme.colors.text }]}>
           {status?.text || "Estado desconocido"}
         </Text>
-        {selectedCategory.doctor_recommendations && (
+        {selectedCategory.professional_recommendations && (
           <View style={styles.recommendationsContainer}>
             <Text
               style={[
@@ -100,7 +100,7 @@ export default function CategoryDetailScreen() {
             <Text
               style={[styles.recommendationsText, { color: theme.colors.text }]}
             >
-              {selectedCategory.doctor_recommendations}
+              {selectedCategory.professional_recommendations}
             </Text>
           </View>
         )}

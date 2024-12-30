@@ -3,8 +3,8 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from django.core.files.storage import default_storage
-from prevcad.models.profile import Profile
-from prevcad.serializers.user_serializer import UserSerializer
+from prevcad.models.user_profile import UserProfile
+from prevcad.serializers.user_profile_serializer import UserProfileSerializer
 import os
 import logging
 
@@ -19,7 +19,7 @@ def uploadProfileImage(request):
         logger.info(f"Procesando imagen para usuario: {user.username}")
         
         # Obtener o crear perfil
-        profile, created = Profile.objects.get_or_create(user=user)
+        profile, created = UserProfile.objects.get_or_create(user=user)
         logger.info(f"Perfil {'creado' if created else 'encontrado'} para {user.username}")
         
         image = request.FILES.get('profile_image')
@@ -50,7 +50,7 @@ def uploadProfileImage(request):
         
         # Refrescar usuario y serializar
         user.refresh_from_db()
-        serializer = UserSerializer(user, context={'request': request})
+        serializer = UserProfileSerializer(user, context={'request': request})
         return Response(serializer.data)
         
     except Exception as e:
@@ -66,9 +66,9 @@ def getProfile(request):
     try:
         user = request.user
         # Asegurar que existe el perfil
-        profile, created = Profile.objects.get_or_create(user=user)
+        profile, created = UserProfile.objects.get_or_create(user=user)
         
-        serializer = UserSerializer(user, context={'request': request})
+        serializer = UserProfileSerializer(user, context={'request': request})
         return Response(serializer.data)
         
     except Exception as e:

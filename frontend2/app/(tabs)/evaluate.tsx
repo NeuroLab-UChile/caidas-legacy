@@ -7,6 +7,7 @@ import {
   ScrollView,
   TouchableOpacity,
   Alert,
+  RefreshControl,
 } from "react-native";
 import { useCategories } from "../contexts/categories";
 import { theme } from "@/src/theme";
@@ -95,6 +96,7 @@ const EvaluateScreen = () => {
 
   const [loading, setLoading] = useState(false);
   const [showWelcome, setShowWelcome] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   const [evaluationState, setEvaluationState] = useState<EvaluationState>(
     () => {
@@ -360,22 +362,60 @@ const EvaluateScreen = () => {
   };
 
   const renderDoctorReview = () => {
-    if (!selectedCategory?.status_color)
+    console.log("Doctor Review Data:", {
+      statusColor: selectedCategory?.status_color,
+      recommendations: selectedCategory?.professional_recommendations,
+      updatedBy: selectedCategory?.professional_recommendations_updated_by,
+      updatedAt: selectedCategory?.professional_recommendations_updated_at,
+      recommendationStatus: selectedCategory?.is_draft,
+    });
+
+    // Solo mostrar si está publicado
+    if (selectedCategory?.is_draft) {
       return (
         <View style={{ padding: 16 }}>
           <Text>Espera a que el doctor revise tu evaluación</Text>
         </View>
       );
+    }
+
+    // Verificar que tengamos color de estado y recomendaciones
+    if (
+      !selectedCategory?.status_color ||
+      !selectedCategory?.professional_recommendations ||
+      selectedCategory?.is_draft
+    ) {
+      return (
+        <View style={{ padding: 16 }}>
+          <Text>Espera a que el doctor revise tu evaluación</Text>
+        </View>
+      );
+    }
 
     return (
       <DoctorRecommendations
         statusColor={selectedCategory.status_color}
-        recommendations={selectedCategory.doctor_recommendations || ""}
-        updatedBy={selectedCategory.doctor_recommendations_updated_by}
-        updatedAt={selectedCategory.doctor_recommendations_updated_at}
+        recommendations={selectedCategory.professional_recommendations}
+        updatedBy={
+          selectedCategory.professional_recommendations_updated_by?.name || ""
+        }
+        updatedAt={
+          selectedCategory.professional_recommendations_updated_at || ""
+        }
       />
     );
   };
+
+  const onRefresh = React.useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await fetchCategories();
+    } catch (error) {
+      console.error("Error refreshing categories:", error);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [fetchCategories]);
 
   if (loading) {
     return (
@@ -395,6 +435,9 @@ const EvaluateScreen = () => {
         <ScrollView
           contentContainerStyle={styles.contentContainer}
           showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
         >
           <CategoryHeader name={selectedCategory.name} />
           <WelcomeScreen
@@ -414,6 +457,9 @@ const EvaluateScreen = () => {
       <ScrollView
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
       >
         {selectedCategory && <CategoryHeader name={selectedCategory.name} />}
 

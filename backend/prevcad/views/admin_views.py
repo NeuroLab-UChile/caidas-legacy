@@ -10,11 +10,12 @@ from django.conf import settings
 from prevcad.models import CategoryTemplate
 import logging
 import time
-
+from prevcad.decorators import doctor_required
 logger = logging.getLogger(__name__)
 
 @require_POST
 @csrf_exempt
+@doctor_required
 def update_evaluation_form(request, template_id):
     """
     Actualiza el formulario de evaluación de una plantilla de categoría.
@@ -26,34 +27,53 @@ def update_evaluation_form(request, template_id):
         if not new_form_data:
             return JsonResponse({
                 'status': 'error', 
-                'message': 'No se recibieron datos del formulario'
-            }, status=400)
+                'message': 'No se recibieron datos del formulario',
+                'details': None
+            }, status=400, json_dumps_params={'indent': 2, 'ensure_ascii': False})
         
         new_form = json.loads(new_form_data)
         if "question_nodes" not in new_form or not isinstance(new_form["question_nodes"], list):
             return JsonResponse({
                 'status': 'error', 
-                'message': 'Estructura de datos inválida'
-            }, status=400)
+                'message': 'Estructura de datos inválida',
+                'details': {
+                    'required_fields': ['question_nodes'],
+                    'received_fields': list(new_form.keys())
+                }
+            }, status=400, json_dumps_params={'indent': 2, 'ensure_ascii': False})
 
         obj.evaluation_form = new_form
         obj.save(update_fields=["evaluation_form"])
         
         return JsonResponse({
             'status': 'success',
-            'message': 'Formulario de evaluación actualizado correctamente'
-        })
+            'message': 'Formulario de evaluación actualizado correctamente',
+            'data': {
+                'template_id': template_id,
+                'updated_at': obj.updated_at.isoformat() if hasattr(obj, 'updated_at') else None,
+                'nodes_count': len(new_form.get('question_nodes', []))
+            }
+        }, json_dumps_params={'indent': 2, 'ensure_ascii': False})
+
     except json.JSONDecodeError:
         return JsonResponse({
             'status': 'error',
-            'message': 'Error al decodificar JSON'
-        }, status=400)
+            'message': 'Error al decodificar JSON',
+            'details': {
+                'received_data': new_form_data[:100] + '...' if len(new_form_data) > 100 else new_form_data
+            }
+        }, status=400, json_dumps_params={'indent': 2, 'ensure_ascii': False})
+
     except Exception as e:
         logger.error(f"Error updating evaluation form: {str(e)}", exc_info=True)
         return JsonResponse({
             'status': 'error',
-            'message': str(e)
-        }, status=500)
+            'message': 'Error interno del servidor',
+            'details': {
+                'error_type': type(e).__name__,
+                'error_message': str(e)
+            }
+        }, status=500, json_dumps_params={'indent': 2, 'ensure_ascii': False})
 
 @require_POST
 @csrf_exempt
