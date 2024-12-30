@@ -27,6 +27,7 @@ export default function ProfileScreen() {
   const loadProfile = async () => {
     try {
       const response = await apiService.user.getProfile();
+      console.log("response", response);
       setUser(response.data);
     } catch (error) {
       console.error("Error al cargar perfil:", error);

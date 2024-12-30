@@ -22,12 +22,34 @@ class CategoryTemplate(models.Model):
   name = models.TextField()
   description = models.TextField()
   is_active = models.BooleanField(default=True)
-  evaluation_form = models.JSONField(
-    null=True, 
-    blank=True, 
-    default=dict,
-    help_text="Formulario de evaluación en formato JSON"
+  EVALUATION_TYPE_CHOICES = [
+    ('SELF', 'Autoevaluación'),
+    ('PROFESSIONAL', 'Evaluación Profesional'),
+    ('BOTH', 'Ambas Evaluaciones')
+  ]
+  evaluation_type = models.CharField(
+    max_length=20,
+    choices=EVALUATION_TYPE_CHOICES,
+    default='SELF',
+    verbose_name="Tipo de Evaluación",
+    help_text="Define quién puede realizar la evaluación"
   )
+  # Formulario para autoevaluación
+  self_evaluation_form = models.JSONField(
+    null=True,
+    blank=True,
+    default=dict,
+    help_text="Formulario de autoevaluación en formato JSON"
+  )
+  # Formulario para evaluación profesional
+  professional_evaluation_form = models.JSONField(
+    null=True,
+    blank=True,
+    default=dict,
+    help_text="Formulario de evaluación profesional en formato JSON"
+  )
+
+  # Agregar el campo training_form
   training_form = models.JSONField(
     null=True,
     blank=True,
@@ -106,37 +128,62 @@ class CategoryTemplate(models.Model):
       self.icon = self.icon.lstrip('/')
     super().save(*args, **kwargs)
 
+  def get_evaluation_form(self):
+    """Retorna el formulario de evaluación apropiado según el tipo"""
+    if self.evaluation_type == 'SELF':
+      return self.self_evaluation_form
+    elif self.evaluation_type == 'PROFESSIONAL':
+      return self.professional_evaluation_form
+    return None
+
+  def get_evaluation_results(self):
+    """Retorna los resultados de evaluación apropiados según el tipo"""
+    if self.evaluation_type == 'SELF':
+      return self.self_evaluation_results
+    elif self.evaluation_type == 'PROFESSIONAL':
+      return self.professional_evaluation_result
+    return None
+
   def update_evaluation_form(self, data):
+    """Actualiza el formulario de evaluación apropiado según el tipo"""
+    if self.evaluation_type == 'SELF':
+      self.update_self_evaluation_form(data)
+    elif self.evaluation_type == 'PROFESSIONAL':
+      self.update_professional_evaluation_form(data)
+
+  def update_self_evaluation_form(self, data):
     if not isinstance(data, dict):
       raise ValueError("Los datos deben ser un diccionario.")
       
     if "question_nodes" not in data:
       raise ValueError("Los datos deben contener 'question_nodes'.")
       
-    if not isinstance(data["question_nodes"], list):
-      raise ValueError("question_nodes debe ser una lista.")
-      
     for node in data["question_nodes"]:
       if not isinstance(node, dict) or "type" not in node or "question" not in node:
         raise ValueError("Cada nodo debe ser un diccionario con 'type' y 'question'.")
 
-    self.evaluation_form = data
-    self.save(update_fields=['evaluation_form'])
+    self.self_evaluation_form = data
+    self.save(update_fields=['self_evaluation_form'])
 
-
-  def update_training_form(self, data):
+  def update_professional_evaluation_form(self, data):
     if not isinstance(data, dict):
       raise ValueError("Los datos deben ser un diccionario.")
+      
+    if "evaluation_sections" not in data:
+      raise ValueError("Los datos deben contener 'evaluation_sections'.")
+      
+    for section in data["evaluation_sections"]:
+      if not isinstance(section, dict) or "title" not in section or "fields" not in section:
+        raise ValueError("Cada sección debe tener 'title' y 'fields'.")
 
-    if "training_nodes" not in data:
-      raise ValueError("Los datos deben contener 'training_nodes'.")
-    
-    for node in data["training_nodes"]:
-      if not isinstance(node, dict) or "type" not in node or "content" not in node:
-        raise ValueError("Cada nodo debe ser un diccionario con 'type' y 'content'.")
+    self.professional_evaluation_form = data
+    self.save(update_fields=['professional_evaluation_form'])
 
-    self.training_form = data
-    self.save(update_fields=['training_form'])
+  def can_self_evaluate(self):
+    return self.evaluation_type in ['SELF', 'BOTH']
+
+  def can_professional_evaluate(self):
+    return self.evaluation_type in ['PROFESSIONAL', 'BOTH']
 
   def __str__(self):
     return self.name
@@ -176,6 +223,22 @@ class HealthCategory(models.Model):
         help_text="Si está marcado, las recomendaciones no serán visibles para el paciente"
     )
     evaluation_form = models.JSONField(null=True, blank=True, verbose_name="Formulario de evaluación")
+    # Resultados de la autoevaluación
+    self_evaluation_results = models.JSONField(
+        null=True,
+        blank=True,
+        default=dict,
+        help_text="Resultados de la autoevaluación del paciente"
+    )
+    # Resultados de la evaluación profesional
+
+    professional_evaluation_data = models.JSONField(default=dict, blank=True)
+    professional_evaluation_result = models.TextField(
+        blank=True, 
+        null=True,
+        verbose_name='Resultado de Evaluación Profesional',
+        help_text='Complete este campo solo para evaluaciones profesionales.'
+    )
 
     class Meta:
         verbose_name = "Categoría de Salud"
@@ -228,31 +291,102 @@ class HealthCategory(models.Model):
 
         super().save(*args, **kwargs)
 
+    def can_self_evaluate(self):
+        return self.template.can_self_evaluate()
+
+    def can_professional_evaluate(self):
+        return self.template.can_professional_evaluate()
+
+    def get_evaluation_results(self):
+        """Retorna los resultados de evaluación apropiados según el tipo de template"""
+        if self.template.evaluation_type == 'SELF':
+            return self.self_evaluation_results
+        elif self.template.evaluation_type == 'PROFESSIONAL':
+            return self.professional_evaluation_result
+        return None
+
+    def update_evaluation_results(self, data, user=None):
+        """Actualiza los resultados de evaluación según el tipo"""
+        if self.template.evaluation_type == 'SELF':
+            self.update_self_evaluation(user, data)
+        elif self.template.evaluation_type == 'PROFESSIONAL':
+            self.update_professional_evaluation(user, data)
+
+    def update_self_evaluation(self, user, evaluation_data):
+        if not self.template.can_self_evaluate():
+            raise ValueError("Esta categoría no permite autoevaluación")
+
+        self.self_evaluation_results = {
+            "date": timezone.now().isoformat(),
+            "user_id": user.id,
+            "evaluation_data": evaluation_data,
+            "updated_at": timezone.now().isoformat()
+        }
+        self.save(update_fields=['self_evaluation_results'])
+
+    def update_professional_evaluation(self, professional_user, evaluation_data):
+        if not self.template.can_professional_evaluate():
+            raise ValueError("Esta categoría no permite evaluación profesional")
+        if not professional_user.is_professional:
+            raise ValueError("Solo los profesionales pueden actualizar la evaluación")
+
+        self.professional_evaluation_result = {
+            "date": timezone.now().isoformat(),
+            "professional_id": professional_user.id,
+            "professional_name": professional_user.get_full_name(),
+            "evaluation_data": evaluation_data,
+            "updated_at": timezone.now().isoformat()
+        }
+        self.save(update_fields=['professional_evaluation_result'])
+
 
 
 
 
 @receiver(post_save, sender=UserProfile)
 def create_user_health_categories(sender, instance, created, **kwargs):
-  """Crear categorías de salud para un nuevo usuario"""
-  if created:
-    # Obtener todos los templates activos
-    templates = CategoryTemplate.objects.filter(is_active=True)
-    
-    # Crear una categoría por cada template para el nuevo usuario
-    for template in templates:
-      HealthCategory.objects.create(
-        user=instance,
-        template=template,
-        evaluation_form=template.evaluation_form,
-        training_form=template.training_form
-      )
+    """Crear categorías de salud para un nuevo usuario"""
+    if created:
+        # Obtener todos los templates activos
+        templates = CategoryTemplate.objects.filter(is_active=True)
+        
+        # Crear una categoría por cada template para el nuevo usuario
+        for template in templates:
+            defaults = {
+                'user': instance,
+                'template': template,
+            }
+            
+            # Agregar los formularios según el tipo de evaluación
+            if template.evaluation_type == 'SELF':
+                defaults['self_evaluation_results'] = {}
+            elif template.evaluation_type == 'PROFESSIONAL':
+                defaults['professional_evaluation_results'] = {}
+            
+            HealthCategory.objects.create(**defaults)
 
 
 @receiver(post_save, sender=CategoryTemplate)
 def create_health_categories_for_template(sender, instance, created, **kwargs):
-  if created:
-    HealthCategory.create_categories_for_template(instance)
+    """Crear categorías de salud cuando se crea un nuevo template"""
+    if created:
+        # Obtener todos los usuarios
+        users = UserProfile.objects.all()
+        
+        # Crear una categoría para cada usuario
+        for user in users:
+            defaults = {
+                'user': user,
+                'template': instance,
+            }
+            
+            # Agregar los formularios según el tipo de evaluación
+            if instance.evaluation_type == 'SELF':
+                defaults['self_evaluation_results'] = {}
+            elif instance.evaluation_type == 'PROFESSIONAL':
+                defaults['professional_evaluation_results'] = {}
+            
+            HealthCategory.objects.create(**defaults)
 
 
 @receiver(pre_delete, sender=CategoryTemplate)

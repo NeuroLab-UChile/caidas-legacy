@@ -9,13 +9,13 @@ class HealthCategorySerializer(serializers.ModelSerializer):
     name = serializers.SerializerMethodField()
     icon = serializers.SerializerMethodField()
     description = serializers.SerializerMethodField()
+    evaluation_type = serializers.SerializerMethodField()
     evaluation_form = serializers.SerializerMethodField()
+    evaluation_results = serializers.SerializerMethodField()
     training_form = serializers.SerializerMethodField()
-    status_color = serializers.SerializerMethodField()
-    status_display = serializers.SerializerMethodField()
-    professional_recommendations_updated_by = serializers.SerializerMethodField()
-    professional_recommendations_updated_at = serializers.DateTimeField(read_only=True)
-    is_draft = serializers.BooleanField(read_only=True)
+    status = serializers.SerializerMethodField()
+    professional_info = serializers.SerializerMethodField()
+    professional_evaluation_result = serializers.SerializerMethodField()
 
     class Meta:
         model = HealthCategory
@@ -24,16 +24,15 @@ class HealthCategorySerializer(serializers.ModelSerializer):
             'name', 
             'icon', 
             'description',
+            'evaluation_type',
             'evaluation_form',
+            'evaluation_results',
             'training_form',
-            'responses',
             'completion_date',
-            'status_color',
-            'professional_recommendations',
+            'status',
+            'professional_info',
             'is_draft',
-            'status_display',
-            'professional_recommendations_updated_by',
-            'professional_recommendations_updated_at'
+            'professional_evaluation_result'
         ]
 
     def get_name(self, obj):
@@ -41,79 +40,119 @@ class HealthCategorySerializer(serializers.ModelSerializer):
 
     def get_icon(self, obj):
         if obj.template and obj.template.icon:
-            print("Icon:", obj.template.icon)
             return obj.template.get_icon_base64()
         return None
 
+    def get_evaluation_type(self, obj):
+        """Obtener el tipo de evaluación y su etiqueta"""
+        if not obj.template:
+            return None
+            
+        types = {
+            'SELF': 'Autoevaluación',
+            'PROFESSIONAL': 'Evaluación Profesional'
+        }
+        return {
+            'type': obj.template.evaluation_type,
+            'label': types.get(obj.template.evaluation_type, 'Desconocido')
+        }
+
     def get_evaluation_form(self, obj):
-        if obj.template:
-            return obj.template.evaluation_form
-        print("No se encontró template")
-        return None
+        """Obtener el formulario de evaluación según el tipo"""
+        if not obj.template:
+            return None
+            
+        return obj.template.get_evaluation_form()
+
+    def get_evaluation_results(self, obj):
+        """Obtener los resultados de evaluación según el tipo"""
+        if not obj.template:
+            return None
+            
+        results = obj.get_evaluation_results()
+        if not results:
+            return None
+
+        # Agregar metadatos según el tipo de evaluación
+        if obj.template.evaluation_type == 'PROFESSIONAL':
+            return {
+                'data': results.get('evaluation_data'),
+                'professional': {
+                    'id': results.get('professional_id'),
+                    'name': results.get('professional_name')
+                },
+                'date': results.get('date'),
+                'updated_at': results.get('updated_at')
+            }
+        else:
+            return {
+                'data': results.get('evaluation_data'),
+                'date': results.get('date'),
+                'updated_at': results.get('updated_at')
+            }
 
     def get_training_form(self, obj):
         if obj.template:
             return obj.template.training_form
         return None
 
-    def get_status_color(self, obj):
-        if not obj.status_color:
-            return None
-            
-        status_map = {
+    def get_professional_evaluation_result(self, obj):
+        if obj.template.evaluation_type == 'PROFESSIONAL':
+            return obj.professional_evaluation_result
+        return None
+
+    def get_status(self, obj):
+        """Obtener información completa del estado"""
+        status_colors = {
             'verde': {'color': 'green', 'text': 'Saludable'},
             'amarillo': {'color': 'yellow', 'text': 'Precaución'},
             'rojo': {'color': 'red', 'text': 'Atención Requerida'},
             'gris': {'color': 'gray', 'text': 'Sin evaluar'}
         }
         
-        return status_map.get(obj.status_color, None)
-    
-    def get_status_display(self, obj):
-        """
-        Devuelve el texto del estado de las recomendaciones usando el display del modelo
-        """
-        if hasattr(obj, 'get_is_draft_display'):
-            return obj.get_is_draft_display()
-        
-        # Fallback por si acaso
-        status_map = {
-            'borrador': 'Borrador',
-            'publicado': 'Publicado',
-            'archivado': 'Archivado'
+        draft_status = {
+            True: 'Borrador',
+            False: 'Publicado'
         }
-        return status_map.get(obj.is_draft, 'Borrador')  # Default a 'Borrador'
+        
+        return {
+            'color': status_colors.get(obj.status_color, status_colors['gris']),
+            'draft': draft_status.get(obj.is_draft, 'Borrador'),
+            'has_evaluation': bool(obj.get_evaluation_results())
+        }
+
+    def get_professional_info(self, obj):
+        """Obtener información del profesional que realizó la última actualización"""
+        if not obj.professional_recommendations_updated_by:
+            return None
+            
+        return {
+            'name': obj.professional_recommendations_updated_by,
+            'date': obj.professional_recommendations_updated_at.strftime('%d/%m/%Y %H:%M') if obj.professional_recommendations_updated_at else None,
+            'recommendations': obj.professional_recommendations,
+            'is_draft': obj.is_draft
+        }
 
     def get_description(self, obj):
-        """Obtener la descripción del template"""
-        if obj and obj.template:
-            if obj.template.root_node:
-                return obj.template.root_node.description
-            return obj.template.description
-        return None
-
-    def get_professional_recommendations_updated_by(self, obj):
-        """
-        Devuelve el nombre del usuario que actualizó las recomendaciones.
-        """
-        if obj.professional_recommendations_updated_by:
-            return {
-                'name': obj.professional_recommendations_updated_by,
-                'date': obj.professional_recommendations_updated_at.strftime('%d/%m/%Y %H:%M') if obj.professional_recommendations_updated_at else None
-            }
-        return None
+        if not obj.template:
+            return None
+            
+        return (obj.template.root_node.description 
+                if obj.template.root_node 
+                else obj.template.description)
 
     def to_representation(self, instance):
-        """
-        Personaliza la representación final del objeto
-        """
         data = super().to_representation(instance)
         
-        # Asegura que los campos de recomendaciones estén presentes
-        if 'professional_recommendations' not in data:
-            data['professional_recommendations'] = None
-            
-        if 'is_draft' not in data:
-            data['is_draft'] = True
-            
+        # Asegurar que los campos requeridos estén presentes
+        required_fields = {
+            'professional_info': None,
+            'is_draft': True,
+            'evaluation_results': None
+        }
+        
+        for field, default in required_fields.items():
+            if field not in data:
+                data[field] = default
+                
         return data

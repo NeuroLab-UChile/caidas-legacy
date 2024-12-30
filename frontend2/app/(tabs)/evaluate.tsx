@@ -24,6 +24,7 @@ import { router } from "expo-router";
 import EmptyState from "../containers/EmptyState";
 import { useAuth } from "../contexts/auth";
 import { UserProfile } from "../services/apiService";
+import { ProfessionalEvaluation } from "@/components/ProfessionalEvaluation";
 
 interface NodeResponse {
   nodeId: number;
@@ -46,6 +47,26 @@ interface EvaluationState {
   };
 }
 
+const getWelcomeText = (category: Category) => {
+  if (category.evaluation_type === "PROFESSIONAL") {
+    return {
+      title: "Evaluación Profesional",
+      description:
+        category.description ||
+        "Esta evaluación será realizada por un profesional de la salud.",
+      buttonText: "Ver Evaluación",
+    };
+  }
+
+  return {
+    title: "Autoevaluación",
+    description:
+      category.description ||
+      "Esta evaluación nos ayudará a entender mejor tu estado de salud.",
+    buttonText: "Comenzar Evaluación",
+  };
+};
+
 const WelcomeScreen = ({
   category,
   onStart,
@@ -55,6 +76,8 @@ const WelcomeScreen = ({
   onStart: () => void;
   userName: string;
 }) => {
+  const welcomeText = getWelcomeText(category);
+
   return (
     <View style={styles.welcomeContainer}>
       <Text style={styles.welcomeTitle}>¡Hola {userName}!</Text>
@@ -63,28 +86,10 @@ const WelcomeScreen = ({
         Bienvenido a la evaluación de {category.name}
       </Text>
 
-      <Text style={styles.welcomeDescription}>
-        Esta evaluación nos ayudará a:
-      </Text>
-
-      <View style={styles.bulletPoints}>
-        <Text style={styles.bulletPoint}>
-          • Entender mejor tu estado de salud actual
-        </Text>
-        <Text style={styles.bulletPoint}>
-          • Proporcionar recomendaciones personalizadas
-        </Text>
-        <Text style={styles.bulletPoint}>
-          • Hacer un seguimiento de tu progreso
-        </Text>
-      </View>
-
-      <Text style={styles.noteText}>
-        Tómate tu tiempo para responder cada pregunta con sinceridad.
-      </Text>
+      <Text style={styles.welcomeDescription}>{welcomeText.description}</Text>
 
       <TouchableOpacity style={styles.startButton} onPress={onStart}>
-        <Text style={styles.startButtonText}>Comenzar Evaluación</Text>
+        <Text style={styles.startButtonText}>{welcomeText.buttonText}</Text>
       </TouchableOpacity>
     </View>
   );
@@ -340,6 +345,13 @@ const EvaluateScreen = () => {
     }
   };
 
+  useEffect(() => {
+    if (selectedCategory) {
+      const { icon, ...categoryWithoutIcon } = selectedCategory;
+      console.log("selectedCategory (without icon):", categoryWithoutIcon);
+    }
+  }, [selectedCategory]);
+
   const getCurrentNode = (nodeId: number | null): QuestionNode | null => {
     const nodes = selectedCategory?.evaluation_form?.question_nodes || [];
     return nodes.find((node) => node.id === nodeId) || null;
@@ -417,6 +429,74 @@ const EvaluateScreen = () => {
     }
   }, [fetchCategories]);
 
+  const renderContent = () => {
+    // Siempre mostrar la pantalla de bienvenida primero si showWelcome es true
+    if (showWelcome) {
+      return (
+        <WelcomeScreen
+          category={selectedCategory as Category}
+          userName={
+            userProfile?.first_name || userProfile?.username || "Usuario"
+          }
+          onStart={() => {
+            setShowWelcome(false);
+            // Si es evaluación profesional, marcar como completada
+            if (selectedCategory?.evaluation_type === "PROFESSIONAL") {
+              setEvaluationState((prev) => ({
+                ...prev,
+                completed: true,
+              }));
+            }
+          }}
+        />
+      );
+    }
+
+    if (selectedCategory?.evaluation_type === "PROFESSIONAL") {
+      return <ProfessionalEvaluation category={selectedCategory} />;
+    }
+
+    if (evaluationState.completed) {
+      return (
+        <View style={styles.completedContainer}>
+          <Text style={styles.completedText}>
+            {getCategoryStatus(selectedCategory)?.text ||
+              "✅ Evaluación Completada"}
+          </Text>
+          {renderDoctorReview()}
+          <TouchableOpacity
+            style={[styles.startButton, { marginTop: 24 }]}
+            onPress={handleStartNewEvaluation}
+          >
+            <Text style={styles.startButtonText}>Iniciar Nueva Evaluación</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+
+    return renderNode(evaluationState.currentNodeId, () => {
+      if (evaluationState.history.length > 0) {
+        const previousNodes = [...evaluationState.history];
+        const previousNodeId = previousNodes.pop();
+        setEvaluationState((prev) => ({
+          ...prev,
+          currentNodeId: previousNodeId || null,
+          history: previousNodes,
+        }));
+      }
+    });
+  };
+
+  useEffect(() => {
+    if (selectedCategory) {
+      setShowWelcome(
+        selectedCategory.evaluation_type === "SELF" &&
+          !evaluationState.completed &&
+          !evaluationState.responses.length
+      );
+    }
+  }, [selectedCategory]);
+
   if (loading) {
     return (
       <View style={styles.container}>
@@ -429,29 +509,6 @@ const EvaluateScreen = () => {
     return <EmptyState view="evaluate" />;
   }
 
-  if (showWelcome && !evaluationState.completed) {
-    return (
-      <View style={styles.container}>
-        <ScrollView
-          contentContainerStyle={styles.contentContainer}
-          showsVerticalScrollIndicator={false}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-          }
-        >
-          <CategoryHeader name={selectedCategory.name} />
-          <WelcomeScreen
-            category={selectedCategory}
-            userName={
-              userProfile?.first_name || userProfile?.username || "Usuario"
-            }
-            onStart={() => setShowWelcome(false)}
-          />
-        </ScrollView>
-      </View>
-    );
-  }
-
   return (
     <View style={styles.container}>
       <ScrollView
@@ -462,36 +519,7 @@ const EvaluateScreen = () => {
         }
       >
         {selectedCategory && <CategoryHeader name={selectedCategory.name} />}
-
-        {evaluationState.completed ? (
-          <View style={styles.completedContainer}>
-            <Text style={styles.completedText}>
-              {getCategoryStatus(selectedCategory)?.text ||
-                "✅ Evaluación Completada"}
-            </Text>
-            {renderDoctorReview()}
-            <TouchableOpacity
-              style={[styles.startButton, { marginTop: 24 }]}
-              onPress={handleStartNewEvaluation}
-            >
-              <Text style={styles.startButtonText}>
-                Iniciar Nueva Evaluación
-              </Text>
-            </TouchableOpacity>
-          </View>
-        ) : (
-          renderNode(evaluationState.currentNodeId, () => {
-            if (evaluationState.history.length > 0) {
-              const previousNodes = [...evaluationState.history];
-              const previousNodeId = previousNodes.pop();
-              setEvaluationState((prev) => ({
-                ...prev,
-                currentNodeId: previousNodeId || null,
-                history: previousNodes,
-              }));
-            }
-          })
-        )}
+        {renderContent()}
       </ScrollView>
     </View>
   );

@@ -22,24 +22,30 @@ class HealthCategoryListView(APIView):
     permission_classes = [IsAuthenticated]
     
     def get(self, request):
-        try:
-            print("\n=== Debug HealthCategoryListView ===")
-            print(f"Usuario autenticado: {request.user}")
-
-            # Obtener o crear el perfil del usuario
-            user_profile = get_object_or_404(UserProfile, user=request.user)
-
-            # Obtener las categorías activas del usuario    
-            categories = HealthCategory.objects.filter(
-                user=user_profile,
-                template__is_active=True
-            ).select_related('template')
-
-            serialized = HealthCategorySerializer(categories, many=True).data
-            return Response(serialized)
-        except Exception as e:
-            print(f"Error: {e}")
-            return Response({"error": str(e)}, status=500)
+        print("=== Debug HealthCategoryListView ===")
+        print(f"Usuario autenticado: {request.user.username}")
+        
+        categories = HealthCategory.objects.filter(user__user=request.user)
+        serialized_categories = []
+        
+        for category in categories:
+            template = category.template
+            if template:
+                category_data = {
+                    'id': category.id,
+                    'name': template.name,
+                    'description': template.description,
+                    'icon': template.get_icon_base64(),
+                    'evaluation_type': template.evaluation_type,
+                    'evaluation_form': template.get_evaluation_form(),
+                    'evaluation_results': category.get_evaluation_results(),
+                    'training_form': template.training_form,
+                    'professional_evaluation_result': category.professional_evaluation_result,
+                    # ... otros campos ...
+                }
+                serialized_categories.append(category_data)
+        
+        return Response(serialized_categories)
 
 @api_view(['POST'])
 def save_evaluation_responses(request, category_id):
@@ -184,15 +190,7 @@ def update_category_template(request, template_id):
         return Response({'error': 'Template not found'}, status=404)
 
 
-def calculate_score(responses):
-    """
-    Calcula el score basado en las respuestas.
-    Implementa tu lógica de puntuación aquí.
-    """
-    # Ejemplo básico
-    score = 0
-    # ... implementa tu lógica de puntuación
-    return score
+
 
 @api_view(['POST'])
 def create_health_category(request):

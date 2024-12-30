@@ -1,0 +1,58 @@
+{% extends "admin/change_form.html" %}
+{% load i18n admin_urls static admin_modify %}
+
+{% block extrahead %}
+{{ block.super }}
+<script type="text/javascript">
+    window.addEventListener('load', function() {
+        if (typeof django !== 'undefined' && django.jQuery) {
+            (function($) {
+                var evaluationTypeSelect = $('#id_evaluation_type');
+                var selfFormFieldset = $('.field-self_evaluation_form').closest('fieldset');
+                var professionalFormFieldset = $('.field-professional_evaluation_form').closest('fieldset');
+                var trainingNodesFieldset = $('.field-training_form').closest('fieldset');
+
+                function updateFormFields() {
+                    var selectedType = evaluationTypeSelect.val();
+                    console.log('Selected type:', selectedType);
+                    
+                    // Siempre mostrar los nodos de entrenamiento
+                    trainingNodesFieldset.show();
+                    
+                    // Mostrar/ocultar formularios según el tipo
+                    if (selectedType === 'SELF') {
+                        selfFormFieldset.show();
+                        professionalFormFieldset.hide();
+                    } else if (selectedType === 'PROFESSIONAL') {
+                        selfFormFieldset.hide();
+                        professionalFormFieldset.show();
+                    }
+                }
+
+                // Actualizar campos cuando cambia el tipo de evaluación
+                evaluationTypeSelect.on('change', function() {
+                    console.log('Evaluation type changed');
+                    if (confirm('¿Está seguro de cambiar el tipo de evaluación? Los formularios se mantendrán guardados pero cambiarán de visibilidad.')) {
+                        updateFormFields();
+                    } else {
+                        // Revertir el cambio
+                        $(this).val($(this).data('previous-value'));
+                    }
+                    // Guardar el nuevo valor como anterior
+                    $(this).data('previous-value', $(this).val());
+                });
+
+                // Guardar el valor inicial
+                evaluationTypeSelect.data('previous-value', evaluationTypeSelect.val());
+
+                // Ejecutar al cargar la página
+                updateFormFields();
+                
+                console.log('Script initialized successfully');
+            })(django.jQuery);
+        } else {
+            console.error('django.jQuery not available');
+        }
+    });
+</script>
+{% endblock %}

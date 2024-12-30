@@ -178,7 +178,7 @@ class ApiClient {
   public user = {
     getProfile: async (): Promise<ApiResponse<UserProfile>> => {
       const response = await fetch(
-        this.getUrl('/user/profile'),
+        this.getUrl('/user/profile/'),
         {
           headers: await this.getHeaders(),
         }
@@ -202,30 +202,44 @@ class ApiClient {
       try {
         console.log("Starting image upload...");
 
-        // Crear un FormData
         const formData = new FormData();
 
-        // Agregar la imagen al FormData
+        // Obtener el nombre del archivo y su extensión
+        const filename = imageUri.split('/').pop() || 'profile-image.jpg';
+        const match = /\.(\w+)$/.exec(filename);
+        const type = match ? `image/${match[1]}` : 'image/jpeg';
+
+        // Agregar la imagen al FormData con la estructura correcta
         formData.append('profile_image', {
           uri: imageUri,
-          type: 'image/jpeg', // o determinar el tipo dinámicamente
-          name: 'profile-image.jpg',
+          type,
+          name: filename,
         } as any);
 
+        const token = await AsyncStorage.getItem('auth_token');
+        if (!token) {
+          throw new Error('No auth token found');
+        }
+
+        // Usar la ruta específica para subir imágenes
         const response = await fetch(
-          this.getUrl('/user/profile/upload_image/'),
+          this.getUrl('/user/profile/upload_image/'),  // Ruta actualizada
           {
-            method: 'POST',
+            method: 'POST',  // Cambiado a POST para coincidir con el backend
             headers: {
-              'Authorization': `Bearer ${await AsyncStorage.getItem('auth_token')}`,
-              // No establecer Content-Type, se establecerá automáticamente con el boundary del FormData
+              'Authorization': `Bearer ${token}`,
+              'Accept': 'application/json',
             },
             body: formData,
           }
         );
 
+        console.log('Upload response status:', response.status);
+
         if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+          const errorData = await response.json();
+          console.error('Upload error:', errorData);
+          throw new Error(errorData.detail || 'Error uploading image');
         }
 
         return this.handleResponse<UserProfile>(response);

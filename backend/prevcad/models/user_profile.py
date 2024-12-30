@@ -42,7 +42,8 @@ class UserProfile(models.Model):
     profile_image = models.ImageField(
         upload_to='profile_images/',
         null=True,
-        blank=True
+        blank=True,
+        verbose_name="Imagen de perfil"
     )
 
 
@@ -112,3 +113,9 @@ def save_user_profile(sender, instance, **kwargs):
     if not hasattr(instance, 'profile'):
         UserProfile.objects.create(user=instance)
     instance.profile.save() 
+
+    def delete(self, *args, **kwargs):
+        # Eliminar la imagen al eliminar el perfil
+        if self.profile_image:
+            self.profile_image.delete()
+        super().delete(*args, **kwargs) 

@@ -1,8 +1,9 @@
 [
   {
     "name": "Riesgo Domiciliario",
-    "description": "Evalúe los riesgos comunes dentro del hogar, como caídas, problemas de iluminación o desorden. Identifique oportunidades para mejorar la seguridad y crear un ambiente más seguro para usted y su familia.",
+    "description": "Evalúe los riesgos comunes dentro del hogar, como caídas, problemas de iluminación o desorden.",
     "icon": "health_categories_icons/home_safety.png",
+    "evaluation_type": "SELF",
     "evaluation_form": {
       "question_nodes": [
         {
@@ -83,7 +84,17 @@
         {
           "id": 7,
           "type": "IMAGE_QUESTION",
-          "question": "Por favor capture fotos de los siguientes lugares de su hogar: entrada, dormitorio, baño, pasillo, living, desniveles en el suelo y otros lugares específicos que considere relevantes."
+          "question": "Por favor capture fotos de los siguientes lugares de su hogar: entrada"
+        },
+        {
+          "id": 8,
+          "type": "IMAGE_QUESTION",
+          "question": "Por favor capture fotos de los siguientes lugares de su hogar: baño"
+        },
+        {
+          "id": 9,
+          "type": "IMAGE_QUESTION",
+          "question": "Por favor capture fotos de los siguientes lugares de su hogar: escaleras"
         }
       ]
     },
@@ -108,8 +119,9 @@
   },
   {
     "name": "Actividad Física",
-    "description": "Manténgase activo y prevenga la pérdida de movilidad con rutinas adaptadas a sus necesidades. La actividad física mejora la fuerza, la coordinación y la confianza para desplazarse de manera segura.",
+    "description": "Manténgase activo y prevenga la pérdida de movilidad con rutinas adaptadas a sus necesidades.",
     "icon": "health_categories_icons/exercise.png",
+    "evaluation_type": "SELF",
     "evaluation_form": {
       "question_nodes": [
         {
@@ -204,23 +216,54 @@
   },
   {
     "name": "Alimentación Saludable",
-    "description": "Una dieta balanceada es esencial para el bienestar. Evalúe sus hábitos alimenticios y aprenda estrategias para mejorar su nutrición y prevenir enfermedades asociadas a una dieta inadecuada.",
+    "description": "Una dieta balanceada es esencial para el bienestar. Su profesional evaluará sus hábitos alimenticios y proporcionará recomendaciones personalizadas.",
     "icon": "health_categories_icons/healthy_diet.png",
-    "evaluation_form": {
-      "question_nodes": [
+    "evaluation_type": "PROFESSIONAL",
+    "professional_evaluation_form": {
+      "evaluation_sections": [
         {
-          "id": 1,
-          "type": "SINGLE_CHOICE_QUESTION",
-          "question": "¿Consume frutas y verduras diariamente?",
-          "options": [
-            "Sí",
-            "No"
+          "title": "Evaluación Nutricional",
+          "fields": [
+            {
+              "id": "weight",
+              "type": "NUMERIC",
+              "label": "Peso actual",
+              "unit": "kg",
+              "required": true
+            },
+            {
+              "id": "height",
+              "type": "NUMERIC",
+              "label": "Altura",
+              "unit": "cm",
+              "required": true
+            },
+            {
+              "id": "bmi",
+              "type": "CALCULATED",
+              "label": "IMC",
+              "formula": "weight / (height/100)^2",
+              "readonly": true
+            }
           ]
         },
         {
-          "id": 2,
-          "type": "TEXT_QUESTION",
-          "question": "¿Qué alimentos considera esenciales en su dieta diaria?"
+          "title": "Recomendaciones",
+          "fields": [
+            {
+              "id": "dietary_restrictions",
+              "type": "TEXT",
+              "label": "Restricciones alimentarias",
+              "multiline": true
+            },
+            {
+              "id": "recommendations",
+              "type": "TEXT",
+              "label": "Plan nutricional recomendado",
+              "multiline": true,
+              "required": true
+            }
+          ]
         }
       ]
     },
@@ -289,6 +332,7 @@
     "name": "Valoración Sensorial",
     "description": "Detecte problemas de visión o audición que puedan aumentar el riesgo de caídas. Mantenga sus sentidos en óptimas condiciones con ejercicios y consultas médicas regulares.",
     "icon": "health_categories_icons/sensory_health.png",
+    "evaluation_type": "SELF",
     "evaluation_form": {
       "question_nodes": [
         {
@@ -327,6 +371,7 @@
     "name": "Fármacos y Medicación",
     "description": "Asegúrese de que su medicación no interfiera con su equilibrio o coordinación. Identifique formas de gestionar mejor su tratamiento.",
     "icon": "health_categories_icons/medication.png",
+    "evaluation_type": "SELF",
     "evaluation_form": {
       "question_nodes": [
         {
@@ -361,6 +406,7 @@
     "name": "Cognición y Ánimo",
     "description": "Evalúe su estado cognitivo y emocional. La mente y el estado de ánimo desempeñan un papel crucial en la prevención de accidentes.",
     "icon": "health_categories_icons/mind_health.png",
+    "evaluation_type": "SELF",
     "evaluation_form": {
       "question_nodes": [
         {
@@ -395,6 +441,7 @@
     "name": "Historia de Caídas",
     "description": "Identifique patrones de incidentes pasados para prevenir futuras caídas y adoptar medidas correctivas en su día a día.",
     "icon": "health_categories_icons/falls.png",
+    "evaluation_type": "SELF",
     "evaluation_form": {
       "question_nodes": [
         {
@@ -429,6 +476,7 @@
     "name": "Estado Óseo y Muscular",
     "description": "Fortalezca sus huesos y músculos para mantener el equilibrio y reducir el riesgo de fracturas en caso de caídas.",
     "icon": "health_categories_icons/bone_muscle_health.png",
+    "evaluation_type": "SELF",
     "evaluation_form": {
       "question_nodes": [
         {

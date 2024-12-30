@@ -4,18 +4,19 @@ from prevcad.models import UserProfile
 
 class UserProfileSerializer(serializers.ModelSerializer):
     profile_image = serializers.SerializerMethodField()
+    username = serializers.CharField(source='user.username', read_only=True)
+    email = serializers.CharField(source='user.email', read_only=True)
+    first_name = serializers.CharField(source='user.first_name', read_only=True)
+    last_name = serializers.CharField(source='user.last_name', read_only=True)
 
     class Meta:
         model = UserProfile
-        fields = ['profile_image', 'phone', 'birth_date', 'role']
+        fields = ['profile_image', 'phone', 'birth_date', 'role', 'first_name', 'last_name', 'email', 'username']
 
     def get_profile_image(self, obj):
-        """
-        Obtiene la URL de la imagen de perfil si existe
-        """
-        if hasattr(obj, 'profile_image') and obj.profile_image:
+        if obj.profile_image:
             request = self.context.get('request')
-            if request is not None:
+            if request:
                 return request.build_absolute_uri(obj.profile_image.url)
         return None
 

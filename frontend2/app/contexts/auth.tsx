@@ -6,7 +6,7 @@ import { UserProfile } from "../services/apiService";
 type AuthContextType = {
   token: string | null;
   isAuthenticated: boolean; // Nueva variable global
-  signIn: (username: string, password: string) => Promise<void>;
+  signIn: (username: string, password: string) => Promise<boolean>;
   signOut: () => Promise<void>;
   isLoading: boolean;
   userProfile: UserProfile | null;
@@ -18,8 +18,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-
-  const isAuthenticated = !!token; // Nueva lógica para determinar autenticación
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
     checkAuthState();
@@ -44,28 +43,59 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const signIn = async (username: string, password: string) => {
+  const signIn = async (
+    username: string,
+    password: string
+  ): Promise<boolean> => {
     try {
       const response = await authService.login({ username, password });
+
+      if (!response || !response.access) {
+        console.log("No se recibió token de acceso");
+        setIsAuthenticated(false);
+        return false;
+      }
+
+      console.log("Token recibido:", response.access);
       setToken(response.access);
-
       await AsyncStorage.setItem("auth_token", response.access);
-      await AsyncStorage.setItem("refresh_token", response.refresh);
 
-      const profile = await authService.getUserInfo(response.access);
-      setUserProfile(profile);
+      if (response.refresh) {
+        await AsyncStorage.setItem("refresh_token", response.refresh);
+      }
 
-      return true;
+      try {
+        const profile = await authService.getUserInfo(response.access);
+        if (profile) {
+          setUserProfile(profile);
+          setIsAuthenticated(true);
+          return true;
+        }
+      } catch (profileError) {
+        console.error("Error obteniendo perfil:", profileError);
+        await signOut();
+        return false;
+      }
+
+      return false;
     } catch (error) {
-      console.error("Login failed:", error);
+      console.error("Error en signIn:", error);
+      setIsAuthenticated(false);
       return false;
     }
   };
 
   const signOut = async () => {
-    await AsyncStorage.removeItem("auth_token");
-    await AsyncStorage.removeItem("refresh_token");
-    setToken(null);
+    try {
+      await AsyncStorage.removeItem("auth_token");
+      await AsyncStorage.removeItem("refresh_token");
+    } catch (error) {
+      console.error("Error durante signOut:", error);
+    } finally {
+      setToken(null);
+      setUserProfile(null);
+      setIsAuthenticated(false);
+    }
   };
 
   return (
@@ -74,7 +104,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         token,
         isAuthenticated,
         signIn: (username: string, password: string) =>
-          signIn(username, password).then(() => {}),
+          signIn(username, password).then((result) => result),
         signOut,
         isLoading,
         userProfile,

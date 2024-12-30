@@ -28,11 +28,24 @@ export interface RootNode {
 
 export interface TrainingNode {
   id: number;
-  type: 'TEXT_NODE' | 'VIDEO_NODE' | 'IMAGE_NODE' | 'WEEKLY_RECIPE_NODE';
-  title: string;
-  description: string;
-  media_url?: string;
-  next_node_id: number | null;
+  type: string;
+  content: string;
+  options?: any[];
+  // Add any other properties your nodes might have
+}
+
+export interface NodeResponse {
+  nodeId: number;
+  response: any;
+}
+
+export interface TrainingState {
+  currentNodeId: number | null;
+  history: number[];
+  trainingResult: {
+    initial_node_id: number | null;
+    nodes: TrainingNode[];
+  };
 }
 
 export interface Category {
@@ -40,6 +53,8 @@ export interface Category {
   name: string;
   icon?: string;
   description?: string;
+  evaluation_type: string;
+  professional_evaluation_result?: string;
 
   evaluation_form?: {
     question_nodes: QuestionNode[];

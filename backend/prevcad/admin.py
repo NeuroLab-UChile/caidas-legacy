@@ -78,41 +78,173 @@ class UserAdmin(BaseUserAdmin):
 
 @admin.register(CategoryTemplate)
 class CategoryTemplateAdmin(admin.ModelAdmin):
-  change_form_template = 'admin/categorytemplate/change_activity_form.html'
-  list_display = ('name', 'is_active', 'preview_icon', 'description_preview')
-  list_filter = ('is_active',)
-  search_fields = ('name', 'description')
+    change_form_template = 'admin/categorytemplate/change_activity_form.html'
+    list_display = ('name', 'is_active', 'preview_icon', 'description_preview', 'get_evaluation_type_display')
+    list_filter = ('is_active', 'evaluation_type')
+    search_fields = ('name', 'description')
 
-  
-  
-  fieldsets = (
-    ('Información Básica', {
-      'fields': ('name', 'description', 'icon', 'is_active')
-    }),
-    ('Formulario de Evaluación', {
-      'classes': ('wide',),
-      'fields': ('evaluation_form_button',),
-      'description': 'Configure las preguntas del formulario de evaluación.'
-    }),
-    ('Nodos de Entrenamiento', {
-      'classes': ('collapse',),
-      'fields': ('training_nodes_button',),
-    }),
-  )
-  readonly_fields = ('evaluation_form_button', 'training_nodes_button')
+    def get_fieldsets(self, request, obj=None):
+        fieldsets = [
+            ('Información Básica', {
+                'fields': ('name', 'description', 'icon', 'is_active')
+            })
+        ]
+        
+        # Solo los superusuarios pueden ver y editar el tipo de evaluación
+        if request.user.is_superuser:
+            fieldsets.append(
+                ('Tipo de Evaluación', {
+                    'fields': ('evaluation_type',),
+                    'description': 'Solo administradores pueden modificar el tipo de evaluación.'
+                })
+            )
 
-  def preview_icon(self, obj):
-    if obj.icon:
-      return format_html('<img src="{}" style="height: 30px; width: auto;"/>', obj.icon.url)
-    return "Sin ícono"
-  preview_icon.short_description = 'Ícono'
+        # Siempre mostrar el training form y el botón de gestión
+        fieldsets.append(
+            ('Nodos de Entrenamiento', {
+                'fields': ('training_form', 'training_nodes_button'),
+                'description': 'Configure los nodos de entrenamiento.',
+            })
+        )
 
-  def description_preview(self, obj):
-    return Truncator(obj.description).chars(50)
-  description_preview.short_description = 'Descripción'
+        # Mostrar el formulario de evaluación según el tipo
+        if obj and obj.evaluation_type:
+            if obj.evaluation_type == 'SELF':
+                if hasattr(request.user, 'profile') and request.user.profile.role == 'doctor':
+                    fieldsets.append(
+                        ('Formulario de Autoevaluación', {
+                            'fields': ('self_evaluation_form', 'evaluation_nodes_button'),
+                            'description': 'Configure las preguntas para la autoevaluación.'
+                        })
+                    )
+            else:  # PROFESSIONAL
+                fieldsets.append(
+                    ('Formulario de Evaluación Profesional', {
+                        'fields': ('professional_evaluation_form', 'evaluation_nodes_button'),
+                        'description': 'Configure el formulario de evaluación profesional.'
+                    })
+                )
 
-  def evaluation_form_button(self, obj):
-    return mark_safe(f"""
+        return fieldsets
+
+    def get_readonly_fields(self, request, obj=None):
+        readonly = ['training_nodes_button', 'evaluation_nodes_button']  # Botones siempre readonly
+        
+        if not request.user.is_superuser:
+            readonly.append('evaluation_type')
+        
+        if obj and obj.evaluation_type == 'SELF':
+            if not hasattr(request.user, 'profile') or request.user.profile.role != 'doctor':
+                readonly.append('self_evaluation_form')
+        
+        return readonly
+
+    def training_nodes_button(self, obj):
+        """Renderiza el botón para gestionar nodos de entrenamiento"""
+        if obj and obj.pk:
+            return format_html(
+                '<button type="button" class="btn btn-primary" onclick="openFormModal(\'TRAINING\')">Gestionar Nodos de Entrenamiento</button>'
+            )
+        return "Guarde primero para gestionar los nodos de entrenamiento"
+    training_nodes_button.short_description = ""
+
+    def evaluation_nodes_button(self, obj):
+        """Renderiza el botón para gestionar nodos de evaluación"""
+        if obj and obj.pk:
+            eval_type = 'SELF' if obj.evaluation_type == 'SELF' else 'PROFESSIONAL'
+            return format_html(
+                '<button type="button" class="btn btn-primary" onclick="openFormModal(\'{}\')">Gestionar Preguntas de Evaluación</button>',
+                eval_type
+            )
+        return "Guarde primero para gestionar las preguntas"
+    evaluation_nodes_button.short_description = ""
+
+    def get_form(self, request, obj=None, **kwargs):
+        form = super().get_form(request, obj, **kwargs)
+        if obj:
+            # Personalizar widgets para los campos de formulario
+            if 'training_form' in form.base_fields:
+                form.base_fields['training_form'].widget = forms.Textarea(attrs={
+                    'rows': 10,
+                    'class': 'vLargeTextField',
+                    'placeholder': 'Configure aquí los nodos de entrenamiento'
+                })
+            if 'self_evaluation_form' in form.base_fields:
+                form.base_fields['self_evaluation_form'].widget = forms.Textarea(attrs={
+                    'rows': 10,
+                    'class': 'vLargeTextField',
+                    'placeholder': 'Configure aquí las preguntas de autoevaluación'
+                })
+            if 'professional_evaluation_form' in form.base_fields:
+                form.base_fields['professional_evaluation_form'].widget = forms.Textarea(attrs={
+                    'rows': 10,
+                    'class': 'vLargeTextField',
+                    'placeholder': 'Configure aquí el formulario de evaluación profesional'
+                })
+        return form
+
+    class Media:
+        js = [
+            'admin/js/vendor/jquery/jquery.min.js',
+            'admin/js/jquery.init.js',
+        ]
+
+    def get_evaluation_type_display(self, obj):
+        evaluation_types = {
+            'SELF': 'Autoevaluación',
+            'PROFESSIONAL': 'Evaluación Profesional'
+        }
+        return evaluation_types.get(obj.evaluation_type, 'Desconocido')
+    get_evaluation_type_display.short_description = 'Tipo de Evaluación'
+
+    def save_model(self, request, obj, form, change):
+        if 'evaluation_type' in form.changed_data:
+            if not request.user.is_superuser:
+                messages.error(request, "Solo los administradores pueden cambiar el tipo de evaluación")
+                return
+            
+            # Limpiar el formulario anterior al cambiar el tipo
+            if obj.evaluation_type == 'SELF':
+                obj.professional_evaluation_form = {}
+                messages.info(request, "Se ha configurado como autoevaluación y se ha limpiado el formulario profesional")
+            else:
+                obj.self_evaluation_form = {}
+                messages.info(request, "Se ha configurado como evaluación profesional y se ha limpiado el formulario de autoevaluación")
+            
+        if obj.evaluation_type == 'SELF' and 'self_evaluation_form' in form.changed_data:
+            if not hasattr(request.user, 'profile') or request.user.profile.role != 'doctor':
+                messages.error(request, "Solo los doctores pueden modificar el formulario de autoevaluación")
+                return
+        
+        super().save_model(request, obj, form, change)
+
+    def has_change_permission(self, request, obj=None):
+        # Verificar permisos básicos primero
+        if not super().has_change_permission(request, obj):
+            return False
+
+        # Si es superusuario, tiene todos los permisos
+        if request.user.is_superuser:
+            return True
+
+        # Si no es superusuario, no puede cambiar el tipo de evaluación
+        if obj and 'evaluation_type' in request.POST:
+            return False
+
+        return True
+
+    def preview_icon(self, obj):
+        if obj.icon:
+            return format_html('<img src="{}" style="height: 30px; width: auto;"/>', obj.icon.url)
+        return "Sin ícono"
+    preview_icon.short_description = 'Ícono'
+
+    def description_preview(self, obj):
+        return Truncator(obj.description).chars(50)
+    description_preview.short_description = 'Descripción'
+
+    def evaluation_form_button(self, obj):
+        return mark_safe(f"""
   <div class="form-row field-evaluation_form">
     <label for="id_evaluation_form">Formulario de Evaluación</label>
     <button type="button" class="btn btn-primary" onclick="openFormModal('EVALUATION')">
@@ -122,10 +254,10 @@ class CategoryTemplateAdmin(admin.ModelAdmin):
     """)
   
 
-  evaluation_form_button.short_description = "Formulario de Evaluación"
+    evaluation_form_button.short_description = "Formulario de Evaluación"
 
-  def training_nodes_button(self, obj):
-    return mark_safe(f"""
+    def training_nodes_button(self, obj):
+        return mark_safe(f"""
      <div class="form-row field-training_form">
     <label for="id_training_form">Formulario de Entrenamiento</label>
     <button type="button" class="btn btn-primary" onclick="openFormModal('TRAINING')">
@@ -133,32 +265,25 @@ class CategoryTemplateAdmin(admin.ModelAdmin):
     </button>
   </div>
     """)
-  training_nodes_button.short_description = "Nodos de Entrenamiento"
+    training_nodes_button.short_description = "Nodos de Entrenamiento"
 
-  def response_change(self, request, obj):
-      if "_add_node" in request.POST:
-          node_data = self._get_node_data_from_request(request)
-          obj.add_activity_node(node_data)
-          self.message_user(request, "Pregunta agregada exitosamente")
-      elif "_edit_node" in request.POST:
-          node_id = request.POST.get('node_id')
-          node_data = self._get_node_data_from_request(request)
-          self._edit_node(obj, node_id, node_data)
-          self.message_user(request, "Pregunta actualizada exitosamente")
-      elif "_delete_node" in request.POST:
-          node_id = request.POST.get('node_id')
-          self._delete_node(obj, node_id)
-          self.message_user(request, "Pregunta eliminada exitosamente")
-      return super().response_change(request, obj)
+    def response_change(self, request, obj):
+        response = super().response_change(request, obj)
+        
+        if "_continue" in request.POST and 'evaluation_type' in request.POST:
+            # Redirigir a la misma página para mostrar los campos actualizados
+            from django.http import HttpResponseRedirect
+            return HttpResponseRedirect(request.path)
+            
+        return response
 
-  def formatted_description(self, obj):
-    truncated_text = Truncator(obj.description).chars(50, truncate='...')
-    return format_html(
-      f'<span title="{obj.description}">{truncated_text}</span>'
-    )
+    def formatted_description(self, obj):
+        truncated_text = Truncator(obj.description).chars(50, truncate='...')
+        return format_html(
+            f'<span title="{obj.description}">{truncated_text}</span>'
+        )
 
-  formatted_description.short_description = "Descripción"
-  
+    formatted_description.short_description = "Descripción"
   
 
 # Unregister the original User admin and register the new one
@@ -244,11 +369,6 @@ class HealthCategoryAdmin(admin.ModelAdmin):
             ),
             'description': 'Estado y color de las recomendaciones médicas.',
             'classes': ('wide',)
-        }),
-        ('Respuestas del Paciente', {
-            'fields': ('get_detailed_responses',),
-            'classes': ('collapse',),
-            'description': 'Historial completo de respuestas del paciente.'
         }),
     )
 
@@ -384,6 +504,49 @@ class HealthCategoryAdmin(admin.ModelAdmin):
         form.base_fields['professional_recommendations'].help_text = (
             "Las recomendaciones serán visibles para el paciente cuando se guarden sin marcar como borrador."
         )
+        return form
+
+    def get_fieldsets(self, request, obj=None):
+        fieldsets = list(self.fieldsets)  # Convertir a lista para poder modificar
+
+        # Si es evaluación profesional, agregar el campo de resultado
+        if obj and obj.template and obj.template.evaluation_type == 'PROFESSIONAL':
+            fieldsets.insert(2, (
+                'Evaluación Profesional', {
+                    'fields': ('professional_evaluation_result',),
+                    'description': 'Resultado de la evaluación profesional.',
+                    'classes': ('wide',)
+                }
+            ))
+
+        # Agregar el fieldset de respuestas al final
+        fieldsets.append(
+            ('Respuestas del Paciente', {
+                'fields': ('get_detailed_responses',),
+                'classes': ('collapse',),
+                'description': 'Historial completo de respuestas del paciente.'
+            })
+        )
+
+        return fieldsets
+
+    def save_model(self, request, obj, form, change):
+        if 'professional_evaluation_result' in form.changed_data:
+            if not obj.is_draft:
+                obj.professional_recommendations_updated_by = request.user.get_full_name() or request.user.username
+                obj.professional_recommendations_updated_at = timezone.now()
+        super().save_model(request, obj, form, change)
+
+    def get_form(self, request, obj=None, **kwargs):
+        form = super().get_form(request, obj, **kwargs)
+        if obj and obj.template and obj.template.evaluation_type == 'PROFESSIONAL':
+            form.base_fields['professional_evaluation_result'].widget = forms.Textarea(
+                attrs={
+                    'rows': 4,
+                    'class': 'vLargeTextField',
+                    'placeholder': 'Ingrese el resultado de la evaluación profesional'
+                }
+            )
         return form
 
 class AppointmentForm(forms.ModelForm):

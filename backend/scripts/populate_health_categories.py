@@ -15,25 +15,28 @@ def process_training_nodes(training_form):
     if not training_form or 'training_nodes' not in training_form:
         return training_form
 
-    for node in training_form['training_nodes']:
-        if 'media_url' in node and node['media_url']:
-            if node['media_url'].startswith('/training/'):
+    # Ordenar los nodos por el campo 'order'
+    nodes = training_form['training_nodes']
+    nodes.sort(key=lambda x: x.get('order', float('inf')))
+    
+    # Establecer next_node_id basado en el orden
+    for i in range(len(nodes)):
+        nodes[i]['next_node_id'] = nodes[i + 1]['id'] if i < len(nodes) - 1 else None
+
+        if 'media_url' in nodes[i] and nodes[i]['media_url']:
+            if nodes[i]['media_url'].startswith('/training/'):
                 # Construir rutas
-                source_video = os.path.join(settings.BASE_DIR, 'assets', node['media_url'].lstrip('/'))
+                source_video = os.path.join(settings.BASE_DIR, 'assets', nodes[i]['media_url'].lstrip('/'))
                 dest_folder = os.path.join(settings.MEDIA_ROOT, 'training_videos')
-                video_filename = os.path.basename(node['media_url'])
+                video_filename = os.path.basename(nodes[i]['media_url'])
                 dest_video = os.path.join(dest_folder, video_filename)
 
-                # print(f"Procesando video: {source_video} -> {dest_video}")  # Debug
-
-                # Crear directorio si no existe
                 os.makedirs(dest_folder, exist_ok=True)
 
                 try:
                     if os.path.exists(source_video):
                         shutil.copy2(source_video, dest_video)
-                        # Modificado: removido /media/ del inicio
-                        node['media_url'] = f'training_videos/{video_filename}'
+                        nodes[i]['media_url'] = f'training_videos/{video_filename}'
                         print(f"Video copiado exitosamente: {video_filename}")
                     else:
                         print(f"Video no encontrado: {source_video}")
@@ -89,15 +92,28 @@ def populate_category_templates_from_file(file_path):
             # Procesar el icono
             icon_path = process_icons(template_info.get('icon'))
             
+            # Preparar los defaults básicos
+            defaults = {
+                'description': template_info['description'],
+                'is_active': True,
+                'icon': icon_path,
+                'training_form': training_form
+            }
+
+            # Manejar el tipo de evaluación y sus formularios
+            evaluation_type = template_info.get('evaluation_type', 'SELF')
+            defaults['evaluation_type'] = evaluation_type
+
+            if evaluation_type == 'PROFESSIONAL':
+                if 'professional_evaluation_form' in template_info:
+                    defaults['professional_evaluation_form'] = template_info['professional_evaluation_form']
+            elif evaluation_type == 'SELF':
+                if 'evaluation_form' in template_info:
+                    defaults['self_evaluation_form'] = template_info['evaluation_form']
+            
             template, created = CategoryTemplate.objects.update_or_create(
                 name=template_info['name'],
-                defaults={
-                    'description': template_info['description'],
-                    'is_active': True,
-                    'evaluation_form': template_info['evaluation_form'],
-                    'training_form': training_form,
-                    'icon': icon_path
-                }
+                defaults=defaults
             )
 
             if created:

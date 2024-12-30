@@ -19,8 +19,6 @@ export interface LoginCredentials {
 const authService = {
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
     try {
-      console.log("Attempting login with:", credentials.username); // Debug
-
       const response = await fetch(`${API_URL}/token/`, {
         method: 'POST',
         headers: {
@@ -29,12 +27,16 @@ const authService = {
         body: JSON.stringify(credentials),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        throw new Error('Error en la autenticación');
+        console.error("Error de autenticación:", data);
+        throw new Error(data.detail || 'Error en la autenticación');
       }
 
-      const data = await response.json();
-      console.log("Login successful, got token"); // Debug
+      if (!data.access) {
+        throw new Error('Token de acceso no recibido');
+      }
 
       return data;
     } catch (error) {
@@ -52,10 +54,13 @@ const authService = {
       });
 
       if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Error obteniendo perfil:", errorData);
         throw new Error('Error obteniendo información del usuario');
       }
 
-      return await response.json();
+      const data = await response.json();
+      return data;
     } catch (error) {
       console.error('Error getting user info:', error);
       throw error;

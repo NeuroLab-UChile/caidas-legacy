@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { View, TextInput, Pressable, Text, StyleSheet } from "react-native";
-import { useAuth } from "../contexts/auth";
+
 import { router } from "expo-router";
 import { theme } from "@/src/theme";
+import { useAuth } from "../contexts/auth";
 
 export default function SignIn() {
   const [username, setUsername] = useState("");
@@ -11,8 +12,10 @@ export default function SignIn() {
 
   const handleLogin = async () => {
     try {
-      await signIn(username, password);
-      router.replace("/(tabs)/action/");
+      const success = await signIn(username, password);
+      if (success) {
+        router.replace("/(tabs)/action/");
+      }
     } catch (error) {
       console.error(error);
     }
