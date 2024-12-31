@@ -49,36 +49,67 @@ export interface TrainingState {
 }
 
 export interface Category {
+  // Basic Information
   id: number;
-  name: string;
-  icon?: string;
-  description?: string;
-  evaluation_type: string;
-  professional_evaluation_result?: string;
+  name: string | null;
+  icon: string | null;
+  description: string | null;
 
-  evaluation_form?: {
+  // Evaluation Configuration
+  evaluation_type:
+  'SELF' | 'PROFESSIONAL' | 'BOTH';
+
+
+  evaluation_form: {
     question_nodes: QuestionNode[];
-  };
-  training_form?: {
-    training_nodes: TrainingNode[];
-  }
-  responses?: Record<string, any>;
-  completion_date?: string;
-  status_color?: {
-    color: string;
-    text: string;
-  };
-  professional_recommendations?: string;
-  professional_recommendations_updated_by?: {
-    name: string;
+  } | null;
+
+  evaluation_results: {
+    data: any;
     date: string;
+    updated_at: string;
+    professional?: {
+      id: number;
+      name: string;
+    };
+  } | null;
+
+  training_form: {
+    training_nodes: TrainingNode[];
+  } | null;
+
+  // Status and Completion
+  status: {
+    color: {
+      color: string;
+      text: string;
+    };
+    draft: 'Borrador' | 'Publicado';
+    has_evaluation: boolean;
+    professional_reviewed: boolean;
   };
-  professional_recommendations_updated_at?: string;
-  is_draft?: boolean;
-  recommendations?: string;
-  status?: {
-    color: string;
-    text: string;
-  };
+
+  // Professional Evaluation
+  professional_evaluation_results: string | null;
+
+  // Recommendations
+  recommendations: {
+    status: {
+      color: string;
+      text: string;
+    };
+    professional: {
+      id: number;
+      name: string;
+    } | null;
+    updated_at: string | null;
+    text: string | null;
+  } | null;
+
+  // Other fields
+  completion_date: string | null;
+  responses: Record<string, any> | null;
+  status_color: 'verde' | 'amarillo' | 'rojo' | 'gris' | null;
+  is_draft: boolean;
 }
 

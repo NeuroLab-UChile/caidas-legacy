@@ -1,5 +1,6 @@
 from .text_recomendation import TextRecomendation
-from .health_category import CategoryTemplate, HealthCategory
+from .health_category import HealthCategory
+from .category_template import CategoryTemplate
 from .activity_node import ActivityNode, ActivityNodeDescription, ActivityNodeQuestion, TextQuestion, SingleChoiceQuestion, MultipleChoiceQuestion, ScaleQuestion, ImageQuestion, ResultNode, WeeklyRecipeNode, VideoNode, TextNode, ImageNode
 from .user_recommendation_interaction import UserRecommendationInteraction
 

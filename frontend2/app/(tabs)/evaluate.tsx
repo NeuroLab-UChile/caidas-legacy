@@ -374,16 +374,7 @@ const EvaluateScreen = () => {
   };
 
   const renderDoctorReview = () => {
-    console.log("Doctor Review Data:", {
-      statusColor: selectedCategory?.status_color,
-      recommendations: selectedCategory?.professional_recommendations,
-      updatedBy: selectedCategory?.professional_recommendations_updated_by,
-      updatedAt: selectedCategory?.professional_recommendations_updated_at,
-      recommendationStatus: selectedCategory?.is_draft,
-    });
-
-    // Solo mostrar si está publicado
-    if (selectedCategory?.is_draft) {
+    if (!selectedCategory?.recommendations) {
       return (
         <View style={{ padding: 16 }}>
           <Text>Espera a que el doctor revise tu evaluación</Text>
@@ -391,12 +382,10 @@ const EvaluateScreen = () => {
       );
     }
 
-    // Verificar que tengamos color de estado y recomendaciones
-    if (
-      !selectedCategory?.status_color ||
-      !selectedCategory?.professional_recommendations ||
-      selectedCategory?.is_draft
-    ) {
+    const { status, professional, updated_at, text } =
+      selectedCategory.recommendations;
+
+    if (selectedCategory.is_draft || !status || !text) {
       return (
         <View style={{ padding: 16 }}>
           <Text>Espera a que el doctor revise tu evaluación</Text>
@@ -406,14 +395,10 @@ const EvaluateScreen = () => {
 
     return (
       <DoctorRecommendations
-        statusColor={selectedCategory.status_color}
-        recommendations={selectedCategory.professional_recommendations}
-        updatedBy={
-          selectedCategory.professional_recommendations_updated_by?.name || ""
-        }
-        updatedAt={
-          selectedCategory.professional_recommendations_updated_at || ""
-        }
+        statusColor={status}
+        recommendations={text}
+        updatedBy={professional?.name || ""}
+        updatedAt={updated_at || ""}
       />
     );
   };
@@ -430,33 +415,23 @@ const EvaluateScreen = () => {
   }, [fetchCategories]);
 
   const renderContent = () => {
-    // Siempre mostrar la pantalla de bienvenida primero si showWelcome es true
-    if (showWelcome) {
+    if (showWelcome && selectedCategory) {
       return (
         <WelcomeScreen
-          category={selectedCategory as Category}
+          category={selectedCategory}
           userName={
             userProfile?.first_name || userProfile?.username || "Usuario"
           }
-          onStart={() => {
-            setShowWelcome(false);
-            // Si es evaluación profesional, marcar como completada
-            if (selectedCategory?.evaluation_type === "PROFESSIONAL") {
-              setEvaluationState((prev) => ({
-                ...prev,
-                completed: true,
-              }));
-            }
-          }}
+          onStart={() => setShowWelcome(false)}
         />
       );
     }
 
     if (selectedCategory?.evaluation_type === "PROFESSIONAL") {
-      return <ProfessionalEvaluation category={selectedCategory} />;
+      return <ProfessionalEvaluation />;
     }
 
-    if (evaluationState.completed) {
+    if (evaluationState.completed && selectedCategory) {
       return (
         <View style={styles.completedContainer}>
           <Text style={styles.completedText}>
@@ -518,7 +493,9 @@ const EvaluateScreen = () => {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
-        {selectedCategory && <CategoryHeader name={selectedCategory.name} />}
+        {selectedCategory && (
+          <CategoryHeader name={selectedCategory.name || ""} />
+        )}
         {renderContent()}
       </ScrollView>
     </View>

@@ -1,10 +1,15 @@
-export const getCategoryStatus = (category: any) => {
+import { Category } from "../app/types/category";
+
+export const getCategoryStatus = (category: Category) => {
+  const { icon, ...categoryWithoutIcon } = category;
+  console.log('Category:', categoryWithoutIcon);
+
   if (!category?.evaluation_form?.question_nodes) return null;
 
   const totalQuestions = category.evaluation_form.question_nodes.length;
   const answeredQuestions = Object.keys(category?.responses || {}).length;
 
-  if (category.professional_recommendations && category.status_color) {
+  if (category.professional_evaluation_results && category.status_color) {
     return {
       status: 'reviewed',
       text: '✅ Evaluación Revisada por Doctor'

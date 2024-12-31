@@ -97,19 +97,17 @@ def populate_category_templates_from_file(file_path):
                 'description': template_info['description'],
                 'is_active': True,
                 'icon': icon_path,
-                'training_form': training_form
+                'training_form': training_form,
+                'evaluation_form': template_info.get('evaluation_form', None)
             }
+
+            default_recommendations = template_info.get('default_recommendations', {})
+            defaults['default_recommendations'] = default_recommendations
 
             # Manejar el tipo de evaluación y sus formularios
             evaluation_type = template_info.get('evaluation_type', 'SELF')
             defaults['evaluation_type'] = evaluation_type
 
-            if evaluation_type == 'PROFESSIONAL':
-                if 'professional_evaluation_form' in template_info:
-                    defaults['professional_evaluation_form'] = template_info['professional_evaluation_form']
-            elif evaluation_type == 'SELF':
-                if 'evaluation_form' in template_info:
-                    defaults['self_evaluation_form'] = template_info['evaluation_form']
             
             template, created = CategoryTemplate.objects.update_or_create(
                 name=template_info['name'],

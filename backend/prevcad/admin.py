@@ -36,7 +36,8 @@ from .models import (
   ResultNode,
   WeeklyRecipeNode,
   Appointment,
-  UserProfile
+  UserProfile,
+ 
 )
 
 # Define an inline admin descriptor for Profile model
@@ -80,203 +81,30 @@ class UserAdmin(BaseUserAdmin):
 class CustomJSONEncoder(DjangoJSONEncoder):
     def default(self, obj):
         if obj is None:
-            return null
+            return None
         return super().default(obj)
+
+
 
 @admin.register(CategoryTemplate)
 class CategoryTemplateAdmin(admin.ModelAdmin):
-    change_form_template = 'admin/categorytemplate/change_activity_form.html'
-    list_display = ('name', 'is_active', 'preview_icon', 'description_preview', 'get_evaluation_type_display')
+    list_display = ('name', 'evaluation_type', 'is_active')
     list_filter = ('is_active', 'evaluation_type')
     search_fields = ('name', 'description')
 
-    def get_fieldsets(self, request, obj=None):
-        fieldsets = [
-            ('Información Básica', {
-                'fields': ('name', 'description', 'icon', 'is_active')
-            })
-        ]
-        
-        # Solo los superusuarios pueden ver y editar el tipo de evaluación
-        if request.user.is_superuser:
-            fieldsets.append(
-                ('Tipo de Evaluación', {
-                    'fields': ('evaluation_type',),
-                    'description': 'Solo administradores pueden modificar el tipo de evaluación.'
-                })
-            )
-
-        # Siempre mostrar el training form y el botón de gestión
-        fieldsets.append(
-            ('Nodos de Entrenamiento', {
-                'fields': ('training_form', 'training_form_button'),
-                'description': 'Configure los nodos de entrenamiento.',
-            })
-        )
-
-        # Mostrar el formulario de evaluación según el tipo
-        if obj and obj.evaluation_type:
-            if obj.evaluation_type == 'SELF':
-                if hasattr(request.user, 'profile') and request.user.profile.role == 'doctor':
-                    fieldsets.append(
-                        ('Formulario de Autoevaluación', {
-                            'fields': ('self_evaluation_form', 'evaluation_form_button'),
-                            'description': 'Configure las preguntas para la autoevaluación.'
-                        })
-                    )
-            else:  # PROFESSIONAL
-                fieldsets.append(
-                    ('Formulario de Evaluación Profesional', {
-                            'fields': ('professional_evaluation_form', 'evaluation_form_button'),
-                        'description': 'Configure el formulario de evaluación profesional.'
-                    })
-                )
-
-        return fieldsets
-
-    def get_readonly_fields(self, request, obj=None):
-        readonly = ['training_form_button', 'evaluation_form_button']  # Botones siempre readonly
-        
-        if not request.user.is_superuser:
-            readonly.append('evaluation_type')
-        
-        if obj and obj.evaluation_type == 'SELF':
-            if not hasattr(request.user, 'profile') or request.user.profile.role != 'doctor':
-                readonly.append('self_evaluation_form')
-        
-        return readonly
-
-
-
-
-
-    def get_form(self, request, obj=None, **kwargs):
-        form = super().get_form(request, obj, **kwargs)
-        if obj:
-            # Personalizar widgets para los campos de formulario
-            if 'training_form' in form.base_fields:
-                form.base_fields['training_form'].widget = forms.Textarea(attrs={
-                    'rows': 10,
-                    'class': 'vLargeTextField',
-                    'placeholder': 'Configure aquí los nodos de entrenamiento'
-                })
-            if 'self_evaluation_form' in form.base_fields:
-                form.base_fields['self_evaluation_form'].widget = forms.Textarea(attrs={
-                    'rows': 10,
-                    'class': 'vLargeTextField',
-                    'placeholder': 'Configure aquí las preguntas de autoevaluación'
-                })
-            if 'professional_evaluation_form' in form.base_fields:
-                form.base_fields['professional_evaluation_form'].widget = forms.Textarea(attrs={
-                    'rows': 10,
-                    'class': 'vLargeTextField',
-                    'placeholder': 'Configure aquí el formulario de evaluación profesional'
-                })
-        return form
-
-    class Media:
-        js = [
-            'admin/js/vendor/jquery/jquery.min.js',
-            'admin/js/jquery.init.js',
-            'admin/js/categorytemplate/change_activity_form.js',
-        ]
-
-    def get_evaluation_type_display(self, obj):
-        evaluation_types = {
-            'SELF': 'Autoevaluación',
-            'PROFESSIONAL': 'Evaluación Profesional'
-        }
-        return evaluation_types.get(obj.evaluation_type, 'Desconocido')
-    get_evaluation_type_display.short_description = 'Tipo de Evaluación'
-
-    def save_model(self, request, obj, form, change):
-        if 'evaluation_type' in form.changed_data:
-            if not request.user.is_superuser:
-                messages.error(request, "Solo los administradores pueden cambiar el tipo de evaluación")
-                return
-            
-            # Limpiar el formulario anterior al cambiar el tipo
-            if obj.evaluation_type == 'SELF':
-                obj.professional_evaluation_form = {}
-                messages.info(request, "Se ha configurado como autoevaluación y se ha limpiado el formulario profesional")
-            else:
-                obj.self_evaluation_form = {}
-                messages.info(request, "Se ha configurado como evaluación profesional y se ha limpiado el formulario de autoevaluación")
-            
-        if obj.evaluation_type == 'SELF' and 'self_evaluation_form' in form.changed_data:
-            if not hasattr(request.user, 'profile') or request.user.profile.role != 'doctor':
-                messages.error(request, "Solo los doctores pueden modificar el formulario de autoevaluación")
-                return
-        
-        super().save_model(request, obj, form, change)
-
-    def has_change_permission(self, request, obj=None):
-        # Verificar permisos básicos primero
-        if not super().has_change_permission(request, obj):
-            return False
-
-        # Si es superusuario, tiene todos los permisos
-        if request.user.is_superuser:
-            return True
-
-        # Si no es superusuario, no puede cambiar el tipo de evaluación
-        if obj and 'evaluation_type' in request.POST:
-            return False
-
-        return True
-
-    def preview_icon(self, obj):
-        if obj.icon:
-            return format_html('<img src="{}" style="height: 30px; width: auto;"/>', obj.icon.url)
-        return "Sin ícono"
-    preview_icon.short_description = 'Ícono'
-
-    def description_preview(self, obj):
-        return Truncator(obj.description).chars(50)
-    description_preview.short_description = 'Descripción'
-
-    def evaluation_form_button(self, obj):
-        return mark_safe(f"""
-    <div class="form-row field-evaluation_form">
-        <label for="id_evaluation_form">Formulario de Evaluación</label>
-        <button type="button" class="btn btn-primary" onclick="openFormModal('EVALUATION')">
-        Ver Formulario
-        </button>
-    </div>
-        """)
     
+    fieldsets = (
+        ('Información Básica', {
+            'fields': ('name', 'description', 'icon', 'is_active')
+        }),
+        ('Configuración de Evaluación', {
+            'fields': ('evaluation_type', 'evaluation_form', 'default_recommendations')
+        }),
+        ('Configuración de Entrenamiento', {
+            'fields': ('training_form', 'root_node')
+        }),
+    )
 
-    evaluation_form_button.short_description = "Formulario de Evaluación"
-
-
-    def training_form_button(self, obj):
-        return mark_safe(f"""
-  <div class="form-row field-training_form">
-    <label for="id_training_form">Formulario de Entrenamiento</label>
-    <button type="button" class="btn btn-primary" onclick="openFormModal('TRAINING')">
-      Ver Formulario
-    </button>
-  </div>
-    """)
-
-    def response_change(self, request, obj):
-        response = super().response_change(request, obj)
-        
-        if "_continue" in request.POST and 'evaluation_type' in request.POST:
-            # Redirigir a la misma página para mostrar los campos actualizados
-            from django.http import HttpResponseRedirect
-            return HttpResponseRedirect(request.path)
-            
-        return response
-
-    def formatted_description(self, obj):
-        truncated_text = Truncator(obj.description).chars(50, truncate='...')
-        return format_html(
-            f'<span title="{obj.description}">{truncated_text}</span>'
-        )
-
-    formatted_description.short_description = "Descripción"
-  
 
 # Unregister the original User admin and register the new one
 admin.site.unregister(User)
@@ -297,7 +125,6 @@ class HealthStatusFilter(SimpleListFilter):
 
 @admin.register(HealthCategory)
 class HealthCategoryAdmin(admin.ModelAdmin):
-    # Display and ordering
     list_display = [
         'get_user_info',
         'get_template_name',
@@ -306,108 +133,64 @@ class HealthCategoryAdmin(admin.ModelAdmin):
         'is_draft',
         'get_status_color',
     ]
-    
     list_filter = [
         ('completion_date', admin.DateFieldListFilter),
         ('template', admin.RelatedFieldListFilter),
         ('user__user__username', admin.AllValuesFieldListFilter),
     ]
-    
     search_fields = [
         'user__user__username',
         'user__user__email',
         'user__user__first_name',
         'user__user__last_name',
         'template__name',
-        'professional_recommendations'
+        'recommendations',
     ]
-    
     ordering = ['-completion_date']
     list_per_page = 20
-
-    # Fields and fieldsets configuration
     readonly_fields = [
+        'template',
         'completion_date',
         'get_user_info',
         'get_template_name',
         'get_status_color',
         'get_completion_status',
         'is_draft',
-        'professional_recommendations_updated_at',
-        'professional_recommendations_updated_by',
-        'get_detailed_responses'
+        'recommendations_field_group',
+        'get_detailed_responses',
     ]
-
     fieldsets = (
         ('Información del Paciente', {
-            'fields': (
-                'get_user_info',
-                'get_template_name',
-                'template',
-            ),
-            'classes': ('wide',)
+            'fields': ('get_user_info', 'get_template_name'),
+            'classes': ('wide',),
         }),
         ('Estado y Fechas', {
-            'fields': (
-                'get_completion_status',
-                'completion_date',
-            ),
+            'fields': ('get_completion_status', 'completion_date'),
         }),
         ('Recomendaciones Médicas', {
             'fields': (
-                'professional_recommendations',
-                ('status_color'),
-                ('professional_recommendations_updated_at', 'professional_recommendations_updated_by')
+                'use_default_recommendations',
+                'recommendations_field_group',
             ),
             'description': 'Estado y color de las recomendaciones médicas.',
-            'classes': ('wide',)
+            'classes': ('wide',),
         }),
+        ('Respuestas del Paciente', {
+            'fields': ('get_detailed_responses',),
+            'classes': ('collapse',),
+            'description': 'Historial completo de respuestas del paciente.',
+        })
     )
-
-    # Templates and Media
     change_form_template = 'admin/healthcategory/change_form.html'
-    
+
     class Media:
         css = {
             'all': ('admin/css/custom_admin.css',)
         }
-
-    # Helper methods for display
-    def get_detailed_responses(self, obj):
-        from django.template.loader import render_to_string
-        
-        if not obj.responses:
-            responses = {}
-        else:
-            responses = {}
-            for node_id, response in obj.responses.items():
-                processed_response = response.copy()
-                
-                # Procesar respuestas de opción única
-                if response.get('type') == 'SINGLE_CHOICE_QUESTION':
-                    answer = response.get('answer', {})
-                    options = answer.get('options', [])
-                    selected = answer.get('selectedOption')
-                    if selected is not None and selected < len(options):
-                        processed_response['answer']['selected_text'] = options[selected]
-                        
-                # Procesar respuestas de opción múltiple
-                elif response.get('type') == 'MULTIPLE_CHOICE_QUESTION':
-                    answer = response.get('answer', {})
-                    options = answer.get('options', [])
-                    selected = answer.get('selectedOptions', [])
-                    selected_texts = []
-                    for idx in selected:
-                        if idx < len(options):
-                            selected_texts.append(options[idx])
-                    processed_response['answer']['selected_texts'] = selected_texts
-                    
-                responses[node_id] = processed_response
-        
-        context = {'responses': responses}
-        return mark_safe(render_to_string('admin/healthcategory/detailed_responses.html', context))
-
-    get_detailed_responses.short_description = "Detalle de Respuestas"
+        js = (
+            'admin/js/jquery.init.js',
+            'admin/js/healthcategory.js',
+        )
 
     def get_user_info(self, obj):
         if obj.user and obj.user.user:
@@ -442,13 +225,12 @@ class HealthCategoryAdmin(admin.ModelAdmin):
         )
     get_completion_status.short_description = 'Estado'
 
-
     def get_status_color(self, obj):
         color_map = {
             'verde': '#28a745',
             'amarillo': '#ffc107',
             'rojo': '#dc3545',
-            'gris': '#6c757d'
+            'gris': '#6c757d',
         }
         if obj.status_color:
             return format_html(
@@ -459,111 +241,204 @@ class HealthCategoryAdmin(admin.ModelAdmin):
         return "Sin asignar"
     get_status_color.short_description = 'Color de riesgo'
 
+    def get_detailed_responses(self, obj):
+        from django.template.loader import render_to_string
+
+        responses = obj.responses or {}
+        processed_responses = {}
+
+        for node_id, response in responses.items():
+            processed_response = response.copy()
+            if response.get('type') == 'SINGLE_CHOICE_QUESTION':
+                options = response['answer'].get('options', [])
+                selected = response['answer'].get('selectedOption')
+                if selected is not None and selected < len(options):
+                    processed_response['answer']['selected_text'] = options[selected]
+            elif response.get('type') == 'MULTIPLE_CHOICE_QUESTION':
+                options = response['answer'].get('options', [])
+                selected = response['answer'].get('selectedOptions', [])
+                processed_response['answer']['selected_texts'] = [
+                    options[idx] for idx in selected if idx < len(options)
+                ]
+            processed_responses[node_id] = processed_response
+
+        context = {'responses': processed_responses}
+        return mark_safe(render_to_string('admin/healthcategory/detailed_responses.html', context))
+    get_detailed_responses.short_description = "Detalle de Respuestas"
+
+    def save_model(self, request, obj, form, change):
+        if 'use_default_recommendations' in form.changed_data:
+            if obj.use_default_recommendations:
+                if obj.template and obj.template.default_recommendations:
+                    obj.recommendations = obj.template.default_recommendations
+                    messages.info(request, "Se han restaurado las recomendaciones por defecto del template")
+            else:
+                messages.info(request, "Ahora puede personalizar las recomendaciones")
+
+        if not obj.use_default_recommendations:
+            if 'recommendations' in request.POST:
+                obj.recommendations = request.POST['recommendations']
+            if 'status_color' in request.POST:
+                obj.status_color = request.POST['status_color']
+
+        super().save_model(request, obj, form, change)
+
     def response_change(self, request, obj):
         if "_save_draft" in request.POST:
             obj.is_draft = True
             obj.save()
-            
             self.message_user(
-                request, 
+                request,
                 "Las recomendaciones se han guardado como borrador y NO son visibles para el paciente.",
                 level=messages.WARNING
             )
             return self.response_post_save_change(request, obj)
-        
-        # Si no es borrador, se guarda como firmado
+
         obj.is_draft = False
-        obj.professional_recommendations_updated_by = request.user.get_full_name() or request.user.username
-        obj.professional_recommendations_updated_at = timezone.now()
+        obj.recommendations_updated_by = request.user.get_full_name() or request.user.username
+        obj.recommendations_updated_at = timezone.now()
         obj.save()
-        
+
         self.message_user(
-            request, 
+            request,
             "✓ Las recomendaciones han sido firmadas y son visibles para el paciente.",
             level=messages.SUCCESS
         )
         return super().response_change(request, obj)
 
-    def save_model(self, request, obj, form, change):
-        if 'doctor_recommendations' in form.changed_data or 'status_color' in form.changed_data:
-            if not obj.is_draft:
-                obj.professional_recommendations_updated_by = request.user.get_full_name() or request.user.username
-                obj.professional_recommendations_updated_at = timezone.now()
-        obj.save()
-
     def get_form(self, request, obj=None, **kwargs):
         form = super().get_form(request, obj, **kwargs)
-        form.base_fields['professional_recommendations'].help_text = (
-            "Las recomendaciones serán visibles para el paciente cuando se guarden sin marcar como borrador."
-        )
+
+        if 'recommendations' in form.base_fields:
+            form.base_fields['recommendations'].help_text = (
+                "Las recomendaciones serán visibles para el paciente cuando se guarden sin marcar como borrador."
+            )
+            form.base_fields['recommendations'].widget = forms.Textarea(attrs={
+                'rows': 4,
+                'class': 'vLargeTextField',
+                'placeholder': 'Ingrese las recomendaciones personalizadas'
+            })
+
+        if 'use_default_recommendations' in form.base_fields:
+            form.base_fields['use_default_recommendations'].help_text = (
+                "Marque esta casilla para usar las recomendaciones predeterminadas del template"
+            )
+
         return form
 
     def get_fieldsets(self, request, obj=None):
-        fieldsets = list(self.fieldsets)  # Convertir a lista para poder modificar
+        fieldsets = [
+            ('Información del Paciente', {
+                'fields': ('get_user_info', 'get_template_name'),
+                'classes': ('wide',),
+            }),
+            ('Estado y Fechas', {
+                'fields': ('get_completion_status', 'completion_date'),
+            }),
+            ('Recomendaciones Médicas', {
+                'fields': (
+                    'use_default_recommendations',
+                    'recommendations_field_group',
+                ),
+                'description': 'Estado y color de las recomendaciones médicas.',
+                'classes': ('wide',),
+            }),
+        ]
 
-        # Si es evaluación profesional, agregar el campo de resultado
-        if obj and obj.template and obj.template.evaluation_type == 'PROFESSIONAL':
-            fieldsets.insert(2, (
-                'Evaluación Profesional', {
-                    'fields': ('professional_evaluation_result',),
-                    'description': 'Resultado de la evaluación profesional.',
-                    'classes': ('wide',)
-                }
-            ))
-
-        # Agregar el fieldset de respuestas al final
-        fieldsets.append(
-            ('Respuestas del Paciente', {
-                'fields': ('get_detailed_responses',),
-                'classes': ('collapse',),
-                'description': 'Historial completo de respuestas del paciente.'
-            })
-        )
+        # Add response fields based on evaluation type
+        if obj and obj.template:
+            if obj.template.evaluation_type == 'SELF':
+                fieldsets.append(
+                    ('Respuestas de Autoevaluación', {
+                        'fields': ('get_detailed_responses',),
+                        'classes': ('collapse',),
+                        'description': 'Historial completo de respuestas de autoevaluación.',
+                    })
+                )
+            elif obj.template.evaluation_type == 'PROFESSIONAL':
+                fieldsets.append(
+                    ('Evaluación Profesional', {
+                        'fields': ('professional_evaluation_results',),
+                        'classes': ('collapse',),
+                        'description': 'Respuestas de la evaluación profesional.',
+                    })
+                )
+            elif obj.template.evaluation_type == 'BOTH':
+                fieldsets.extend([
+                    ('Respuestas de Autoevaluación', {
+                        'fields': ('get_detailed_responses',),
+                        'classes': ('collapse',),
+                        'description': 'Historial completo de respuestas de autoevaluación.',
+                    }),
+                    ('Evaluación Profesional', {
+                        'fields': ('professional_evaluation_results',),
+                        'classes': ('collapse',),
+                        'description': 'Respuestas de la evaluación profesional.',
+                    })
+                ])
 
         return fieldsets
 
-    def save_model(self, request, obj, form, change):
-        if 'professional_evaluation_result' in form.changed_data:
-            if not obj.is_draft:
-                obj.professional_recommendations_updated_by = request.user.get_full_name() or request.user.username
-                obj.professional_recommendations_updated_at = timezone.now()
-        super().save_model(request, obj, form, change)
-
-    def get_form(self, request, obj=None, **kwargs):
-        form = super().get_form(request, obj, **kwargs)
-        if obj and obj.template and obj.template.evaluation_type == 'PROFESSIONAL':
-            form.base_fields['professional_evaluation_result'].widget = forms.Textarea(
-                attrs={
-                    'rows': 4,
-                    'class': 'vLargeTextField',
-                    'placeholder': 'Ingrese el resultado de la evaluación profesional'
-                }
-            )
-        return form
-
-    def change_view(self, request, object_id, form_url='', extra_context=None):
-        extra_context = extra_context or {}
-        obj = self.get_object(request, object_id)
-        
-        try:
-            # Asegurarse de que los datos son diccionarios válidos
-            training_form = obj.training_form if isinstance(obj.training_form, dict) else {}
-            evaluation_form = (
-                obj.self_evaluation_form if obj.evaluation_type == 'SELF' 
-                else obj.professional_evaluation_form
-            )
-            evaluation_form = evaluation_form if isinstance(evaluation_form, dict) else {}
-
-            # Serializar los datos
-            extra_context['training_form'] = training_form
-            extra_context['evaluation_form'] = evaluation_form
-
-        except Exception as e:
-            print(f"Error preparing data: {e}")
-            extra_context['training_form'] = {'training_nodes': []}
-            extra_context['evaluation_form'] = {'question_nodes': []}
-
-        return super().change_view(request, object_id, form_url, extra_context=extra_context)
+    def recommendations_field_group(self, obj):
+        """Muestra las recomendaciones según el tipo seleccionado."""
+        if obj and obj.use_default_recommendations:
+            # Mostrar las recomendaciones por defecto del template
+            default_recs = obj.template.default_recommendations if obj.template else {}
+            field_html = """
+            <div style="margin: 10px 0;">
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; font-weight: bold; margin-bottom: 5px;">
+                        Recomendaciones por defecto del template:
+                    </label>
+                    <div style="padding: 10px; background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px;">
+                        <pre style="margin: 0; white-space: pre-wrap;">{default_recs}</pre>
+                    </div>
+                </div>
+                <button type="submit" name="_save_default_recs" style="padding: 6px 12px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                    Guardar
+                </button>
+            </div>
+            """
+            return mark_safe(field_html.format(
+                default_recs=json.dumps(default_recs, indent=2) if default_recs else "No hay recomendaciones por defecto"
+            ))
+        else:
+            # Mostrar el formulario para recomendaciones personalizadas
+            field_html = """
+            <div style="margin: 10px 0;">
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; font-weight: bold; margin-bottom: 5px;">Recomendaciones:</label>
+                    <textarea 
+                        name="recommendations" 
+                        rows="4" 
+                        style="width: 90%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;"
+                    >{recommendations}</textarea>
+                </div>
+                <div>
+                    <label style="display: block; font-weight: bold; margin-bottom: 5px;">Color de estado:</label>
+                    <select 
+                        name="status_color" 
+                        style="width: 200px; padding: 6px; border: 1px solid #ccc; border-radius: 4px;"
+                    >
+                        <option value="">---------</option>
+                        <option value="verde" {verde_selected}>Verde</option>
+                        <option value="amarillo" {amarillo_selected}>Amarillo</option>
+                        <option value="rojo" {rojo_selected}>Rojo</option>
+                        <option value="gris" {gris_selected}>Gris</option>
+                    </select>
+                </div>
+            </div>
+            """
+            recommendations = obj.recommendations if obj and obj.recommendations else ""
+            status_color = obj.status_color if obj and obj.status_color else ""
+            
+            return mark_safe(field_html.format(
+                recommendations=recommendations,
+                verde_selected="selected" if status_color == "verde" else "",
+                amarillo_selected="selected" if status_color == "amarillo" else "",
+                rojo_selected="selected" if status_color == "rojo" else "",
+                gris_selected="selected" if status_color == "gris" else "",
+            ))
 
 class AppointmentForm(forms.ModelForm):
     date = forms.DateField(

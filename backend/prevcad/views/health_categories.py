@@ -37,10 +37,10 @@ class HealthCategoryListView(APIView):
                     'description': template.description,
                     'icon': template.get_icon_base64(),
                     'evaluation_type': template.evaluation_type,
-                    'evaluation_form': template.get_evaluation_form(),
-                    'evaluation_results': category.get_evaluation_results(),
+                    'evaluation_form': template.evaluation_form,
+                    'professional_evaluation_results': category.professional_evaluation_results,
                     'training_form': template.training_form,
-                    'professional_evaluation_result': category.professional_evaluation_result,
+
                     # ... otros campos ...
                 }
                 serialized_categories.append(category_data)

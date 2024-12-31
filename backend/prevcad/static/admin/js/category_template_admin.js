@@ -4,12 +4,12 @@
     django.jQuery(document).ready(function($) {
         var evaluationTypeSelect = $('#id_evaluation_type');
         var selfFormSection = $('.field-self_evaluation_form').closest('.form-section');
-        var professionalFormSection = $('.field-professional_evaluation_form').closest('.form-section');
+        var professionalFormSection = $('.field-professional_evaluation_results').closest('.form-section');
         
         // Almacenar los valores de los formularios
         var formData = {
             SELF: $('#id_self_evaluation_form').val(),
-            PROFESSIONAL: $('#id_professional_evaluation_form').val(),
+            PROFESSIONAL: $('#id_professional_evaluation_results').val(),
             TRAINING: $('#id_training_form').val()
         };
 
@@ -51,7 +51,7 @@
             
             // Guardar los valores actuales antes del cambio
             formData[oldType] = newType === 'SELF' ? 
-                $('#id_professional_evaluation_form').val() : 
+                $('#id_professional_evaluation_results').val() : 
                 $('#id_self_evaluation_form').val();
 
             if (confirm('¿Está seguro de cambiar el tipo de evaluación?\nLos formularios anteriores se preservarán.')) {
@@ -61,7 +61,7 @@
                 if (newType === 'SELF') {
                     $('#id_self_evaluation_form').val(formData.SELF || '{}');
                 } else {
-                    $('#id_professional_evaluation_form').val(formData.PROFESSIONAL || '{}');
+                    $('#id_professional_evaluation_results').val(formData.PROFESSIONAL || '{}');
                 }
                 
                 updateFormUI();
@@ -95,7 +95,7 @@
                     break;
                 case 'PROFESSIONAL':
                     title = 'Gestionar Formulario Profesional';
-                    currentData = $('#id_professional_evaluation_form').val();
+                    currentData = $('#id_professional_evaluation_results').val();
                     break;
             }
 
@@ -112,7 +112,7 @@
             if (currentType === 'SELF') {
                 formData.SELF = $('#id_self_evaluation_form').val();
             } else {
-                formData.PROFESSIONAL = $('#id_professional_evaluation_form').val();
+                formData.PROFESSIONAL = $('#id_professional_evaluation_results').val();
             }
             formData.TRAINING = $('#id_training_form').val();
         }

@@ -3,6 +3,11 @@
     "name": "Riesgo Domiciliario",
     "description": "Evalúe los riesgos comunes dentro del hogar, como caídas, problemas de iluminación o desorden.",
     "icon": "health_categories_icons/home_safety.png",
+    "default_recommendations": {
+      "no_risk": "Su hogar está en condiciones óptimas. Mantenga las medidas de seguridad actuales.",
+      "prev_risk": "Su hogar presenta medidas previas de mitigación de riesgos. Reevalúe áreas clave para mantener la seguridad.",
+      "risk": "Existen riesgos en su hogar que deben abordarse. Considere implementar barandas, alfombras antideslizantes y mejor iluminación."
+    },
     "evaluation_type": "SELF",
     "evaluation_form": {
       "question_nodes": [
@@ -121,6 +126,11 @@
     "name": "Actividad Física",
     "description": "Manténgase activo y prevenga la pérdida de movilidad con rutinas adaptadas a sus necesidades.",
     "icon": "health_categories_icons/exercise.png",
+    "default_recommendations": {
+      "no_risk": "Su actividad física es adecuada. Mantenga su rutina actual.",
+      "prev_risk": "Ha disminuido su actividad física. Considere comenzar una rutina de ejercicios suaves.",
+      "risk": "Su actividad física es insuficiente. Considere aumentar su actividad física con ejercicios suaves."
+    },
     "evaluation_type": "SELF",
     "evaluation_form": {
       "question_nodes": [
@@ -218,55 +228,12 @@
     "name": "Alimentación Saludable",
     "description": "Una dieta balanceada es esencial para el bienestar. Su profesional evaluará sus hábitos alimenticios y proporcionará recomendaciones personalizadas.",
     "icon": "health_categories_icons/healthy_diet.png",
-    "evaluation_type": "PROFESSIONAL",
-    "professional_evaluation_form": {
-      "evaluation_sections": [
-        {
-          "title": "Evaluación Nutricional",
-          "fields": [
-            {
-              "id": "weight",
-              "type": "NUMERIC",
-              "label": "Peso actual",
-              "unit": "kg",
-              "required": true
-            },
-            {
-              "id": "height",
-              "type": "NUMERIC",
-              "label": "Altura",
-              "unit": "cm",
-              "required": true
-            },
-            {
-              "id": "bmi",
-              "type": "CALCULATED",
-              "label": "IMC",
-              "formula": "weight / (height/100)^2",
-              "readonly": true
-            }
-          ]
-        },
-        {
-          "title": "Recomendaciones",
-          "fields": [
-            {
-              "id": "dietary_restrictions",
-              "type": "TEXT",
-              "label": "Restricciones alimentarias",
-              "multiline": true
-            },
-            {
-              "id": "recommendations",
-              "type": "TEXT",
-              "label": "Plan nutricional recomendado",
-              "multiline": true,
-              "required": true
-            }
-          ]
-        }
-      ]
+    "default_recommendations": {
+      "no_risk": "Su dieta es adecuada. Mantenga su dieta actual.",
+      "prev_risk": "Ha disminuido su actividad física. Considere comenzar una rutina de ejercicios suaves.",
+      "risk": "Su actividad física es insuficiente. Considere aumentar su actividad física con ejercicios suaves."
     },
+    "evaluation_type": "PROFESSIONAL",
     "training_form": {
       "training_nodes": [
         {
@@ -332,6 +299,11 @@
     "name": "Valoración Sensorial",
     "description": "Detecte problemas de visión o audición que puedan aumentar el riesgo de caídas. Mantenga sus sentidos en óptimas condiciones con ejercicios y consultas médicas regulares.",
     "icon": "health_categories_icons/sensory_health.png",
+    "default_recommendations": {
+      "no_risk": "Su visión y audición son adecuadas. Mantenga su rutina de ejercicios y consultas médicas regulares.",
+      "prev_risk": "Ha notado dificultades para ver objetos a corta distancia. Considere consultar a un oculista.",
+      "risk": "Ha notado dificultades para ver objetos a corta distancia. Considere consultar a un oculista."
+    },
     "evaluation_type": "SELF",
     "evaluation_form": {
       "question_nodes": [
@@ -371,6 +343,11 @@
     "name": "Fármacos y Medicación",
     "description": "Asegúrese de que su medicación no interfiera con su equilibrio o coordinación. Identifique formas de gestionar mejor su tratamiento.",
     "icon": "health_categories_icons/medication.png",
+    "default_recommendations": {
+      "no_risk": "Su medicación es adecuada. Mantenga su medicación actual.",
+      "prev_risk": "Ha disminuido su actividad física. Considere comenzar una rutina de ejercicios suaves.",
+      "risk": "Su actividad física es insuficiente. Considere aumentar su actividad física con ejercicios suaves."
+    },
     "evaluation_type": "SELF",
     "evaluation_form": {
       "question_nodes": [
@@ -406,6 +383,11 @@
     "name": "Cognición y Ánimo",
     "description": "Evalúe su estado cognitivo y emocional. La mente y el estado de ánimo desempeñan un papel crucial en la prevención de accidentes.",
     "icon": "health_categories_icons/mind_health.png",
+    "default_recommendations": {
+      "no_risk": "Su estado cognitivo y emocional es adecuado. Mantenga su rutina de ejercicios y consultas médicas regulares.",
+      "prev_risk": "Ha notado dificultades para concentrarse durante el día. Considere consultar a un especialista.",
+      "risk": "Ha notado dificultades para concentrarse durante el día. Considere consultar a un especialista."
+    },
     "evaluation_type": "SELF",
     "evaluation_form": {
       "question_nodes": [
@@ -441,6 +423,11 @@
     "name": "Historia de Caídas",
     "description": "Identifique patrones de incidentes pasados para prevenir futuras caídas y adoptar medidas correctivas en su día a día.",
     "icon": "health_categories_icons/falls.png",
+    "default_recommendations": {
+      "no_risk": "No ha sufrido caídas en el último año. Mantenga su rutina de ejercicios y consultas médicas regulares.",
+      "prev_risk": "Ha sufrido una caída en el último año. Considere adoptar medidas preventivas.",
+      "risk": "Ha sufrido una caída en el último año. Considere adoptar medidas preventivas."
+    },
     "evaluation_type": "SELF",
     "evaluation_form": {
       "question_nodes": [
@@ -476,6 +463,11 @@
     "name": "Estado Óseo y Muscular",
     "description": "Fortalezca sus huesos y músculos para mantener el equilibrio y reducir el riesgo de fracturas en caso de caídas.",
     "icon": "health_categories_icons/bone_muscle_health.png",
+    "default_recommendations": {
+      "no_risk": "Su estado óseo y muscular es adecuado. Mantenga su rutina de ejercicios y consultas médicas regulares.",
+      "prev_risk": "Ha disminuido su actividad física. Considere comenzar una rutina de ejercicios suaves.",
+      "risk": "Su actividad física es insuficiente. Considere aumentar su actividad física con ejercicios suaves."
+    },
     "evaluation_type": "SELF",
     "evaluation_form": {
       "question_nodes": [

@@ -5,18 +5,13 @@ from django.db import transaction
 import uuid
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from .user_types import UserTypes
 
 
 
 
 
 class UserProfile(models.Model):
-    USER_ROLES = (
-        ('doctor', 'Doctor'),
-        ('admin', 'Administrador'),
-        ('patient', 'Paciente'),
-    )
-
     user = models.OneToOneField(
         User,
         on_delete=models.CASCADE,
@@ -36,8 +31,15 @@ class UserProfile(models.Model):
     birth_date = models.DateField(null=True, blank=True)
     role = models.CharField(
         max_length=50, 
-        choices=USER_ROLES,
-        default='patient'
+        choices=UserTypes.choices,
+        default=UserTypes.PATIENT,
+        verbose_name="Tipo de Usuario"
+    )
+    specialty = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        help_text="Especialidad del profesional (si aplica)"
     )
     profile_image = models.ImageField(
         upload_to='profile_images/',
@@ -46,6 +48,15 @@ class UserProfile(models.Model):
         verbose_name="Imagen de perfil"
     )
 
+    @property
+    def is_professional(self):
+        """Verifica si el usuario es un profesional de la salud"""
+        return UserTypes.is_professional(self.role)
+
+    @property
+    def is_staff_member(self):
+        """Verifica si el usuario es personal administrativo"""
+        return UserTypes.is_staff(self.role)
 
     def clean(self):
         super().clean()

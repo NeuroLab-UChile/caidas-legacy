@@ -185,7 +185,7 @@
   {% if original.evaluation_type == "SELF" %}
       {{ original.self_evaluation_form|json_script:"evaluation-form-data" }}
   {% else %}
-      {{ original.professional_evaluation_form|json_script:"evaluation-form-data" }}
+      {{ original.professional_evaluation_results|json_script:"evaluation-form-data" }}
   {% endif %}
 
 <script>

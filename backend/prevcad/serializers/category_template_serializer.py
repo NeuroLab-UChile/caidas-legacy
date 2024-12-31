@@ -6,7 +6,7 @@ class CategoryTemplateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CategoryTemplate
-        fields = ['id', 'name', 'icon']
+        fields = ['id', 'name', 'icon', 'default_recommendations']
 
     def get_icon(self, obj):
         if obj.icon:

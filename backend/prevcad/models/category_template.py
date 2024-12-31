@@ -1,0 +1,189 @@
+from django.db import models
+from .activity_node import ActivityNodeDescription
+import base64
+import os
+from django.conf import settings
+
+class CategoryTemplate(models.Model):
+  """
+  Template for health categories
+  """
+  # Basic information
+  name = models.TextField()
+  icon = models.ImageField(
+    upload_to='health_categories_icons',
+    null=True,
+    blank=True
+  )
+
+  description = models.TextField()
+  is_active = models.BooleanField(default=True)
+
+  # Evaluation 
+  evaluation_type = models.CharField(
+    max_length=20,
+    choices=[
+       ('SELF', 'Autoevaluación'),
+       ('PROFESSIONAL', 'Evaluación Profesional'),
+       ('BOTH', 'Ambas Evaluaciones')
+    ],
+    default='SELF',
+    verbose_name="Tipo de Evaluación",
+    help_text="Define quién puede realizar la evaluación"
+    
+  )
+  evaluation_form = models.JSONField(
+    null=True,
+    blank=True,
+    default=dict,
+    help_text="Formulario de autoevaluación en formato JSON"
+  )
+  # Formulario para evaluación profesional
+
+  default_recommendations = models.JSONField(
+        default=dict,
+        blank=True,
+        null=True,
+        help_text='Recomendaciones predeterminadas según el color de estado'
+    )
+  
+  training_form = models.JSONField(
+    null=True,
+    blank=True,
+    default=dict,
+    help_text="Formulario de entrenamiento en formato JSON"
+  )
+
+  # Agregar el campo training_form
+
+  root_node = models.OneToOneField(
+    ActivityNodeDescription,
+    on_delete=models.CASCADE,
+    null=True,
+    blank=True,
+    related_name="category_template",
+    verbose_name="Nodo raíz"
+  )
+
+  class EditableFields(models.TextChoices):
+        RECOMMENDATIONS = 'recommendations', 'Recomendaciones'
+        STATUS = 'status_color', 'Estado'
+        EVALUATION = 'evaluation_results', 'Resultados de Evaluación'
+        TRAINING = 'training_results', 'Resultados de Entrenamiento'
+
+  editors = models.ManyToManyField(
+        'UserProfile',
+        through='CategoryTemplateEditor',
+        related_name='editable_templates',
+        blank=True
+    )
+
+  def can_user_edit(self, user_profile, field=None):
+        """Verifica si un usuario puede editar este template o un campo específico"""
+        if not user_profile:
+            return False
+            
+        editor = self.categorytemplateeditor_set.filter(user=user_profile).first()
+        if not editor:
+            return False
+            
+        if field:
+            return field in editor.editable_fields
+        return True
+
+  def get_icon_base64(self):
+    try:
+      if not self.icon:
+        return None
+        
+      # Construir la ruta correcta usando MEDIA_ROOT
+      relative_path = str(self.icon).lstrip('/')  # Eliminar slash inicial si existe
+      icon_path = os.path.join(settings.MEDIA_ROOT, relative_path)
+      
+      print(f"Debug - Icon paths:")
+      print(f"MEDIA_ROOT: {settings.MEDIA_ROOT}")
+      print(f"Relative path: {relative_path}")
+      print(f"Full path: {icon_path}")
+      
+      # Verificar que el archivo existe
+      if not os.path.exists(icon_path):
+        print(f"Icon file not found at: {icon_path}")
+        return None
+        
+      # Leer y codificar el archivo
+      with open(icon_path, 'rb') as image_file:
+        encoded_string = base64.b64encode(image_file.read()).decode('utf-8')
+        
+      # Determinar el tipo MIME
+      extension = os.path.splitext(icon_path)[1].lower()
+      mime_type = {
+        '.png': 'image/png',
+        '.jpg': 'image/jpeg',
+        '.jpeg': 'image/jpeg',
+        '.gif': 'image/gif'
+      }.get(extension, 'image/png')
+        
+      return f"data:{mime_type};base64,{encoded_string}"
+      
+    except Exception as e:
+      print(f"Error encoding image: {str(e)}")
+      print(f"Icon type: {type(self.icon)}")
+      print(f"Icon value: {self.icon}")
+      return None
+    
+  def get_ordered_training_nodes(self):
+    """Retorna los nodos de entrenamiento ordenados"""
+    if not self.training_form:
+      return []
+      
+    nodes = self.training_form['training_nodes']  
+    for i, node in enumerate(nodes):
+      node['next_node_id'] = nodes[i + 1]['id'] if i < len(nodes) - 1 else None
+
+    return nodes
+
+  def save(self, *args, **kwargs):
+    if not self.root_node:
+      # Crear el nodo raíz usando ActivityNodeDescription en lugar de ActivityNode
+      self.root_node = ActivityNodeDescription.objects.create(
+        type=ActivityNodeDescription.NodeType.CATEGORY_DESCRIPTION,
+        description=self.description
+      )
+  
+    # Si el icono tiene una ruta con slash inicial, corregirlo
+    if self.icon and isinstance(self.icon, str) and self.icon.startswith('/'):
+      self.icon = self.icon.lstrip('/')
+    super().save(*args, **kwargs)
+
+  def can_self_evaluate(self):
+    return self.evaluation_type in ['SELF', 'BOTH']
+
+  def can_professional_evaluate(self):
+    return self.evaluation_type in ['PROFESSIONAL', 'BOTH']
+
+  def __str__(self):
+    return self.name
+
+class CategoryTemplateEditor(models.Model):
+    """Modelo intermedio para manejar permisos de edición de templates"""
+    template = models.ForeignKey(CategoryTemplate, on_delete=models.CASCADE)
+    user = models.ForeignKey('UserProfile', on_delete=models.CASCADE)
+    editable_fields = models.JSONField(
+        default=list,
+        help_text="Lista de campos que el usuario puede editar"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ['template', 'user']
+
+from django.db import models
+from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
+from django.db import transaction
+import uuid
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from .user_types import UserTypes
+
+
