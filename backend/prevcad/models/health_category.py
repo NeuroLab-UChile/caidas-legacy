@@ -361,7 +361,7 @@ def create_user_health_categories(sender, instance, created, **kwargs):
             if template.evaluation_type == 'SELF':
                 defaults['self_evaluation_results'] = {}
             elif template.evaluation_type == 'PROFESSIONAL':
-                defaults['professional_evaluation_results'] = {}
+                defaults['professional_evaluation_result'] = {}
             
             HealthCategory.objects.create(**defaults)
 
@@ -384,7 +384,7 @@ def create_health_categories_for_template(sender, instance, created, **kwargs):
             if instance.evaluation_type == 'SELF':
                 defaults['self_evaluation_results'] = {}
             elif instance.evaluation_type == 'PROFESSIONAL':
-                defaults['professional_evaluation_results'] = {}
+                defaults['professional_evaluation_result'] = {}
             
             HealthCategory.objects.create(**defaults)
 

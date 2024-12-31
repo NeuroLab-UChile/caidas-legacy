@@ -1,5 +1,5 @@
 {% extends "admin/change_form.html" %}
-{% load i18n static context %}
+{% load i18n static context json_tags %}
 
 {% block extrahead %}
   {{ block.super }}
@@ -180,45 +180,79 @@
     </div>
   </div>
 
-<script>
-  let options = [];
-  let mediaFiles = [];
+  <!-- Insertar los datos usando json_script con escape adecuado -->
+  {{ original.training_form|json_script:"training-form-data" }}
+  {% if original.evaluation_type == "SELF" %}
+      {{ original.self_evaluation_form|json_script:"evaluation-form-data" }}
+  {% else %}
+      {{ original.professional_evaluation_form|json_script:"evaluation-form-data" }}
+  {% endif %}
 
-  // Abre el modal de formulario para gestionar preguntas
-  function openFormModal(type) {
+<script>
+// Inicializar variables
+let trainingNodes = [];
+let evaluationNodes = [];
+
+try {
+    // Obtener y parsear los datos del training form de forma segura
+    const trainingFormElement = document.getElementById('training-form-data');
+    const evaluationFormElement = document.getElementById('evaluation-form-data');
+
+    if (trainingFormElement) {
+        try {
+            const trainingForm = JSON.parse(trainingFormElement.textContent || '{"training_nodes":[]}');
+            trainingNodes = trainingForm.training_nodes || [];
+            console.log('Training form parsed successfully:', trainingNodes);
+        } catch (e) {
+            console.error('Error parsing training form:', e);
+            console.log('Raw training form data:', trainingFormElement.textContent);
+        }
+    }
+
+    if (evaluationFormElement) {
+        try {
+            const evaluationForm = JSON.parse(evaluationFormElement.textContent || '{"question_nodes":[]}');
+            evaluationNodes = evaluationForm.question_nodes || [];
+            console.log('Evaluation form parsed successfully:', evaluationNodes);
+        } catch (e) {
+            console.error('Error parsing evaluation form:', e);
+            console.log('Raw evaluation form data:', evaluationFormElement.textContent);
+        }
+    }
+
+} catch (error) {
+    console.error('General error processing forms:', error);
+}
+
+// Función para abrir el modal del formulario
+function openFormModal(type) {
+    console.log('Opening modal for type:', type);
     const modal = document.getElementById('formModal');
     const modalTitle = document.getElementById('modalTitle');
-    modalTitle.textContent = type === 'TRAINING' ? 'Gestión de Contenido de Entrenamiento' : 'Gestión de Evaluación';
-
+    
+    modalTitle.textContent = type === 'TRAINING' ? 
+        'Gestión de Contenido de Entrenamiento' : 
+        'Gestión de Evaluación';
+    
     modal.classList.remove('hidden');
     
-    // Asegurarnos de obtener los nodos correctos según el tipo y manejar valores nulos
-    let nodes;
-    if (type === 'TRAINING') {
-        nodes = {{ original.training_form.training_nodes|default:"[]"|safe }} || [];
-    } else {
-        nodes = {{ original.evaluation_form.question_nodes|default:"[]"|safe }} || [];
-    }
+    const nodes = type === 'TRAINING' ? trainingNodes : evaluationNodes;
+    console.log(`Nodes for ${type}:`, nodes);
     
-    // Filtrar los nodos según el tipo
-    const filteredNodes = nodes.filter(node => {
-        if (!node || !node.type) return false;
-        return type === 'TRAINING' ? 
-            node.type.endsWith('_NODE') : 
-            node.type.endsWith('_QUESTION');
-    });
-    
-    console.log(`Abriendo modal de tipo ${type} con nodos filtrados:`, filteredNodes);
-    renderNodes(filteredNodes, type);
-  }
+    renderNodes(nodes || [], type);
+}
 
-  // Cierra el modal
-  function closeModal() {
+// Agregar logs para ver los datos crudos
+console.log('Raw training data:', '{{ original.training_form.training_nodes|default:"[]"|escapejs }}');
+console.log('Raw evaluation data:', '{{ original.evaluation_form.question_nodes|default:"[]"|escapejs }}');
+
+// Cierra el modal
+function closeModal() {
     document.querySelectorAll('.modal-overlay').forEach(modal => modal.classList.add('hidden'));
-  }
+}
 
-  // Función para manejar el cambio entre tipos de contenido (Evaluación / Entrenamiento)
-  function toggleContentType() {
+// Función para manejar el cambio entre tipos de contenido (Evaluación / Entrenamiento)
+function toggleContentType() {
     const contentType = document.getElementById('contentType').value;
     const evaluationTypes = document.getElementById('evaluationTypes');
     const trainingTypes = document.getElementById('trainingTypes');
@@ -238,34 +272,34 @@
                      ['VIDEO_NODE', 'IMAGE_NODE'].includes(trainingType);
     
     mediaContainer.classList.toggle('hidden', !showMedia);
-  }
+}
 
-  // Agregar listener para el cambio de tipo de entrenamiento
-  document.getElementById('trainingType').addEventListener('change', function() {
+// Agregar listener para el cambio de tipo de entrenamiento
+document.getElementById('trainingType').addEventListener('change', function() {
     const mediaContainer = document.getElementById('mediaContainer');
     const showMedia = ['VIDEO_NODE', 'IMAGE_NODE'].includes(this.value);
     mediaContainer.classList.toggle('hidden', !showMedia);
-  });
+});
 
-  // Mostrar el modal de agregar pregunta
-  function openAddQuestionModal() {
+// Mostrar el modal de agregar pregunta
+function openAddQuestionModal() {
     options = [];
     renderOptions();
     openModal(questionModal);
-  }
+}
 
-  // Mostrar modal
-  function openModal(modal) {
+// Mostrar modal
+function openModal(modal) {
     modal.classList.remove('hidden');
-  }
+}
 
-  // Cerrar modal de pregunta
-  function closeQuestionModal() {
+// Cerrar modal de pregunta
+function closeQuestionModal() {
     questionModal.classList.add('hidden');
-  }
+}
 
-  // Renderizar las opciones de la pregunta
-  function renderOptions() {
+// Renderizar las opciones de la pregunta
+function renderOptions() {
     const optionsList = document.getElementById('optionsList');
     optionsList.innerHTML = options.map((opt, index) => `
       <li class="flex items-center gap-2 mb-2">
@@ -273,31 +307,31 @@
         <button type="button" onclick="removeOption(${index})" class="text-white px-3 py-2 bg-red-500 rounded-lg font-medium transition-colors">Eliminar</button>
       </li>
     `).join('');
-  }
+}
 
-  // Función para agregar una nueva opción
-  function addOption() {
+// Función para agregar una nueva opción
+function addOption() {
     const optionText = document.getElementById('newOption').value.trim();
     if (optionText) {
-      options.push(optionText);
-      renderOptions();
-      document.getElementById('newOption').value = '';
+        options.push(optionText);
+        renderOptions();
+        document.getElementById('newOption').value = '';
     }
-  }
+}
 
-  // Función para actualizar una opción
-  function updateOption(index, value) {
+// Función para actualizar una opción
+function updateOption(index, value) {
     options[index] = value.trim();
-  }
+}
 
-  // Función para eliminar una opción
-  function removeOption(index) {
+// Función para eliminar una opción
+function removeOption(index) {
     options.splice(index, 1);
     renderOptions();
-  }
+}
 
-  // Función para guardar la pregunta o contenido
-  function saveQuestion() {
+// Función para guardar la pregunta o contenido
+function saveQuestion() {
     const contentType = document.getElementById('contentType').value;
     const nodeId = document.getElementById('nodeId').value;
     const questionText = document.getElementById('questionText').value;
@@ -359,9 +393,9 @@
 
         submitFormWithMedia(formData, "{% url 'update_evaluation_form' original.id %}");
     }
-  }
+}
 
-  function submitForm(formData, url) {
+function submitForm(formData, url) {
     fetch(url, {
         method: 'POST',
         headers: {
@@ -382,9 +416,9 @@
         console.error('Error:', error);
         alert(`Error: ${error.message}`);
     });
-  }
+}
 
-  function handleFileSelect(event) {
+function handleFileSelect(event) {
     const file = event.target.files[0];
     if (!file) return;
 
@@ -411,10 +445,10 @@
     };
 
     reader.readAsDataURL(file);
-  }
+}
 
-  // Renderizar los nodos de preguntas
-  function renderNodes(nodes, type) {
+// Renderizar los nodos de preguntas
+function renderNodes(nodes, type) {
     const questionsList = document.getElementById('questionsList');
     
     const trainingLabels = {
@@ -467,9 +501,9 @@
           </div>
         `;
     }).join('');
-  }
+}
 
-  function editNode(node, type) {
+function editNode(node, type) {
     try {
         // Si el nodo viene como string, parsearlo
         if (typeof node === 'string') {
@@ -521,20 +555,20 @@
         console.error('Error al editar el nodo:', error);
         alert('Error al editar el elemento');
     }
-  }
+}
 
-  // Asegúrate de que el formulario maneje el submit correctamente
-  document.getElementById('questionForm').addEventListener('submit', function(e) {
+// Asegúrate de que el formulario maneje el submit correctamente
+document.getElementById('questionForm').addEventListener('submit', function(e) {
     e.preventDefault();
     saveQuestion();
-  });
+});
 
-  // Asegúrate de que el botón de agregar opción funcione
-  document.getElementById('addOptionBtn').addEventListener('click', function() {
+// Asegúrate de que el botón de agregar opción funcione
+document.getElementById('addOptionBtn').addEventListener('click', function() {
     addOption();
-  });
+});
 
-  function submitFormWithMedia(formData, url) {
+function submitFormWithMedia(formData, url) {
     fetch(url, {
         method: 'POST',
         headers: {
@@ -562,16 +596,16 @@
         console.error('Error:', error);
         alert(`Error: ${error.message}`);
     });
-  }
+}
 
-  // Asegurarse de que el formulario maneje el submit correctamente
-  document.getElementById('questionForm').addEventListener('submit', function(e) {
+// Asegurarse de que el formulario maneje el submit correctamente
+document.getElementById('questionForm').addEventListener('submit', function(e) {
     e.preventDefault();
     saveQuestion();
-  });
+});
 
-  // Asegurarse de que el input de archivo actualice la previsualización
-  document.getElementById('mediaFile').addEventListener('change', function(e) {
+// Asegurarse de que el input de archivo actualice la previsualización
+document.getElementById('mediaFile').addEventListener('change', function(e) {
     const file = e.target.files[0];
     if (!file) return;
 
@@ -592,6 +626,6 @@
             </video>
         `;
     }
-  });
+});
 </script>
 {% endblock %}

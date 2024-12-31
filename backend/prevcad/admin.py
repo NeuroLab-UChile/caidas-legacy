@@ -19,6 +19,7 @@ from django import forms
 import os
 from django.conf import settings
 from django.contrib import messages
+from django.core.serializers.json import DjangoJSONEncoder
 
 from .models import (
   TextRecomendation,
@@ -76,6 +77,12 @@ class UserAdmin(BaseUserAdmin):
     # Asegurarse de que el usuario tenga un perfil
     UserProfile.objects.get_or_create(user=obj)
 
+class CustomJSONEncoder(DjangoJSONEncoder):
+    def default(self, obj):
+        if obj is None:
+            return null
+        return super().default(obj)
+
 @admin.register(CategoryTemplate)
 class CategoryTemplateAdmin(admin.ModelAdmin):
     change_form_template = 'admin/categorytemplate/change_activity_form.html'
@@ -102,7 +109,7 @@ class CategoryTemplateAdmin(admin.ModelAdmin):
         # Siempre mostrar el training form y el botón de gestión
         fieldsets.append(
             ('Nodos de Entrenamiento', {
-                'fields': ('training_form', 'training_nodes_button'),
+                'fields': ('training_form', 'training_form_button'),
                 'description': 'Configure los nodos de entrenamiento.',
             })
         )
@@ -113,14 +120,14 @@ class CategoryTemplateAdmin(admin.ModelAdmin):
                 if hasattr(request.user, 'profile') and request.user.profile.role == 'doctor':
                     fieldsets.append(
                         ('Formulario de Autoevaluación', {
-                            'fields': ('self_evaluation_form', 'evaluation_nodes_button'),
+                            'fields': ('self_evaluation_form', 'evaluation_form_button'),
                             'description': 'Configure las preguntas para la autoevaluación.'
                         })
                     )
             else:  # PROFESSIONAL
                 fieldsets.append(
                     ('Formulario de Evaluación Profesional', {
-                        'fields': ('professional_evaluation_form', 'evaluation_nodes_button'),
+                            'fields': ('professional_evaluation_form', 'evaluation_form_button'),
                         'description': 'Configure el formulario de evaluación profesional.'
                     })
                 )
@@ -128,7 +135,7 @@ class CategoryTemplateAdmin(admin.ModelAdmin):
         return fieldsets
 
     def get_readonly_fields(self, request, obj=None):
-        readonly = ['training_nodes_button', 'evaluation_nodes_button']  # Botones siempre readonly
+        readonly = ['training_form_button', 'evaluation_form_button']  # Botones siempre readonly
         
         if not request.user.is_superuser:
             readonly.append('evaluation_type')
@@ -139,25 +146,9 @@ class CategoryTemplateAdmin(admin.ModelAdmin):
         
         return readonly
 
-    def training_nodes_button(self, obj):
-        """Renderiza el botón para gestionar nodos de entrenamiento"""
-        if obj and obj.pk:
-            return format_html(
-                '<button type="button" class="btn btn-primary" onclick="openFormModal(\'TRAINING\')">Gestionar Nodos de Entrenamiento</button>'
-            )
-        return "Guarde primero para gestionar los nodos de entrenamiento"
-    training_nodes_button.short_description = ""
 
-    def evaluation_nodes_button(self, obj):
-        """Renderiza el botón para gestionar nodos de evaluación"""
-        if obj and obj.pk:
-            eval_type = 'SELF' if obj.evaluation_type == 'SELF' else 'PROFESSIONAL'
-            return format_html(
-                '<button type="button" class="btn btn-primary" onclick="openFormModal(\'{}\')">Gestionar Preguntas de Evaluación</button>',
-                eval_type
-            )
-        return "Guarde primero para gestionar las preguntas"
-    evaluation_nodes_button.short_description = ""
+
+
 
     def get_form(self, request, obj=None, **kwargs):
         form = super().get_form(request, obj, **kwargs)
@@ -187,6 +178,7 @@ class CategoryTemplateAdmin(admin.ModelAdmin):
         js = [
             'admin/js/vendor/jquery/jquery.min.js',
             'admin/js/jquery.init.js',
+            'admin/js/categorytemplate/change_activity_form.js',
         ]
 
     def get_evaluation_type_display(self, obj):
@@ -245,27 +237,27 @@ class CategoryTemplateAdmin(admin.ModelAdmin):
 
     def evaluation_form_button(self, obj):
         return mark_safe(f"""
-  <div class="form-row field-evaluation_form">
-    <label for="id_evaluation_form">Formulario de Evaluación</label>
-    <button type="button" class="btn btn-primary" onclick="openFormModal('EVALUATION')">
-      Ver Formulario
-    </button>
-  </div>
-    """)
-  
+    <div class="form-row field-evaluation_form">
+        <label for="id_evaluation_form">Formulario de Evaluación</label>
+        <button type="button" class="btn btn-primary" onclick="openFormModal('EVALUATION')">
+        Ver Formulario
+        </button>
+    </div>
+        """)
+    
 
     evaluation_form_button.short_description = "Formulario de Evaluación"
 
-    def training_nodes_button(self, obj):
+
+    def training_form_button(self, obj):
         return mark_safe(f"""
-     <div class="form-row field-training_form">
+  <div class="form-row field-training_form">
     <label for="id_training_form">Formulario de Entrenamiento</label>
     <button type="button" class="btn btn-primary" onclick="openFormModal('TRAINING')">
       Ver Formulario
     </button>
   </div>
     """)
-    training_nodes_button.short_description = "Nodos de Entrenamiento"
 
     def response_change(self, request, obj):
         response = super().response_change(request, obj)
@@ -548,6 +540,30 @@ class HealthCategoryAdmin(admin.ModelAdmin):
                 }
             )
         return form
+
+    def change_view(self, request, object_id, form_url='', extra_context=None):
+        extra_context = extra_context or {}
+        obj = self.get_object(request, object_id)
+        
+        try:
+            # Asegurarse de que los datos son diccionarios válidos
+            training_form = obj.training_form if isinstance(obj.training_form, dict) else {}
+            evaluation_form = (
+                obj.self_evaluation_form if obj.evaluation_type == 'SELF' 
+                else obj.professional_evaluation_form
+            )
+            evaluation_form = evaluation_form if isinstance(evaluation_form, dict) else {}
+
+            # Serializar los datos
+            extra_context['training_form'] = training_form
+            extra_context['evaluation_form'] = evaluation_form
+
+        except Exception as e:
+            print(f"Error preparing data: {e}")
+            extra_context['training_form'] = {'training_nodes': []}
+            extra_context['evaluation_form'] = {'question_nodes': []}
+
+        return super().change_view(request, object_id, form_url, extra_context=extra_context)
 
 class AppointmentForm(forms.ModelForm):
     date = forms.DateField(
