@@ -65,32 +65,27 @@ class CategoryTemplate(models.Model):
     verbose_name="Nodo raíz"
   )
 
-  class EditableFields(models.TextChoices):
-        RECOMMENDATIONS = 'recommendations', 'Recomendaciones'
-        STATUS = 'status_color', 'Estado'
-        EVALUATION = 'evaluation_results', 'Resultados de Evaluación'
-        TRAINING = 'training_results', 'Resultados de Entrenamiento'
-
-  editors = models.ManyToManyField(
-        'UserProfile',
-        through='CategoryTemplateEditor',
-        related_name='editable_templates',
-        blank=True
+  editable_fields_by_user_type = models.JSONField(
+        default=dict,
+        help_text="Defina los campos editables para cada tipo de usuario. Ejemplo: {'DOCTOR': ['recommendations', 'status_color'], 'NURSE': ['recommendations']}",
     )
 
   def can_user_edit(self, user_profile, field=None):
-        """Verifica si un usuario puede editar este template o un campo específico"""
+        """
+        Verifica si un usuario puede editar este template o un campo específico según el rol
+        y los campos definidos en editable_fields_by_user_type.
+        """
         if not user_profile:
             return False
-            
-        editor = self.categorytemplateeditor_set.filter(user=user_profile).first()
-        if not editor:
-            return False
-            
-        if field:
-            return field in editor.editable_fields
-        return True
 
+        if user_profile.role == UserTypes.ADMIN:
+            return True  # Administradores pueden editar todo
+
+        editable_fields = self.editable_fields_by_user_type.get(user_profile.role, [])
+        if field:
+            return field in editable_fields
+        return bool(editable_fields)
+  
   def get_icon_base64(self):
     try:
       if not self.icon:

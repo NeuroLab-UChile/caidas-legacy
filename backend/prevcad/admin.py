@@ -100,8 +100,9 @@ class CategoryTemplateAdmin(admin.ModelAdmin):
         ('Configuración de Evaluación', {
             'fields': ('evaluation_type', 'evaluation_form', 'default_recommendations')
         }),
-        ('Configuración de Entrenamiento', {
-            'fields': ('training_form', 'root_node')
+        ('Permisos de Edición', {
+            'fields': ('editable_fields_by_user_type',),
+            'description': "Defina qué campos son editables para cada tipo de usuario.",
         }),
     )
 
@@ -192,6 +193,40 @@ class HealthCategoryAdmin(admin.ModelAdmin):
             'admin/js/healthcategory.js',
         )
 
+    def recommendations_field_group(self, obj):
+            """Muestra las recomendaciones de forma organizada"""
+            if not obj.recommendations:
+                return "No hay recomendaciones"
+
+            html = ['<div class="recommendations-group">']
+            
+            for status, data in obj.recommendations.items():
+                if isinstance(data, dict) and 'text' in data:
+                    text = data['text']
+                    updated_at = data.get('updated_at', 'No especificada')
+                    professional = data.get('professional', {})
+                    prof_name = professional.get('name', 'No especificado')
+                    
+                    html.append(f'<div class="recommendation-item status-{status}">')
+                    html.append(f'<h4>Estado: {status}</h4>')
+                    html.append(f'<p><strong>Recomendación:</strong> {text}</p>')
+                    html.append(f'<p><small>Actualizado por: {prof_name}</small></p>')
+                    html.append(f'<p><small>Fecha: {updated_at}</small></p>')
+                    html.append('</div>')
+                else:
+                    html.append(f'<div class="recommendation-item status-{status}">')
+                    html.append(f'<h4>Estado: {status}</h4>')
+                    html.append(f'<p>{data}</p>')
+                    html.append('</div>')
+
+            html.append('</div>')
+            
+            # Añadir estilos inline
+      
+            return format_html(''.join(html))
+        
+    recommendations_field_group.short_description = "Recomendaciones"
+    recommendations_field_group.allow_tags = True
     def get_user_info(self, obj):
         if obj.user and obj.user.user:
             user = obj.user.user
@@ -267,6 +302,15 @@ class HealthCategoryAdmin(admin.ModelAdmin):
     get_detailed_responses.short_description = "Detalle de Respuestas"
 
     def save_model(self, request, obj, form, change):
+        user_profile = request.user.profile
+        if not obj.can_user_edit(user_profile):
+            self.message_user(
+                request,
+                "No tienes permiso para editar esta categoría.",
+                level=messages.ERROR,
+            )
+            return
+        super().save_model(request, obj, form, change)
         if 'use_default_recommendations' in form.changed_data:
             if obj.use_default_recommendations:
                 if obj.template and obj.template.default_recommendations:
@@ -327,6 +371,12 @@ class HealthCategoryAdmin(admin.ModelAdmin):
         return form
 
     def get_fieldsets(self, request, obj=None):
+        """
+        Ajusta los fieldsets según los permisos del usuario y los campos definidos.
+        """
+        user_profile = request.user.profile
+
+        # Base fieldsets siempre visibles
         fieldsets = [
             ('Información del Paciente', {
                 'fields': ('get_user_info', 'get_template_name'),
@@ -335,19 +385,24 @@ class HealthCategoryAdmin(admin.ModelAdmin):
             ('Estado y Fechas', {
                 'fields': ('get_completion_status', 'completion_date'),
             }),
-            ('Recomendaciones Médicas', {
-                'fields': (
-                    'use_default_recommendations',
-                    'recommendations_field_group',
-                ),
-                'description': 'Estado y color de las recomendaciones médicas.',
-                'classes': ('wide',),
-            }),
         ]
 
-        # Add response fields based on evaluation type
+        # Verificar si el usuario tiene permisos para ver/editar recomendaciones médicas
+        if obj and obj.can_user_edit(user_profile, field="recommendations"):
+            fieldsets.append(
+                ('Recomendaciones Médicas', {
+                    'fields': (
+                        'use_default_recommendations',
+                        'recommendations_field_group',
+                    ),
+                    'description': 'Estado y color de las recomendaciones médicas.',
+                    'classes': ('wide',),
+                })
+            )
+
+        # Añadir campos según el tipo de evaluación de la plantilla
         if obj and obj.template:
-            if obj.template.evaluation_type == 'SELF':
+            if obj.template.evaluation_type == 'SELF' and obj.can_user_edit(user_profile, field="responses"):
                 fieldsets.append(
                     ('Respuestas de Autoevaluación', {
                         'fields': ('get_detailed_responses',),
@@ -355,7 +410,7 @@ class HealthCategoryAdmin(admin.ModelAdmin):
                         'description': 'Historial completo de respuestas de autoevaluación.',
                     })
                 )
-            elif obj.template.evaluation_type == 'PROFESSIONAL':
+            if obj.template.evaluation_type == 'PROFESSIONAL' and obj.can_user_edit(user_profile, field="professional_evaluation_results"):
                 fieldsets.append(
                     ('Evaluación Profesional', {
                         'fields': ('professional_evaluation_results',),
@@ -363,82 +418,86 @@ class HealthCategoryAdmin(admin.ModelAdmin):
                         'description': 'Respuestas de la evaluación profesional.',
                     })
                 )
-            elif obj.template.evaluation_type == 'BOTH':
-                fieldsets.extend([
-                    ('Respuestas de Autoevaluación', {
-                        'fields': ('get_detailed_responses',),
-                        'classes': ('collapse',),
-                        'description': 'Historial completo de respuestas de autoevaluación.',
-                    }),
-                    ('Evaluación Profesional', {
-                        'fields': ('professional_evaluation_results',),
-                        'classes': ('collapse',),
-                        'description': 'Respuestas de la evaluación profesional.',
-                    })
-                ])
+            if obj.template.evaluation_type == 'BOTH':
+                if obj.can_user_edit(user_profile, field="responses"):
+                    fieldsets.append(
+                        ('Respuestas de Autoevaluación', {
+                            'fields': ('get_detailed_responses',),
+                            'classes': ('collapse',),
+                            'description': 'Historial completo de respuestas de autoevaluación.',
+                        })
+                    )
+                if obj.can_user_edit(user_profile, field="professional_evaluation_results"):
+                    fieldsets.append(
+                        ('Evaluación Profesional', {
+                            'fields': ('professional_evaluation_results',),
+                            'classes': ('collapse',),
+                            'description': 'Respuestas de la evaluación profesional.',
+                        })
+                    )
 
         return fieldsets
 
-    def recommendations_field_group(self, obj):
-        """Muestra las recomendaciones según el tipo seleccionado."""
-        if obj and obj.use_default_recommendations:
-            # Mostrar las recomendaciones por defecto del template
-            default_recs = obj.template.default_recommendations if obj.template else {}
-            field_html = """
-            <div style="margin: 10px 0;">
-                <div style="margin-bottom: 15px;">
-                    <label style="display: block; font-weight: bold; margin-bottom: 5px;">
-                        Recomendaciones por defecto del template:
-                    </label>
-                    <div style="padding: 10px; background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px;">
-                        <pre style="margin: 0; white-space: pre-wrap;">{default_recs}</pre>
+        def recommendations_field_group(self, obj):
+            """Muestra las recomendaciones según el tipo seleccionado."""
+            if obj and obj.use_default_recommendations:
+                # Mostrar las recomendaciones por defecto del template
+                default_recs = obj.template.default_recommendations if obj.template else {}
+                field_html = """
+                <div style="margin: 10px 0;">
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; font-weight: bold; margin-bottom: 5px;">
+                            Recomendaciones por defecto del template:
+                        </label>
+                        <div style="padding: 10px; background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px;">
+                            <pre style="margin: 0; white-space: pre-wrap;">{default_recs}</pre>
+                        </div>
+                    </div>
+                    <button type="submit" name="_save_default_recs" style="padding: 6px 12px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                        Guardar
+                    </button>
+                </div>
+                """
+                return mark_safe(field_html.format(
+                    default_recs=json.dumps(default_recs, indent=2) if default_recs else "No hay recomendaciones por defecto"
+                ))
+            else:
+                # Mostrar el formulario para recomendaciones personalizadas
+                field_html = """
+                <div style="margin: 10px 0;">
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; font-weight: bold; margin-bottom: 5px;">Recomendaciones:</label>
+                        <textarea 
+                            name="recommendations" 
+                            rows="4" 
+                            style="width: 90%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;"
+                        >{recommendations}</textarea>
+                    </div>
+                    <div>
+                        <label style="display: block; font-weight: bold; margin-bottom: 5px;">Color de estado:</label>
+                        <select 
+                            name="status_color" 
+                            style="width: 200px; padding: 6px; border: 1px solid #ccc; border-radius: 4px;"
+                        >
+                            <option value="">---------</option>
+                            <option value="verde" {verde_selected}>Verde</option>
+                            <option value="amarillo" {amarillo_selected}>Amarillo</option>
+                            <option value="rojo" {rojo_selected}>Rojo</option>
+                            <option value="gris" {gris_selected}>Gris</option>
+                        </select>
                     </div>
                 </div>
-                <button type="submit" name="_save_default_recs" style="padding: 6px 12px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                    Guardar
-                </button>
-            </div>
-            """
-            return mark_safe(field_html.format(
-                default_recs=json.dumps(default_recs, indent=2) if default_recs else "No hay recomendaciones por defecto"
-            ))
-        else:
-            # Mostrar el formulario para recomendaciones personalizadas
-            field_html = """
-            <div style="margin: 10px 0;">
-                <div style="margin-bottom: 15px;">
-                    <label style="display: block; font-weight: bold; margin-bottom: 5px;">Recomendaciones:</label>
-                    <textarea 
-                        name="recommendations" 
-                        rows="4" 
-                        style="width: 90%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;"
-                    >{recommendations}</textarea>
-                </div>
-                <div>
-                    <label style="display: block; font-weight: bold; margin-bottom: 5px;">Color de estado:</label>
-                    <select 
-                        name="status_color" 
-                        style="width: 200px; padding: 6px; border: 1px solid #ccc; border-radius: 4px;"
-                    >
-                        <option value="">---------</option>
-                        <option value="verde" {verde_selected}>Verde</option>
-                        <option value="amarillo" {amarillo_selected}>Amarillo</option>
-                        <option value="rojo" {rojo_selected}>Rojo</option>
-                        <option value="gris" {gris_selected}>Gris</option>
-                    </select>
-                </div>
-            </div>
-            """
-            recommendations = obj.recommendations if obj and obj.recommendations else ""
-            status_color = obj.status_color if obj and obj.status_color else ""
-            
-            return mark_safe(field_html.format(
-                recommendations=recommendations,
-                verde_selected="selected" if status_color == "verde" else "",
-                amarillo_selected="selected" if status_color == "amarillo" else "",
-                rojo_selected="selected" if status_color == "rojo" else "",
-                gris_selected="selected" if status_color == "gris" else "",
-            ))
+                """
+                recommendations = obj.recommendations if obj and obj.recommendations else ""
+                status_color = obj.status_color if obj and obj.status_color else ""
+                
+                return mark_safe(field_html.format(
+                    recommendations=recommendations,
+                    verde_selected="selected" if status_color == "verde" else "",
+                    amarillo_selected="selected" if status_color == "amarillo" else "",
+                    rojo_selected="selected" if status_color == "rojo" else "",
+                    gris_selected="selected" if status_color == "gris" else "",
+                ))
 
 class AppointmentForm(forms.ModelForm):
     date = forms.DateField(

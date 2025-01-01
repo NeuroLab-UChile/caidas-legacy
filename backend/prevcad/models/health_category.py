@@ -95,29 +95,28 @@ class HealthCategory(models.Model):
         self.save(update_fields=["recommendations"])
 
     def can_user_edit(self, user_profile, field=None):
-        """Verifica si un usuario puede editar esta categoría o un campo específico"""
+        """
+        Verifica si el usuario puede editar esta categoría o un campo específico.
+        Basado en el rol del usuario (enfermero o doctor) y las definiciones del template.
+        """
         if not user_profile:
             return False
 
-        # Restringir completamente la edición para pacientes
+        # Pacientes no pueden editar nada
         if user_profile.role == UserTypes.PATIENT:
             return False
 
-        # El propietario puede editar todo, excepto campos restringidos
-        if self.user == user_profile:
-            if field in ["professional_evaluation_results"]:
-                return False
+        # Administradores y doctores tienen acceso completo
+        if user_profile.role in [UserTypes.ADMIN, UserTypes.DOCTOR]:
             return True
 
-        # Verificar permisos específicos en el editor
-        editor = self.healthcategoryeditor_set.filter(user=user_profile).first()
-        if not editor:
-            # Verificar permisos del template
-            return self.template.can_user_edit(user_profile, field)
+        # Enfermeros solo pueden editar campos específicos definidos en el template
+        if user_profile.role == UserTypes.NURSE:
+            if field:
+                return field in self.template.editable_fields_by_user_type.get(UserTypes.NURSE, [])
+            return True  # Si no se especifica un campo, se permite la edición básica
 
-        if field:
-            return field in editor.editable_fields
-        return True
+        return False
 
 class HealthCategoryEditor(models.Model):
     """Modelo intermedio para manejar permisos de edición de categorías"""
