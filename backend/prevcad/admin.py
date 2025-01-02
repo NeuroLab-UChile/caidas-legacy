@@ -20,6 +20,7 @@ import os
 from django.conf import settings
 from django.contrib import messages
 from django.core.serializers.json import DjangoJSONEncoder
+from django.urls import path
 
 from .models import (
   TextRecomendation,
@@ -200,374 +201,135 @@ class HealthCategoryAdmin(admin.ModelAdmin):
         'get_user_info',
         'get_template_name',
         'get_completion_status',
-        'completion_date',
-        'is_draft',
-        'get_status_color',
+        'get_completion_date',
+        'get_is_draft',
+        'get_status_color'
     ]
+    
     list_filter = [
-        ('completion_date', admin.DateFieldListFilter),
+        ('evaluation_form__completed_date', admin.DateFieldListFilter),
         ('template', admin.RelatedFieldListFilter),
         ('user__user__username', admin.AllValuesFieldListFilter),
     ]
+    
     search_fields = [
         'user__user__username',
         'user__user__email',
         'user__user__first_name',
         'user__user__last_name',
         'template__name',
-        'recommendations',
     ]
-    ordering = ['-completion_date']
-    list_per_page = 20
+    
     readonly_fields = [
-        'template',
-        'completion_date',
         'get_user_info',
         'get_template_name',
-        'get_status_color',
         'get_completion_status',
-        'is_draft',
-        'recommendations_field_group',
-        'get_detailed_responses',
+        'get_completion_date',
+        'get_is_draft',
+        'get_status_color',
+        'get_evaluation_data',
+        'get_recommendation_data'
     ]
+
     fieldsets = (
-        ('Información del Paciente', {
-            'fields': ('get_user_info', 'get_template_name'),
-            'classes': ('wide',),
-        }),
-        ('Estado y Fechas', {
-            'fields': ('get_completion_status', 'completion_date'),
-        }),
-        ('Recomendaciones Médicas', {
+        ('Información del Usuario', {
             'fields': (
-                'use_default_recommendations',
-                'recommendations_field_group',
-            ),
-            'description': 'Estado y color de las recomendaciones médicas.',
-            'classes': ('wide',),
+                'user',
+                'get_user_info',
+                'template',
+                'get_template_name',
+            )
         }),
-        ('Respuestas del Paciente', {
-            'fields': ('get_detailed_responses',),
-            'classes': ('collapse',),
-            'description': 'Historial completo de respuestas del paciente.',
+        ('Estado', {
+            'fields': (
+                'get_completion_status',
+                'get_completion_date',
+                'get_is_draft',
+                'get_status_color'
+            )
+        }),
+        ('Datos de Evaluación', {
+            'fields': (
+                'get_evaluation_data',
+                'get_recommendation_data'
+            )
         })
     )
-    change_form_template = 'admin/healthcategory/change_form.html'
 
-    class Media:
-        css = {
-            'all': ('admin/css/custom_admin.css',)
-        }
-        js = (
-            'admin/js/jquery.init.js',
-            'admin/js/healthcategory.js',
-        )
-
-    def recommendations_field_group(self, obj):
-            """Muestra las recomendaciones de forma organizada"""
-            if not obj.recommendations:
-                return "No hay recomendaciones"
-
-            html = ['<div class="recommendations-group">']
-            
-            for status, data in obj.recommendations.items():
-                if isinstance(data, dict) and 'text' in data:
-                    text = data['text']
-                    updated_at = data.get('updated_at', 'No especificada')
-                    professional = data.get('professional', {})
-                    prof_name = professional.get('name', 'No especificado')
-                    
-                    html.append(f'<div class="recommendation-item status-{status}">')
-                    html.append(f'<h4>Estado: {status}</h4>')
-                    html.append(f'<p><strong>Recomendación:</strong> {text}</p>')
-                    html.append(f'<p><small>Actualizado por: {prof_name}</small></p>')
-                    html.append(f'<p><small>Fecha: {updated_at}</small></p>')
-                    html.append('</div>')
-                else:
-                    html.append(f'<div class="recommendation-item status-{status}">')
-                    html.append(f'<h4>Estado: {status}</h4>')
-                    html.append(f'<p>{data}</p>')
-                    html.append('</div>')
-
-            html.append('</div>')
-            
-            # Añadir estilos inline
-      
-            return format_html(''.join(html))
-        
-    recommendations_field_group.short_description = "Recomendaciones"
-    recommendations_field_group.allow_tags = True
     def get_user_info(self, obj):
-        if obj.user and obj.user.user:
-            user = obj.user.user
-            return format_html(
-                '<div style="min-width: 200px;">'
-                '<strong style="font-size: 14px;">{username}</strong><br>'
-                '<small style="color: #666;">{nombre} {apellido}</small><br>'
-                '<small style="color: #888;">{email}</small>'
-                '</div>',
-                username=user.username,
-                nombre=user.first_name or '',
-                apellido=user.last_name or '',
-                email=user.email or ''
-            )
-        return "Usuario no disponible"
-    get_user_info.short_description = 'Usuario'
+        return f"{obj.user.user.get_full_name()} ({obj.user.user.username})"
+    get_user_info.short_description = "Usuario"
 
     def get_template_name(self, obj):
-        return obj.template.name if obj.template else "Sin plantilla"
-    get_template_name.short_description = 'Plantilla'
+        return obj.template.name
+    get_template_name.short_description = "Plantilla"
 
     def get_completion_status(self, obj):
-        if obj.completion_date:
-            return format_html(
-                '<span style="color: #28a745; font-weight: bold;">●</span> '
-                '<span style="color: #28a745;">Completado</span>'
-            )
-        return format_html(
-            '<span style="color: #ffc107; font-weight: bold;">●</span> '
-            '<span style="color: #ffc107;">Pendiente</span>'
-        )
-    get_completion_status.short_description = 'Estado'
+        status = obj.get_status()
+        return "Completado" if status['is_completed'] else "Pendiente"
+    get_completion_status.short_description = "Estado"
+
+    def get_completion_date(self, obj):
+        try:
+            return obj.evaluation_form.completed_date
+        except:
+            return None
+    get_completion_date.short_description = "Fecha de Completado"
 
     def get_status_color(self, obj):
-        color_map = {
+        status = obj.get_status()
+        colors = {
             'verde': '#28a745',
             'amarillo': '#ffc107',
             'rojo': '#dc3545',
-            'gris': '#6c757d',
+            'gris': '#6c757d'
         }
-        if obj.status_color:
-            return format_html(
-                '<span style="color: {}; font-weight: bold;">●</span> {}',
-                color_map.get(obj.status_color, '#6c757d'),
-                obj.get_status_color_display()
-            )
-        return "Sin asignar"
-    get_status_color.short_description = 'Color de riesgo'
-
-    def get_detailed_responses(self, obj):
-        from django.template.loader import render_to_string
-
-        responses = obj.responses or {}
-        processed_responses = {}
-
-        for node_id, response in responses.items():
-            processed_response = response.copy()
-            if response.get('type') == 'SINGLE_CHOICE_QUESTION':
-                options = response['answer'].get('options', [])
-                selected = response['answer'].get('selectedOption')
-                if selected is not None and selected < len(options):
-                    processed_response['answer']['selected_text'] = options[selected]
-            elif response.get('type') == 'MULTIPLE_CHOICE_QUESTION':
-                options = response['answer'].get('options', [])
-                selected = response['answer'].get('selectedOptions', [])
-                processed_response['answer']['selected_texts'] = [
-                    options[idx] for idx in selected if idx < len(options)
-                ]
-            processed_responses[node_id] = processed_response
-
-        context = {'responses': processed_responses}
-        return mark_safe(render_to_string('admin/healthcategory/detailed_responses.html', context))
-    get_detailed_responses.short_description = "Detalle de Respuestas"
-
-    def save_model(self, request, obj, form, change):
-        user_profile = request.user.profile
-        if not obj.can_user_edit(user_profile):
-            self.message_user(
-                request,
-                "No tienes permiso para editar esta categoría.",
-                level=messages.ERROR,
-            )
-            return
-        super().save_model(request, obj, form, change)
-        if 'use_default_recommendations' in form.changed_data:
-            if obj.use_default_recommendations:
-                if obj.template and obj.template.default_recommendations:
-                    obj.recommendations = obj.template.default_recommendations
-                    messages.info(request, "Se han restaurado las recomendaciones por defecto del template")
-            else:
-                messages.info(request, "Ahora puede personalizar las recomendaciones")
-
-        if not obj.use_default_recommendations:
-            if 'recommendations' in request.POST:
-                obj.recommendations = request.POST['recommendations']
-            if 'status_color' in request.POST:
-                obj.status_color = request.POST['status_color']
-
-        super().save_model(request, obj, form, change)
-
-    def response_change(self, request, obj):
-        if "_save_draft" in request.POST:
-            obj.is_draft = True
-            obj.save()
-            self.message_user(
-                request,
-                "Las recomendaciones se han guardado como borrador y NO son visibles para el paciente.",
-                level=messages.WARNING
-            )
-            return self.response_post_save_change(request, obj)
-
-        obj.is_draft = False
-        obj.recommendations_updated_by = request.user.get_full_name() or request.user.username
-        obj.recommendations_updated_at = timezone.now()
-        obj.save()
-
-        self.message_user(
-            request,
-            "✓ Las recomendaciones han sido firmadas y son visibles para el paciente.",
-            level=messages.SUCCESS
+        return format_html(
+            '<span style="color: {};">●</span> {}',
+            colors.get(status['recommendation_status'], '#6c757d'),
+            status['recommendation_status'].capitalize()
         )
-        return super().response_change(request, obj)
+    get_status_color.short_description = "Estado de Recomendación"
 
-    def get_form(self, request, obj=None, **kwargs):
-        form = super().get_form(request, obj, **kwargs)
-
-        if 'recommendations' in form.base_fields:
-            form.base_fields['recommendations'].help_text = (
-                "Las recomendaciones serán visibles para el paciente cuando se guarden sin marcar como borrador."
-            )
-            form.base_fields['recommendations'].widget = forms.Textarea(attrs={
-                'rows': 4,
-                'class': 'vLargeTextField',
-                'placeholder': 'Ingrese las recomendaciones personalizadas'
-            })
-
-        if 'use_default_recommendations' in form.base_fields:
-            form.base_fields['use_default_recommendations'].help_text = (
-                "Marque esta casilla para usar las recomendaciones predeterminadas del template"
-            )
-
-        return form
-
-    def get_fieldsets(self, request, obj=None):
-        """
-        Ajusta los fieldsets según los permisos del usuario y los campos definidos.
-        """
-        user_profile = request.user.profile
-
-        # Base fieldsets siempre visibles
-        fieldsets = [
-            ('Información del Paciente', {
-                'fields': ('get_user_info', 'get_template_name'),
-                'classes': ('wide',),
-            }),
-            ('Estado y Fechas', {
-                'fields': ('get_completion_status', 'completion_date'),
-            }),
+    change_form_template = 'admin/healthcategory/change_form.html'
+    
+    def get_urls(self):
+        urls = super().get_urls()
+        custom_urls = [
+            path(
+                '<path:object_id>/update-recommendation/',
+                self.admin_site.admin_view(self.update_recommendation_view),
+                name='update-recommendation',
+            ),
         ]
+        return custom_urls + urls
 
-        # Verificar si el usuario tiene permisos para ver/editar recomendaciones médicas
-        if obj and obj.can_user_edit(user_profile, field="recommendations"):
-            fieldsets.append(
-                ('Recomendaciones Médicas', {
-                    'fields': (
-                        'use_default_recommendations',
-                        'recommendations_field_group',
-                    ),
-                    'description': 'Estado y color de las recomendaciones médicas.',
-                    'classes': ('wide',),
-                })
-            )
-
-        # Añadir campos según el tipo de evaluación de la plantilla
-        if obj and obj.template:
-            if obj.template.evaluation_type == 'SELF' and obj.can_user_edit(user_profile, field="responses"):
-                fieldsets.append(
-                    ('Respuestas de Autoevaluación', {
-                        'fields': ('get_detailed_responses',),
-                        'classes': ('collapse',),
-                        'description': 'Historial completo de respuestas de autoevaluación.',
-                    })
-                )
-            if obj.template.evaluation_type == 'PROFESSIONAL' and obj.can_user_edit(user_profile, field="professional_evaluation_results"):
-                fieldsets.append(
-                    ('Evaluación Profesional', {
-                        'fields': ('professional_evaluation_results',),
-                        'classes': ('collapse',),
-                        'description': 'Respuestas de la evaluación profesional.',
-                    })
-                )
-            if obj.template.evaluation_type == 'BOTH':
-                if obj.can_user_edit(user_profile, field="responses"):
-                    fieldsets.append(
-                        ('Respuestas de Autoevaluación', {
-                            'fields': ('get_detailed_responses',),
-                            'classes': ('collapse',),
-                            'description': 'Historial completo de respuestas de autoevaluación.',
-                        })
-                    )
-                if obj.can_user_edit(user_profile, field="professional_evaluation_results"):
-                    fieldsets.append(
-                        ('Evaluación Profesional', {
-                            'fields': ('professional_evaluation_results',),
-                            'classes': ('collapse',),
-                            'description': 'Respuestas de la evaluación profesional.',
-                        })
-                    )
-
-        return fieldsets
-
-        def recommendations_field_group(self, obj):
-            """Muestra las recomendaciones según el tipo seleccionado."""
-            if obj and obj.use_default_recommendations:
-                # Mostrar las recomendaciones por defecto del template
-                default_recs = obj.template.default_recommendations if obj.template else {}
-                field_html = """
-                <div style="margin: 10px 0;">
-                    <div style="margin-bottom: 15px;">
-                        <label style="display: block; font-weight: bold; margin-bottom: 5px;">
-                            Recomendaciones por defecto del template:
-                        </label>
-                        <div style="padding: 10px; background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px;">
-                            <pre style="margin: 0; white-space: pre-wrap;">{default_recs}</pre>
-                        </div>
-                    </div>
-                    <button type="submit" name="_save_default_recs" style="padding: 6px 12px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                        Guardar
-                    </button>
-                </div>
-                """
-                return mark_safe(field_html.format(
-                    default_recs=json.dumps(default_recs, indent=2) if default_recs else "No hay recomendaciones por defecto"
-                ))
-            else:
-                # Mostrar el formulario para recomendaciones personalizadas
-                field_html = """
-                <div style="margin: 10px 0;">
-                    <div style="margin-bottom: 15px;">
-                        <label style="display: block; font-weight: bold; margin-bottom: 5px;">Recomendaciones:</label>
-                        <textarea 
-                            name="recommendations" 
-                            rows="4" 
-                            style="width: 90%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;"
-                        >{recommendations}</textarea>
-                    </div>
-                    <div>
-                        <label style="display: block; font-weight: bold; margin-bottom: 5px;">Color de estado:</label>
-                        <select 
-                            name="status_color" 
-                            style="width: 200px; padding: 6px; border: 1px solid #ccc; border-radius: 4px;"
-                        >
-                            <option value="">---------</option>
-                            <option value="verde" {verde_selected}>Verde</option>
-                            <option value="amarillo" {amarillo_selected}>Amarillo</option>
-                            <option value="rojo" {rojo_selected}>Rojo</option>
-                            <option value="gris" {gris_selected}>Gris</option>
-                        </select>
-                    </div>
-                </div>
-                """
-                recommendations = obj.recommendations if obj and obj.recommendations else ""
-                status_color = obj.status_color if obj and obj.status_color else ""
+    def update_recommendation_view(self, request, object_id):
+        if request.method == 'POST':
+            try:
+                data = json.loads(request.body)
+                health_category = self.get_object(request, object_id)
                 
-                return mark_safe(field_html.format(
-                    recommendations=recommendations,
-                    verde_selected="selected" if status_color == "verde" else "",
-                    amarillo_selected="selected" if status_color == "amarillo" else "",
-                    rojo_selected="selected" if status_color == "rojo" else "",
-                    gris_selected="selected" if status_color == "gris" else "",
-                ))
+                health_category.update({
+                    'professional_recommendations': data.get('text'),
+                    'status_color': data.get('status_color', 'gris'),
+                    'is_draft': data.get('is_draft', True),
+                    'updated_by': request.user.username
+                })
+                
+                return JsonResponse({'status': 'success'})
+            except Exception as e:
+                return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+        
+        return JsonResponse({'status': 'error', 'message': 'Method not allowed'}, status=405)
+
+    def change_view(self, request, object_id, form_url='', extra_context=None):
+        extra_context = extra_context or {}
+        obj = self.get_object(request, object_id)
+        if obj:
+            extra_context['evaluation_data'] = obj.get_evaluation_data()
+            extra_context['recommendation_data'] = obj.get_recommendation_data()
+        return super().change_view(request, object_id, form_url, extra_context)
 
 class AppointmentForm(forms.ModelForm):
     date = forms.DateField(

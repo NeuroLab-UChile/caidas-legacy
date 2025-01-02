@@ -16,11 +16,11 @@ export const CategoriesContext = createContext<CategoriesContextType>(
   {} as CategoriesContextType
 );
 
-export function CategoriesProvider({
+export const CategoriesProvider = ({
   children,
 }: {
   children: React.ReactNode;
-}) {
+}) => {
   const { isAuthenticated } = useAuth();
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(
@@ -87,6 +87,14 @@ export function CategoriesProvider({
       {children}
     </CategoriesContext.Provider>
   );
-}
+};
 
-export const useCategories = () => useContext(CategoriesContext);
+export const useCategories = () => {
+  const context = useContext(CategoriesContext);
+  if (!context) {
+    throw new Error("useCategories must be used within a CategoriesProvider");
+  }
+  return context;
+};
+
+export default CategoriesProvider;

@@ -16,7 +16,7 @@ export const getCategoryStatus = (category: Category) => {
     };
   }
 
-  if (answeredQuestions === totalQuestions && category.completion_date) {
+  if (answeredQuestions === totalQuestions && category.evaluation_form.completion_date) {
     return {
       status: 'completed',
       text: '✅ Evaluación Completada'

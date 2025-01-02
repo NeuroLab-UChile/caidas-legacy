@@ -1,36 +1,36 @@
 from django.db import models
 from django.utils import timezone
-from django.db.models.signals import post_save, pre_delete
-from django.dispatch import receiver
+from django.core.exceptions import ValidationError
 from .user_profile import UserProfile
 from .category_template import CategoryTemplate
-from django.core.exceptions import ValidationError
-from .user_types import UserTypes
+from .evaluation import EvaluationForm
+from .recommendation import Recommendation
+
+from django.db.models.signals import post_save, pre_delete
+from django.dispatch import receiver
+
+class HealthCategoryEditor(models.Model):
+    health_category = models.ForeignKey('HealthCategory', on_delete=models.CASCADE)
+    editor = models.ForeignKey('UserProfile', on_delete=models.CASCADE)
+    added_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Editor de Categoría de Salud"
+        verbose_name_plural = "Editores de Categoría de Salud"
+        unique_together = ('health_category', 'editor')
 
 class HealthCategory(models.Model):
-    STATUS_CHOICES = [
-        ('verde', 'Verde'),
-        ('amarillo', 'Amarillo'),
-        ('rojo', 'Rojo'),
-        ('gris', 'Gris'),
-    ]
-
-    user = models.ForeignKey(UserProfile, on_delete=models.CASCADE, verbose_name="Usuario")
-    template = models.ForeignKey(CategoryTemplate, on_delete=models.CASCADE, verbose_name="Plantilla")
-    completion_date = models.DateTimeField(null=True, blank=True, verbose_name="Fecha de completado")
-    responses = models.JSONField(null=True, blank=True, verbose_name="Respuestas")
-    status_color = models.CharField(max_length=20, choices=STATUS_CHOICES, null=True, blank=True, verbose_name="Color de riesgo")
-    is_draft = models.BooleanField(default=True, verbose_name="Es borrador", help_text="Si está marcado, las recomendaciones no serán visibles para el paciente")
-    recommendations = models.JSONField(null=True, blank=True, default=dict, help_text="Recomendaciones asociadas al estado actual, en formato JSON")
-    use_default_recommendations = models.BooleanField(default=True, verbose_name="Usar recomendaciones por defecto", help_text="Si está marcado, las recomendaciones serán copiadas desde la plantilla asociada.")
-    professional_evaluation_results = models.JSONField(
-        null=True,
-        blank=True,
-        default=dict,
-        help_text="Resultados de evaluación profesional, en formato JSON"
+    user = models.ForeignKey(
+        UserProfile, 
+        on_delete=models.CASCADE, 
+        verbose_name="Usuario"
     )
-    can_edit_user_type = models.BooleanField(default=False, verbose_name="Puede editar el tipo de usuario", help_text="Si está marcado, el usuario puede cambiar el tipo de usuario")
-
+    template = models.ForeignKey(
+        CategoryTemplate, 
+        on_delete=models.CASCADE, 
+        verbose_name="Plantilla"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
     editors = models.ManyToManyField(
         UserProfile,
         through='HealthCategoryEditor',
@@ -41,95 +41,177 @@ class HealthCategory(models.Model):
     class Meta:
         verbose_name = "Categoría de Salud"
         verbose_name_plural = "Categorías de Salud"
-        ordering = ['-completion_date']
+        ordering = ['-created_at']
 
-    def save(self, *args, **kwargs):
-        if self.use_default_recommendations and self.template:
-            self.recommendations = self.template.default_recommendations
-        
-        if self.professional_evaluation_results and not self.completion_date:
-            self.completion_date = timezone.now()
-            
-        if not self.professional_evaluation_results and self.template and self.template.evaluation_type == 'PROFESSIONAL':
-            self.completion_date = None
-
-        super().save(*args, **kwargs)
-
-    def get_recommendations(self):
-        """Retorna las recomendaciones basadas en el estado actual."""
-        return self.recommendations.get(self.status_color) if self.recommendations and self.status_color else None
-
-    def update_recommendations(self, status_color, text, user_profile):
+    def update(self, data):
         """
-        Actualiza las recomendaciones asociadas a un estado específico.
-        Solo profesionales pueden actualizar recomendaciones.
+        Actualiza la HealthCategory y sus modelos relacionados
         
         Args:
-            status_color: Color del estado ('verde', 'amarillo', etc)
-            text: Texto de la recomendación
-            user_profile: Perfil del usuario que intenta actualizar
-            
-        Raises:
-            ValidationError: Si el usuario no tiene permisos
-        """
-        # Verificar que sea un profesional
-        if not user_profile or user_profile.role == UserTypes.PATIENT:
-            raise ValidationError("Solo los profesionales pueden actualizar recomendaciones")
-
-        # Verificar que tenga permisos para editar recomendaciones
-        if not self.can_user_edit(user_profile, self.EditableFields.RECOMMENDATIONS):
-            raise ValidationError("No tienes permisos para actualizar recomendaciones")
-
-        # Actualizar las recomendaciones
-        self.recommendations = self.recommendations or {}
-        self.recommendations[status_color] = {
-            "text": text,
-            "updated_at": timezone.now().isoformat(),
-            "professional": {
-                "id": user_profile.id,
-                "name": f"{user_profile.first_name} {user_profile.last_name}",
-                "role": user_profile.role
+            data (dict): Diccionario con los datos a actualizar
+            {
+                'professional_recommendations': str,
+                'status_color': str,
+                'evaluation_responses': dict,
+                'is_draft': bool,
+                'updated_by': str
             }
-        }
-        
-        self.save(update_fields=["recommendations"])
-
-    def can_user_edit(self, user_profile, field=None):
         """
-        Verifica si el usuario puede editar esta categoría o un campo específico.
-        Basado en el rol del usuario (enfermero o doctor) y las definiciones del template.
-        """
-        if not user_profile:
-            return False
+        try:
+            # Actualizar recomendaciones
+            if 'professional_recommendations' in data:
+                self.save_recommendation(
+                    text=data['professional_recommendations'],
+                    status_color=data.get('status_color', self.recommendation.status_color if hasattr(self, 'recommendation') else 'gris'),
+                    updated_by=data.get('updated_by', ''),
+                    is_draft=data.get('is_draft', True)
+                )
+            # Solo actualizar status_color si viene solo
+            elif 'status_color' in data:
+                self.save_recommendation(
+                    text=self.recommendation.text if hasattr(self, 'recommendation') else '',
+                    status_color=data['status_color'],
+                    updated_by=data.get('updated_by', ''),
+                    is_draft=data.get('is_draft', True)
+                )
 
-        # Pacientes no pueden editar nada
-        if user_profile.role == UserTypes.PATIENT:
-            return False
+            # Actualizar evaluación
+            if 'evaluation_responses' in data:
+                self.save_evaluation(
+                    responses=data['evaluation_responses']
+                )
 
-        # Administradores y doctores tienen acceso completo
-        if user_profile.role in [UserTypes.ADMIN, UserTypes.DOCTOR]:
+            # Actualizar estado de borrador
+            if 'is_draft' in data and not ('professional_recommendations' in data or 'status_color' in data):
+                self.save_recommendation(
+                    text=self.recommendation.text if hasattr(self, 'recommendation') else '',
+                    status_color=self.recommendation.status_color if hasattr(self, 'recommendation') else 'gris',
+                    updated_by=data.get('updated_by', ''),
+                    is_draft=data['is_draft']
+                )
+
             return True
 
-        # Enfermeros solo pueden editar campos específicos definidos en el template
-        if user_profile.role == UserTypes.NURSE:
-            if field:
-                return field in self.template.editable_fields_by_user_type.get(UserTypes.NURSE, [])
-            return True  # Si no se especifica un campo, se permite la edición básica
+        except Exception as e:
+            print(f"Error updating health category: {str(e)}")
+            return False
 
-        return False
+    def save_evaluation(self, responses=None):
+        """Guarda o actualiza el formulario de evaluación"""
+        if not hasattr(self, 'evaluation_form'):
+            self.evaluation_form = EvaluationForm.objects.create(
+                health_category=self,
+                question_nodes=self.template.evaluation_form if self.template else {}
+            )
+        
+        if responses is not None:
+            if self.evaluation_form.responses is None:
+                self.evaluation_form.responses = {}
+            self.evaluation_form.responses.update(responses)
+            self.evaluation_form.completed_date = timezone.now()
+        
+        self.evaluation_form.save()
 
-class HealthCategoryEditor(models.Model):
-    """Modelo intermedio para manejar permisos de edición de categorías"""
-    category = models.ForeignKey(HealthCategory, on_delete=models.CASCADE)
-    user = models.ForeignKey(UserProfile, on_delete=models.CASCADE)
-    editable_fields = models.JSONField(
-        default=list,
-        help_text="Lista de campos que el usuario puede editar"
-    )
-    created_at = models.DateTimeField(auto_now_add=True)
+    def save_recommendation(self, text, status_color, updated_by, is_draft=True):
+        """Guarda o actualiza la recomendación"""
+        if not hasattr(self, 'recommendation'):
+            self.recommendation = Recommendation.objects.create(
+                health_category=self
+            )
+        
+        self.recommendation.text = text
+        self.recommendation.status_color = status_color
+        self.recommendation.updated_by = updated_by
+        self.recommendation.is_draft = is_draft
+        self.recommendation.save()
 
-    class Meta:
-        unique_together = ['category', 'user']
+    def get_status(self):
+        try:
+            return {
+                'is_completed': self.evaluation_form.completed_date is not None,
+                'recommendation_status': self.recommendation.status_color,
+                'is_draft': self.recommendation.is_draft,
+                'last_updated': self.recommendation.updated_at
+            }
+        except:
+            return {
+                'is_completed': False,
+                'recommendation_status': 'gris',
+                'is_draft': True,
+                'last_updated': None
+            }
+
+    def can_user_edit(self, user_profile):
+        if not user_profile:
+            return False
+        if user_profile.is_professional:
+            return True
+        return self.editors.filter(id=user_profile.id).exists()
+
+    def get_evaluation_data(self):
+        """Obtiene los datos de evaluación"""
+        try:
+            return {
+                'question_nodes': self.evaluation_form.question_nodes,
+                'responses': self.evaluation_form.responses,
+                'completed_date': self.evaluation_form.completed_date
+            }
+        except EvaluationForm.DoesNotExist:
+            return None
+
+    def get_recommendation_data(self):
+        """Obtiene los datos de recomendación"""
+        try:
+            return {
+                'text': self.recommendation.text,
+                'status_color': self.recommendation.status_color,
+                'updated_by': self.recommendation.updated_by,
+                'updated_at': self.recommendation.updated_at,
+                'is_draft': self.recommendation.is_draft
+            }
+        except Recommendation.DoesNotExist:
+            return None
+
+    def get_is_draft(self):
+        """Helper method para obtener el estado de borrador de la recomendación"""
+        try:
+            return self.recommendation.is_draft
+        except Recommendation.DoesNotExist:
+            return True
+
+    def get_or_create_recommendation(self):
+        """
+        Obtiene la recomendación existente o crea una nueva si no existe
+        """
+        try:
+            return self.recommendation
+        except Recommendation.DoesNotExist:
+            return Recommendation.objects.create(
+                health_category=self,
+                status_color='gris',
+                is_draft=True
+            )
+
+    def get_or_create_evaluation_form(self):
+        """
+        Obtiene el formulario de evaluación existente o crea uno nuevo si no existe
+        """
+        try:
+            return self.evaluation_form
+        except EvaluationForm.DoesNotExist:
+            return EvaluationForm.objects.create(
+                health_category=self,
+                question_nodes=self.template.evaluation_form if self.template else {}
+            )
+
+    def save(self, *args, **kwargs):
+        is_new = self.pk is None
+        super().save(*args, **kwargs)
+        
+        if is_new:
+            # Crear EvaluationForm y Recommendation automáticamente
+            self.get_or_create_evaluation_form()
+            self.get_or_create_recommendation()
 
 @receiver(post_save, sender=UserProfile)
 def create_user_health_categories(sender, instance, created, **kwargs):

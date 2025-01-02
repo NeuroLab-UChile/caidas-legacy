@@ -1,115 +1,109 @@
 import { ActivityNodeType } from "@/components/ActivityNodes";
 
+/**
+ * Tipo para los nodos de preguntas en evaluaciones.
+ */
 export interface QuestionNode {
   id: number;
   type: ActivityNodeType;
-
   question: string;
   options?: string[];
   image?: string;
-
   next_node_id: number | null;
+  required?: boolean;
+  order?: number;
 }
 
-export interface EvaluationForm {
-  id: number;
+/**
+ * Representa los resultados de una evaluación.
+ */
+export interface EvaluationResults {
+  completed_date: string | null;
+  is_completed: boolean;
+  responses: Record<string, any>; // Respuestas de los nodos
   question_nodes: QuestionNode[];
-  completion_date?: string;
-  score?: number;
-  recommendations?: string[];
+  professional_responses?: Record<string, any>;
+  updated_at?: string;
 }
 
+/**
+ * Representa el estado de una categoría.
+ */
+export interface Status {
+  color: string; // Código de color (e.g., "#808080").
+  text: string; // Texto descriptivo del estado.
+  is_completed: boolean; // Indica si se completó.
+  is_draft: boolean; // Indica si está en borrador.
+  last_updated: string | null; // Última fecha de actualización.
+  professional_reviewed: boolean | null; // Si fue revisado por un profesional.
+}
+
+/**
+ * Representa las recomendaciones asociadas a una categoría.
+ */
+export interface Recommendation {
+  status: Status; // Estado de la recomendación.
+  text: string | null; // Texto de la recomendación.
+  updated_at: string | null; // Fecha de la última actualización.
+  is_draft: boolean; // Indica si está en borrador.
+  professional?: {
+    name: string; // Nombre del profesional que actualizó.
+  };
+}
+
+/**
+ * Representa el formulario de evaluación.
+ */
+export interface EvaluationForm {
+  question_nodes: QuestionNode[];
+}
+
+/**
+ * Representa el formulario de entrenamiento.
+ */
+export interface TrainingForm {
+  training_nodes: TrainingNode[];
+}
+
+/**
+ * Representa un nodo de entrenamiento.
+ */
+export interface TrainingNode {
+  id: number;
+  type: string;
+  content: string;
+  options?: any[];
+}
+
+/**
+ * Representa una categoría de evaluación.
+ */
+export interface Category {
+  // Identificación básica
+  id: number; // ID único.
+  name: string; // Nombre de la categoría.
+  icon: string | null; // URL del ícono.
+  description: string | null; // Descripción de la categoría.
+
+  // Evaluación
+  evaluation_type: "SELF" | "PROFESSIONAL" | "BOTH"; // Tipo de evaluación.
+  evaluation_form: EvaluationForm; // Formulario de evaluación.
+  evaluation_results: EvaluationResults | null; // Resultados de la evaluación.
+
+  // Estado y recomendaciones
+  status: Status; // Estado actual.
+  recommendations: Recommendation | null; // Recomendaciones asociadas.
+
+  // Entrenamiento
+  training_form: TrainingForm | null; // Formulario de entrenamiento.
+}
+
+/**
+ * Representa un nodo raíz en el sistema.
+ */
 export interface RootNode {
   type: ActivityNodeType;
   description: string;
   first_button_text: string;
   first_button_node_id: number;
 }
-
-export interface TrainingNode {
-  id: number;
-  type: string;
-  content: string;
-  options?: any[];
-  // Add any other properties your nodes might have
-}
-
-export interface NodeResponse {
-  nodeId: number;
-  response: any;
-}
-
-export interface TrainingState {
-  currentNodeId: number | null;
-  history: number[];
-  trainingResult: {
-    initial_node_id: number | null;
-    nodes: TrainingNode[];
-  };
-}
-
-export interface Category {
-  // Basic Information
-  id: number;
-  name: string | null;
-  icon: string | null;
-  description: string | null;
-
-  // Evaluation Configuration
-  evaluation_type:
-  'SELF' | 'PROFESSIONAL' | 'BOTH';
-
-
-  evaluation_form: {
-    question_nodes: QuestionNode[];
-  } | null;
-
-  evaluation_results: {
-    data: any;
-    date: string;
-    updated_at: string;
-    professional?: {
-      id: number;
-      name: string;
-    };
-  } | null;
-
-  training_form: {
-    training_nodes: TrainingNode[];
-  } | null;
-
-  // Status and Completion
-  status: {
-    color: {
-      color: string;
-      text: string;
-    };
-    draft: 'Borrador' | 'Publicado';
-    has_evaluation: boolean;
-    professional_reviewed: boolean;
-  };
-
-  // Professional Evaluation
-  professional_evaluation_results: string | null;
-
-  // Recommendations
-  recommendations: {
-    status: {
-      color: string;
-      text: string;
-    };
-    professional: {
-      id: number;
-      name: string;
-    } | null;
-    updated_at: string | null;
-    text: string | null;
-  } | null;
-
-  // Other fields
-  completion_date: string | null;
-  responses: Record<string, any> | null;
-  status_color: 'verde' | 'amarillo' | 'rojo' | 'gris' | null;
-  is_draft: boolean;
-}
-

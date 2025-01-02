@@ -6,6 +6,8 @@ from .user_recommendation_interaction import UserRecommendationInteraction
 
 from .appointment import Appointment
 from .user_profile import UserProfile
+from .evaluation import EvaluationForm
+from .recommendation import Recommendation
 
 
 __all__ = [

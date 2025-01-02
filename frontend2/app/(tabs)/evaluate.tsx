@@ -95,6 +95,29 @@ const WelcomeScreen = ({
   );
 };
 
+const initializeEvaluationState = (
+  category: Category | null
+): EvaluationState => {
+  const nodes = category?.evaluation_form?.question_nodes || [];
+  const existingResponses = Object.entries(category?.responses || {}).map(
+    ([key, value]): NodeResponse => ({
+      nodeId: parseInt(key),
+      response: value,
+    })
+  );
+
+  return {
+    currentNodeId: nodes[0]?.id || null,
+    responses: existingResponses,
+    completed: nodes.length === existingResponses.length && nodes.length > 0,
+    history: [],
+    evaluationResult: {
+      initial_node_id: nodes[0]?.id || null,
+      nodes,
+    },
+  };
+};
+
 const EvaluateScreen = () => {
   const { selectedCategory, fetchCategories } = useCategories();
   const { userProfile } = useAuth();
@@ -103,30 +126,8 @@ const EvaluateScreen = () => {
   const [showWelcome, setShowWelcome] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  const [evaluationState, setEvaluationState] = useState<EvaluationState>(
-    () => {
-      const nodes = selectedCategory?.evaluation_form?.question_nodes || [];
-      const existingResponses = Object.entries(
-        selectedCategory?.responses || {}
-      ).map(
-        ([key, value]): NodeResponse => ({
-          nodeId: parseInt(key),
-          response: value,
-        })
-      );
-
-      return {
-        currentNodeId: nodes[0]?.id || null,
-        responses: existingResponses,
-        completed:
-          nodes.length === existingResponses.length && nodes.length > 0,
-        history: [],
-        evaluationResult: {
-          initial_node_id: nodes[0]?.id || null,
-          nodes,
-        },
-      };
-    }
+  const [evaluationState, setEvaluationState] = useState<EvaluationState>(() =>
+    initializeEvaluationState(selectedCategory)
   );
 
   useEffect(() => {
@@ -146,27 +147,12 @@ const EvaluateScreen = () => {
 
   useEffect(() => {
     if (selectedCategory) {
-      const nodes = selectedCategory.evaluation_form?.question_nodes || [];
-      const existingResponses = Object.entries(
-        selectedCategory.responses || {}
-      ).map(
-        ([key, value]): NodeResponse => ({
-          nodeId: parseInt(key),
-          response: value,
-        })
+      setEvaluationState(initializeEvaluationState(selectedCategory));
+      setShowWelcome(
+        selectedCategory.evaluation_type === "SELF" &&
+          !evaluationState.completed &&
+          !evaluationState.responses.length
       );
-
-      setEvaluationState({
-        currentNodeId: nodes[0]?.id || null,
-        responses: existingResponses,
-        completed:
-          nodes.length === existingResponses.length && nodes.length > 0,
-        history: [],
-        evaluationResult: {
-          initial_node_id: nodes[0]?.id || null,
-          nodes,
-        },
-      });
     }
   }, [selectedCategory]);
 
@@ -226,56 +212,63 @@ const EvaluateScreen = () => {
     return nodes[currentIndex + 1].id;
   };
 
+  const formatNodeResponse = (node: QuestionNode, response: any) => {
+    const baseResponse = {
+      id: node.id,
+      type: node.type,
+      question: node.question,
+      metadata: {
+        timestamp: new Date().toISOString(),
+        version: "1.0",
+      },
+    };
+
+    // Manejar cada tipo de respuesta de forma segura
+    const answerMap: Record<ActivityNodeType, (res: any) => any> = {
+      SINGLE_CHOICE_QUESTION: (res) => ({
+        selectedOption: res.selectedOption,
+        options: node.options || [],
+      }),
+      MULTIPLE_CHOICE_QUESTION: (res) => ({
+        selectedOptions: res.selectedOptions || [],
+        options: node.options || [],
+      }),
+      TEXT_QUESTION: (res) => ({
+        value: res.answer || "",
+      }),
+      IMAGE_QUESTION: (res) => ({
+        images: res.answer || [],
+      }),
+      SCALE_QUESTION: (res) => ({
+        value: res?.answer?.value || res?.value || 0,
+      }),
+    };
+
+    const formatter = answerMap[node.type];
+    if (!formatter) {
+      console.warn(`Tipo de nodo no manejado: ${node.type}`);
+      return { ...baseResponse, answer: response };
+    }
+
+    return {
+      ...baseResponse,
+      answer: formatter(response),
+    };
+  };
+
   const handleNodeResponse = async (nodeId: number, response: any) => {
     try {
       const node = getCurrentNode(nodeId);
-      if (!node) {
-        Alert.alert("Error", "Nodo no encontrado");
-        return;
-      }
+      if (!node) throw new Error("Nodo no encontrado");
 
-      const formattedResponse = {
-        id: nodeId,
-        type: node.type,
-        question: node.question,
-        answer: null as any,
-        metadata: {
-          timestamp: new Date().toISOString(),
-          version: "1.0",
-        },
-      };
+      // Log para debug
+      console.log("Node:", node);
+      console.log("Response:", response);
 
-      switch (node.type) {
-        case "SINGLE_CHOICE_QUESTION":
-          formattedResponse.answer = {
-            selectedOption: response.selectedOption,
-            options: node.options,
-          };
-          break;
-        case "MULTIPLE_CHOICE_QUESTION":
-          formattedResponse.answer = {
-            selectedOptions: response.selectedOptions,
-            options: node.options,
-          };
-          break;
-        case "TEXT_QUESTION":
-          formattedResponse.answer = {
-            value: response.answer || "",
-          };
-          break;
-        case "IMAGE_QUESTION":
-          formattedResponse.answer = {
-            images: response.answer || [],
-          };
-          break;
-        case "SCALE_QUESTION":
-          formattedResponse.answer = {
-            value: response.answer.value,
-          };
-          break;
-        default:
-          formattedResponse.answer = response;
-      }
+      const formattedResponse = formatNodeResponse(node, response);
+
+      // Log para debug
+      console.log("Formatted Response:", formattedResponse);
 
       const newResponses = {
         ...Object.fromEntries(
@@ -341,7 +334,8 @@ const EvaluateScreen = () => {
         }));
       }
     } catch (error) {
-      Alert.alert("Error", "No se pudo procesar la respuesta, " + error);
+      console.error("Error en handleNodeResponse:", error);
+      Alert.alert("Error", `No se pudo procesar la respuesta: ${error}`);
     }
   };
 
@@ -415,23 +409,7 @@ const EvaluateScreen = () => {
   }, [fetchCategories]);
 
   const renderContent = () => {
-    if (showWelcome && selectedCategory) {
-      return (
-        <WelcomeScreen
-          category={selectedCategory}
-          userName={
-            userProfile?.first_name || userProfile?.username || "Usuario"
-          }
-          onStart={() => setShowWelcome(false)}
-        />
-      );
-    }
-
-    if (selectedCategory?.evaluation_type === "PROFESSIONAL") {
-      return <ProfessionalEvaluation />;
-    }
-
-    if (evaluationState.completed && selectedCategory) {
+    if (selectedCategory?.evaluation_results?.is_completed) {
       return (
         <View style={styles.completedContainer}>
           <Text style={styles.completedText}>
@@ -449,6 +427,22 @@ const EvaluateScreen = () => {
       );
     }
 
+    if (showWelcome && selectedCategory) {
+      return (
+        <WelcomeScreen
+          category={selectedCategory}
+          userName={
+            userProfile?.first_name || userProfile?.username || "Usuario"
+          }
+          onStart={() => setShowWelcome(false)}
+        />
+      );
+    }
+
+    if (selectedCategory?.evaluation_type === "PROFESSIONAL") {
+      return <ProfessionalEvaluation />;
+    }
+
     return renderNode(evaluationState.currentNodeId, () => {
       if (evaluationState.history.length > 0) {
         const previousNodes = [...evaluationState.history];
@@ -461,16 +455,6 @@ const EvaluateScreen = () => {
       }
     });
   };
-
-  useEffect(() => {
-    if (selectedCategory) {
-      setShowWelcome(
-        selectedCategory.evaluation_type === "SELF" &&
-          !evaluationState.completed &&
-          !evaluationState.responses.length
-      );
-    }
-  }, [selectedCategory]);
 
   if (loading) {
     return (

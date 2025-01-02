@@ -25,25 +25,17 @@ class HealthCategoryListView(APIView):
         print("=== Debug HealthCategoryListView ===")
         print(f"Usuario autenticado: {request.user.username}")
         
+        user_profile = get_object_or_404(UserProfile, user=request.user)
         categories = HealthCategory.objects.filter(user__user=request.user)
+        
         serialized_categories = []
         
         for category in categories:
             template = category.template
             if template:
-                category_data = {
-                    'id': category.id,
-                    'name': template.name,
-                    'description': template.description,
-                    'icon': template.get_icon_base64(),
-                    'evaluation_type': template.evaluation_type,
-                    'evaluation_form': template.evaluation_form,
-                    'professional_evaluation_results': category.professional_evaluation_results,
-                    'training_form': template.training_form,
-
-                    # ... otros campos ...
-                }
-                serialized_categories.append(category_data)
+                # Usar el serializer en lugar de construir el diccionario manualmente
+                serializer = HealthCategorySerializer(category)
+                serialized_categories.append(serializer.data)
         
         return Response(serialized_categories)
 
@@ -53,88 +45,44 @@ def save_evaluation_responses(request, category_id):
     print(f"Request data: {request.data}")
     
     try:
+        # Primero obtener el perfil del usuario
         user_profile = get_object_or_404(UserProfile, user=request.user)
-        category = get_object_or_404(
+        
+        # Luego buscar la categoría asegurándose que pertenece al usuario
+        health_category = get_object_or_404(
             HealthCategory, 
             id=category_id, 
             user=user_profile
         )
         
+        # Obtener o crear el formulario de evaluación
+        evaluation_form = health_category.evaluation_form
+        
+        # Actualizar las respuestas
         responses = request.data.get('responses', {})
-        validated_responses = {}
-        
-        for node_id, response_data in responses.items():
-            print(f"\nProcessing node_id: {node_id}")
-            response_type = response_data.get('type')
+        if evaluation_form.responses is None:
+            evaluation_form.responses = {}
             
-            if response_type == 'IMAGE_QUESTION':
-                # Obtener el array de imágenes del formato correcto
-                answer_data = response_data.get('answer', {})
-                images = answer_data.get('images', []) if isinstance(answer_data, dict) else []
-                processed_images = []
-                
-                if isinstance(images, list):
-                    for image_data in images:
-                        if image_data and image_data.startswith('file://'):
-                            try:
-                                # Extraer el nombre del archivo
-                                file_name = image_data.split('/')[-1]
-                                # Crear una URL pública para la imagen
-                                public_url = f"/media/evaluation_images/{category_id}/{file_name}"
-                                
-                                # Guardar la imagen en el servidor
-                                import base64
-                                from django.core.files.base import ContentFile
-                                from django.conf import settings
-                                import os
-                                
-                                # Crear el directorio si no existe
-                                save_path = os.path.join(settings.MEDIA_ROOT, 'evaluation_images', str(category_id))
-                                os.makedirs(save_path, exist_ok=True)
-                                
-                                # Guardar la imagen
-                                with open(image_data.replace('file://', ''), 'rb') as image_file:
-                                    image_content = image_file.read()
-                                    file_path = os.path.join(save_path, file_name)
-                                    with open(file_path, 'wb') as f:
-                                        f.write(image_content)
-                                
-                                processed_images.append(public_url)
-                            except Exception as e:
-                                print(f"Error processing image: {e}")
-                                processed_images.append("Error processing image")
-                
-                # Mantener el formato de respuesta consistente
-                response_data['answer'] = {
-                    'images': processed_images
-                }
+        evaluation_form.responses.update(responses)
+        
+        # Si hay respuestas, actualizar la fecha de completado
+        if responses:
+            evaluation_form.completed_date = timezone.now()
             
-            validated_responses[str(node_id)] = response_data
-        
-        # Actualizar la categoría con la información del usuario
-        category.responses = validated_responses
-        category.completion_date = timezone.now()
-        category.status = 'completed'
-        
-        # Limpiar las recomendaciones previas
-        category.professional_recommendations = None
-        category.professional_recommendations_updated_at = None
-        category.professional_recommendations_updated_by = None
-        category.status_color = None  
-        
-        category.save()
-        
-        # Serializar con información detallada
-        serializer = HealthCategorySerializer(category)
+        evaluation_form.save()
         
         return Response({
             'status': 'success',
-            'message': 'Respuestas guardadas correctamente',
-            'data': serializer.data
+            'message': 'Respuestas guardadas correctamente'
         })
-        
+            
+    except HealthCategory.DoesNotExist:
+        return Response({
+            'status': 'error',
+            'message': 'Categoría de salud no encontrada'
+        }, status=status.HTTP_404_NOT_FOUND)
     except Exception as e:
-        print(f"Error saving responses: {e}")
+        print(f"Error saving responses: {str(e)}")
         return Response({
             'status': 'error',
             'message': str(e)
@@ -150,27 +98,22 @@ def update_health_category(request, category_id):
             user=user_profile
         )
         
-        # Actualizar los campos específicos
-        if 'professional_recommendations' in request.data:
-            category.professional_recommendations = request.data['professional_recommendations']
-            category.professional_recommendations_updated_at = None
-            category.professional_recommendations_updated_by = None
+        # Agregar el usuario que actualiza
+        data = request.data.copy()
+        data['updated_by'] = request.user.get_full_name()
         
-        if 'status_color' in request.data:
-            category.status_color = request.data['status_color']
+        if category.update(data):
+            return Response({
+                'status': 'success',
+                'message': 'Categoría actualizada correctamente',
+                'data': HealthCategorySerializer(category).data
+            })
+        else:
+            return Response({
+                'status': 'error',
+                'message': 'Error al actualizar la categoría'
+            }, status=status.HTTP_400_BAD_REQUEST)
         
-        category.save()
-        
-        return Response({
-            'status': 'success',
-            'message': 'Categoría actualizada correctamente',
-            'data': HealthCategorySerializer(category).data
-        })
-        
-    except HealthCategory.DoesNotExist:
-        return Response({
-            'error': 'Category not found'
-        }, status=status.HTTP_404_NOT_FOUND)
     except Exception as e:
         return Response({
             'status': 'error',
