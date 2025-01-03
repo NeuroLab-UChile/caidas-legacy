@@ -2,34 +2,46 @@ from django.db import models
 from django.utils import timezone
 
 class Recommendation(models.Model):
-    STATUS_CHOICES = [
-        ('verde', 'Verde'),
-        ('amarillo', 'Amarillo'),
-        ('rojo', 'Rojo'),
-        ('gris', 'Gris'),
-    ]
-
     health_category = models.OneToOneField(
-        'HealthCategory', 
+        'HealthCategory',
         on_delete=models.CASCADE,
         related_name='recommendation'
     )
+    text = models.TextField(blank=True)
+    default_text = models.TextField(blank=True)
     status_color = models.CharField(
-        max_length=20, 
-        choices=STATUS_CHOICES,
+        max_length=20,
+        choices=[
+            ('verde', 'Verde'),
+            ('amarillo', 'Amarillo'),
+            ('rojo', 'Rojo'),
+            ('gris', 'Gris')
+        ],
         default='gris'
     )
-    text = models.TextField(
-        null=True,
-        blank=True
+    default_status_color = models.CharField(
+        max_length=20,
+        choices=[
+            ('verde', 'Verde'),
+            ('amarillo', 'Amarillo'),
+            ('rojo', 'Rojo'),
+            ('gris', 'Gris')
+        ],
+        default='gris'
     )
-    updated_by = models.CharField(
-        max_length=255,
-        null=True,
-        blank=True
-    )
-    updated_at = models.DateTimeField(auto_now=True)
     is_draft = models.BooleanField(default=True)
+    is_signed = models.BooleanField(default=False)
+    signed_by = models.CharField(max_length=150, blank=True)
+    signed_at = models.DateTimeField(null=True, blank=True)
+    updated_by = models.CharField(max_length=150, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def save(self, *args, **kwargs):
+        # Si es nuevo y no tiene texto, usar el texto por defecto
+        if not self.pk and not self.text:
+            self.text = self.default_text
+            self.status_color = self.default_status_color
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"Recomendación para {self.health_category}" 

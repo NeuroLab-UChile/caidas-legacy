@@ -1,4 +1,7 @@
 from django.db import models
+from django.contrib.auth.models import Group
+from django.db.models.signals import post_migrate
+from django.dispatch import receiver
 
 class UserTypes(models.TextChoices):
     # Roles principales
@@ -53,3 +56,17 @@ class UserTypes(models.TextChoices):
     def is_staff(cls, user_type):
         """Verifica si un tipo de usuario es personal administrativo"""
         return user_type in [choice.value for choice in cls.get_staff_types()] 
+
+@receiver(post_migrate)
+def create_user_groups(sender, **kwargs):
+    """
+    Crea los grupos de usuarios después de la migración
+    """
+    # Solo ejecutar para la app 'prevcad'
+    if sender.name != 'prevcad':
+        return
+
+    for user_type in UserTypes:
+        group, created = Group.objects.get_or_create(name=user_type.value)
+        if created:
+            print(f"Grupo creado: {user_type.value}") 

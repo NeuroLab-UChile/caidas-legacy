@@ -9,14 +9,14 @@ class CategoryTemplate(models.Model):
   Template for health categories
   """
   # Basic information
-  name = models.TextField()
+  name = models.CharField(max_length=200)
   icon = models.ImageField(
     upload_to='health_categories_icons',
     null=True,
     blank=True
   )
 
-  description = models.TextField()
+  description = models.TextField(blank=True)
   is_active = models.BooleanField(default=True)
 
   # Evaluation 
@@ -69,6 +69,15 @@ class CategoryTemplate(models.Model):
         default=dict,
         help_text="Defina los campos editables para cada tipo de usuario. Ejemplo: {'DOCTOR': ['recommendations', 'status_color'], 'NURSE': ['recommendations']}",
     )
+
+  # Agregar campo para grupos con permisos de edición
+  editable_by_groups = models.ManyToManyField(
+    'auth.Group',
+    related_name='editable_templates',
+    blank=True,
+    verbose_name="Grupos que pueden editar",
+    help_text="Selecciona los grupos que pueden editar esta plantilla"
+  )
 
   def can_user_edit(self, user_profile, field=None):
         """
@@ -158,6 +167,16 @@ class CategoryTemplate(models.Model):
 
   def __str__(self):
     return self.name
+
+  def can_edit(self, user):
+    """
+    Verifica si un usuario puede editar esta plantilla
+    """
+    if user.is_superuser:
+      return True
+            
+    # Verificar si el usuario pertenece a algún grupo con permiso
+    return user.groups.filter(id__in=self.editable_by_groups.all()).exists()
 
 class CategoryTemplateEditor(models.Model):
     """Modelo intermedio para manejar permisos de edición de templates"""

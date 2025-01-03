@@ -4,6 +4,6 @@ from .health_category import HealthCategoryAdmin
 from .encoders import CustomJSONEncoder
 from ..models import CategoryTemplate, HealthCategory
 from .filters import HealthStatusFilter
-from .user import CustomUserAdmin
-from .appointment import AppointmentAdmin
 
+from .appointment import AppointmentAdmin
+from .user import CustomUserAdmin

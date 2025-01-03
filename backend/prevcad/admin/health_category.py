@@ -5,8 +5,29 @@ from django.template.loader import render_to_string
 from django.http import JsonResponse
 from django.urls import path
 import json
-from ..models import HealthCategory
+from ..models import HealthCategory, Recommendation
 from .filters import HealthStatusFilter
+from django.utils import timezone
+
+class RecommendationInline(admin.StackedInline):
+    model = Recommendation
+    can_delete = False
+    max_num = 1
+    min_num = 1
+    verbose_name = "Recomendación"
+    verbose_name_plural = "Recomendación"
+
+    fields = ('text', 'status_color', 'is_draft', 'is_signed')
+    readonly_fields = ('updated_by', 'updated_at', 'signed_by', 'signed_at')
+
+    def get_formset(self, request, obj=None, **kwargs):
+        formset = super().get_formset(request, obj, **kwargs)
+        if obj:
+            # Obtener los valores por defecto del template
+            default_recommendations = obj.template.default_recommendations or {}
+            formset.form.base_fields['text'].initial = default_recommendations.get('text', '')
+            formset.form.base_fields['status_color'].initial = default_recommendations.get('status_color', 'gris')
+        return formset
 
 @admin.register(HealthCategory)
 class HealthCategoryAdmin(admin.ModelAdmin):
@@ -15,8 +36,7 @@ class HealthCategoryAdmin(admin.ModelAdmin):
         'get_template_name',
         'get_completion_status',
         'get_completion_date',
-        'get_is_draft',
-        'get_status_color'
+        'get_recommendation_status'
     ]
     
     list_filter = [
@@ -38,18 +58,14 @@ class HealthCategoryAdmin(admin.ModelAdmin):
         'get_template_name',
         'get_completion_status',
         'get_completion_date',
-        'get_is_draft',
-        'get_status_color',
         'get_detailed_responses',
-        'get_recommendation_data'
+        'get_recommendation_editor'
     ]
 
     fieldsets = (
         ('Información del Usuario', {
             'fields': (
-           
                 'get_user_info',
-            
                 'get_template_name',
             )
         }),
@@ -57,19 +73,24 @@ class HealthCategoryAdmin(admin.ModelAdmin):
             'fields': (
                 'get_completion_status',
                 'get_completion_date',
-                'get_is_draft',
-                'get_status_color'
             )
+        }),
+        ('Recomendación', {
+            'fields': (
+                'get_recommendation_editor',
+            ),
+            'classes': ('wide',)
         }),
         ('Datos de Evaluación', {
             'fields': (
                 'get_detailed_responses',
-                'get_recommendation_data'
             )
         })
     )
 
     change_form_template = 'admin/healthcategory/change_form.html'
+
+    inlines = [RecommendationInline]
 
     def get_readonly_fields(self, request, obj=None):
         if obj and obj.editors.filter(user=request.user).exists():
@@ -93,14 +114,38 @@ class HealthCategoryAdmin(admin.ModelAdmin):
                 data = json.loads(request.body)
                 health_category = self.get_object(request, object_id)
                 
-                health_category.update({
-                    'professional_recommendations': data.get('text'),
-                    'status_color': data.get('status_color', 'gris'),
-                    'is_draft': data.get('is_draft', True),
-                    'updated_by': request.user.username
-                })
+                # Obtener o crear la recomendación
+                recommendation = health_category.get_or_create_recommendation()
                 
-                return JsonResponse({'status': 'success'})
+                # Actualizar los campos
+                if 'text' in data:
+                    recommendation.text = data['text']
+                if 'status_color' in data:
+                    recommendation.status_color = data['status_color']
+                if 'is_draft' in data:
+                    recommendation.is_draft = data['is_draft']
+                    # Si se está publicando, verificar si debe firmarse
+                    if not data['is_draft'] and data.get('sign', False):
+                        recommendation.is_signed = True
+                        recommendation.signed_by = request.user.username
+                        recommendation.signed_at = timezone.now()
+                
+                recommendation.updated_by = request.user.username
+                recommendation.save()
+                
+                return JsonResponse({
+                    'status': 'success',
+                    'recommendation': {
+                        'text': recommendation.text,
+                        'status_color': recommendation.status_color,
+                        'is_draft': recommendation.is_draft,
+                        'is_signed': recommendation.is_signed,
+                        'signed_by': recommendation.signed_by,
+                        'signed_at': recommendation.signed_at.isoformat() if recommendation.signed_at else None,
+                        'updated_by': recommendation.updated_by,
+                        'updated_at': recommendation.updated_at.isoformat()
+                    }
+                })
             except Exception as e:
                 return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
         
@@ -126,20 +171,42 @@ class HealthCategoryAdmin(admin.ModelAdmin):
             return None
     get_completion_date.short_description = "Fecha de Completado"
 
-    def get_status_color(self, obj):
-        status = obj.get_status()
-        colors = {
-            'verde': '#28a745',
-            'amarillo': '#ffc107',
-            'rojo': '#dc3545',
-            'gris': '#6c757d'
-        }
-        return format_html(
-            '<span style="color: {};">●</span> {}',
-            colors.get(status['recommendation_status'], '#6c757d'),
-            status['recommendation_status'].capitalize()
-        )
-    get_status_color.short_description = "Estado de Recomendación"
+    def get_recommendation_status(self, obj):
+        try:
+            recommendation = obj.recommendation
+            status_colors = {
+                'verde': ('bg-green-100 text-green-800', '●'),
+                'amarillo': ('bg-yellow-100 text-yellow-800', '●'),
+                'rojo': ('bg-red-100 text-red-800', '●'),
+                'gris': ('bg-gray-100 text-gray-600', '●')
+            }
+            color_class, dot = status_colors.get(recommendation.status_color, status_colors['gris'])
+            
+            # Mostrar estado de publicación y firma
+            status_text = []
+            if recommendation.is_draft:
+                status_text.append("Borrador")
+            else:
+                status_text.append("Publicado")
+                if recommendation.is_signed:
+                    status_text.append("Firmado")
+            
+            return format_html(
+                '<div class="flex flex-col gap-2">'
+                '<span class="{} px-2 py-1 rounded-full text-xs font-medium">'
+                '{} {}</span>'
+                '<span class="text-xs text-gray-500">{}</span>'
+                '</div>',
+                color_class,
+                dot,
+                recommendation.status_color.capitalize(),
+                ' • '.join(status_text)
+            )
+        except:
+            return format_html(
+                '<span class="text-xs text-gray-500">Sin recomendación</span>'
+            )
+    get_recommendation_status.short_description = "Estado de Recomendación"
 
     def get_detailed_responses(self, obj):
         responses = obj.evaluation_form.responses or {}
@@ -168,5 +235,57 @@ class HealthCategoryAdmin(admin.ModelAdmin):
         extra_context = extra_context or {}
         obj = self.get_object(request, object_id)
         if obj:
-            extra_context['recommendation_data'] = obj.get_recommendation_data()
-        return super().change_view(request, object_id, form_url, extra_context) 
+            recommendation = obj.get_or_create_recommendation()
+            extra_context['recommendation_data'] = {
+                'text': recommendation.text,
+                'status_color': recommendation.status_color,
+                'is_draft': recommendation.is_draft,
+                'is_signed': recommendation.is_signed,
+                'signed_by': recommendation.signed_by,
+                'signed_at': recommendation.signed_at,
+                'updated_by': recommendation.updated_by,
+                'updated_at': recommendation.updated_at,
+                'default_text': recommendation.default_text,
+                'default_status_color': recommendation.default_status_color
+            }
+        return super().change_view(request, object_id, form_url, extra_context)
+
+    def save_formset(self, request, form, formset, change):
+        instances = formset.save(commit=False)
+        for instance in instances:
+            if isinstance(instance, Recommendation):
+                instance.updated_by = request.user.username
+                if not instance.is_draft and instance.is_signed:
+                    instance.signed_by = request.user.username
+                    instance.signed_at = timezone.now()
+            instance.save()
+        formset.save_m2m() 
+
+    def get_recommendation_editor(self, obj):
+        recommendation = obj.get_or_create_recommendation()
+        context = {
+            'recommendation': recommendation,
+            'default_recommendations': obj.template.default_recommendations or {},
+            'status_colors': [
+                ('verde', 'Verde'),
+                ('amarillo', 'Amarillo'),
+                ('rojo', 'Rojo'),
+                ('gris', 'Gris')
+            ]
+        }
+        return mark_safe(render_to_string(
+            'admin/healthcategory/recommendation_editor.html',
+            context
+        ))
+    get_recommendation_editor.short_description = "Editor de Recomendación"
+
+    class Media:
+        css = {
+            'all': (
+                'https://cdn.tailwindcss.com',
+                'admin/css/forms.css',
+            )
+        }
+        js = (
+            'admin/js/recommendation_editor.js',
+        ) 

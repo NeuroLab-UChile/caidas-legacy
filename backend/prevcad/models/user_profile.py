@@ -1,5 +1,5 @@
 from django.db import models
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, Group
 from django.core.exceptions import ValidationError
 from django.db import transaction
 import uuid
@@ -15,26 +15,10 @@ class UserProfile(models.Model):
     user = models.OneToOneField(
         User,
         on_delete=models.CASCADE,
-        related_name='profile',
-        blank=True,
-        null=True
+        related_name='profile'
     )
-    username = models.CharField(
-        max_length=150,
-        unique=True,
-        help_text='Nombre de usuario para iniciar sesión'
-    )
-    email = models.EmailField(unique=True)
-    first_name = models.CharField(max_length=30, blank=True, null=True)
-    last_name = models.CharField(max_length=30, blank=True, null=True)
     phone = models.CharField(max_length=20, blank=True, null=True)
     birth_date = models.DateField(null=True, blank=True)
-    role = models.CharField(
-        max_length=50, 
-        choices=UserTypes.choices,
-        default=UserTypes.PATIENT,
-        verbose_name="Tipo de Usuario"
-    )
     specialty = models.CharField(
         max_length=100,
         blank=True,
@@ -49,84 +33,53 @@ class UserProfile(models.Model):
     )
 
     @property
+    def role(self):
+        """Obtiene el rol del usuario basado en su grupo"""
+        return self.user.groups.first().name if self.user.groups.exists() else None
+
+    @role.setter
+    def role(self, role_name):
+        """Establece el rol del usuario cambiando su grupo"""
+        if role_name not in UserTypes.values:
+            raise ValueError(f"Rol inválido: {role_name}")
+        
+        # Limpiar grupos existentes
+        self.user.groups.clear()
+        
+        # Agregar al nuevo grupo
+        group = Group.objects.get(name=role_name)
+        self.user.groups.add(group)
+        
+        # Actualizar is_staff según el tipo de usuario
+        self.user.is_staff = UserTypes.is_professional(role_name) or UserTypes.is_staff(role_name)
+        self.user.save()
+
     def is_professional(self):
         """Verifica si el usuario es un profesional de la salud"""
         return UserTypes.is_professional(self.role)
 
-    @property
     def is_staff_member(self):
         """Verifica si el usuario es personal administrativo"""
         return UserTypes.is_staff(self.role)
 
-    def clean(self):
-        super().clean()
-        if User.objects.filter(username=self.username).exists() and (
-            not self.user or self.user.username != self.username
-        ):
-            raise ValidationError({'username': 'Este nombre de usuario ya está en uso.'})
-
-    @transaction.atomic
     def save(self, *args, **kwargs):
         creating = not self.pk
-        if creating and not self.user:
-            if User.objects.filter(username=self.username).exists():
-                raise ValidationError({'username': 'Este nombre de usuario ya está en uso.'})
-            
-            try:
-                user = User.objects.create(
-                    username=self.username,
-                    email=self.email,
-                    first_name=self.first_name or '',
-                    last_name=self.last_name or ''
-                )
-                
-                if self.role == 'admin':
-                    user.is_staff = True
-                    user.is_superuser = True
-                elif self.role == 'doctor':
-                    user.is_staff = True
-                
-                temp_password = str(uuid.uuid4())
-                user.set_password(temp_password)
-                user.save()
-                
-                self.user = user
-                
-            except Exception as e:
-                raise ValidationError(f'Error al crear el usuario: {str(e)}')
-        
         super().save(*args, **kwargs)
-
-    def __str__(self):
-        return f"{self.username} - {self.get_role_display()}"
+        
+        if creating and not self.user.groups.exists():
+            # Por defecto, asignar como paciente
+            self.role = UserTypes.PATIENT
 
     class Meta:
         verbose_name = 'Perfil de Usuario'
         verbose_name_plural = 'Perfiles de Usuario'
 
-
-
-
-
     def __str__(self):
-        return f"{self.username} - {self.get_role_display()}" 
+        role = self.role or 'Sin rol'
+        return f"{self.user.username} - {role}"
 
-
-# Señal para crear automáticamente el perfil
 @receiver(post_save, sender=User)
 def create_user_profile(sender, instance, created, **kwargs):
+    """Crear perfil automáticamente al crear un usuario"""
     if created:
-        UserProfile.objects.create(user=instance)
-
-# Señal para guardar el perfil
-@receiver(post_save, sender=User)
-def save_user_profile(sender, instance, **kwargs):
-    if not hasattr(instance, 'profile'):
-        UserProfile.objects.create(user=instance)
-    instance.profile.save() 
-
-    def delete(self, *args, **kwargs):
-        # Eliminar la imagen al eliminar el perfil
-        if self.profile_image:
-            self.profile_image.delete()
-        super().delete(*args, **kwargs) 
+        UserProfile.objects.create(user=instance) 

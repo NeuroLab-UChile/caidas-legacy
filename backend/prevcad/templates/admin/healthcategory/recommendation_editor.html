@@ -1,0 +1,88 @@
+{% load static %}
+
+<div class="recommendation-editor bg-white rounded-lg shadow divide-y divide-gray-200">
+    {# Sección de Recomendación por Defecto #}
+    <div class="p-4">
+        <h3 class="text-lg font-medium text-gray-900 mb-4">Recomendación por Defecto</h3>
+        <div class="bg-gray-50 rounded-lg p-4 mb-4">
+            <p class="text-sm text-gray-700 whitespace-pre-wrap">{{ default_recommendations.text|default:"Sin recomendación por defecto" }}</p>
+        </div>
+        <div class="flex items-center">
+            <span class="text-sm text-gray-600 mr-2">Estado por defecto:</span>
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ default_recommendations.status_color|default:'bg-gray-100 text-gray-800' }}">
+                {{ default_recommendations.status_color|default:"Gris"|title }}
+            </span>
+        </div>
+    </div>
+
+    {# Sección de Recomendación Actual #}
+    <div class="p-4">
+        <h3 class="text-lg font-medium text-gray-900 mb-4">Recomendación Actual</h3>
+        <div class="space-y-4">
+            <div>
+                <label for="recommendation-text" class="block text-sm font-medium text-gray-700">Texto de la recomendación</label>
+                <textarea 
+                    id="recommendation-text" 
+                    name="recommendation-text" 
+                    rows="4"
+                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                    data-recommendation-id="{{ recommendation.id }}"
+                >{{ recommendation.text }}</textarea>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label for="status-color" class="block text-sm font-medium text-gray-700">Estado</label>
+                    <select 
+                        id="status-color" 
+                        name="status-color"
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                    >
+                        {% for value, label in status_colors %}
+                            <option value="{{ value }}" {% if value == recommendation.status_color %}selected{% endif %}>
+                                {{ label }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="flex items-start space-x-4 mt-6">
+                    <div class="flex items-center">
+                        <input 
+                            type="checkbox" 
+                            id="is-draft" 
+                            name="is-draft"
+                            {% if recommendation.is_draft %}checked{% endif %}
+                            class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                        >
+                        <label for="is-draft" class="ml-2 text-sm text-gray-700">Borrador</label>
+                    </div>
+
+                    <div class="flex items-center">
+                        <input 
+                            type="checkbox" 
+                            id="sign-recommendation" 
+                            name="sign-recommendation"
+                            class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                        >
+                        <label for="sign-recommendation" class="ml-2 text-sm text-gray-700">Firmar</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# Sección de Información Adicional #}
+    <div class="p-4 bg-gray-50">
+        <div class="flex justify-between text-sm text-gray-500">
+            <div>
+                Última actualización: {{ recommendation.updated_at|date:"d/m/Y H:i" }} por {{ recommendation.updated_by|default:"Sistema" }}
+            </div>
+            {% if recommendation.is_signed %}
+            <div>
+                Firmado por: {{ recommendation.signed_by }} el {{ recommendation.signed_at|date:"d/m/Y H:i" }}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div> 
