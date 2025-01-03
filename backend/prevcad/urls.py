@@ -35,7 +35,7 @@ urlpatterns = [
        name='update_health_category'),
   path('admin/update-evaluation-form/<int:template_id>/', admin_views.update_evaluation_form, name='update_evaluation_form'),
   path('admin/update-training-form/<int:template_id>/', admin_views.update_training_form, name='update_training_form'),
-  path('admin/prevcad/healthcategory/<int:object_id>/update-recommendation/', 
+  path('admin/prevcad/healthcategory/<int:object_id>/update_recommendation/', 
        admin_views.update_recommendation, 
-       name='update-recommendation'),
+       name='update_recommendation'),
 ]

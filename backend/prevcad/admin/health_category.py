@@ -275,7 +275,6 @@ class HealthCategoryAdmin(admin.ModelAdmin):
             'recommendation': recommendation,
             'health_category': obj,
             'default_recommendations': obj.template.default_recommendations or {},
-            'health_category_id': obj.id,
         }
         return mark_safe(render_to_string(
             'admin/healthcategory/recommendation_editor.html',

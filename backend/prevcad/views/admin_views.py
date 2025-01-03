@@ -188,15 +188,13 @@ def handle_uploaded_file(file):
 def update_recommendation(request, object_id):
     try:
         data = json.loads(request.body.decode('utf-8'))
-        print("Datos recibidos:", data)
-        
         health_category = get_object_or_404(HealthCategory, id=object_id)
         recommendation = health_category.recommendation
 
         # Actualizar los campos
         recommendation.use_default = data.get('use_default', False)
-        recommendation.status_color = data.get('status_color', 'gris')
         recommendation.text = data.get('text', '')
+        recommendation.status_color = data.get('status_color', 'gris')
         recommendation.is_draft = data.get('is_draft', True)
         
         if data.get('sign'):
@@ -206,9 +204,10 @@ def update_recommendation(request, object_id):
         
         recommendation.updated_by = request.user.username
         recommendation.save()
-        
+
         return JsonResponse({
             'status': 'success',
+            'message': 'Recomendación actualizada correctamente',
             'recommendation': {
                 'text': recommendation.text,
                 'status_color': recommendation.status_color,
@@ -222,14 +221,18 @@ def update_recommendation(request, object_id):
             }
         })
 
-    except json.JSONDecodeError as e:
+    except json.JSONDecodeError:
         return JsonResponse({
             'status': 'error',
-            'message': 'Invalid JSON data'
+            'message': 'Error en el formato de los datos enviados'
         }, status=400)
+    except HealthCategory.DoesNotExist:
+        return JsonResponse({
+            'status': 'error',
+            'message': 'Categoría de salud no encontrada'
+        }, status=404)
     except Exception as e:
-        logger.error(f"Error updating recommendation: {str(e)}", exc_info=True)
         return JsonResponse({
             'status': 'error',
             'message': str(e)
-        }, status=400) 
+        }, status=500) 
