@@ -227,7 +227,7 @@ class HealthCategoryAdmin(admin.ModelAdmin):
         'get_completion_date',
         'get_is_draft',
         'get_status_color',
-        'get_evaluation_data',
+        'get_detailed_responses',
         'get_recommendation_data'
     ]
 
@@ -250,7 +250,7 @@ class HealthCategoryAdmin(admin.ModelAdmin):
         }),
         ('Datos de Evaluación', {
             'fields': (
-                'get_evaluation_data',
+                'get_detailed_responses',
                 'get_recommendation_data'
             )
         })
@@ -327,9 +327,36 @@ class HealthCategoryAdmin(admin.ModelAdmin):
         extra_context = extra_context or {}
         obj = self.get_object(request, object_id)
         if obj:
-            extra_context['evaluation_data'] = obj.get_evaluation_data()
+            
             extra_context['recommendation_data'] = obj.get_recommendation_data()
         return super().change_view(request, object_id, form_url, extra_context)
+    
+    def get_detailed_responses(self, obj):
+        from django.template.loader import render_to_string
+
+        responses = obj.evaluation_form.responses or {}
+        processed_responses = {}
+
+        for node_id, response in responses.items():
+            processed_response = response.copy()
+            if response.get('type') == 'SINGLE_CHOICE_QUESTION':
+                options = response['answer'].get('options', [])
+                selected = response['answer'].get('selectedOption')
+                if selected is not None and selected < len(options):
+                    processed_response['answer']['selected_text'] = options[selected]
+            elif response.get('type') == 'MULTIPLE_CHOICE_QUESTION':
+                options = response['answer'].get('options', [])
+                selected = response['answer'].get('selectedOptions', [])
+                processed_response['answer']['selected_texts'] = [
+                    options[idx] for idx in selected if idx < len(options)
+                ]
+            processed_responses[node_id] = processed_response
+
+        context = {'responses': processed_responses}
+        return mark_safe(render_to_string('admin/healthcategory/detailed_responses.html', context))
+    get_detailed_responses.short_description = "Detalle de Respuestas"
+    
+
 
 class AppointmentForm(forms.ModelForm):
     date = forms.DateField(

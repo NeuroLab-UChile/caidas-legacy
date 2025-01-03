@@ -10,7 +10,7 @@ class HealthCategorySerializer(serializers.ModelSerializer):
     # Campos de evaluación
     evaluation_type = serializers.SerializerMethodField()
     evaluation_form = serializers.SerializerMethodField()
-    evaluation_results = serializers.SerializerMethodField()
+ 
     
     # Campos de estado y recomendaciones
     status = serializers.SerializerMethodField()
@@ -34,7 +34,7 @@ class HealthCategorySerializer(serializers.ModelSerializer):
             'description',
             'evaluation_type',
             'evaluation_form',
-            'evaluation_results',
+          
             'status',
             'recommendations',
             'training_form',
@@ -89,11 +89,8 @@ class HealthCategorySerializer(serializers.ModelSerializer):
             'label': types.get(eval_type, 'Desconocido')
         }
 
-    def get_evaluation_form(self, obj):
-        """Obtener el formulario de evaluación"""
-        return self.get_template_attribute(obj, 'evaluation_form')
 
-    def get_evaluation_results(self, obj):
+    def get_evaluation_form(self, obj):
         """Obtener resultados de evaluación"""
         if not obj.template or not hasattr(obj, 'evaluation_form'):
             return None

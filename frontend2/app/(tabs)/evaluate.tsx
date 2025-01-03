@@ -99,7 +99,9 @@ const initializeEvaluationState = (
   category: Category | null
 ): EvaluationState => {
   const nodes = category?.evaluation_form?.question_nodes || [];
-  const existingResponses = Object.entries(category?.responses || {}).map(
+  const existingResponses = Object.entries(
+    category?.evaluation_form?.responses || {}
+  ).map(
     ([key, value]): NodeResponse => ({
       nodeId: parseInt(key),
       response: value,
@@ -409,7 +411,7 @@ const EvaluateScreen = () => {
   }, [fetchCategories]);
 
   const renderContent = () => {
-    if (selectedCategory?.evaluation_results?.is_completed) {
+    if (selectedCategory?.evaluation_form?.is_completed) {
       return (
         <View style={styles.completedContainer}>
           <Text style={styles.completedText}>

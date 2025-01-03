@@ -17,7 +17,7 @@ export interface QuestionNode {
 /**
  * Representa los resultados de una evaluación.
  */
-export interface EvaluationResults {
+export interface EvaluationForm {
   completed_date: string | null;
   is_completed: boolean;
   responses: Record<string, any>; // Respuestas de los nodos
@@ -54,9 +54,6 @@ export interface Recommendation {
 /**
  * Representa el formulario de evaluación.
  */
-export interface EvaluationForm {
-  question_nodes: QuestionNode[];
-}
 
 /**
  * Representa el formulario de entrenamiento.
@@ -88,7 +85,7 @@ export interface Category {
   // Evaluación
   evaluation_type: "SELF" | "PROFESSIONAL" | "BOTH"; // Tipo de evaluación.
   evaluation_form: EvaluationForm; // Formulario de evaluación.
-  evaluation_results: EvaluationResults | null; // Resultados de la evaluación.
+
 
   // Estado y recomendaciones
   status: Status; // Estado actual.
