@@ -229,9 +229,9 @@
     "description": "Una dieta balanceada es esencial para el bienestar. Su profesional evaluará sus hábitos alimenticios y proporcionará recomendaciones personalizadas.",
     "icon": "health_categories_icons/healthy_diet.png",
     "default_recommendations": {
-      "no_risk": "Su dieta es adecuada. Mantenga su dieta actual.",
-      "prev_risk": "Ha disminuido su actividad física. Considere comenzar una rutina de ejercicios suaves.",
-      "risk": "Su actividad física es insuficiente. Considere aumentar su actividad física con ejercicios suaves."
+      "no_risk": "Una nutrición adecuada es clave para mantenerse fuerte y prevenir caídas a medida que envejecemos. Comer bien ayuda a mantener los músculos y los huesos saludables, lo que es esencial para un buen equilibrio y estabilidad. Los alimentos ricos en calcio y vitamina D, como los lácteos, los pescados y los vegetales de hoja verde, fortalecen los huesos. Las proteínas, presentes en carnes, legumbres y frutos secos, ayudan a conservar la masa muscular. Mantenerse bien nutrido también mejora la energía y la agilidad, reduciendo el riesgo de tropezar y caer. Por lo tanto, una buena alimentación es un pilar fundamental para una vida activa y segura en la tercera edad.",
+      "prev_risk": "Las dietas restrictivas en calorías y proteínas pueden ser especialmente peligrosas para los adultos mayores. Al reducir demasiado la ingesta de estos nutrientes esenciales, se aumenta el riesgo de debilitar los músculos y los huesos, lo que puede llevar a una mayor fragilidad y un riesgo elevado de caídas y fracturas. La proteína es vital para mantener la masa muscular, que es crucial para la movilidad y el equilibrio. Además, una ingesta adecuada de calorías es necesaria para mantener la energía y la vitalidad diaria. Privarse de estos nutrientes esenciales puede comprometer la salud general y la calidad de vida en la tercera edad.",
+      "risk": "Las dietas restrictivas en calorías y proteínas pueden ser especialmente peligrosas para los adultos mayores. Al reducir demasiado la ingesta de estos nutrientes esenciales, se aumenta el riesgo de debilitar los músculos y los huesos, lo que puede llevar a una mayor fragilidad y un riesgo elevado de caídas y fracturas. La proteína es vital para mantener la masa muscular, que es crucial para la movilidad y el equilibrio. Además, una ingesta adecuada de calorías es necesaria para mantener la energía y la vitalidad diaria. Privarse de estos nutrientes esenciales puede comprometer la salud general y la calidad de vida en la tercera edad."
     },
     "evaluation_type": "PROFESSIONAL",
     "training_form": {
@@ -270,7 +270,7 @@
               "BREAKFAST": {
                 "meal": "Yogur con granola y miel",
                 "proteins": "12g",
-                "notes": "Probióticos y energía"
+                "notes": "Probóticos y energía"
               },
               "LUNCH": {
                 "meal": "Wrap de pavo con aguacate",
@@ -281,6 +281,91 @@
                 "meal": "Sopa de lentejas",
                 "proteins": "18g",
                 "notes": "Rica en hierro y fibra"
+              }
+            },
+            "WED": {
+              "BREAKFAST": {
+                "meal": "Batido de leche con frutas",
+                "proteins": "15g",
+                "notes": "Vitaminas y energía"
+              },
+              "LUNCH": {
+                "meal": "Bistec con ensalada fresca",
+                "proteins": "25g",
+                "notes": "Alta en hierro"
+              },
+              "DINNER": {
+                "meal": "Salmón al vapor con espinacas",
+                "proteins": "20g",
+                "notes": "Omega-3 y antioxidantes"
+              }
+            },
+            "THU": {
+              "BREAKFAST": {
+                "meal": "Tostadas integrales con queso fresco",
+                "proteins": "12g",
+                "notes": "Fibra y calcio"
+              },
+              "LUNCH": {
+                "meal": "Estofado de pollo con arroz integral",
+                "proteins": "22g",
+                "notes": "Baja en grasa y alta en proteínas"
+              },
+              "DINNER": {
+                "meal": "Ensalada de garbanzos con atún",
+                "proteins": "20g",
+                "notes": "Rica en fibra y omega-3"
+              }
+            },
+            "FRI": {
+              "BREAKFAST": {
+                "meal": "Huevos revueltos con espinacas",
+                "proteins": "14g",
+                "notes": "Rica en vitaminas y minerales"
+              },
+              "LUNCH": {
+                "meal": "Albóndigas de carne con puré de papas",
+                "proteins": "25g",
+                "notes": "Alta en proteínas"
+              },
+              "DINNER": {
+                "meal": "Pescado blanco al horno con ensalada",
+                "proteins": "20g",
+                "notes": "Ligero y nutritivo"
+              }
+            },
+            "SAT": {
+              "BREAKFAST": {
+                "meal": "Pan integral con mantequilla de almendras",
+                "proteins": "10g",
+                "notes": "Energía y grasas saludables"
+              },
+              "LUNCH": {
+                "meal": "Pollo al horno con vegetales asados",
+                "proteins": "22g",
+                "notes": "Rico en proteínas y vitaminas"
+              },
+              "DINNER": {
+                "meal": "Sopa de lentejas con trozos de jamón",
+                "proteins": "18g",
+                "notes": "Rica en fibra y hierro"
+              }
+            },
+            "SUN": {
+              "BREAKFAST": {
+                "meal": "Yogur natural con frutas",
+                "proteins": "10g",
+                "notes": "Ligero y saludable"
+              },
+              "LUNCH": {
+                "meal": "Bistec de vacuno con ensalada de papas",
+                "proteins": "25g",
+                "notes": "Rico en hierro y energía"
+              },
+              "DINNER": {
+                "meal": "Ensalada de garbanzos con huevo cocido",
+                "proteins": "20g",
+                "notes": "Proteínas y fibra"
               }
             }
           }

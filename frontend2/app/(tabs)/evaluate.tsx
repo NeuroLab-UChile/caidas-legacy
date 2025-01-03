@@ -46,14 +46,15 @@ interface EvaluationState {
     nodes: QuestionNode[];
   };
 }
-
 const getWelcomeText = (category: Category) => {
-  if (category.evaluation_type === "PROFESSIONAL") {
+  if (category.evaluation_type.type === "PROFESSIONAL") {
     return {
       title: "Evaluación Profesional",
       description:
         category.description ||
         "Esta evaluación será realizada por un profesional de la salud.",
+
+      note: "Agenda una cita con tu profesional de salud para realizar esta evaluación.",
       buttonText: "Ver Evaluación",
     };
   }
@@ -63,6 +64,8 @@ const getWelcomeText = (category: Category) => {
     description:
       category.description ||
       "Esta evaluación nos ayudará a entender mejor tu estado de salud.",
+
+    note: "Toma unos minutos para responder con sinceridad.",
     buttonText: "Comenzar Evaluación",
   };
 };
@@ -88,6 +91,10 @@ const WelcomeScreen = ({
 
       <Text style={styles.welcomeDescription}>{welcomeText.description}</Text>
 
+      {welcomeText.note && (
+        <Text style={styles.noteText}>{welcomeText.note}</Text>
+      )}
+
       <TouchableOpacity style={styles.startButton} onPress={onStart}>
         <Text style={styles.startButtonText}>{welcomeText.buttonText}</Text>
       </TouchableOpacity>
@@ -98,6 +105,21 @@ const WelcomeScreen = ({
 const initializeEvaluationState = (
   category: Category | null
 ): EvaluationState => {
+  // Si es evaluación profesional, no necesitamos inicializar nodos
+  if (category?.evaluation_type?.type === "PROFESSIONAL") {
+    return {
+      currentNodeId: null,
+      responses: [],
+      completed: false,
+      history: [],
+      evaluationResult: {
+        initial_node_id: null,
+        nodes: [],
+      },
+    };
+  }
+
+  // Para autoevaluación, mantener la lógica original
   const nodes = category?.evaluation_form?.question_nodes || [];
   const existingResponses = Object.entries(
     category?.evaluation_form?.responses || {}
@@ -149,9 +171,19 @@ const EvaluateScreen = () => {
 
   useEffect(() => {
     if (selectedCategory) {
+      console.log("Evaluation Type:", {
+        type: selectedCategory.evaluation_type?.type,
+        label: selectedCategory.evaluation_type?.label,
+        fullObject: selectedCategory.evaluation_type,
+      });
+
+      const isProfessional =
+        selectedCategory.evaluation_type?.type === "PROFESSIONAL";
+      console.log("Is Professional:", isProfessional);
+
       setEvaluationState(initializeEvaluationState(selectedCategory));
       setShowWelcome(
-        selectedCategory.evaluation_type === "SELF" &&
+        !isProfessional &&
           !evaluationState.completed &&
           !evaluationState.responses.length
       );
@@ -205,6 +237,9 @@ const EvaluateScreen = () => {
 
   const getNextNodeId = (currentNodeId: number): number | null => {
     const nodes = selectedCategory?.evaluation_form?.question_nodes || [];
+    if (!nodes || nodes.length === 0) {
+      return null;
+    }
     const currentIndex = nodes.findIndex((node) => node.id === currentNodeId);
 
     if (currentIndex === -1 || currentIndex === nodes.length - 1) {
@@ -244,6 +279,24 @@ const EvaluateScreen = () => {
       SCALE_QUESTION: (res) => ({
         value: res?.answer?.value || res?.value || 0,
       }),
+      DESCRIPTION_NODE: function (res: any) {
+        throw new Error("Function not implemented.");
+      },
+      VIDEO_NODE: function (res: any) {
+        throw new Error("Function not implemented.");
+      },
+      IMAGE_NODE: function (res: any) {
+        throw new Error("Function not implemented.");
+      },
+      TEXT_NODE: function (res: any) {
+        throw new Error("Function not implemented.");
+      },
+      WEEKLY_RECIPE_NODE: function (res: any) {
+        throw new Error("Function not implemented.");
+      },
+      RESULT_NODE: function (res: any) {
+        throw new Error("Function not implemented.");
+      },
     };
 
     const formatter = answerMap[node.type];
@@ -350,6 +403,9 @@ const EvaluateScreen = () => {
 
   const getCurrentNode = (nodeId: number | null): QuestionNode | null => {
     const nodes = selectedCategory?.evaluation_form?.question_nodes || [];
+    if (!nodeId || !nodes || nodes.length === 0) {
+      return null;
+    }
     return nodes.find((node) => node.id === nodeId) || null;
   };
 
@@ -411,7 +467,22 @@ const EvaluateScreen = () => {
   }, [fetchCategories]);
 
   const renderContent = () => {
-    if (selectedCategory?.evaluation_form?.is_completed) {
+    if (!selectedCategory) return null;
+
+    // Debug
+    console.log("Category:", {
+      type: selectedCategory.evaluation_type?.type,
+      completed_date: selectedCategory.evaluation_form?.completed_date,
+      responses: selectedCategory.evaluation_form?.responses,
+    });
+
+    // Si es evaluación profesional
+    if (selectedCategory.evaluation_type?.type === "PROFESSIONAL") {
+      return <ProfessionalEvaluation />;
+    }
+
+    // Para autoevaluaciones, verificar si está completada usando completed_date
+    if (selectedCategory.evaluation_form?.completed_date) {
       return (
         <View style={styles.completedContainer}>
           <Text style={styles.completedText}>
@@ -429,7 +500,8 @@ const EvaluateScreen = () => {
       );
     }
 
-    if (showWelcome && selectedCategory) {
+    // Para evaluaciones no completadas
+    if (showWelcome) {
       return (
         <WelcomeScreen
           category={selectedCategory}
@@ -441,10 +513,7 @@ const EvaluateScreen = () => {
       );
     }
 
-    if (selectedCategory?.evaluation_type === "PROFESSIONAL") {
-      return <ProfessionalEvaluation />;
-    }
-
+    // Renderizar nodos de evaluación
     return renderNode(evaluationState.currentNodeId, () => {
       if (evaluationState.history.length > 0) {
         const previousNodes = [...evaluationState.history];

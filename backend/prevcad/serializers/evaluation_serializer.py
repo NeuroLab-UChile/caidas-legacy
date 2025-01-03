@@ -14,9 +14,9 @@ class QuestionNodeSerializer(serializers.ModelSerializer):
         fields = ['id', 'type', 'question', 'options', 'required', 'order', 'responses']
 
 class EvaluationFormSerializer(serializers.ModelSerializer):
-    nodes = QuestionNodeSerializer(many=True, read_only=True)
+    question_nodes = QuestionNodeSerializer(many=True, read_only=True, source='nodes')
     professional_responses = ResponseSerializer(many=True, read_only=True)
     
     class Meta:
         model = EvaluationForm
-        fields = ['id', 'form_type', 'completed_date', 'nodes', 'professional_responses'] 
+        fields = ['id', 'form_type', 'completed_date', 'question_nodes', 'professional_responses'] 

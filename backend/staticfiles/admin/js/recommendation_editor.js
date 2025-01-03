@@ -43,50 +43,55 @@ document.addEventListener('DOMContentLoaded', function() {
     async function saveChanges() {
         const healthCategoryId = recommendationText.dataset.healthCategoryId;
         const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-        const saveButton = document.getElementById('save-recommendation');
-        if (saveButton) {
-            saveButton.addEventListener('click', async function() {
-                const textarea = document.getElementById('recommendation-text');
-                const categoryId = textarea.dataset.healthCategoryId;
-                
-                console.log('Intentando guardar con:', {
-                    text: textarea.value,
-                    categoryId: categoryId
-                });
-    
-                try {
-                    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-                    
-                    const response = await fetch(`/admin/prevcad/healthcategory/${categoryId}/update-recommendation/`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRFToken': csrfToken,
-                        },
-                        body: JSON.stringify({
-                            recommendation_text: textarea.value,
-                            debug_info: {
-                                timestamp: new Date().toISOString(),
-                                textLength: textarea.value.length
-                            }
-                        })
-                    });
-    
-                    const data = await response.json();
-                    
-                    if (response.ok && data.status === 'success') {
-                        window.location.reload();
-                    } else {
-                        throw new Error(data.message || 'Error al guardar los cambios');
-                    }
-                } catch (error) {
-                    console.error('Error al guardar:', error);
-                    alert('Error: ' + error.message);
-                }
-            });
-        }
 
-      
+        try {
+            // Mostrar estado de carga
+            saveButton.disabled = true;
+            saveButton.innerHTML = `
+                <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Guardando...
+            `;
+
+            const response = await fetch(`/admin/prevcad/healthcategory/${healthCategoryId}/update-recommendation/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken,
+                },
+                body: JSON.stringify({
+                    use_default: defaultRadio.checked,
+                    text: recommendationText.value,
+                    status_color: statusColor.value,
+                    is_draft: isDraft.checked,
+                    sign: signRecommendation.checked
+                })
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.status === 'success') {
+                showNotification('success', data.message || 'Cambios guardados correctamente');
+                updateLastModifiedInfo(data.recommendation);
+            } else {
+                throw new Error(data.message || 'Error al guardar los cambios');
+            }
+
+        } catch (error) {
+            console.error('Error:', error);
+            showNotification('error', error.message || 'Error al guardar los cambios');
+        } finally {
+            // Restaurar botón
+            saveButton.disabled = false;
+            saveButton.innerHTML = `
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                </svg>
+                Guardar Cambios
+            `;
+        }
     }
 
     function showNotification(type, message) {
@@ -153,90 +158,4 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Event listeners
     saveButton.addEventListener('click', saveChanges);
-
-    async function updateRecommendation(categoryId) {
-        console.group('DEBUG: Actualización de Recomendación');
-        
-        // 1. Obtener el texto
-        const textarea = document.getElementById('recommendation_text');
-        console.log('Textarea encontrado:', textarea);
-        
-        if (!textarea) {
-            console.error('No se encontró el textarea');
-            alert('Error: No se encontró el campo de texto');
-            console.groupEnd();
-            return;
-        }
-        
-        const recommendationText = textarea.value;
-        console.log('Texto de recomendación:', {
-            value: recommendationText,
-            length: recommendationText?.length,
-            preview: recommendationText?.substring(0, 100)
-        });
-
-        if (!recommendationText?.trim()) {
-            console.warn('Texto vacío');
-            alert('Por favor, ingrese una recomendación');
-            console.groupEnd();
-            return;
-        }
-
-        // 2. CSRF Token
-        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
-        if (!csrfToken) {
-            console.error('No CSRF token');
-            alert('Error de seguridad: No se encontró el token CSRF');
-            console.groupEnd();
-            return;
-        }
-
-        // 3. Enviar request
-        try {
-            const payload = {
-                recommendation_text: recommendationText,
-                debug_info: {
-                    timestamp: new Date().toISOString(),
-                    textLength: recommendationText.length
-                }
-            };
-            
-            console.log('Enviando payload:', payload);
-
-            const response = await fetch(`${categoryId}/update-recommendation/`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': csrfToken,
-                },
-                body: JSON.stringify(payload),
-                credentials: 'same-origin'
-            });
-
-            console.log('Response status:', response.status);
-            const responseData = await response.text();
-            console.log('Response data:', responseData);
-
-            if (response.ok) {
-                try {
-                    const jsonData = JSON.parse(responseData);
-                    if (jsonData.status === 'success') {
-                        window.location.reload();
-                    } else {
-                        throw new Error(jsonData.message || 'Error desconocido');
-                    }
-                } catch (e) {
-                    console.error('Error parsing response:', e);
-                    throw new Error('Error procesando la respuesta del servidor');
-                }
-            } else {
-                throw new Error(`Error ${response.status}: ${responseData}`);
-            }
-        } catch (error) {
-            console.error('Error completo:', error);
-            alert('Error: ' + error.message);
-        }
-
-        console.groupEnd();
-    }
 }); 

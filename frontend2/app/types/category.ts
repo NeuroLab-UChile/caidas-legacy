@@ -20,10 +20,12 @@ export interface QuestionNode {
 export interface EvaluationForm {
   completed_date: string | null;
   is_completed: boolean;
-  responses: Record<string, any>; // Respuestas de los nodos
+  responses: Record<string, any>;
+  professional_responses: ProfessionalResponse | null;
+  updated_at: string | null;
+  is_draft: boolean;
+  type?: 'PROFESSIONAL' | 'SELF';
   question_nodes: QuestionNode[];
-  professional_responses?: Record<string, any>;
-  updated_at?: string;
 }
 
 /**
@@ -76,16 +78,19 @@ export interface TrainingNode {
  * Representa una categoría de evaluación.
  */
 export interface Category {
+  is_draft: boolean;
   // Identificación básica
   id: number; // ID único.
   name: string; // Nombre de la categoría.
-  icon: string | null; // URL del ícono.
-  description: string | null; // Descripción de la categoría.
+  icon?: string; // URL del ícono.
+  description?: string; // Descripción de la categoría.
 
   // Evaluación
-  evaluation_type: "SELF" | "PROFESSIONAL" | "BOTH"; // Tipo de evaluación.
+  evaluation_type: {
+    type: 'PROFESSIONAL' | 'SELF';
+    label: string;
+  };
   evaluation_form: EvaluationForm; // Formulario de evaluación.
-
 
   // Estado y recomendaciones
   status: Status; // Estado actual.
@@ -103,4 +108,11 @@ export interface RootNode {
   description: string;
   first_button_text: string;
   first_button_node_id: number;
+}
+
+interface ProfessionalResponse {
+  observations: string;
+  diagnosis: string;
+  professional_name: string;
+  evaluation_date: string;
 }

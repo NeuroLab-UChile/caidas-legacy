@@ -38,4 +38,7 @@ urlpatterns = [
   path('admin/prevcad/healthcategory/<int:object_id>/update_recommendation/', 
        admin_views.update_recommendation, 
        name='update_recommendation'),
+  path('admin/prevcad/healthcategory/<int:category_id>/save-professional-evaluation/',
+       admin_views.save_professional_evaluation,
+       name='admin_save_professional_evaluation'),
 ]

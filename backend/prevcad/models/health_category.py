@@ -213,6 +213,89 @@ class HealthCategory(models.Model):
             self.get_or_create_evaluation_form()
             self.get_or_create_recommendation()
 
+    def update_recommendation(self, text, professional_name=None, is_draft=True):
+        """
+        Actualiza la recomendación asociada a esta categoría de salud.
+        
+        Args:
+            text (str): Texto de la recomendación
+            professional_name (str, optional): Nombre del profesional
+            is_draft (bool, default=True): Si es un borrador
+        """
+        try:
+            recommendation = self.recommendation
+        except AttributeError:
+            # Si no existe la recomendación, crear una nueva
+            from prevcad.models import Recommendation
+            recommendation = Recommendation.objects.create(
+                category=self,
+                text="",
+                status_color="gris"
+            )
+
+        # Actualizar los campos
+        recommendation.text = text
+        recommendation.is_draft = is_draft
+        recommendation.updated_at = timezone.now()
+        
+        if professional_name:
+            recommendation.professional = {
+                "name": professional_name
+            }
+            
+        if not is_draft:
+            recommendation.is_signed = True
+            recommendation.signed_by = professional_name
+            recommendation.signed_at = timezone.now()
+
+        recommendation.save()
+        
+        return recommendation
+
+    def get_default_recommendation(self):
+        """
+        Retorna la recomendación por defecto basada en el tipo de evaluación
+        """
+        if self.evaluation_type and self.evaluation_type.get('type') == 'PROFESSIONAL':
+            return {
+                "text": "Esta evaluación requiere revisión profesional.",
+                "status": {
+                    "color": "#808080",
+                    "text": "⚪️ Pendiente de Evaluación Profesional"
+                }
+            }
+        
+        return {
+            "text": "Complete la autoevaluación para recibir recomendaciones.",
+            "status": {
+                "color": "#808080",
+                "text": "⚪️ Pendiente de Autoevaluación"
+            }
+        }
+
+    @property
+    def recommendations(self):
+        """
+        Propiedad que retorna las recomendaciones o valores por defecto
+        """
+        try:
+            recommendation = self.recommendation
+            if not recommendation or not recommendation.text:
+                return self.get_default_recommendation()
+                
+            return {
+                "text": recommendation.text,
+                "is_draft": recommendation.is_draft,
+                "professional": recommendation.professional,
+                "status": {
+                    "color": recommendation.status_color,
+                    "text": recommendation.get_status_display()
+                },
+                "updated_at": recommendation.updated_at.isoformat() if recommendation.updated_at else None
+            }
+        except Exception:
+            return self.get_default_recommendation()
+
 @receiver(post_save, sender=UserProfile)
 def create_user_health_categories(sender, instance, created, **kwargs):
     """Crear categorías de salud para un nuevo usuario"""

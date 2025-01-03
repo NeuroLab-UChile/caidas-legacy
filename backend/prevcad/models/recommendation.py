@@ -33,9 +33,11 @@ class Recommendation(models.Model):
     is_signed = models.BooleanField(default=False)
     signed_by = models.CharField(max_length=150, blank=True)
     signed_at = models.DateTimeField(null=True, blank=True)
-    updated_by = models.CharField(max_length=150, blank=True)
+    updated_by = models.CharField(max_length=255, null=True, blank=True)
     updated_at = models.DateTimeField(auto_now=True)
     use_default = models.BooleanField(default=False)
+    professional_name = models.CharField(max_length=255, null=True, blank=True)
+    professional_role = models.CharField(max_length=255, null=True, blank=True)
 
     def save(self, *args, **kwargs):
         # Si es nuevo y no tiene texto, usar el texto por defecto

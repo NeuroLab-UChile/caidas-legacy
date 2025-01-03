@@ -178,6 +178,31 @@ class CategoryTemplate(models.Model):
     # Verificar si el usuario pertenece a algún grupo con permiso
     return user.groups.filter(id__in=self.editable_by_groups.all()).exists()
 
+  def get_question_nodes(self):
+    """Obtener los nodos de preguntas según el tipo de evaluación"""
+    print(f"Obteniendo nodos para template: {self.name}")  # Debug
+    
+    if self.evaluation_type == 'PROFESSIONAL':
+      nodes = [
+        {
+          'id': 'observations',
+          'type': 'text',
+          'label': 'Observaciones',
+          'required': True
+        },
+        {
+          'id': 'diagnosis',
+          'type': 'text',
+          'label': 'Diagnóstico',
+          'required': True
+        }
+      ]
+      print("Nodos profesionales:", nodes)  # Debug
+      return nodes
+      
+    # Para autoevaluación
+    return self.evaluation_form.get('question_nodes', [])
+
 class CategoryTemplateEditor(models.Model):
     """Modelo intermedio para manejar permisos de edición de templates"""
     template = models.ForeignKey(CategoryTemplate, on_delete=models.CASCADE)

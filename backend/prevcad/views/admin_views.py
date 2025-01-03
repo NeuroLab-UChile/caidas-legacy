@@ -1,7 +1,7 @@
 import json
 import uuid
 import os
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponseRedirect
 from django.views.decorators.http import require_POST, require_http_methods
 from django.views.decorators.csrf import csrf_exempt, csrf_protect
 from django.shortcuts import get_object_or_404
@@ -16,6 +16,9 @@ from django.contrib.auth.decorators import user_passes_test
 
 from django.utils import timezone
 from prevcad.models import HealthCategory
+from django.contrib.admin.views.decorators import staff_member_required
+from django.contrib import admin
+from django.urls import path
 
 logger = logging.getLogger(__name__)
 
@@ -235,4 +238,91 @@ def update_recommendation(request, object_id):
         return JsonResponse({
             'status': 'error',
             'message': str(e)
+        }, status=500) 
+
+@staff_member_required
+def save_professional_evaluation(request, category_id):
+    """
+    Vista de admin para guardar la evaluación profesional
+    """
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Método no permitido'}, status=405)
+
+    try:
+        # Obtener la categoría de salud
+        health_category = HealthCategory.objects.get(id=category_id)
+        
+        # Obtener los datos del request
+        data = json.loads(request.body)
+        evaluation_form = health_category.get_or_create_evaluation_form()
+        
+        # Debug
+        print("Estado inicial:", {
+            'is_draft': evaluation_form.is_draft,
+            'completed_date': evaluation_form.completed_date
+        })
+        
+        # Obtener y actualizar las respuestas profesionales
+        professional_responses = data.get('professional_responses', {})
+        if evaluation_form.professional_responses is None:
+            evaluation_form.professional_responses = {}
+        evaluation_form.professional_responses.update(professional_responses)
+        
+        # Manejar el estado de completado
+        if data.get('complete', False):
+            print("Marcando como completado...")  # Debug
+            now = timezone.now()
+            
+            # Actualizar el formulario
+            evaluation_form.is_draft = False
+            evaluation_form.completed_date = now
+            
+            # Actualizar la recomendación
+            try:
+                recommendation = health_category.get_or_create_recommendation()
+                if recommendation:
+                    recommendation.is_draft = False
+                    recommendation.updated_by = request.user.username
+                    recommendation.updated_at = now
+                    recommendation.save()
+                    print("Recomendación actualizada")  # Debug
+            except Exception as e:
+                print(f"Error actualizando recomendación: {e}")
+        
+        # Guardar y verificar
+        evaluation_form.save()
+        evaluation_form.refresh_from_db()
+        
+        # Debug final
+        print("Estado final:", {
+            'is_draft': evaluation_form.is_draft,
+            'completed_date': evaluation_form.completed_date,
+            'professional_responses': evaluation_form.professional_responses
+        })
+
+        return JsonResponse({
+            'success': True,
+            'message': 'Evaluación guardada correctamente',
+            'is_draft': evaluation_form.is_draft,
+            'completed_date': evaluation_form.completed_date.isoformat() if evaluation_form.completed_date else None,
+            'professional_responses': evaluation_form.professional_responses
+        })
+
+    except HealthCategory.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'error': 'Categoría de salud no encontrada'
+        }, status=404)
+    except json.JSONDecodeError:
+        return JsonResponse({
+            'success': False,
+            'error': 'Datos JSON inválidos'
+        }, status=400)
+    except Exception as e:
+        import traceback
+        print("Error completo:")
+        print(traceback.format_exc())
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
         }, status=500) 

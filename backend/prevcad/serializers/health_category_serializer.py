@@ -20,9 +20,10 @@ class HealthCategorySerializer(serializers.ModelSerializer):
     training_form = serializers.SerializerMethodField()
 
     STATUS_COLORS = {
-        'verde': {'color': '#008000', 'text': '✅ Evaluación Completada'},
-        'amarillo': {'color': '#FFFF00', 'text': '🟡 Evaluación Pendiente'},
-        'gris': {'color': '#808080', 'text': '⚪️ Sin Evaluación'},
+        'verde': {'color': '#008000', 'text': '✅ No Riesgoso'},
+        'amarillo': {'color': '#FFFF00', 'text': '🟡 Poco Riesgoso'},
+        'rojo': {'color': '#FF0000', 'text': '🔴 Riesgoso'},
+        'gris': {'color': '#808080', 'text': '⚪️ Neutral'},
     }
 
     class Meta:
@@ -38,6 +39,9 @@ class HealthCategorySerializer(serializers.ModelSerializer):
             'status',
             'recommendations',
             'training_form',
+          
+       
+        
         ]
 
     def get_template_attribute(self, obj, attr, default=None):
@@ -91,30 +95,74 @@ class HealthCategorySerializer(serializers.ModelSerializer):
 
 
     def get_evaluation_form(self, obj):
-        """Obtener resultados de evaluación"""
-        if not obj.template or not hasattr(obj, 'evaluation_form'):
-            return None
-
-        eval_form = obj.evaluation_form
-        is_professional = obj.template.evaluation_type == 'PROFESSIONAL'
-
-        base_result = {
-            'completed_date': eval_form.completed_date.isoformat() if eval_form.completed_date else None,
-            'is_completed': bool(eval_form.completed_date),
-        }
-
-        if is_professional:
-            base_result.update({
-                'professional_responses': eval_form.professional_responses,
-                'updated_at': eval_form.completed_date.isoformat() if eval_form.completed_date else None
-            })
-        else:
-            base_result.update({
+        eval_form = obj.get_or_create_evaluation_form()
+        if eval_form:
+            # Debug
+            print("Procesando evaluation_form para:", obj.template.name if obj.template else "No template")
+            
+            template = obj.template
+            question_nodes = []
+            
+            if template:
+                # Debug
+                print("Tipo de evaluación:", template.evaluation_type)
+                
+                
+                # Si es evaluación profesional
+                if template.evaluation_type == 'PROFESSIONAL':
+                    question_nodes = [
+                        {
+                            'id': 'observations',
+                            'type': 'text',
+                            'label': 'Observaciones',
+                            'required': True
+                        },
+                        {
+                            'id': 'diagnosis',
+                            'type': 'text',
+                            'label': 'Diagnóstico',
+                            'required': True
+                        }
+                    ]
+                    print("Nodos profesionales creados:", question_nodes)  # Debug
+                # Si es autoevaluación
+                else:
+                    try:
+                        # Obtener los nodos del template
+                        if hasattr(template, 'get_question_nodes'):
+                            question_nodes = template.get_question_nodes()
+                         
+                        else:
+                            print("El template no tiene método get_question_nodes")  # Debug
+                            # Intentar obtener nodos del root_node
+                            if hasattr(template, 'root_node') and template.root_node:
+                                question_nodes = [
+                                    {
+                                        'id': node.id,
+                                        'type': node.type,
+                                        'label': node.text,
+                                        'required': getattr(node, 'required', False),
+                                        'options': getattr(node, 'options', None)
+                                    }
+                                    for node in template.root_node.get_descendants()
+                                    if node.type == 'QUESTION'
+                                ]
+                                print("Nodos obtenidos del root_node:", question_nodes)  # Debug
+                    except Exception as e:
+                        print("Error obteniendo nodos:", str(e))  # Debug
+                        question_nodes = []
+            
+            # Debug final
+            print("Nodos finales a devolver:", question_nodes)
+            
+            return {
+                'completed_date': eval_form.completed_date,
                 'responses': eval_form.responses,
-                'question_nodes': eval_form.question_nodes
-            })
-
-        return base_result
+                'professional_responses': eval_form.professional_responses,
+                'updated_at': eval_form.updated_at if hasattr(eval_form, 'updated_at') else None,
+                'question_nodes': question_nodes
+            }
+        return None
 
     def get_status(self, obj):
         """Obtener estado completo"""
@@ -150,20 +198,32 @@ class HealthCategorySerializer(serializers.ModelSerializer):
             status = self.get_status(obj)
             recommendation = obj.get_or_create_recommendation()
 
+            # Obtener información del profesional directamente del objeto
+            professional_info = None
+            professional_role = None
+            
+            if recommendation:
+                if hasattr(recommendation, 'professional_name') and recommendation.professional_name:
+                    professional_info = recommendation.professional_name
+                elif hasattr(recommendation, 'updated_by') and recommendation.updated_by:
+                    professional_info = recommendation.updated_by
+                    
+                if hasattr(recommendation, 'professional_role') and recommendation.professional_role:
+                    professional_role = recommendation.professional_role
+            
             base_recommendation = {
                 'status': {
                     'color': status['color'],
                     'text': status['text']
                 },
-                'text': self.get_recommendation_attribute(obj, 'text'),
-                'updated_at': self.get_recommendation_attribute(obj, 'updated_at'),
-                'is_draft': self.get_recommendation_attribute(obj, 'is_draft', True)
+                'text': recommendation.text if recommendation else None,
+                'updated_at': recommendation.updated_at if recommendation else None,
+                'is_draft': recommendation.is_draft if recommendation else True,
+                'professional': {
+                    'name': professional_info,
+                    'role': professional_role
+                } if professional_info else None
             }
-
-            if obj.template.evaluation_type == 'PROFESSIONAL':
-                base_recommendation['professional'] = {
-                    'name': self.get_recommendation_attribute(obj, 'updated_by'),
-                }
 
             return base_recommendation
         except Exception as e:

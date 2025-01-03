@@ -15,6 +15,8 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { TrainingState } from "../types/category";
 import { ActivityNodeType } from "@/components/ActivityNodes";
 import EmptyState from "../containers/EmptyState";
+import { DoctorRecommendations } from "@/components/DoctorRecommendations";
+import { getCategoryStatus } from "@/utils/categoryHelpers";
 
 const TrainingScreen = () => {
   const { selectedCategory, fetchCategories } = useCategories();
@@ -36,6 +38,18 @@ const TrainingScreen = () => {
   useEffect(() => {
     fetchCategories();
   }, []);
+
+  useEffect(() => {
+    console.log("Vista actual:", view);
+    if (view === "recommendations") {
+      console.log("Datos de recomendaciones:", {
+        hasCategory: !!selectedCategory,
+        recommendations: selectedCategory?.recommendations,
+        text: selectedCategory?.recommendations?.text,
+        status: selectedCategory?.recommendations?.status,
+      });
+    }
+  }, [view, selectedCategory]);
 
   const handleRestart = useCallback(() => {
     const nodes = selectedCategory?.training_form?.training_nodes || [];
@@ -109,6 +123,50 @@ const TrainingScreen = () => {
     [getCurrentNode, trainingState, selectedCategory, setView]
   );
 
+  const renderDoctorReview = () => {
+    console.log("Rendering doctor review with:", {
+      recommendations: selectedCategory?.recommendations,
+      hasText: Boolean(selectedCategory?.recommendations?.text),
+      text: selectedCategory?.recommendations?.text,
+    });
+
+    // Verificar si hay recomendaciones y texto
+    if (!selectedCategory?.recommendations?.text) {
+      return (
+        <View style={styles.emptyStateContainer}>
+          <Ionicons name="document-text-outline" size={48} color="#9CA3AF" />
+          <Text style={styles.emptyStateText}>
+            No hay recomendaciones disponibles
+          </Text>
+        </View>
+      );
+    }
+
+    // Extraer los datos necesarios
+    const {
+      status = { color: "#808080", text: "Sin estado" },
+      text,
+      updated_at,
+    } = selectedCategory.recommendations;
+
+    return (
+      <View style={styles.recommendationContent}>
+        <View style={styles.statusContainer}>
+          <View style={[styles.statusDot, { backgroundColor: status.color }]} />
+          <Text style={styles.statusText}>{status.text}</Text>
+        </View>
+
+        <Text style={styles.recommendationText}>{text}</Text>
+
+        {updated_at && (
+          <Text style={styles.updatedAtText}>
+            Actualizado: {new Date(updated_at).toLocaleDateString()}
+          </Text>
+        )}
+      </View>
+    );
+  };
+
   if (loading) return <LoadingIndicator />;
   if (!selectedCategory) return <EmptyState view="training" />;
 
@@ -117,10 +175,13 @@ const TrainingScreen = () => {
       <CategoryHeader name={selectedCategory.name} />
       {!view && (
         <View style={styles.viewSelection}>
-          {selectedCategory.professional_recommendations && (
+          {selectedCategory?.recommendations?.text && (
             <TouchableOpacity
               style={styles.optionCard}
-              onPress={() => setView("recommendations")}
+              onPress={() => {
+                console.log("Abriendo recomendaciones");
+                setView("recommendations");
+              }}
             >
               <View style={styles.iconContainer}>
                 <Ionicons name="medical" size={32} color="#4CAF50" />
@@ -157,31 +218,72 @@ const TrainingScreen = () => {
                 <Ionicons name="medical" size={32} color="#4CAF50" />
               </View>
               <Text style={styles.recommendationsTitle}>
-                Recomendación Médica
+                Recomendaciones Médicas
               </Text>
             </View>
 
-            {selectedCategory.professional_recommendations ? (
-              <View style={styles.recommendationContent}>
-                <View style={styles.quoteIconContainer}>
-                  <Ionicons name="chatbox-ellipses" size={24} color="#4CAF50" />
+            <View style={styles.recommendationContent}>
+              {selectedCategory?.recommendations?.status && (
+                <View style={styles.statusContainer}>
+                  <View
+                    style={[
+                      styles.statusDot,
+                      {
+                        backgroundColor:
+                          selectedCategory.recommendations.status.color,
+                      },
+                    ]}
+                  />
+                  <Text style={styles.statusText}>
+                    {selectedCategory.recommendations.status.text}
+                  </Text>
                 </View>
-                <Text style={styles.recommendationsText}>
-                  "{selectedCategory.professional_recommendations}"
-                </Text>
+              )}
+
+              {(selectedCategory?.recommendations?.professional ||
+                selectedCategory?.recommendations?.updated_at) && (
+                <View style={styles.professionalContainer}>
+                  <View style={styles.professionalHeader}>
+                    <Ionicons name="person" size={16} color="#6B7280" />
+                    <Text style={styles.professionalName}>
+                      {selectedCategory.recommendations.professional?.name ||
+                        "Sin asignar"}
+                    </Text>
+                  </View>
+                  <Text style={styles.professionalRole}>
+                    {selectedCategory.recommendations.professional?.role ||
+                      "Profesional de la salud"}
+                  </Text>
+                  {selectedCategory.recommendations.updated_at && (
+                    <Text style={styles.dateText}>
+                      Actualizado el
+                      {new Date(
+                        selectedCategory.recommendations.updated_at
+                      ).toLocaleDateString()}
+                    </Text>
+                  )}
+                </View>
+              )}
+
+              <View style={styles.recommendationTextWrapper}>
+                {selectedCategory?.recommendations?.text ? (
+                  <Text style={styles.recommendationText}>
+                    {selectedCategory.recommendations.text}
+                  </Text>
+                ) : (
+                  <View style={styles.emptyStateContainer}>
+                    <Ionicons
+                      name="document-text-outline"
+                      size={48}
+                      color="#9CA3AF"
+                    />
+                    <Text style={styles.emptyStateText}>
+                      No hay recomendaciones disponibles
+                    </Text>
+                  </View>
+                )}
               </View>
-            ) : (
-              <View style={styles.emptyStateContainer}>
-                <Ionicons
-                  name="document-text-outline"
-                  size={48}
-                  color="#9CA3AF"
-                />
-                <Text style={styles.emptyStateText}>
-                  No hay recomendaciones disponibles
-                </Text>
-              </View>
-            )}
+            </View>
 
             <TouchableOpacity
               style={styles.backButton}
@@ -284,7 +386,6 @@ const styles = StyleSheet.create({
   },
   recommendationsContainer: {
     flex: 1,
-    backgroundColor: "#F5F6F8",
   },
   recommendationsCard: {
     backgroundColor: "white",
@@ -299,7 +400,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 4,
-    minHeight: 300,
   },
   recommendationsHeader: {
     flexDirection: "row",
@@ -309,22 +409,33 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "#E5E7EB",
   },
-
   recommendationsTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: "700",
     color: "#1F2937",
-    flex: 1,
+    marginLeft: 12,
+    flexWrap: "wrap",
+    textAlign: "center",
   },
   recommendationContent: {
     backgroundColor: "#F8FAF9",
     borderRadius: 16,
     padding: 20,
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-    minHeight: 150,
-    justifyContent: "center",
+    marginVertical: 10,
+  },
+  recommendationSection: {
+    marginBottom: 24,
+  },
+  recommendationSectionTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#374151",
+    marginBottom: 12,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: "#E5E7EB",
+    marginVertical: 20,
   },
   quoteIconContainer: {
     backgroundColor: "#E8F5E9",
@@ -428,15 +539,14 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   emptyStateContainer: {
-    flex: 1,
     alignItems: "center",
-    justifyContent: "center",
     padding: 20,
   },
   emptyStateText: {
     fontSize: 16,
     color: "#9CA3AF",
     marginTop: 8,
+    textAlign: "center",
   },
   backButton: {
     flexDirection: "row",
@@ -460,6 +570,76 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     marginLeft: 8,
+  },
+  statusContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 16,
+    backgroundColor: "white",
+    padding: 12,
+    borderRadius: 8,
+    flexWrap: "wrap",
+  },
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 8,
+  },
+  statusText: {
+    fontSize: 14,
+    color: "#6B7280",
+  },
+  recommendationText: {
+    fontSize: 16,
+    color: "#374151",
+    lineHeight: 24,
+    marginTop: 8,
+    flexWrap: "wrap",
+  },
+  updatedAtText: {
+    fontSize: 12,
+    color: "#9CA3AF",
+    fontStyle: "italic",
+  },
+  professionalContainer: {
+    backgroundColor: "white",
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 16,
+  },
+  professionalHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 4,
+  },
+  professionalName: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#374151",
+    marginLeft: 8,
+    flex: 1,
+  },
+  professionalRole: {
+    fontSize: 13,
+    color: "#4B5563",
+    marginTop: 4,
+    marginLeft: 24,
+    fontStyle: "italic",
+  },
+  dateText: {
+    fontSize: 12,
+    color: "#9CA3AF",
+    marginTop: 8,
+    marginLeft: 24,
+  },
+  dotSeparator: {
+    marginHorizontal: 8,
+  },
+  recommendationTextContainer: {
+    backgroundColor: "white",
+    padding: 16,
+    borderRadius: 8,
   },
 });
 export default TrainingScreen;

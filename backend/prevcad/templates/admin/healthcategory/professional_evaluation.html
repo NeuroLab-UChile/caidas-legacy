@@ -1,0 +1,269 @@
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<div id="alertMessage" class="hidden fixed top-4 right-4 max-w-sm z-50" role="alert"></div>
+
+<div class="professional-evaluation bg-white rounded-lg shadow p-4">
+    {% if evaluation_form %}
+        <!-- Estado de la evaluación -->
+        <div class="evaluation-status mb-4">
+            {% if evaluation_form.completed_date %}
+                <div class="flex items-center gap-2 text-green-600">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                    </svg>
+                    <span class="font-medium">
+                        Completado el {{ evaluation_form.completed_date|date:"d/m/Y H:i" }}
+                    </span>
+                </div>
+            {% else %}
+                <div class="flex items-center gap-2 text-yellow-600">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                    </svg>
+                    <span class="font-medium">
+                        {% if evaluation_form.is_draft %}
+                            Borrador
+                        {% else %}
+                            Pendiente de evaluación
+                        {% endif %}
+                    </span>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Formulario de evaluación profesional -->
+        <form method="post" class="mb-6">
+            {% csrf_token %}
+            <div class="space-y-6">
+                <!-- Observaciones -->
+                <div>
+                    <label for="observations" class="block text-sm font-medium text-gray-700">
+                        Observaciones
+                    </label>
+                    <div class="mt-1">
+                        <textarea
+                            id="observations"
+                            name="professional_responses[observations]"
+                            rows="4"
+                            class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                            placeholder="Ingrese sus observaciones profesionales aquí..."
+                        >{{ professional_responses.observations|default:"" }}</textarea>
+                    </div>
+                </div>
+
+                <!-- Diagnóstico -->
+                <div>
+                    <label for="diagnosis" class="block text-sm font-medium text-gray-700">
+                        Diagnóstico
+                    </label>
+                    <div class="mt-1">
+                        <textarea
+                            id="diagnosis"
+                            name="professional_responses[diagnosis]"
+                            rows="4"
+                            class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                            placeholder="Ingrese el diagnóstico aquí..."
+                        >{{ professional_responses.diagnosis|default:"" }}</textarea>
+                    </div>
+                </div>
+
+                <!-- Botones de acción -->
+                <div class="flex justify-end space-x-3">
+                    <button 
+                        type="submit" 
+                        name="save_draft" 
+                        value="true"
+                        class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                    >
+                        Guardar borrador
+                    </button>
+                    <button 
+                        type="button"
+                        class="save-evaluation inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                        data-complete="true"
+                    >
+                        Completar evaluación
+                    </button>
+                </div>
+            </div>
+        </form>
+
+        <!-- Respuestas profesionales previas -->
+        <div class="professional-responses space-y-4">
+            {% for key, response in professional_responses.items %}
+                {% if key != 'observations' and key != 'diagnosis' %}
+                    <div class="response-item bg-gray-50 p-4 rounded-lg">
+                        <div class="font-medium text-gray-700 mb-2">
+                            {{ response.question }}
+                        </div>
+                        <div class="text-gray-600 whitespace-pre-wrap">
+                            {{ response.answer|default:"Sin respuesta" }}
+                        </div>
+                    </div>
+                {% endif %}
+            {% empty %}
+                <div class="text-center py-8 bg-gray-50 rounded-lg">
+                    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                    </svg>
+                    <h3 class="mt-2 text-sm font-medium text-gray-900">
+                        No hay respuestas adicionales registradas
+                    </h3>
+                    <p class="mt-1 text-sm text-gray-500">
+                        Solo se muestran las respuestas que no son observaciones ni diagnóstico.
+                    </p>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <!-- Estado sin formulario -->
+        <div class="text-center py-8 bg-gray-50 rounded-lg">
+            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+            </svg>
+            <h3 class="mt-2 text-sm font-medium text-gray-900">
+                Sin formulario de evaluación
+            </h3>
+            <p class="mt-1 text-sm text-gray-500">
+                No se ha creado el formulario de evaluación profesional.
+            </p>
+        </div>
+    {% endif %}
+</div>
+
+<script>
+function showAlert(message, type = 'success') {
+    const alertDiv = document.getElementById('alertMessage');
+    const colors = {
+        success: 'bg-green-100 border-green-500 text-green-700',
+        error: 'bg-red-100 border-red-500 text-red-700'
+    };
+    
+    alertDiv.className = `fixed top-4 right-4 max-w-sm z-50 p-4 rounded-lg border-l-4 ${colors[type]} animate-fade-in`;
+    alertDiv.innerHTML = `
+        <div class="flex items-center">
+            <div class="flex-shrink-0">
+                ${type === 'success' ? `
+                    <svg class="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                    </svg>
+                ` : `
+                    <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+                    </svg>
+                `}
+            </div>
+            <div class="ml-3">
+                <p class="text-sm font-medium">
+                    ${message}
+                </p>
+            </div>
+        </div>
+    `;
+    
+    alertDiv.classList.remove('hidden');
+    
+    // Ocultar después de 3 segundos
+    setTimeout(() => {
+        alertDiv.classList.add('hidden');
+    }, 3000);
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('professionalEvaluationForm');
+    const buttons = document.querySelectorAll('.save-evaluation');
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    
+    // Obtener el ID limpio de la URL actual
+    const path = window.location.pathname;
+    const match = path.match(/\/healthcategory\/(\d+)/);
+    const categoryId = match ? match[1] : null;
+    
+    console.log('ID de categoría extraído:', categoryId);  // Debug
+    
+    if (!categoryId) {
+        console.error('No se pudo extraer el ID de la categoría de la URL');
+        return;
+    }
+    
+    buttons.forEach(button => {
+        button.addEventListener('click', async function(e) {
+            e.preventDefault();
+            const complete = this.dataset.complete === 'true';
+            
+            try {
+                // Construir la URL correcta usando el ID limpio
+                const url = `/admin/prevcad/healthcategory/${categoryId}/save-professional-evaluation/`;
+                
+                console.log('URL de la petición:', url);  // Debug
+                
+                const requestData = {
+                    professional_responses: {
+                        observations: document.getElementById('observations').value,
+                        diagnosis: document.getElementById('diagnosis').value
+                    },
+                    complete: complete
+                };
+                
+                console.log('Datos a enviar:', requestData);  // Debug
+                
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: JSON.stringify(requestData)
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('Error response:', errorText);
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                console.log('Respuesta del servidor:', data);
+                
+                if (data.success) {
+                    await Swal.fire({
+                        icon: 'success',
+                        title: complete ? 'Evaluación completada' : 'Borrador guardado',
+                        text: data.message,
+                        confirmButtonText: 'Aceptar',
+                        confirmButtonColor: '#4F46E5'
+                    });
+                    
+                    window.location.reload();
+                } else {
+                    await Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: data.error || 'Ha ocurrido un error al guardar',
+                        confirmButtonColor: '#EF4444'
+                    });
+                }
+            } catch (error) {
+                console.error('Error completo:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Ha ocurrido un error al procesar la solicitud: ' + error.message,
+                    confirmButtonColor: '#EF4444'
+                });
+            }
+        });
+    });
+});
+</script>
+
+<style>
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-1rem); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+    animation: fadeIn 0.3s ease-out;
+}
+</style>
