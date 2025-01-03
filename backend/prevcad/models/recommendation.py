@@ -35,6 +35,7 @@ class Recommendation(models.Model):
     signed_at = models.DateTimeField(null=True, blank=True)
     updated_by = models.CharField(max_length=150, blank=True)
     updated_at = models.DateTimeField(auto_now=True)
+    use_default = models.BooleanField(default=False)
 
     def save(self, *args, **kwargs):
         # Si es nuevo y no tiene texto, usar el texto por defecto

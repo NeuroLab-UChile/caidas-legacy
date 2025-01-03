@@ -113,22 +113,29 @@ class HealthCategoryAdmin(admin.ModelAdmin):
             try:
                 data = json.loads(request.body)
                 health_category = self.get_object(request, object_id)
-                
-                # Obtener o crear la recomendación
                 recommendation = health_category.get_or_create_recommendation()
                 
-                # Actualizar los campos
-                if 'text' in data:
-                    recommendation.text = data['text']
-                if 'status_color' in data:
-                    recommendation.status_color = data['status_color']
-                if 'is_draft' in data:
-                    recommendation.is_draft = data['is_draft']
-                    # Si se está publicando, verificar si debe firmarse
-                    if not data['is_draft'] and data.get('sign', False):
-                        recommendation.is_signed = True
-                        recommendation.signed_by = request.user.username
-                        recommendation.signed_at = timezone.now()
+                recommendation.use_default = data.get('use_default', False)
+                recommendation.status_color = data.get('status_color', 'gris')
+                
+                if not recommendation.use_default:
+                    recommendation.text = data.get('text', '')
+                else:
+                    # Usar el texto por defecto según el estado
+                    status_map = {
+                        'verde': 'no_risk',
+                        'amarillo': 'prev_risk',
+                        'rojo': 'risk'
+                    }
+                    default_recommendations = health_category.template.default_recommendations or {}
+                    status_key = status_map.get(recommendation.status_color)
+                    recommendation.text = default_recommendations.get(status_key, '')
+
+                recommendation.is_draft = data.get('is_draft', True)
+                if data.get('is_signed'):
+                    recommendation.is_signed = True
+                    recommendation.signed_by = request.user.username
+                    recommendation.signed_at = timezone.now()
                 
                 recommendation.updated_by = request.user.username
                 recommendation.save()
@@ -138,6 +145,7 @@ class HealthCategoryAdmin(admin.ModelAdmin):
                     'recommendation': {
                         'text': recommendation.text,
                         'status_color': recommendation.status_color,
+                        'use_default': recommendation.use_default,
                         'is_draft': recommendation.is_draft,
                         'is_signed': recommendation.is_signed,
                         'signed_by': recommendation.signed_by,
@@ -265,13 +273,9 @@ class HealthCategoryAdmin(admin.ModelAdmin):
         recommendation = obj.get_or_create_recommendation()
         context = {
             'recommendation': recommendation,
+            'health_category': obj,
             'default_recommendations': obj.template.default_recommendations or {},
-            'status_colors': [
-                ('verde', 'Verde'),
-                ('amarillo', 'Amarillo'),
-                ('rojo', 'Rojo'),
-                ('gris', 'Gris')
-            ]
+            'health_category_id': obj.id,
         }
         return mark_safe(render_to_string(
             'admin/healthcategory/recommendation_editor.html',

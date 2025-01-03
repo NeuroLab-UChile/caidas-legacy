@@ -2,8 +2,8 @@ import json
 import uuid
 import os
 from django.http import JsonResponse
-from django.views.decorators.http import require_POST
-from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST, require_http_methods
+from django.views.decorators.csrf import csrf_exempt, csrf_protect
 from django.shortcuts import get_object_or_404
 from django.core.files.storage import default_storage
 from django.conf import settings
@@ -11,6 +11,12 @@ from prevcad.models import CategoryTemplate
 import logging
 import time
 from prevcad.decorators import doctor_required
+from django.contrib.auth.decorators import user_passes_test
+
+
+from django.utils import timezone
+from prevcad.models import HealthCategory
+
 logger = logging.getLogger(__name__)
 
 @require_POST
@@ -174,3 +180,56 @@ def handle_uploaded_file(file):
     
     # Retornar la ruta relativa con el formato correcto
     return f'/media/uploads/{file_name}'  # Añadimos /media/ al inicio 
+
+
+@require_http_methods(["POST"])
+@csrf_protect
+@user_passes_test(lambda u: u.is_staff)
+def update_recommendation(request, object_id):
+    try:
+        data = json.loads(request.body.decode('utf-8'))
+        print("Datos recibidos:", data)
+        
+        health_category = get_object_or_404(HealthCategory, id=object_id)
+        recommendation = health_category.recommendation
+
+        # Actualizar los campos
+        recommendation.use_default = data.get('use_default', False)
+        recommendation.status_color = data.get('status_color', 'gris')
+        recommendation.text = data.get('text', '')
+        recommendation.is_draft = data.get('is_draft', True)
+        
+        if data.get('sign'):
+            recommendation.is_signed = True
+            recommendation.signed_by = request.user.username
+            recommendation.signed_at = timezone.now()
+        
+        recommendation.updated_by = request.user.username
+        recommendation.save()
+        
+        return JsonResponse({
+            'status': 'success',
+            'recommendation': {
+                'text': recommendation.text,
+                'status_color': recommendation.status_color,
+                'use_default': recommendation.use_default,
+                'is_draft': recommendation.is_draft,
+                'is_signed': recommendation.is_signed,
+                'signed_by': recommendation.signed_by,
+                'signed_at': recommendation.signed_at.isoformat() if recommendation.signed_at else None,
+                'updated_by': recommendation.updated_by,
+                'updated_at': recommendation.updated_at.isoformat()
+            }
+        })
+
+    except json.JSONDecodeError as e:
+        return JsonResponse({
+            'status': 'error',
+            'message': 'Invalid JSON data'
+        }, status=400)
+    except Exception as e:
+        logger.error(f"Error updating recommendation: {str(e)}", exc_info=True)
+        return JsonResponse({
+            'status': 'error',
+            'message': str(e)
+        }, status=400) 
