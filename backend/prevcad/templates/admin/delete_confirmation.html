@@ -112,7 +112,7 @@
                 {% if is_popup %}<input type="hidden" name="{{ is_popup_var }}" value="1">{% endif %}
                 {% if to_field %}<input type="hidden" name="{{ to_field_var }}" value="{{ to_field }}">{% endif %}
                 <input type="submit"
-                       value="{% translate 'Yes, I’m sure' %}" class="button mr-2 text-white bg-primary-600 hover:bg-primary-700 focus:ring-primary-500">
+                       value="{% translate 'Yes, I’m sure' %}" class="button mr-2 text-dark bg-primary-500 hover:bg-primary-700 focus:ring-primary-500">
                 <a href="#" class="button cancel-link text-light-900 dark:text-dark-900 bg-light-100 dark:bg-dark-100 hover:bg-light-200 dark:hover:bg-dark-200 focus:ring-light-50 dark:focus:ring-dark-50">{% translate "No, take me back" %}</a>
             </div>
         </form>

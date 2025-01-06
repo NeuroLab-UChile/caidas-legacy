@@ -51,6 +51,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 console.log('Intentando guardar con:', {
                     text: textarea.value,
+                    status_color: statusColor.value,
                     categoryId: categoryId
                 });
     
@@ -65,6 +66,9 @@ document.addEventListener('DOMContentLoaded', function() {
                         },
                         body: JSON.stringify({
                             recommendation_text: textarea.value,
+                            status_color: statusColor.value,
+                            is_draft: isDraft.checked,
+                            
                             debug_info: {
                                 timestamp: new Date().toISOString(),
                                 textLength: textarea.value.length
@@ -195,6 +199,7 @@ document.addEventListener('DOMContentLoaded', function() {
         try {
             const payload = {
                 recommendation_text: recommendationText,
+                status_color: statusColor,
                 debug_info: {
                     timestamp: new Date().toISOString(),
                     textLength: recommendationText.length

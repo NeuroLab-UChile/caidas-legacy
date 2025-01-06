@@ -19,7 +19,6 @@ class HealthCategoryAdmin(admin.ModelAdmin):
     list_display = [
         'get_user_info',
         'get_template_name',
-        'get_completion_status',
         'get_completion_date',
         'get_recommendation_status'
     ]
@@ -115,47 +114,178 @@ class HealthCategoryAdmin(admin.ModelAdmin):
     get_completion_status.short_description = "Estado"
 
     def get_completion_date(self, obj):
+        """Muestra la fecha de completado con formato mejorado"""
         try:
-            return obj.evaluation_form.completed_date
-        except:
-            return None
+            completed_date = obj.evaluation_form.completed_date
+            if not completed_date:
+                return format_html(
+                    '<span style="'
+                    'color: #6B7280;'
+                    'font-size: 0.875rem;'
+                    'font-style: italic;'
+                    '">No completado</span>'
+                )
+
+            # Formatear la fecha en español
+            from django.utils import formats
+            from django.utils.timezone import localtime
+            
+            # Convertir a zona horaria local
+            local_date = localtime(completed_date)
+            
+            # Calcular tiempo transcurrido
+            from django.utils.timesince import timesince
+            time_ago = timesince(local_date)
+            
+            # Formatear fecha completa
+            formatted_date = formats.date_format(local_date, "j \d\e F \d\e Y, H:i")
+            
+            return format_html(
+                '<div style="'
+                'display: flex;'
+                'flex-direction: column;'
+                'gap: 4px;'
+                '">'
+                '<div style="'
+                'display: flex;'
+                'align-items: center;'
+                'gap: 6px;'
+                'color: #059669;'  # Verde esmeralda
+                'font-weight: 500;'
+                'font-size: 0.875rem;'
+                '">'
+                '<span style="'
+                'display: inline-block;'
+                'width: 8px;'
+                'height: 8px;'
+                'background-color: #059669;'
+                'border-radius: 50%;'
+                '"></span>'
+                'Completado'
+                '</div>'
+                '<div style="'
+                'font-size: 0.875rem;'
+                'color: #374151;'  # Gris oscuro
+                '">{}</div>'
+                '<div style="'
+                'font-size: 0.75rem;'
+                'color: #6B7280;'  # Gris medio
+                'font-style: italic;'
+                '">hace {}</div>'
+                '</div>',
+                formatted_date,
+                time_ago
+            )
+        except Exception as e:
+            return format_html(
+                '<span style="'
+                'color: #6B7280;'
+                'font-size: 0.875rem;'
+                'font-style: italic;'
+                '">Sin fecha de completado</span>'
+            )
+
     get_completion_date.short_description = "Fecha de Completado"
 
     def get_recommendation_status(self, obj):
+        """Muestra el estado de la recomendación con estilos mejorados"""
         try:
             recommendation = obj.recommendation
-            status_colors = {
-                'verde': ('bg-green-100 text-green-800', '●'),
-                'amarillo': ('bg-yellow-100 text-yellow-800', '●'),
-                'rojo': ('bg-red-100 text-red-800', '●'),
-                'gris': ('bg-gray-100 text-gray-600', '●')
+            
+            # Configuración de estados con estilos y símbolos
+            status_config = {
+                'verde': {
+                    'color': '#059669',  # Verde esmeralda
+                    'bg': '#ECFDF5',
+                    'border': '#A7F3D0',
+                    'icon': '✓',
+                    'label': 'Favorable'
+                },
+                'amarillo': {
+                    'color': '#D97706',  # Ámbar
+                    'bg': '#FFFBEB',
+                    'border': '#FDE68A',
+                    'icon': '⚠',
+                    'label': 'Precaución'
+                },
+                'rojo': {
+                    'color': '#DC2626',  # Rojo
+                    'bg': '#FEF2F2',
+                    'border': '#FECACA',
+                    'icon': '!',
+                    'label': 'Atención'
+                },
+                'gris': {
+                    'color': '#6B7280',  # Gris
+                    'bg': '#F9FAFB',
+                    'border': '#E5E7EB',
+                    'icon': '○',
+                    'label': 'Pendiente'
+                }
             }
-            color_class, dot = status_colors.get(recommendation.status_color, status_colors['gris'])
             
-            # Mostrar estado de publicación y firma
-            status_text = []
+            # Obtener configuración del estado actual
+            status = status_config.get(recommendation.status_color, status_config['gris'])
+            
+            # Determinar estado de publicación
+            publication_status = []
             if recommendation.is_draft:
-                status_text.append("Borrador")
+                publication_status.append(("Borrador", "#6B7280"))  # Gris
             else:
-                status_text.append("Publicado")
+                publication_status.append(("Publicado", "#059669"))  # Verde
                 if recommendation.is_signed:
-                    status_text.append("Firmado")
+                    publication_status.append(("Firmado", "#2563EB"))  # Azul
             
+            # Construir el HTML con estilos inline (para no depender de Tailwind)
+            status_html = f'''
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <div style="
+                        display: inline-flex;
+                        align-items: center;
+                        background-color: {status['bg']};
+                        color: {status['color']};
+                        border: 1px solid {status['border']};
+                        padding: 4px 12px;
+                        border-radius: 9999px;
+                        font-size: 0.75rem;
+                        font-weight: 500;
+                        line-height: 1rem;
+                    ">
+                        <span style="margin-right: 4px;">{status['icon']}</span>
+                        {status['label']}
+                    </div>
+                    <div style="
+                        display: flex;
+                        gap: 8px;
+                        font-size: 0.75rem;
+                    ">
+            '''
+            
+            # Agregar pills de estado
+            for label, color in publication_status:
+                status_html += f'''
+                    <span style="
+                        color: {color};
+                        background-color: {color}15;
+                        padding: 2px 8px;
+                        border-radius: 4px;
+                        font-weight: 500;
+                    ">{label}</span>
+                '''
+            
+            status_html += '</div></div>'
+            
+            return format_html(status_html)
+            
+        except Exception as e:
             return format_html(
-                '<div class="flex flex-col gap-2">'
-                '<span class="{} px-2 py-1 rounded-full text-xs font-medium">'
-                '{} {}</span>'
-                '<span class="text-xs text-gray-500">{}</span>'
-                '</div>',
-                color_class,
-                dot,
-                recommendation.status_color.capitalize(),
-                ' • '.join(status_text)
+                '<span style="'
+                'color: #6B7280;'
+                'font-size: 0.75rem;'
+                'font-style: italic;'
+                '">Sin recomendación</span>'
             )
-        except:
-            return format_html(
-                '<span class="text-xs text-gray-500">Sin recomendación</span>'
-            )
+
     get_recommendation_status.short_description = "Estado de Recomendación"
 
     def get_detailed_responses(self, obj):
@@ -341,6 +471,9 @@ class HealthCategoryAdmin(admin.ModelAdmin):
             if request.method == 'POST':
                 data = json.loads(request.body)
                 recommendation_text = data.get('recommendation_text', '').strip()
+                status_color = data.get('status_color', '').strip()
+                is_draft = data.get('is_draft', False)
+
                 
                 # Obtener nombre completo del profesional
                 professional_name = request.user.get_full_name() or request.user.username
@@ -380,8 +513,8 @@ class HealthCategoryAdmin(admin.ModelAdmin):
                 recommendation.professional_role = professional_role
                 recommendation.updated_by = request.user.username
                 recommendation.updated_at = timezone.now()
-                recommendation.is_draft = False
-                
+                recommendation.is_draft = is_draft
+                recommendation.status_color = status_color
                 # Debug antes de guardar
                 print(f"DEBUG - Antes de guardar:")
                 print(f"professional_role: {recommendation.professional_role}")
@@ -425,8 +558,7 @@ class HealthCategoryAdmin(admin.ModelAdmin):
     class Media:
         css = {
             'all': (
-                'https://cdn.tailwindcss.com',
-                'admin/css/forms.css',
+                'admin/css/custom_admin.css',
             )
         }
         js = (

@@ -20,10 +20,10 @@ class HealthCategorySerializer(serializers.ModelSerializer):
     training_form = serializers.SerializerMethodField()
 
     STATUS_COLORS = {
-        'verde': {'color': '#008000', 'text': '✅ No Riesgoso'},
-        'amarillo': {'color': '#FFFF00', 'text': '🟡 Poco Riesgoso'},
-        'rojo': {'color': '#FF0000', 'text': '🔴 Riesgoso'},
-        'gris': {'color': '#808080', 'text': '⚪️ Neutral'},
+        'verde': {'color': '#008000', 'text': 'No Riesgoso'},
+        'amarillo': {'color': '#FFFF00', 'text': 'Poco Riesgoso'},
+        'rojo': {'color': '#FF0000', 'text': 'Riesgoso'},
+        'gris': {'color': '#808080', 'text': 'Neutral'},
     }
 
     class Meta:

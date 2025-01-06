@@ -8,7 +8,7 @@
                 </label>
                 <input type="text" name="{{ search_var }}" value="{{ cl.query }}" id="searchbar" autofocus>
                 <input type="submit"
-                       class="mx-2 search-button text-white bg-primary-600 hover:bg-primary-700 focus:ring-primary-500"
+                       class="mx-2 search-button text-dark bg-primary-500 hover:bg-primary-700 focus:ring-primary-500"
                        value="{% translate 'Search' %}">
                 {% if show_result_count %}
                     <span class="small quiet">{% blocktranslate count counter=cl.result_count %}{{ counter }} result

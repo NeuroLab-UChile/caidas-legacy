@@ -27,12 +27,12 @@
     @apply text-light-500 dark:text-dark-500;
   }
 
-  input[type='text'],
-  input[type='password'],
-  input[type='email'],
-  input[type='url'],
-  input[type='number'],
-  input[type='tel'],
+  input[type="text"],
+  input[type="password"],
+  input[type="email"],
+  input[type="url"],
+  input[type="number"],
+  input[type="tel"],
   textarea,
   select,
   .vIntegerField,
@@ -40,11 +40,11 @@
     @apply text-light-900 dark:text-dark-900 mt-1 block w-full rounded-md bg-light-100 dark:bg-dark-100 focus:border-light-500 dark:focus:border-dark-500 focus:bg-light-0 dark:focus:bg-dark-0 focus:ring-0 !important;
   }
 
-  input[type='submit'] {
+  input[type="submit"] {
     @apply cursor-pointer;
   }
 
-  input[type='checkbox'] {
+  input[type="checkbox"] {
     @apply bg-light-0 dark:bg-dark-0;
   }
 
@@ -103,7 +103,7 @@
     @apply inline-flex items-center mt-1 px-4 py-3 text-sm font-medium rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2;
   }
 
-  select[name='action'] {
+  select[name="action"] {
     @apply mx-2;
   }
 
@@ -156,7 +156,7 @@
   }
 
   .paginator > .this-page {
-    @apply rounded bg-primary-600 text-white relative inline-flex items-center px-4 py-2 border border-light-300 dark:border-dark-300 text-sm font-medium hover:bg-primary-700;
+    @apply rounded bg-primary0 text-white relative inline-flex items-center px-4 py-2 border border-light-300 dark:border-dark-300 text-sm font-medium hover:bg-primary-700;
   }
 
   .object-tools.change-form {
@@ -165,7 +165,7 @@
 
   .object-tools.change-form > li > a,
   .object-tools.change-form > li > button {
-    @apply mr-2 bg-primary-600 text-white relative inline-flex items-center px-4 py-2 border border-light-300 dark:border-dark-300 text-sm font-medium hover:bg-primary-700 rounded;
+    @apply mr-2 bg-primary0 text-dark relative inline-flex items-center px-4 py-2 border border-light-300 dark:border-dark-300 text-sm font-medium hover:bg-primary-700 rounded;
   }
 
   .selector h2,
