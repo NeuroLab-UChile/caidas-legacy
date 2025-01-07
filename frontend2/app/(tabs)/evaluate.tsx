@@ -28,12 +28,18 @@ import { ProfessionalEvaluation } from "@/components/ProfessionalEvaluation";
 
 interface NodeResponse {
   nodeId: number;
-  response: {
-    selectedOption?: number;
-    selectedOptions?: number[];
-    answer?: string;
-    value?: number;
+  response: FormattedResponse;
+}
+
+interface FormattedResponse {
+  id: number;
+  type: ActivityNodeType;
+  question: string;
+  metadata: {
+    timestamp: string;
+    version: string;
   };
+  answer: any; // Tipo específico según el tipo de nodo
 }
 
 interface EvaluationState {
@@ -46,6 +52,7 @@ interface EvaluationState {
     nodes: QuestionNode[];
   };
 }
+
 const getWelcomeText = (category: Category) => {
   if (category.evaluation_type.type === "PROFESSIONAL") {
     return {
@@ -119,7 +126,6 @@ const initializeEvaluationState = (
     };
   }
 
-  // Para autoevaluación, mantener la lógica original
   const nodes = category?.evaluation_form?.question_nodes || [];
   const existingResponses = Object.entries(
     category?.evaluation_form?.responses || {}
@@ -133,7 +139,7 @@ const initializeEvaluationState = (
   return {
     currentNodeId: nodes[0]?.id || null,
     responses: existingResponses,
-    completed: nodes.length === existingResponses.length && nodes.length > 0,
+    completed: Boolean(category?.evaluation_form?.completed_date),
     history: [],
     evaluationResult: {
       initial_node_id: nodes[0]?.id || null,
@@ -171,21 +177,19 @@ const EvaluateScreen = () => {
 
   useEffect(() => {
     if (selectedCategory) {
-      console.log("Evaluation Type:", {
-        type: selectedCategory.evaluation_type?.type,
-        label: selectedCategory.evaluation_type?.label,
-        fullObject: selectedCategory.evaluation_type,
-      });
-
       const isProfessional =
         selectedCategory.evaluation_type?.type === "PROFESSIONAL";
-      console.log("Is Professional:", isProfessional);
+      const newState = initializeEvaluationState(selectedCategory);
 
-      setEvaluationState(initializeEvaluationState(selectedCategory));
+      setEvaluationState(newState);
+
+      // Corregir la condición para mostrar la pantalla de bienvenida
       setShowWelcome(
         !isProfessional &&
-          !evaluationState.completed &&
-          !evaluationState.responses.length
+          (!selectedCategory.evaluation_form?.completed_date ||
+            selectedCategory.evaluation_form?.responses === null ||
+            Object.keys(selectedCategory.evaluation_form?.responses || {})
+              .length === 0)
       );
     }
   }, [selectedCategory]);
@@ -205,24 +209,30 @@ const EvaluateScreen = () => {
             try {
               setLoading(true);
 
-              // Limpiar las recomendaciones del doctor
+              if (selectedCategory?.id) {
+                // Limpiar las respuestas en el backend
+                await apiService.categories.saveResponses(
+                  selectedCategory.id,
+                  []
+                );
 
-              // Reiniciar el estado de evaluación
-              const nodes =
-                selectedCategory?.evaluation_form?.question_nodes || [];
-              setEvaluationState({
-                currentNodeId: nodes[0]?.id || null,
-                responses: [],
-                completed: false,
-                history: [],
-                evaluationResult: {
-                  initial_node_id: nodes[0]?.id || null,
-                  nodes,
-                },
-              });
+                // Reiniciar el estado local
+                const nodes =
+                  selectedCategory?.evaluation_form?.question_nodes || [];
+                setEvaluationState({
+                  currentNodeId: nodes[0]?.id || null,
+                  responses: [],
+                  completed: false,
+                  history: [],
+                  evaluationResult: {
+                    initial_node_id: nodes[0]?.id || null,
+                    nodes,
+                  },
+                });
 
-              // Actualizar las categorías después de limpiar las recomendaciones
-              await fetchCategories();
+                // Mostrar la pantalla de bienvenida
+                renderContent();
+              }
             } catch (error) {
               console.error("Error al iniciar nueva evaluación:", error);
               Alert.alert("Error", "No se pudo iniciar una nueva evaluación");
@@ -317,8 +327,6 @@ const EvaluateScreen = () => {
       if (!node) throw new Error("Nodo no encontrado");
 
       // Log para debug
-      console.log("Node:", node);
-      console.log("Response:", response);
 
       const formattedResponse = formatNodeResponse(node, response);
 
@@ -397,7 +405,6 @@ const EvaluateScreen = () => {
   useEffect(() => {
     if (selectedCategory) {
       const { icon, ...categoryWithoutIcon } = selectedCategory;
-      console.log("selectedCategory (without icon):", categoryWithoutIcon);
     }
   }, [selectedCategory]);
 
@@ -426,18 +433,12 @@ const EvaluateScreen = () => {
   };
 
   const renderDoctorReview = () => {
-    if (!selectedCategory?.recommendations) {
-      return (
-        <View style={{ padding: 16 }}>
-          <Text>Espera a que el doctor revise tu evaluación</Text>
-        </View>
-      );
-    }
+    if (!selectedCategory?.recommendations) return null;
 
-    const { status, professional, updated_at, text } =
+    const { status, text, professional, updated_at } =
       selectedCategory.recommendations;
 
-    if (selectedCategory.is_draft || !status || !text) {
+    if (!status || !text) {
       return (
         <View style={{ padding: 16 }}>
           <Text>Espera a que el doctor revise tu evaluación</Text>
@@ -447,9 +448,9 @@ const EvaluateScreen = () => {
 
     return (
       <DoctorRecommendations
-        statusColor={status}
+        status={status}
         recommendations={text}
-        updatedBy={professional?.name || ""}
+        professional={professional || { name: "", role: "" }}
         updatedAt={updated_at || ""}
       />
     );
@@ -468,26 +469,18 @@ const EvaluateScreen = () => {
 
   const renderContent = () => {
     if (!selectedCategory) return null;
-
-    // Debug
-    console.log("Category:", {
-      type: selectedCategory.evaluation_type?.type,
-      completed_date: selectedCategory.evaluation_form?.completed_date,
-      responses: selectedCategory.evaluation_form?.responses,
-    });
-
-    // Si es evaluación profesional
-    if (selectedCategory.evaluation_type?.type === "PROFESSIONAL") {
+    if (selectedCategory.evaluation_type.type === "PROFESSIONAL") {
       return <ProfessionalEvaluation />;
     }
 
-    // Para autoevaluaciones, verificar si está completada usando completed_date
-    if (selectedCategory.evaluation_form?.completed_date) {
+    if (evaluationState.completed) {
+      const status = getCategoryStatus(selectedCategory);
       return (
         <View style={styles.completedContainer}>
-          <Text style={styles.completedText}>
-            {getCategoryStatus(selectedCategory)?.text ||
-              "✅ Evaluación Completada"}
+          <Text
+            style={[styles.completedText, { color: status?.color || "#000" }]}
+          >
+            {status?.text || "✅ Evaluación Completada"}
           </Text>
           {renderDoctorReview()}
           <TouchableOpacity

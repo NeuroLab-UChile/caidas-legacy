@@ -11,6 +11,9 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from django.template.loader import TemplateDoesNotExist
 from urllib.parse import unquote
+from django.utils.formats import date_format
+from django.utils.timezone import localtime
+from django.utils.timesince import timesince
 
 
 
@@ -65,6 +68,24 @@ class HealthCategoryAdmin(admin.ModelAdmin):
    
     ]
 
+    def format_datetime(self, date):
+        """Función auxiliar para formatear fechas de manera consistente"""
+        if not date:
+            return None
+            
+        # Asegurar que la fecha está en UTC
+        if timezone.is_naive(date):
+            date = timezone.make_aware(date)
+            
+        # Convertir a hora local
+        local_date = timezone.localtime(date)
+        
+        return {
+            'iso': date.isoformat(),
+            'formatted': date_format(local_date, "j \d\e F \d\e Y, H:i"),
+            'timesince': timesince(local_date),
+        }
+
     def get_professional_evaluation(self, obj):
         """Renderiza el formulario de evaluación profesional"""
         if not hasattr(obj, 'template') or obj.template.evaluation_type != 'PROFESSIONAL':
@@ -73,6 +94,8 @@ class HealthCategoryAdmin(admin.ModelAdmin):
         try:
             evaluation_form = obj.get_or_create_evaluation_form()
             professional_responses = evaluation_form.professional_responses or {}
+
+            
             
             context = {
                 'health_category': obj,
@@ -110,79 +133,40 @@ class HealthCategoryAdmin(admin.ModelAdmin):
 
     def get_completion_status(self, obj):
         status = obj.get_status()
-        return "Completado" if status['is_completed'] else "Pendiente"
+        if status['is_completed']:
+            return "Completado"
+        elif status['is_draft']:
+            return "Pendiente"
+        else:
+            return "Pendiente"
     get_completion_status.short_description = "Estado"
 
     def get_completion_date(self, obj):
         """Muestra la fecha de completado con formato mejorado"""
         try:
-            completed_date = obj.evaluation_form.completed_date
-            if not completed_date:
+            date_info = self.format_datetime(obj.evaluation_form.completed_date)
+            if not date_info:
                 return format_html(
-                    '<span style="'
-                    'color: #6B7280;'
-                    'font-size: 0.875rem;'
-                    'font-style: italic;'
-                    '">No completado</span>'
+                    '<span style="color: #6B7280; font-style: italic;">No completado</span>'
                 )
 
-            # Formatear la fecha en español
-            from django.utils import formats
-            from django.utils.timezone import localtime
-            
-            # Convertir a zona horaria local
-            local_date = localtime(completed_date)
-            
-            # Calcular tiempo transcurrido
-            from django.utils.timesince import timesince
-            time_ago = timesince(local_date)
-            
-            # Formatear fecha completa
-            formatted_date = formats.date_format(local_date, "j \d\e F \d\e Y, H:i")
-            
             return format_html(
-                '<div style="'
-                'display: flex;'
-                'flex-direction: column;'
-                'gap: 4px;'
-                '">'
-                '<div style="'
-                'display: flex;'
-                'align-items: center;'
-                'gap: 6px;'
-                'color: #059669;'  # Verde esmeralda
-                'font-weight: 500;'
-                'font-size: 0.875rem;'
-                '">'
-                '<span style="'
-                'display: inline-block;'
-                'width: 8px;'
-                'height: 8px;'
-                'background-color: #059669;'
-                'border-radius: 50%;'
-                '"></span>'
-                'Completado'
+                '<div style="display: flex; flex-direction: column; gap: 4px;">'
+                '<div style="color: #059669; font-weight: 500;">'
+                '<span style="display: inline-block; width: 8px; height: 8px; '
+                'background-color: #059669; border-radius: 50%; margin-right: 6px;'
+                '"></span>Completado'
                 '</div>'
-                '<div style="'
-                'font-size: 0.875rem;'
-                'color: #374151;'  # Gris oscuro
-                '">{}</div>'
-                '<div style="'
-                'font-size: 0.75rem;'
-                'color: #6B7280;'  # Gris medio
-                'font-style: italic;'
-                '">hace {}</div>'
+                '<div style="color: #374151;">{}</div>'
+                '<div style="color: #6B7280; font-style: italic;">hace {}</div>'
                 '</div>',
-                formatted_date,
-                time_ago
+                date_info['formatted'],
+                date_info['timesince']
             )
         except Exception as e:
             return format_html(
-                '<span style="'
-                'color: #6B7280;'
-                'font-size: 0.875rem;'
-                'font-style: italic;'
-                '">Sin fecha de completado</span>'
+                '<span style="color: #6B7280; font-style: italic;">'
+                'Error al mostrar fecha: {}</span>', str(e)
             )
 
     get_completion_date.short_description = "Fecha de Completado"
@@ -451,11 +435,13 @@ class HealthCategoryAdmin(admin.ModelAdmin):
             
             evaluation_form.save()
 
+            date_info = self.format_datetime(evaluation_form.completed_date)
             return JsonResponse({
                 'success': True,
                 'message': 'Evaluación guardada correctamente',
                 'is_draft': evaluation_form.is_draft,
-                'completed_date': evaluation_form.completed_date.isoformat() if evaluation_form.completed_date else None
+                'completed_date': date_info['iso'] if date_info else None,
+                'formatted_date': date_info['formatted'] if date_info else None,
             })
 
         except Exception as e:
@@ -470,90 +456,51 @@ class HealthCategoryAdmin(admin.ModelAdmin):
             
             if request.method == 'POST':
                 data = json.loads(request.body)
-                recommendation_text = data.get('recommendation_text', '').strip()
-                status_color = data.get('status_color', '').strip()
-                is_draft = data.get('is_draft', False)
-
+                now = timezone.now()
                 
-                # Obtener nombre completo del profesional
-                professional_name = request.user.get_full_name() or request.user.username
-                
-                # Obtener roles del usuario de manera más robusta
-                professional_roles = []
-                
-                # 1. Primero intentar obtener roles de grupos
-                user_groups = request.user.groups.all()
-                if user_groups.exists():
-                    professional_roles.extend([group.name for group in user_groups])
-                
-                # 2. Si no hay grupos, usar roles basados en permisos
-                if not professional_roles:
-                    if request.user.is_superuser:
-                        professional_roles.append("Administrador")
-                    if request.user.is_staff:
-                        professional_roles.append("Personal Médico")
-                
-                # 3. Si aún no hay roles, usar rol por defecto
-                if not professional_roles:
-                    professional_roles.append("Profesional de la salud")
-                
-                # Unir roles y asegurarse de que no sea None
-                professional_role = " • ".join(professional_roles)
-                
-                # Debug para verificar
-                print(f"DEBUG - Información del profesional:")
-                print(f"Nombre: {professional_name}")
-                print(f"Roles encontrados: {professional_roles}")
-                print(f"Rol final: {professional_role}")
-                
-                # Actualizar recomendación
                 recommendation = category.get_or_create_recommendation()
-                recommendation.text = recommendation_text
-                recommendation.professional_name = professional_name
-                recommendation.professional_role = professional_role
+                recommendation.text = data.get('recommendation_text', '').strip()
+                recommendation.status_color = data.get('status_color', '').strip()
+                recommendation.is_draft = data.get('is_draft', False)
                 recommendation.updated_by = request.user.username
-                recommendation.updated_at = timezone.now()
-                recommendation.is_draft = is_draft
-                recommendation.status_color = status_color
-                # Debug antes de guardar
-                print(f"DEBUG - Antes de guardar:")
-                print(f"professional_role: {recommendation.professional_role}")
-                
+                recommendation.updated_at = now
+                recommendation.professional_name = request.user.get_full_name() or request.user.username
+                recommendation.professional_role = " • ".join(
+                    [group.name for group in request.user.groups.all()] or ["Profesional de la salud"]
+                )
+
+                if not recommendation.is_draft and data.get('is_signed'):
+                    recommendation.signed_by = request.user.username
+                    recommendation.signed_at = now
+
                 recommendation.save()
-                
-                # Verificar después de guardar
-                recommendation.refresh_from_db()
-                print(f"DEBUG - Después de guardar:")
-                print(f"professional_role: {recommendation.professional_role}")
-                
+
+                date_info = self.format_datetime(now)
                 return JsonResponse({
                     'status': 'success',
                     'message': 'Recomendación actualizada correctamente',
-                    'debug_info': {
-                        'professional_name': professional_name,
-                        'professional_role': professional_role
+                    'recommendation': {
+                        'updated_at': date_info['iso'],
+                        'formatted_date': date_info['formatted'],
+                        'timesince': date_info['timesince'],
+                        'professional': {
+                            'name': recommendation.professional_name,
+                            'role': recommendation.professional_role
+                        }
                     }
                 })
                 
         except HealthCategory.DoesNotExist:
-            print(f"No se encontró la categoría con ID: {category_id}")
             return JsonResponse({
                 'status': 'error',
                 'message': 'Categoría no encontrada'
             }, status=404)
             
         except Exception as e:
-            print(f"Error inesperado: {str(e)}")
-            import traceback
-            print("Traceback completo:")
-            print(traceback.format_exc())
             return JsonResponse({
                 'status': 'error',
                 'message': f'Error: {str(e)}'
             }, status=500)
-            
-        print("=== Fin de la Actualización ===\n")
-        return HttpResponseRedirect("../../")
 
     class Media:
         css = {

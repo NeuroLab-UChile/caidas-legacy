@@ -18,44 +18,49 @@ export interface QuestionNode {
  * Representa los resultados de una evaluación.
  */
 export interface EvaluationForm {
-  completed_date: string | null;
-  is_completed: boolean;
-  responses: Record<string, any>;
-  professional_responses: ProfessionalResponse | null;
-  updated_at: string | null;
-  is_draft: boolean;
-  type?: 'PROFESSIONAL' | 'SELF';
+  completed_date: string;
+  professional_responses?: ProfessionalResponses;
   question_nodes: QuestionNode[];
+  responses: Record<string, any>;
+  updated_at: string;
 }
 
 /**
- * Representa el estado de una categoría.
+ * Representa el estado de una categoría o recomendación.
  */
 export interface Status {
-  color: string; // Código de color (e.g., "#808080").
-  text: string; // Texto descriptivo del estado.
-  is_completed: boolean; // Indica si se completó.
-  is_draft: boolean; // Indica si está en borrador.
-  last_updated: string | null; // Última fecha de actualización.
-  professional_reviewed: boolean | null; // Si fue revisado por un profesional.
+  color: string;
+  text: string;
+  is_completed?: boolean;
+  is_draft?: boolean;
+  last_updated?: string;
+  professional_reviewed?: boolean;
 }
 
 /**
- * Representa las recomendaciones asociadas a una categoría.
+ * Representa las recomendaciones profesionales.
  */
 export interface Recommendation {
-  status: Status; // Estado de la recomendación.
-  text: string | null; // Texto de la recomendación.
-  updated_at: string | null; // Fecha de la última actualización.
-  is_draft: boolean; // Indica si está en borrador.
-  professional?: {
-    name: string; // Nombre del profesional que actualizó.
+  is_draft: boolean;
+  professional: {
+    name: string;
+    role: string;
   };
+  status: {
+    color: string;
+    text: string;
+  };
+  text: string;
+  updated_at: string;
 }
 
 /**
- * Representa el formulario de evaluación.
+ * Representa las respuestas profesionales.
  */
+export interface ProfessionalResponses {
+  diagnosis: string;
+  observations: string;
+}
 
 /**
  * Representa el formulario de entrenamiento.
@@ -78,26 +83,27 @@ export interface TrainingNode {
  * Representa una categoría de evaluación.
  */
 export interface Category {
-  is_draft: boolean;
-  // Identificación básica
-  id: number; // ID único.
-  name: string; // Nombre de la categoría.
-  icon?: string; // URL del ícono.
-  description?: string; // Descripción de la categoría.
-
-  // Evaluación
+  description: string;
+  evaluation_form: EvaluationForm;
   evaluation_type: {
-    type: 'PROFESSIONAL' | 'SELF';
     label: string;
+    type: 'PROFESSIONAL' | 'SELF';
   };
-  evaluation_form: EvaluationForm; // Formulario de evaluación.
-
-  // Estado y recomendaciones
-  status: Status; // Estado actual.
-  recommendations: Recommendation | null; // Recomendaciones asociadas.
-
-  // Entrenamiento
-  training_form: TrainingForm | null; // Formulario de entrenamiento.
+  id: number;
+  name: string;
+  recommendations: Recommendation;
+  status: {
+    color: string;
+    is_completed: boolean;
+    is_draft: boolean;
+    last_updated: string;
+    professional_reviewed: boolean;
+    text: string;
+  };
+  training_form?: {
+    training_nodes: TrainingNode[];
+  };
+  icon?: string;
 }
 
 /**
@@ -108,11 +114,4 @@ export interface RootNode {
   description: string;
   first_button_text: string;
   first_button_node_id: number;
-}
-
-interface ProfessionalResponse {
-  observations: string;
-  diagnosis: string;
-  professional_name: string;
-  evaluation_date: string;
 }

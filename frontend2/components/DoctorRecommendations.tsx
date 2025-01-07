@@ -4,19 +4,22 @@ import { theme } from "@/src/theme";
 import { formatDate } from "date-fns";
 
 interface DoctorRecommendationsProps {
-  statusColor: {
+  status: {
     color: string;
     text: string;
   };
   recommendations: string;
-  updatedBy: string;
+  professional: {
+    name: string;
+    role: string;
+  };
   updatedAt: string;
 }
 
 export const DoctorRecommendations: React.FC<DoctorRecommendationsProps> = ({
-  statusColor,
+  status,
   recommendations,
-  updatedBy,
+  professional,
   updatedAt,
 }) => {
   return (
@@ -28,15 +31,13 @@ export const DoctorRecommendations: React.FC<DoctorRecommendationsProps> = ({
               styles.statusDot,
               {
                 backgroundColor:
-                  statusColor?.color === "green"
+                  status?.color === "green"
                     ? "#28a745"
-                    : statusColor?.color || "#gray",
+                    : status?.color || "#gray",
               },
             ]}
           />
-          <Text style={styles.statusText}>
-            {statusColor?.text || "Sin evaluar"}
-          </Text>
+          <Text style={styles.statusText}>{status?.text || "Sin evaluar"}</Text>
         </View>
       </View>
 
@@ -49,10 +50,10 @@ export const DoctorRecommendations: React.FC<DoctorRecommendationsProps> = ({
         </Text>
       </View>
 
-      {updatedBy && (
+      {professional.name && (
         <View style={styles.updateInfo}>
           <Text style={styles.updateInfoText}>
-            Actualizado por: {updatedBy}
+            Actualizado por: {professional.name}
           </Text>
           {updatedAt && (
             <Text style={styles.updateInfoText}>Fecha: {updatedAt}</Text>

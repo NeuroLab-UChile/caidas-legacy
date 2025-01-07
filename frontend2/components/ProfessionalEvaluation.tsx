@@ -1,238 +1,231 @@
 import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, Platform } from "react-native";
 import { theme } from "@/src/theme";
 import { useCategories } from "@/app/contexts/categories";
-import { formatDate } from "date-fns";
-import { Ionicons } from "@expo/vector-icons";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
+import Ionicons from "@expo/vector-icons/Ionicons";
 
 export const ProfessionalEvaluation = () => {
   const { selectedCategory } = useCategories();
   const evaluationForm = selectedCategory?.evaluation_form;
-  const professional = selectedCategory?.recommendations?.professional;
+  const recommendations = selectedCategory?.recommendations;
+  const statusColor = recommendations?.status?.color || theme.colors.success;
 
-  const isCompleted = !!evaluationForm?.completed_date;
+  const { diagnosis, observations } =
+    evaluationForm?.professional_responses || {};
+  const professional = recommendations?.professional;
+  const evaluation_date = evaluationForm?.completed_date;
 
-  const renderProfessionalInfo = () => {
-    if (!isCompleted) {
-      return (
-        <View style={styles.pendingContainer}>
-          <View style={styles.iconContainer}>
-            <Ionicons name="medical" size={32} color={theme.colors.warning} />
-          </View>
-          <Text style={styles.pendingTitle}>Pendiente de Evaluación</Text>
-          <Text style={styles.pendingDescription}>
-            Esta evaluación debe ser realizada por un profesional de la salud.
-            Por favor, agenda una cita para completarla.
-          </Text>
-        </View>
-      );
-    }
-
-    const { diagnosis, observations } =
-      evaluationForm.professional_responses || {};
-    const professional_name = professional?.name;
-    const professional_role = professional?.role;
-    const evaluation_date = evaluationForm.completed_date;
-
-    return (
-      <View style={styles.completedContainer}>
-        <View style={styles.headerSection}>
-          <View style={styles.successIconContainer}>
-            <Ionicons
-              name="checkmark-circle"
-              size={32}
-              color={theme.colors.success}
-            />
-          </View>
-          <Text style={styles.completedTitle}>Evaluación Completada</Text>
-        </View>
-
-        <View style={styles.infoCard}>
-          {/* Información del Profesional */}
-          <View style={styles.professionalSection}>
-            <View style={styles.professionalHeader}>
-              <Ionicons
-                name="person"
-                size={24}
-                color={theme.colors.textSecondary}
-              />
-              <View style={styles.professionalInfo}>
-                <Text style={styles.professionalName}>{professional_name}</Text>
-                {professional_role && (
-                  <Text style={styles.professionalRole}>
-                    {professional_role}
-                  </Text>
-                )}
-              </View>
-            </View>
-            {evaluation_date && (
-              <Text style={styles.evaluationDate}>
-                Evaluado el{" "}
-                {formatDate(new Date(evaluation_date), "dd/MM/yyyy")}
-              </Text>
-            )}
-          </View>
-
-          {/* Diagnóstico y Observaciones */}
-          <View style={styles.evaluationDetails}>
-            {diagnosis && (
-              <View style={styles.detailSection}>
-                <View style={styles.detailHeader}>
-                  <Ionicons
-                    name="fitness"
-                    size={20}
-                    color={theme.colors.textSecondary}
-                  />
-                  <Text style={styles.detailLabel}>Diagnóstico</Text>
-                </View>
-                <Text style={styles.detailValue}>{diagnosis}</Text>
-              </View>
-            )}
-
-            {observations && (
-              <View style={styles.detailSection}>
-                <View style={styles.detailHeader}>
-                  <Ionicons
-                    name="clipboard"
-                    size={20}
-                    color={theme.colors.textSecondary}
-                  />
-                  <Text style={styles.detailLabel}>Observaciones</Text>
-                </View>
-                <Text style={styles.detailValue}>{observations}</Text>
-              </View>
-            )}
-          </View>
-        </View>
-      </View>
-    );
+  const formatDate = (date: string) => {
+    return format(new Date(date), "d 'de' MMMM, yyyy", { locale: es });
   };
 
-  return <View style={styles.container}>{renderProfessionalInfo()}</View>;
+  const getCardStyle = (index: number) => [
+    styles.card,
+    {
+      borderLeftColor: statusColor,
+      borderLeftWidth: 4,
+      shadowColor: statusColor,
+    },
+  ];
+
+  return (
+    <View style={styles.container}>
+      <View style={[styles.gradientBackground]}>
+        <View style={styles.content}>
+          {/* Header */}
+          <View style={styles.header}>
+            <View
+              style={[
+                styles.iconContainer,
+                { backgroundColor: `${statusColor}15` },
+              ]}
+            >
+              <Ionicons
+                name="checkmark-circle"
+                size={32}
+                color={theme.colors.text}
+              />
+            </View>
+            <Text style={styles.title}>Evaluación Profesional</Text>
+            <Text style={styles.subtitle}>
+              {recommendations?.status?.text || "Estado de la evaluación"}
+            </Text>
+          </View>
+
+          {/* Professional Info Card */}
+          {professional && (
+            <View style={getCardStyle(0)}>
+              <View style={styles.cardHeader}>
+                <Ionicons name="person" size={20} color={theme.colors.text} />
+                <Text style={styles.cardHeaderText}>
+                  Información del Profesional
+                </Text>
+              </View>
+              <Text style={styles.professionalInfo}>
+                <Text style={styles.boldText}>{professional.name}</Text>
+                {professional.role && (
+                  <Text style={styles.roleText}> - {professional.role}</Text>
+                )}
+              </Text>
+              {evaluation_date && (
+                <Text style={styles.dateText}>
+                  Evaluado el {formatDate(evaluation_date)}
+                </Text>
+              )}
+            </View>
+          )}
+
+          {/* Diagnosis Card */}
+          {diagnosis && (
+            <View style={getCardStyle(1)}>
+              <View style={styles.cardHeader}>
+                <Ionicons name="medical" size={20} color={theme.colors.text} />
+                <Text style={styles.cardHeaderText}>Diagnóstico</Text>
+              </View>
+              <Text style={styles.diagnosisText}>{diagnosis}</Text>
+            </View>
+          )}
+
+          {/* Observations Card */}
+          {observations && (
+            <View style={getCardStyle(2)}>
+              <View style={styles.cardHeader}>
+                <Ionicons
+                  name="clipboard"
+                  size={20}
+                  color={theme.colors.text}
+                />
+                <Text style={styles.cardHeaderText}>Observaciones</Text>
+              </View>
+              <Text style={styles.observationsText}>{observations}</Text>
+            </View>
+          )}
+
+          {/* Color Indicator */}
+          {recommendations?.status?.color && (
+            <View style={styles.colorIndicator}>
+              <Text style={styles.colorText}>
+                Color de recomendación profesional:
+              </Text>
+              <View
+                style={[styles.colorSquare, { backgroundColor: statusColor }]}
+              />
+            </View>
+          )}
+        </View>
+      </View>
+    </View>
+  );
 };
 
 const styles = StyleSheet.create({
   container: {
-    padding: 16,
+    flex: 1,
     backgroundColor: theme.colors.background,
   },
-  pendingContainer: {
-    backgroundColor: theme.colors.card,
-    borderRadius: 16,
-    padding: 24,
+  gradientBackground: {
+    flex: 1,
+    paddingHorizontal: 16,
+    paddingTop: 24,
+    paddingBottom: 32,
+  },
+  content: {
+    gap: 16,
+  },
+  header: {
     alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    marginBottom: 24,
   },
   iconContainer: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: `${theme.colors.warning}15`,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 16,
   },
-  pendingTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: theme.colors.text,
-    marginBottom: 12,
+  title: {
+    fontSize: 28,
+    fontWeight: "bold",
     textAlign: "center",
+    marginBottom: 8,
+    color: theme.colors.text,
   },
-  pendingDescription: {
-    fontSize: 16,
+  subtitle: {
+    fontSize: 18,
     color: theme.colors.textSecondary,
     textAlign: "center",
-    lineHeight: 24,
   },
-  completedContainer: {
-    gap: 16,
-  },
-  headerSection: {
-    alignItems: "center",
-    marginBottom: 8,
-  },
-  successIconContainer: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: `${theme.colors.success}15`,
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  completedTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: theme.colors.success,
-    textAlign: "center",
-  },
-  infoCard: {
-    backgroundColor: theme.colors.card,
+  card: {
+    backgroundColor: "#FFFFFF",
     borderRadius: 16,
     padding: 20,
-    gap: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    ...Platform.select({
+      ios: {
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.15,
+        shadowRadius: 8,
+        shadowColor: "#000",
+      },
+      android: {
+        elevation: 8,
+      },
+    }),
   },
-  professionalSection: {
-    borderBottomWidth: 1,
-    borderBottomColor: `${theme.colors.border}50`,
-    paddingBottom: 16,
-  },
-  professionalHeader: {
+  cardHeader: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 8,
+    marginBottom: 12,
   },
-  professionalInfo: {
-    marginLeft: 12,
-    flex: 1,
-  },
-  professionalName: {
+  cardHeaderText: {
     fontSize: 18,
     fontWeight: "600",
+    marginLeft: 8,
     color: theme.colors.text,
   },
-  professionalRole: {
-    fontSize: 14,
-    color: theme.colors.textSecondary,
-    marginTop: 2,
+  professionalInfo: {
+    fontSize: 16,
+    color: theme.colors.text,
+    marginBottom: 4,
   },
-  evaluationDate: {
-    fontSize: 14,
+  boldText: {
+    fontWeight: "600",
+  },
+  roleText: {
     color: theme.colors.textSecondary,
+  },
+  dateText: {
+    fontSize: 14,
+    color: theme.colors.textTertiary,
     marginTop: 4,
   },
-  evaluationDetails: {
-    gap: 16,
+  diagnosisText: {
+    fontSize: 16,
+    color: theme.colors.text,
+    lineHeight: 24,
   },
-  detailSection: {
-    gap: 8,
+  observationsText: {
+    fontSize: 16,
+    color: theme.colors.text,
+    fontStyle: "italic",
+    lineHeight: 24,
   },
-  detailHeader: {
+  colorIndicator: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
+    marginTop: 24,
     gap: 8,
   },
-  detailLabel: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: theme.colors.text,
+  colorText: {
+    fontSize: 14,
+    color: theme.colors.textSecondary,
   },
-  detailValue: {
-    fontSize: 16,
-    color: theme.colors.text,
-    backgroundColor: theme.colors.background,
-    padding: 12,
-    borderRadius: 12,
-    lineHeight: 24,
+  colorSquare: {
+    width: 16,
+    height: 16,
+    borderRadius: 4,
   },
 });

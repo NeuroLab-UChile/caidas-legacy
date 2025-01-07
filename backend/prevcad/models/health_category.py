@@ -37,6 +37,7 @@ class HealthCategory(models.Model):
         related_name='editable_categories',
         blank=True
     )
+    evaluation_history = models.JSONField(default=list)
 
     class Meta:
         verbose_name = "Categoría de Salud"

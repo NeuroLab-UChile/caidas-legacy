@@ -45,47 +45,63 @@ def save_evaluation_responses(request, category_id):
     print(f"Request data: {request.data}")
     
     try:
-        # Primero obtener el perfil del usuario
+        # Obtener el perfil del usuario
         user_profile = get_object_or_404(UserProfile, user=request.user)
         
-        # Luego buscar la categoría asegurándose que pertenece al usuario
+        # Buscar la categoría asegurándose que pertenece al usuario
         health_category = get_object_or_404(
             HealthCategory, 
             id=category_id, 
             user=user_profile
         )
         
-        # Obtener o crear el formulario de evaluación
+        # Validar que tenemos un formulario de evaluación
+        if not hasattr(health_category, 'evaluation_form'):
+            return Response({
+                'status': 'error',
+                'message': 'La categoría no tiene un formulario de evaluación'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
         evaluation_form = health_category.evaluation_form
         
-        # Actualizar las respuestas
+        # Validar las respuestas recibidas
         responses = request.data.get('responses', {})
+        if not isinstance(responses, dict):
+            responses = {}
+        
+        # Actualizar las respuestas
         if evaluation_form.responses is None:
             evaluation_form.responses = {}
             
         evaluation_form.responses.update(responses)
         
-        # Si hay respuestas, actualizar la fecha de completado
+        # Actualizar fecha de completado con la zona horaria correcta
         if responses:
-            evaluation_form.completed_date = timezone.now()
+            current_time = timezone.localtime(timezone.now())
+            evaluation_form.completed_date = current_time
+            print(f"Fecha de completado: {current_time}")
             
         evaluation_form.save()
         
+        # Eliminar las recomendaciones si existen
+        if hasattr(health_category, 'recommendations'):
+            health_category.recommendations = None
+            health_category.save()
+        
         return Response({
             'status': 'success',
-            'message': 'Respuestas guardadas correctamente'
+            'message': 'Respuestas guardadas correctamente',
+            'data': {
+                'responses_count': len(responses),
+                'completed_date': evaluation_form.completed_date.isoformat() if evaluation_form.completed_date else None
+            }
         })
             
-    except HealthCategory.DoesNotExist:
-        return Response({
-            'status': 'error',
-            'message': 'Categoría de salud no encontrada'
-        }, status=status.HTTP_404_NOT_FOUND)
     except Exception as e:
         print(f"Error saving responses: {str(e)}")
         return Response({
             'status': 'error',
-            'message': str(e)
+            'message': f'Error al guardar las respuestas: {str(e)}'
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['PATCH'])
