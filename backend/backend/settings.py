@@ -64,8 +64,6 @@ INSTALLED_APPS = [
     'prevcad',
     'rest_framework_simplejwt',
     'django_admin_tailwind',
-    
-
 
 ]
 
@@ -190,11 +188,22 @@ LOCALE_PATHS = [
 # https://docs.djangoproject.com/en/2.2/howto/static-files/
 
 STATIC_URL = '/static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'prevcad/static'),
+    os.path.join(BASE_DIR, 'backend', 'static'),
 ]
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+TAILWIND_APP_NAME = 'theme'
+INTERNAL_IPS = [
+    "127.0.0.1",
+]
+
+# Configuración de django-admin-tailwind
+ADMIN_TAILWIND = {
+    'theme': 'light',  # o 'dark' o 'auto'
+    'dark_mode_theme': 'dark',
+    'primary_color': 'blue',  # Color principal
+}
 

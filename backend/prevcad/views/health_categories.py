@@ -108,28 +108,32 @@ def save_evaluation_responses(request, category_id):
 def update_health_category(request, category_id):
     try:
         user_profile = get_object_or_404(UserProfile, user=request.user)
-        category = get_object_or_404(
-            HealthCategory, 
-            id=category_id, 
-            user=user_profile
-        )
+        category = get_object_or_404(HealthCategory, id=category_id)
         
-        # Agregar el usuario que actualiza
+        # Verificar permisos de edición
+        if not category.can_user_edit(user_profile):
+            return Response({
+                'status': 'error',
+                'message': 'No tienes permisos para editar esta categoría'
+            }, status=status.HTTP_403_FORBIDDEN)
+
         data = request.data.copy()
+        data['user_profile'] = user_profile  # Agregar el perfil de usuario
         data['updated_by'] = request.user.get_full_name()
         
-        if category.update(data):
+        try:
+            category.update(data)
             return Response({
                 'status': 'success',
                 'message': 'Categoría actualizada correctamente',
                 'data': HealthCategorySerializer(category).data
             })
-        else:
+        except ValidationError as e:
             return Response({
                 'status': 'error',
-                'message': 'Error al actualizar la categoría'
-            }, status=status.HTTP_400_BAD_REQUEST)
-        
+                'message': str(e)
+            }, status=status.HTTP_403_FORBIDDEN)
+            
     except Exception as e:
         return Response({
             'status': 'error',

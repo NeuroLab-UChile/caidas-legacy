@@ -1,218 +1,56 @@
-/* Campo específico del formulario */
-#id_evaluation_form {
-  background-color: var(--darkened-bg) !important;
-  color: var(--body-fg) !important;
-  font-family: "Monaco", "Consolas", "Courier New", monospace !important;
-  font-size: 14px !important;
-  line-height: 1.6 !important;
-  padding: 20px !important;
-  border: 2px solid var(--body-fg) !important;
-  width: 100% !important;
-  min-height: 300px !important;
-}
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-#id_training_form {
-  background-color: var(--darkened-bg) !important;
-  color: var(--body-fg) !important;
-  font-family: "Monaco", "Consolas", "Courier New", monospace !important;
-  font-size: 14px !important;
-  line-height: 1.6 !important;
-  padding: 20px !important;
-  border: 2px solid var(--body-fg) !important;
-  width: 100% !important;
-  min-height: 300px !important;
-}
+@layer components {
+  /* Mensajes y Notificaciones */
+  .admin-message {
+    @apply tw-flex tw-items-start tw-p-4 tw-mb-4 tw-rounded-admin tw-border-l-4;
+  }
 
-/* Descripción del fieldset */
-fieldset .description {
-  background-color: var(--darkened-bg) !important;
-  color: var(--body-fg) !important;
-  padding: 15px !important;
-  border: 1px solid var(--body-fg) !important;
-  margin: 10px 0 !important;
-}
+  .admin-message-success {
+    @apply tw-bg-admin-success-50 tw-border-admin-success-500;
+  }
 
-/* Estilos flex para la tabla */
-#result_list tbody tr {
-  display: flex;
-  align-items: center;
-  padding: 8px 0;
-  border-bottom: 1px solid #eee;
-}
+  .admin-message-error {
+    @apply tw-bg-admin-error-50 tw-border-admin-error-500;
+  }
 
-#result_list thead tr {
-  display: flex;
-  align-items: center;
-}
+  /* Formularios */
+  .admin-form-row {
+    @apply tw-mb-6 tw-p-4 tw-bg-white tw-rounded-admin tw-shadow-admin;
+  }
 
-.flex-cell {
-  padding: 0 8px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
+  .admin-input {
+    @apply tw-w-full tw-px-3 tw-py-2 tw-border tw-border-gray-300 tw-rounded-lg 
+           tw-shadow-sm focus:tw-ring-blue-500 focus:tw-border-blue-500;
+  }
 
-/* Ajustar ancho de columnas en el header */
-#result_list thead th {
-  flex: 1;
-}
+  .admin-label {
+    @apply tw-block tw-text-admin-sm tw-font-medium tw-text-admin-gray-700 tw-mb-1;
+  }
 
-#result_list thead th:nth-child(2) {
-  flex: 2;
-}
+  /* Botones */
+  .admin-btn {
+    @apply tw-px-4 tw-py-2 tw-rounded-admin tw-font-medium tw-text-admin-sm 
+           tw-transition-all tw-duration-200;
+  }
 
-#result_list thead th:nth-child(3),
-#result_list thead th:nth-child(4) {
-  flex: 0.5;
-  text-align: center;
-}
+  .admin-btn-primary {
+    @apply tw-bg-admin-primary-600 tw-text-white hover:tw-bg-admin-primary-700 
+           focus:tw-ring-2 focus:tw-ring-offset-2 focus:tw-ring-admin-primary-500;
+  }
 
-/* Estilos para el formulario de evaluación */
-.evaluation-form-preview {
-  background: var(--body-bg);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  padding: 20px;
-  margin: 10px 0;
-}
+  /* Tablas */
+  .admin-table {
+    @apply tw-min-w-full tw-divide-y tw-divide-admin-gray-200;
+  }
 
-.question-item {
-  background: var(--darkened-bg);
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  padding: 15px;
-  margin-bottom: 15px;
-}
+  .admin-table-header {
+    @apply tw-bg-admin-gray-50;
+  }
 
-.question-number {
-  font-weight: bold;
-  color: var(--link-fg);
-  margin-bottom: 8px;
-}
-
-.question-type {
-  display: inline-block;
-  background: var(--primary);
-  color: white;
-  font-size: 0.8em;
-  padding: 2px 8px;
-  border-radius: 12px;
-  margin-bottom: 8px;
-}
-
-.question-text {
-  font-size: 1.1em;
-  margin: 10px 0;
-  color: var(--body-fg);
-}
-
-.question-options {
-  margin-left: 20px;
-  padding: 10px 0;
-}
-
-.option-item {
-  color: var(--body-quiet-color);
-  padding: 4px 0;
-}
-
-/* Campo JSON */
-#id_evaluation_form {
-  font-family: "Monaco", "Menlo", "Ubuntu Mono", "Consolas", monospace;
-  font-size: 13px;
-  line-height: 1.5;
-  padding: 15px;
-  border-radius: 4px;
-  border: 1px solid var(--border-color);
-  background: var(--darkened-bg);
-  color: var(--body-fg);
-}
-
-/* Descripción del fieldset */
-.fieldset-description {
-  padding: 10px;
-  margin: 10px 0;
-  background: var(--message-success-bg);
-  border: 1px solid var(--message-success-border);
-  border-radius: 4px;
-  color: var(--body-fg);
-}
-
-/* Estilos generales */
-.admin-user-avatar {
-  transition: transform 0.2s;
-}
-
-.admin-user-avatar:hover {
-  transform: scale(1.1);
-}
-
-.admin-user-avatar-placeholder {
-  font-weight: bold;
-  color: #666;
-  background: linear-gradient(145deg, #f0f0f0, #e6e6e6);
-  box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
-}
-
-/* Personalización de la lista de usuarios */
-#changelist-form .results {
-  margin-top: 20px;
-}
-
-#changelist-form .results table {
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-}
-
-#changelist-form .results th {
-  background-color: #f8f9fa;
-  font-weight: 600;
-}
-
-#changelist-form .results tr:hover {
-  background-color: #f8f9fa;
-}
-
-/* Estilos para el formulario de edición */
-.form-row {
-  margin-bottom: 1.5em;
-  padding: 1em;
-  border-radius: 8px;
-  background-color: #fff;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-}
-
-.form-row label {
-  font-weight: 600;
-  color: #495057;
-}
-
-.form-row input[type="text"],
-.form-row input[type="email"],
-.form-row select {
-  border-radius: 4px;
-  border: 1px solid #ced4da;
-  padding: 8px;
-  width: 100%;
-}
-
-.form-row input[type="file"] {
-  border: 1px dashed #ced4da;
-  padding: 1em;
-  border-radius: 4px;
-  background-color: #f8f9fa;
-}
-
-/* Botones */
-.submit-row input[type="submit"] {
-  border-radius: 4px;
-  text-transform: uppercase;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-}
-
-.submit-row input[type="submit"]:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  .admin-table-cell {
+    @apply tw-px-6 tw-py-4 tw-whitespace-nowrap tw-text-admin-sm tw-text-admin-gray-500;
+  }
 }

@@ -1,82 +1,20 @@
 {% extends "admin/change_form.html" %}
-{% load i18n %}
+{% load i18n admin_urls static admin_modify %}
 
-{% block submit_buttons_bottom %}
-<div class="submit-row" style="display: flex; flex-direction: column; gap: 1rem;">
-    <!-- Estado actual -->
-    <div style="
-        padding: 0.75rem;
-        border-radius: 0.375rem;
-        {% if original.is_draft %}
-            background-color: #FEF3C7;
-            border: 1px solid #FCD34D;
-            color: #92400E;
-        {% else %}
-            background-color: #DEF7EC;
-            border: 1px solid #84E1BC;
-            color: #03543F;
-        {% endif %}
-    ">
-        {% if original.is_draft %}
-            📝 Estado: BORRADOR - Las recomendaciones no son visibles para el paciente
-        {% else %}
-            ✓ Estado: FIRMADO - Las recomendaciones son visibles para el paciente
-            {% if original.doctor_recommendations_updated_by %}
-                <br>
-                <small style="color: #065F46">
-                    Firmado por: {{ original.doctor_recommendations_updated_by }} 
-                    el {{ original.doctor_recommendations_updated_at|date:"d/m/Y H:i" }}
-                </small>
-            {% endif %}
-        {% endif %}
-    </div>
-
-    <!-- Botones de acción -->
-    <div style="display: flex; justify-content: flex-end; gap: 1rem;">
-        {% if original.status != 'reviewed' %}
-            <input 
-                type="submit" 
-                value="Guardar como borrador" 
-                name="_save_draft"
-                style="
-                    padding: 8px 16px;
-                    font-size: 14px;
-                    font-weight: 500;
-                    background-color: #F3F4F6;
-                    color: #374151;
-                    border: 1px solid #E5E7EB;
-                    border-radius: 4px;
-                    cursor: pointer;
-                "
-            >
-            <input 
-                type="submit" 
-                value="Firmar y publicar" 
-                name="_sign_and_publish"
-                style="
-                    padding: 8px 16px;
-                    font-size: 14px;
-                    font-weight: 500;
-                    background-color: #FFCC00;
-                    color: #333333;
-                    border: none;
-                    border-radius: 4px;
-                    cursor: pointer;
-                    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-                "
-            >
-        {% else %}
-            <p style="
-                padding: 8px 16px;
-                font-size: 14px;
-                color: #6B7280;
-                background-color: #F3F4F6;
-                border: 1px solid #E5E7EB;
-                border-radius: 4px;
-            ">
-                Esta evaluación ya ha sido revisada y firmada
-            </p>
-        {% endif %}
-    </div>
+{% block content %}
+<div id="content-main">
+    <form {% if has_file_field %}enctype="multipart/form-data" {% endif %}action="{{ form_url }}" method="post" id="healthcategory_form" novalidate>
+        {% csrf_token %}
+        {% block form_top %}{% endblock %}
+        
+        <!-- Tu contenido existente -->
+        
+        <!-- Asegúrate de incluir los botones de submit estándar del admin -->
+        <div class="submit-row">
+            <input type="submit" value="{% trans 'Save' %}" class="default" name="_save">
+            <input type="submit" value="{% trans 'Save and continue editing' %}" name="_continue">
+            <input type="submit" value="{% trans 'Save and add another' %}" name="_addanother">
+        </div>
+    </form>
 </div>
 {% endblock %} 

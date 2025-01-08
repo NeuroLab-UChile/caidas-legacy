@@ -20,6 +20,9 @@ class HealthCategoryEditor(models.Model):
         unique_together = ('health_category', 'editor')
 
 class HealthCategory(models.Model):
+    # Campos que siempre son readonly
+    READONLY_FIELDS = {'user', 'template', 'created_at'}
+
     user = models.ForeignKey(
         UserProfile, 
         on_delete=models.CASCADE, 
@@ -73,56 +76,28 @@ class HealthCategory(models.Model):
 
     def update(self, data):
         """
-        Actualiza la HealthCategory y sus modelos relacionados
-        
-        Args:
-            data (dict): Diccionario con los datos a actualizar
-            {
-                'professional_recommendations': str,
-                'status_color': str,
-                'evaluation_responses': dict,
-                'is_draft': bool,
-                'updated_by': str
-            }
+        Actualiza los campos permitidos de la categoría
         """
         try:
-            # Actualizar recomendaciones
-            if 'professional_recommendations' in data:
-                self.save_recommendation(
-                    text=data['professional_recommendations'],
-                    status_color=data.get('status_color', self.recommendation.status_color if hasattr(self, 'recommendation') else 'gris'),
-                    updated_by=data.get('updated_by', ''),
-                    is_draft=data.get('is_draft', True)
-                )
-            # Solo actualizar status_color si viene solo
-            elif 'status_color' in data:
-                self.save_recommendation(
-                    text=self.recommendation.text if hasattr(self, 'recommendation') else '',
-                    status_color=data['status_color'],
-                    updated_by=data.get('updated_by', ''),
-                    is_draft=data.get('is_draft', True)
-                )
+            user_profile = data.get('user_profile')
+            if not self.can_user_edit(user_profile):
+                raise ValidationError("No tienes permisos para editar esta categoría")
 
-            # Actualizar evaluación
-            if 'evaluation_responses' in data:
-                self.save_evaluation(
-                    responses=data['evaluation_responses']
-                )
+            # Validar que no se intenten modificar campos readonly
+            invalid_fields = set(data.keys()) & self.READONLY_FIELDS
+            if invalid_fields:
+                raise ValidationError(f"No se pueden modificar los campos: {', '.join(invalid_fields)}")
 
-            # Actualizar estado de borrador
-            if 'is_draft' in data and not ('professional_recommendations' in data or 'status_color' in data):
-                self.save_recommendation(
-                    text=self.recommendation.text if hasattr(self, 'recommendation') else '',
-                    status_color=self.recommendation.status_color if hasattr(self, 'recommendation') else 'gris',
-                    updated_by=data.get('updated_by', ''),
-                    is_draft=data['is_draft']
-                )
-
+            # Actualizar solo campos editables
+            for field, value in data.items():
+                if field not in self.READONLY_FIELDS and hasattr(self, field):
+                    setattr(self, field, value)
+            
+            self.save()
             return True
-
         except Exception as e:
-            print(f"Error updating health category: {str(e)}")
-            return False
+            print(f"Error actualizando HealthCategory: {e}")
+            raise ValidationError(str(e))
 
     def save_evaluation(self, responses=None):
         """Guarda o actualiza el formulario de evaluación"""
@@ -170,11 +145,18 @@ class HealthCategory(models.Model):
             }
 
     def can_user_edit(self, user_profile):
+        """
+        Verifica si un usuario puede editar esta instancia
+        """
         if not user_profile:
             return False
-        if user_profile.is_professional:
-            return True
-        return self.editors.filter(id=user_profile.id).exists()
+            
+        # Si el template está en modo readonly, nadie puede editar excepto admin
+        if self.template.is_readonly and not user_profile.is_staff_member():
+            return False
+            
+        # Verificar permisos en el template
+        return self.template.can_user_edit(user_profile)
 
     def get_evaluation_data(self):
         """Obtiene los datos de evaluación"""
@@ -236,10 +218,14 @@ class HealthCategory(models.Model):
         is_new = self.pk is None
         super().save(*args, **kwargs)
         
+        
         if is_new:
-            # Crear EvaluationForm y Recommendation automáticamente
-            self.get_or_create_evaluation_form()
-            self.get_or_create_recommendation()
+            # Al crear una nueva instancia, agregar editores según el template
+            from ..models import UserProfile
+            editors = UserProfile.objects.filter(
+                user__groups__name__in=self.template.allowed_editor_roles
+            )
+            self.editors.add(*editors)
 
     def update_recommendation(self, text, professional_name=None, is_draft=True):
         """
@@ -280,26 +266,6 @@ class HealthCategory(models.Model):
         
         return recommendation
 
-    def get_default_recommendation(self):
-        """
-        Retorna la recomendación por defecto basada en el tipo de evaluación
-        """
-        if self.evaluation_type and self.evaluation_type.get('type') == 'PROFESSIONAL':
-            return {
-                "text": "Esta evaluación requiere revisión profesional.",
-                "status": {
-                    "color": "#808080",
-                    "text": "⚪️ Pendiente de Evaluación Profesional"
-                }
-            }
-        
-        return {
-            "text": "Complete la autoevaluación para recibir recomendaciones.",
-            "status": {
-                "color": "#808080",
-                "text": "⚪️ Pendiente de Autoevaluación"
-            }
-        }
 
     @property
     def recommendations(self):
@@ -323,7 +289,6 @@ class HealthCategory(models.Model):
             }
         except Exception:
             return self.get_default_recommendation()
-
 @receiver(post_save, sender=UserProfile)
 def create_user_health_categories(sender, instance, created, **kwargs):
     """Crear categorías de salud para un nuevo usuario"""

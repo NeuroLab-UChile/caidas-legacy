@@ -1,49 +1,85 @@
 module.exports = {
   content: [
-    "./prevcad/templates/**/*.html",
-    "./prevcad/static/**/*.js",
+    "./templates/**/*.html",
+    "./**/templates/**/*.html",
+    "./static/admin/**/*.{js,css}",
+    "./prevcad/**/templates/**/*.html"
   ],
   theme: {
     extend: {
       colors: {
-        primary: '#FFCC00',
-        'primary-light': '#FFE066',
-        'primary-dark': '#E6B800',
-        secondary: '#333333',
-        light: {
-          bg: {
-            primary: '#FFFFFF',
-            secondary: '#F3F4F6',
-            tertiary: '#F9FAFB',
+        admin: {
+          primary: {
+            50: '#F0F9FF',
+            100: '#E0F2FE',
+            500: '#0EA5E9',
+            600: '#0284C7',
+            700: '#0369A1'
           },
-          text: {
-            primary: '#111827',
-            secondary: '#374151',
-            tertiary: '#6B7280',
+          error: {
+            50: '#FEF2F2',
+            100: '#FEE2E2',
+            500: '#EF4444',
+            600: '#DC2626'
           },
-          border: {
-            primary: '#E5E7EB',
-            secondary: '#D1D5DB',
+          success: {
+            50: '#F0FDF4',
+            100: '#DCFCE7',
+            500: '#22C55E',
+            600: '#16A34A'
+          },
+          warning: {
+            50: '#FFFBEB',
+            100: '#FEF3C7',
+            500: '#F59E0B',
+            600: '#D97706'
+          },
+          gray: {
+            50: '#F9FAFB',
+            100: '#F3F4F6',
+            200: '#E5E7EB',
+            300: '#D1D5DB',
+            400: '#9CA3AF',
+            500: '#6B7280',
+            600: '#4B5563',
+            700: '#374151'
           }
         }
       },
-      fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
-      },
       spacing: {
-        '72': '18rem',
-        '84': '21rem',
-        '96': '24rem',
+        'admin': {
+          'form': '1.5rem',
+          'section': '2rem',
+          'header': '4rem'
+        }
       },
       borderRadius: {
-        'xl': '1rem',
-        '2xl': '1.5rem',
+        'admin': '0.5rem'
+      },
+      fontSize: {
+        'admin': {
+          'xs': '0.75rem',
+          'sm': '0.875rem',
+          'base': '1rem',
+          'lg': '1.125rem',
+          'xl': '1.25rem'
+        }
       },
       boxShadow: {
-        'soft': '0 2px 4px rgba(0,0,0,0.05)',
-        'medium': '0 4px 6px rgba(0,0,0,0.07)',
+        'admin': '0 1px 3px rgba(0, 0, 0, 0.1)',
+        'admin-md': '0 4px 6px rgba(0, 0, 0, 0.1)',
+        'admin-lg': '0 10px 15px rgba(0, 0, 0, 0.1)'
       }
-    },
+    }
   },
-  plugins: [],
+  plugins: [
+    require('@tailwindcss/forms')({
+      strategy: 'class'
+    })
+  ],
+  prefix: 'tw-',
+  important: true,
+  corePlugins: {
+    preflight: false
+  }
 }

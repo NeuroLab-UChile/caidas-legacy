@@ -1,5 +1,16 @@
 {% extends "admin/base.html" %}
-{% load static %}  <!-- Cargamos la etiqueta static -->
+{% load static %}
+
+{% block extrastyle %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'django_admin_tailwind/css/base.css' %}">
+<link rel="stylesheet" href="{% static 'admin/css/custom_admin.css' %}">
+{% endblock %}
+
+{% block extrahead %}
+{{ block.super }}
+<script src="{% static 'admin/js/theme.js' %}"></script>
+{% endblock %}
 
 {% block title %}
   {% if subtitle %}{{ subtitle }} | {% endif %}{{ title }} |

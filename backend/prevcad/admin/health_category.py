@@ -1,9 +1,10 @@
-from django.contrib import admin
+from django.contrib import admin, messages
+from django.core.exceptions import PermissionDenied
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 from django.template.loader import render_to_string
 from django.http import JsonResponse, HttpResponseRedirect
-from django.urls import path
+from django.urls import path, reverse
 import json
 from ..models import HealthCategory, Recommendation
 from .filters import HealthStatusFilter
@@ -14,6 +15,9 @@ from urllib.parse import unquote
 from django.utils.formats import date_format
 from django.utils.timezone import localtime
 from django.utils.timesince import timesince
+from django.core.handlers.wsgi import WSGIRequest
+from threading import current_thread
+from django.db import transaction
 
 
 
@@ -23,7 +27,8 @@ class HealthCategoryAdmin(admin.ModelAdmin):
         'get_user_info',
         'get_template_name',
         'get_completion_date',
-        'get_recommendation_status'
+        'get_recommendation_status',
+        'get_edit_status'
     ]
 
     # Definir los campos base del modelo
@@ -42,31 +47,6 @@ class HealthCategoryAdmin(admin.ModelAdmin):
         'get_professional_evaluation'
         
     )
-
-    fieldsets = [
-        ('Información Base', {
-            'fields': (
-                'user',
-                'template',
-            )
-        }),
-     
-        ('Estado de Completación', {
-            'fields': (
-                'get_professional_evaluation',
-                'get_completion_status',
-                'get_completion_date',
-                'get_detailed_responses',
-            )
-        }),
-        ('Recomendación', {
-            'fields': (
-                'get_recommendation_editor',
-            ),
-            'classes': ('wide',)
-        }),
-   
-    ]
 
     def format_datetime(self, date):
         """Función auxiliar para formatear fechas de manera consistente"""
@@ -308,72 +288,119 @@ class HealthCategoryAdmin(admin.ModelAdmin):
             instance.save()
         formset.save_m2m() 
 
+    
+    def get_default_recommendation(self, obj):
+        """Retorna la recomendación por defecto basada en el tipo de evaluación"""
+        return obj.template.get_default_recommendation()
+
     def get_recommendation_editor(self, obj):
         """Renderiza el editor de recomendaciones"""
-        recommendation = obj.get_or_create_recommendation()
-        context = {
-            'recommendation': recommendation,
-            'health_category': obj,
-            'default_recommendations': obj.template.default_recommendations or {},
-        }
-        return mark_safe(render_to_string(
-            'admin/healthcategory/recommendation_editor.html',
-            context
-        ))
+        request = getattr(current_thread(), '_current_request', None)
+        if not request:
+            return "Error: No se pudo obtener el contexto de la solicitud"
+
+        try:
+            # Verificar permisos usando el método del modelo
+            user_profile = getattr(request.user, 'profile', None)
+            can_edit = obj.can_user_edit(user_profile)
+
+            # Obtener o crear recomendación
+            try:
+                recommendation = obj.recommendation
+            except Recommendation.DoesNotExist:
+                recommendation = Recommendation.objects.create(
+                    health_category=obj,
+                    status_color='gris',
+                    is_draft=True,
+                    use_default=True
+                )
+
+            context = {
+                'recommendation': recommendation,
+                'health_category': obj,
+                'default_recommendations': {
+                    'verde': 'No ha sufrido caídas en el último año. Mantenga su rutina de ejercicios y consultas médicas regulares.',
+                    'amarillo': 'Ha sufrido una caída en el último año. Considere adoptar medidas preventivas.',
+                    'rojo': 'Ha sufrido múltiples caídas. Se requiere evaluación médica inmediata y plan de prevención personalizado.',
+                    'gris': 'Pendiente de evaluación.'
+                },
+                'can_edit': can_edit,
+                'user_role': getattr(user_profile, 'role', None),
+                'is_readonly': obj.template.is_readonly if obj.template else True,
+            }
+
+            # Debug de permisos
+            print(f"""
+            Debug Permisos:
+            - Usuario: {request.user.username}
+            - Rol: {getattr(user_profile, 'role', None)}
+            - Puede editar: {can_edit}
+            - Template readonly: {obj.template.is_readonly if obj.template else True}
+            """)
+
+            return render_to_string(
+                'admin/healthcategory/recommendation_editor.html',
+                context,
+                request=request
+            )
+
+        except Exception as e:
+            import traceback
+            print(f"Error al renderizar el editor: {str(e)}")
+            print(traceback.format_exc())
+            return f"Error al cargar el editor: {str(e)}"
+
     get_recommendation_editor.short_description = "Editor de Recomendación"
 
+    def response_change(self, request, obj):
+        """Personaliza la respuesta después de intentar guardar"""
+        if '_save' in request.POST and hasattr(request, '_permission_denied'):
+            # Si hubo un error de permisos, redirigir de vuelta al formulario
+            url = reverse(
+                'admin:prevcad_healthcategory_change',
+                args=[obj.pk],
+            )
+            return HttpResponseRedirect(url)
+        return super().response_change(request, obj)
+
     def save_model(self, request, obj, form, change):
-        """Guarda el modelo y actualiza los campos relacionados con la evaluación profesional"""
-        super().save_model(request, obj, form, change)
-        
-        if obj.template.evaluation_type == 'PROFESSIONAL':
-            try:
-                evaluation_form = obj.get_or_create_evaluation_form()
+        """
+        Procesa los campos de recomendación antes de guardar el modelo
+        """
+        try:
+            with transaction.atomic():
+                # Obtener los datos de la recomendación del POST
+                recommendation_data = {
+                    'text': request.POST.get('recommendation_text', ''),
+                    'status': request.POST.get('recommendation_status', 'gris'),  # Valor por defecto 'gris'
+                    'is_draft': request.POST.get('recommendation_is_draft') == 'true',
+                    'use_default': request.POST.get('recommendation_use_default') == 'true'
+                }
+
+                # Debug
+                print("Datos de recomendación recibidos:", recommendation_data)
+
+                # Guardar el modelo principal primero
+                super().save_model(request, obj, form, change)
+
+                # Obtener o crear la recomendación
+                recommendation = obj.recommendation if hasattr(obj, 'recommendation') else Recommendation(health_category=obj)
                 
-                # Debug: Imprimir estado inicial
-                print(f"Estado inicial - is_draft: {evaluation_form.is_draft}, completed_date: {evaluation_form.completed_date}")
-                
-                if 'professional_responses' in request.POST:
-                    # Obtener las respuestas actuales o inicializar
-                    responses = evaluation_form.professional_responses or {}
-                    
-                    # Actualizar observaciones y diagnóstico
-                    observations = request.POST.get('professional_responses[observations]', '').strip()
-                    diagnosis = request.POST.get('professional_responses[diagnosis]', '').strip()
-                    
-                    if observations:
-                        responses['observations'] = observations
-                    if diagnosis:
-                        responses['diagnosis'] = diagnosis
-                    
-                    # Actualizar el formulario
-                    evaluation_form.professional_responses = responses
-                    
-                    # Manejar el estado de completado
-                    if 'complete_evaluation' in request.POST:
-                        print("Completando evaluación...")  # Debug
-                        evaluation_form.completed_date = timezone.now()
-                        evaluation_form.is_draft = False
-                        
-                        # Actualizar la recomendación
-                        recommendation = obj.get_or_create_recommendation()
-                        if recommendation:
-                            recommendation.is_draft = False
-                            recommendation.updated_by = request.user.username
-                            recommendation.updated_at = timezone.now()
-                            recommendation.save()
-                            print(f"Recomendación actualizada - is_draft: {recommendation.is_draft}")  # Debug
-                    
-                    # Forzar el guardado y verificar que se guardó correctamente
-                    evaluation_form.save()
-                    evaluation_form.refresh_from_db()
-                    
-                    # Debug: Imprimir estado final
-                    print(f"Estado final - is_draft: {evaluation_form.is_draft}, completed_date: {evaluation_form.completed_date}")
-                    
-            except Exception as e:
-                print(f"Error al guardar la evaluación: {str(e)}")
-                raise
+                # Asignar valores asegurando que no sean None
+                recommendation.text = recommendation_data['text']
+                recommendation.status_color = recommendation_data['status']
+                recommendation.is_draft = recommendation_data['is_draft']
+                recommendation.use_default = recommendation_data['use_default']
+                recommendation.updated_at = timezone.now()
+                recommendation.save()
+
+        except Exception as e:
+            self.message_user(
+                request,
+                f"Error al guardar los cambios: {str(e)}",
+                level=messages.ERROR
+            )
+            raise
 
     def get_urls(self):
         urls = super().get_urls()
@@ -502,13 +529,188 @@ class HealthCategoryAdmin(admin.ModelAdmin):
                 'message': f'Error: {str(e)}'
             }, status=500)
 
+    def get_readonly_fields(self, request, obj=None):
+        """Define campos de solo lectura basados en permisos"""
+        readonly = list(self.readonly_fields)
+        
+        if obj:  # Solo para objetos existentes
+            user_profile = getattr(request.user, 'profile', None)
+            
+            # Si el usuario no puede editar o el template está en readonly
+            if not obj.can_user_edit(user_profile) or obj.template.is_readonly:
+                # Hacer todos los campos readonly excepto los que ya lo son
+                all_fields = [f.name for f in self.model._meta.fields]
+                readonly.extend([f for f in all_fields if f not in readonly])
+                
+                # Mantener campos base siempre readonly
+                readonly.extend(self.base_fields)
+            
+            # Campos que siempre son readonly
+            readonly.extend(obj.READONLY_FIELDS)
+        
+        return list(set(readonly))  # Eliminar duplicados
+
+    def get_edit_status(self, obj):
+        """Muestra el estado de edición del objeto"""
+        try:
+            # Obtener el request del thread local actual
+            from django.core.handlers.wsgi import WSGIRequest
+            from threading import current_thread
+            request = getattr(current_thread(), '_current_request', None)
+            
+            if not request or not isinstance(request, WSGIRequest):
+                return format_html(
+                    '<span style="color: #6B7280; padding: 4px 8px; '
+                    'background: #F3F4F6; border-radius: 4px; font-size: 0.875rem;">'
+                    '⚠️ Estado desconocido</span>'
+                )
+
+            user_profile = getattr(request.user, 'profile', None)
+            can_edit = obj.can_user_edit(user_profile)
+            is_readonly = obj.template.is_readonly
+
+            if is_readonly:
+                return format_html(
+                    '<span style="color: #DC2626; padding: 4px 8px; '
+                    'background: #FEF2F2; border-radius: 4px; font-size: 0.875rem;">'
+                    '🔒 Solo lectura</span>'
+                )
+            elif can_edit:
+                return format_html(
+                    '<span style="color: #059669; padding: 4px 8px; '
+                    'background: #ECFDF5; border-radius: 4px; font-size: 0.875rem;">'
+                    '✏️ Editable</span>'
+                )
+            else:
+                return format_html(
+                    '<span style="color: #6B7280; padding: 4px 8px; '
+                    'background: #F3F4F6; border-radius: 4px; font-size: 0.875rem;">'
+                    '🚫 Sin permisos</span>'
+                )
+        except Exception as e:
+            return format_html(
+                '<span style="color: #DC2626;">Error: {}</span>', str(e)
+            )
+    get_edit_status.short_description = "Estado de Edición"
+
+    def changelist_view(self, request, extra_context=None):
+        """Guarda el request en el thread local para acceso posterior"""
+        from threading import current_thread
+        setattr(current_thread(), '_current_request', request)
+        return super().changelist_view(request, extra_context)
+
+    def change_view(self, request, object_id, form_url='', extra_context=None):
+        """Guarda el request en el thread local para acceso posterior"""
+        from threading import current_thread
+        setattr(current_thread(), '_current_request', request)
+        return super().change_view(request, object_id, form_url, extra_context)
+
+    def has_change_permission(self, request, obj=None):
+        """Controla el permiso de edición"""
+        if obj is None:
+            return True  # Permitir acceso a la lista
+            
+        user_profile = getattr(request.user, 'profile', None)
+        if request.user.is_superuser:
+            return True
+            
+        return obj.can_user_edit(user_profile)
+
+    def get_fieldsets(self, request, obj=None):
+        """Define los fieldsets incluyendo el editor de recomendaciones"""
+        fieldsets = [
+            ('Información Base', {
+                'fields': (
+                    'user',
+                    'template',
+                )
+            }),
+            ('Recomendación', {
+                'fields': ('get_recommendation_editor',),
+                'classes': ('wide',)
+            }),
+            ('Estado de Completación', {
+                'fields': (
+                    'get_professional_evaluation',
+                    'get_completion_status',
+                    'get_completion_date',
+                    'get_detailed_responses',
+                )
+            }),
+        ]
+        return fieldsets
+
+    def get_edit_status_message(self, obj, can_edit, is_readonly):
+        """Genera un mensaje detallado sobre el estado de edición"""
+        if not obj:
+            return ''
+
+        styles = {
+            'container': 'padding: 15px; border-radius: 8px; margin: 10px 0;',
+            'title': 'font-size: 1.1em; font-weight: bold; margin-bottom: 10px;',
+            'message': 'margin: 5px 0;',
+            'info': 'margin-top: 10px; font-size: 0.9em; color: #666;',
+            'readonly': 'background: #FEF2F2; border: 1px solid #FCA5A5;',
+            'editable': 'background: #ECFDF5; border: 1px solid #6EE7B7;',
+            'no_permission': 'background: #F3F4F6; border: 1px solid #D1D5DB;'
+        }
+
+        if is_readonly:
+            return f"""
+            <div style="{styles['container']} {styles['readonly']}">
+                <div style="{styles['title']}">🔒 Modo Solo Lectura</div>
+                <div style="{styles['message']}">
+                    Esta categoría está configurada como solo lectura y no puede ser modificada.
+                </div>
+                <div style="{styles['info']}">
+                    • El template está configurado como solo lectura<br>
+                    • Solo los administradores pueden modificar este estado
+                </div>
+            </div>
+            """
+        elif can_edit:
+            role_info = f"como {getattr(obj.user.user.profile, 'role', 'Usuario')}"
+            return f"""
+            <div style="{styles['container']} {styles['editable']}">
+                <div style="{styles['title']}">✏️ Edición Permitida</div>
+                <div style="{styles['message']}">
+                    Tienes permisos para editar esta categoría {role_info}.
+                </div>
+                <div style="{styles['info']}">
+                    • Puedes modificar los campos no marcados como "solo lectura"<br>
+                    • Los cambios quedarán registrados con tu usuario
+                </div>
+            </div>
+            """
+        else:
+            return f"""
+            <div style="{styles['container']} {styles['no_permission']}">
+                <div style="{styles['title']}">🚫 Sin Permisos de Edición</div>
+                <div style="{styles['message']}">
+                    No tienes los permisos necesarios para editar esta categoría.
+                </div>
+                <div style="{styles['info']}">
+                    • Tu rol actual no está en la lista de roles permitidos<br>
+                    • Contacta a un administrador si necesitas acceso
+                </div>
+            </div>
+            """
+
+  
+        
+
+    def can_user_edit(self, obj, user_profile):
+        """Verifica si un usuario puede editar la categoría"""
+        if not user_profile:
+            return False
+            
+        user_role = getattr(user_profile, 'role', None)
+        template_roles = obj.template.allowed_editor_roles if obj.template else []
+        
+        return user_role in template_roles
+
     class Media:
         css = {
-            'all': (
-                'admin/css/custom_admin.css',
-            )
+            'all': ('admin/css/custom_admin.css',)
         }
-        js = (
-            'admin/js/recommendation_editor.js',
-            'admin/js/professional_evaluation.js',
-        ) 
+        js = ('admin/js/recommendation_editor.js',) 

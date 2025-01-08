@@ -3,6 +3,10 @@ from .activity_node import ActivityNodeDescription
 import base64
 import os
 from django.conf import settings
+from django.db.models.signals import post_save, m2m_changed
+from django.dispatch import receiver
+from .user_types import UserTypes
+from django.core.exceptions import ValidationError
 
 class CategoryTemplate(models.Model):
   """
@@ -65,36 +69,70 @@ class CategoryTemplate(models.Model):
     verbose_name="Nodo raíz"
   )
 
-  editable_fields_by_user_type = models.JSONField(
-        default=dict,
-        help_text="Defina los campos editables para cada tipo de usuario. Ejemplo: {'DOCTOR': ['recommendations', 'status_color'], 'NURSE': ['recommendations']}",
+  # Simplificar a un solo campo para roles con permiso de edición
+  allowed_editor_roles = models.JSONField(
+        default=list,
+        help_text="Roles que pueden editar instancias basadas en este template",
+        verbose_name="Roles con permiso de edición"
     )
 
-  # Agregar campo para grupos con permisos de edición
-  editable_by_groups = models.ManyToManyField(
-    'auth.Group',
-    related_name='editable_templates',
-    blank=True,
-    verbose_name="Grupos que pueden editar",
-    help_text="Selecciona los grupos que pueden editar esta plantilla"
-  )
+  # Nuevo campo para control global de solo lectura
+  is_readonly = models.BooleanField(
+        default=False,
+        help_text="Si está activo, todas las instancias serán de solo lectura independientemente de los roles",
+        verbose_name="Solo lectura global"
+    )
 
-  def can_user_edit(self, user_profile, field=None):
+  @property
+  def available_roles(self):
+        """Retorna lista de choices para roles disponibles"""
+        return [(role.value, role.label) for role in UserTypes]
+
+  def clean(self):
+        """Valida que los roles seleccionados sean válidos"""
+        super().clean()
+        if self.allowed_editor_roles:
+            valid_roles = [role.value for role in UserTypes]
+            invalid_roles = [role for role in self.allowed_editor_roles if role not in valid_roles]
+            if invalid_roles:
+                raise ValidationError({
+                    'allowed_editor_roles': f'Roles inválidos: {", ".join(invalid_roles)}'
+                })
+
+  def can_user_edit(self, user_profile):
         """
-        Verifica si un usuario puede editar este template o un campo específico según el rol
-        y los campos definidos en editable_fields_by_user_type.
+        Verifica si un usuario puede editar instancias basadas en este template
         """
-        if not user_profile:
+        if not user_profile or self.is_readonly:
             return False
+            
+        # Admins siempre pueden editar
+        if user_profile.is_staff_member():
+            return True
+            
+        return user_profile.role in self.allowed_editor_roles
 
-        if user_profile.role == UserTypes.ADMIN:
-            return True  # Administradores pueden editar todo
+  def update_instance_editors(self):
+        """
+        Actualiza los editores en todas las instancias de HealthCategory
+        basadas en este template
+        """
+        from .health_category import HealthCategory
+        
+        # Obtener todas las instancias relacionadas
+        instances = HealthCategory.objects.filter(template=self)
+        
+        for instance in instances:
+            # Limpiar editores existentes
+            instance.editors.clear()
+            
+            # Agregar nuevos editores basados en roles permitidos
+            from ..models import UserProfile
+            editors = UserProfile.objects.filter(
+                user__groups__name__in=self.allowed_editor_roles
+            )
+            instance.editors.add(*editors)
 
-        editable_fields = self.editable_fields_by_user_type.get(user_profile.role, [])
-        if field:
-            return field in editable_fields
-        return bool(editable_fields)
-  
   def get_icon_base64(self):
     try:
       if not self.icon:
@@ -147,17 +185,12 @@ class CategoryTemplate(models.Model):
     return nodes
 
   def save(self, *args, **kwargs):
-    if not self.root_node:
-      # Crear el nodo raíz usando ActivityNodeDescription en lugar de ActivityNode
-      self.root_node = ActivityNodeDescription.objects.create(
-        type=ActivityNodeDescription.NodeType.CATEGORY_DESCRIPTION,
-        description=self.description
-      )
-  
-    # Si el icono tiene una ruta con slash inicial, corregirlo
-    if self.icon and isinstance(self.icon, str) and self.icon.startswith('/'):
-      self.icon = self.icon.lstrip('/')
+    is_new = self.pk is None
     super().save(*args, **kwargs)
+    
+    if not is_new:
+        # Actualizar editores en instancias existentes
+        self.update_instance_editors()
 
   def can_self_evaluate(self):
     return self.evaluation_type in ['SELF', 'BOTH']

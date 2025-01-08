@@ -7,8 +7,7 @@ class Recommendation(models.Model):
         on_delete=models.CASCADE,
         related_name='recommendation'
     )
-    text = models.TextField(blank=True)
-    default_text = models.TextField(blank=True)
+    text = models.TextField(blank=True, default='')
     status_color = models.CharField(
         max_length=20,
         choices=[
@@ -19,32 +18,18 @@ class Recommendation(models.Model):
         ],
         default='gris'
     )
-    default_status_color = models.CharField(
-        max_length=20,
-        choices=[
-            ('verde', 'Verde'),
-            ('amarillo', 'Amarillo'),
-            ('rojo', 'Rojo'),
-            ('gris', 'Gris')
-        ],
-        default='gris'
-    )
     is_draft = models.BooleanField(default=True)
-    is_signed = models.BooleanField(default=False)
-    signed_by = models.CharField(max_length=150, blank=True)
-    signed_at = models.DateTimeField(null=True, blank=True)
-    updated_by = models.CharField(max_length=255, null=True, blank=True)
+    use_default = models.BooleanField(default=True)
     updated_at = models.DateTimeField(auto_now=True)
-    use_default = models.BooleanField(default=False)
-    professional_name = models.CharField(max_length=255, null=True, blank=True)
-    professional_role = models.CharField(max_length=255, null=True, blank=True)
-
-    def save(self, *args, **kwargs):
-        # Si es nuevo y no tiene texto, usar el texto por defecto
-        if not self.pk and not self.text:
-            self.text = self.default_text
-            self.status_color = self.default_status_color
-        super().save(*args, **kwargs)
+    signed_by = models.CharField(max_length=255, blank=True, null=True)
+    is_signed = models.BooleanField(default=False)
+    signed_at = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
         return f"Recomendación para {self.health_category}" 
+
+    def save(self, *args, **kwargs):
+        # Asegurar que status_color nunca sea None
+        if not self.status_color:
+            self.status_color = 'gris'
+        super().save(*args, **kwargs) 
