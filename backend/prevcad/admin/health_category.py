@@ -18,6 +18,7 @@ from django.utils.timesince import timesince
 from django.core.handlers.wsgi import WSGIRequest
 from threading import current_thread
 from django.db import transaction
+from ..models.user_types import UserTypes
 
 
 
@@ -303,6 +304,10 @@ class HealthCategoryAdmin(admin.ModelAdmin):
             # Verificar permisos usando el método del modelo
             user_profile = getattr(request.user, 'profile', None)
             can_edit = obj.can_user_edit(user_profile)
+            
+            # Obtener el rol y su label
+            user_role = getattr(user_profile, 'role', None)
+            user_role_label = UserTypes(user_role).label if user_role else None
 
             # Obtener o crear recomendación
             try:
@@ -325,7 +330,8 @@ class HealthCategoryAdmin(admin.ModelAdmin):
                     'gris': 'Pendiente de evaluación.'
                 },
                 'can_edit': can_edit,
-                'user_role': getattr(user_profile, 'role', None),
+                'user_role': user_role,
+                'user_role_label': user_role_label,
                 'is_readonly': obj.template.is_readonly if obj.template else True,
             }
 
@@ -333,7 +339,8 @@ class HealthCategoryAdmin(admin.ModelAdmin):
             print(f"""
             Debug Permisos:
             - Usuario: {request.user.username}
-            - Rol: {getattr(user_profile, 'role', None)}
+            - Rol: {user_role}
+            - Label: {user_role_label}
             - Puede editar: {can_edit}
             - Template readonly: {obj.template.is_readonly if obj.template else True}
             """)

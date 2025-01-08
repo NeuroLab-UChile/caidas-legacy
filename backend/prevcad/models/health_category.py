@@ -50,15 +50,12 @@ class HealthCategory(models.Model):
     def __str__(self):
         """Retorna una representación en string más amigable del objeto"""
         try:
-            # Obtener y formatear el nombre de la plantilla
             template_name = self.template.name.title()
             
-            # Obtener el nombre completo del usuario o su username como fallback
-            user_name = self.user.user.get_full_name()
-            if not user_name.strip():  # Si está vacío o solo contiene espacios
-                user_name = self.user.user.username
+            # Obtener el nombre y rol del usuario
+            user_name = self.user.user.get_full_name() or self.user.user.username
+            user_role = UserTypes(self.user.role).label if self.user.role else "Sin rol"
             
-            # Obtener el estado
             status = self.get_status()
             status_indicator = {
                 'verde': '✓',
@@ -67,10 +64,7 @@ class HealthCategory(models.Model):
                 'gris': '•'
             }.get(status['recommendation_status'], '•')
             
-            return f"Categoría {template_name} de {user_name} {status_indicator}"
-        except AttributeError:
-            # En caso de que falte algún atributo requerido
-            return f"Categoría {getattr(self.template, 'name', 'Sin Nombre')}"
+            return f"{template_name} - {user_name} ({user_role}) {status_indicator}"
         except Exception:
             return "Categoría Sin Nombre"
 
