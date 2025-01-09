@@ -24,6 +24,7 @@ class Recommendation(models.Model):
     signed_by = models.CharField(max_length=255, blank=True, null=True)
     is_signed = models.BooleanField(default=False)
     signed_at = models.DateTimeField(null=True, blank=True)
+    video_url = models.CharField(max_length=255, blank=True, null=True)
 
     def __str__(self):
         return f"Recomendación para {self.health_category}" 

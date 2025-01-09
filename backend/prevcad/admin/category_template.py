@@ -103,6 +103,8 @@ class CategoryTemplateAdmin(admin.ModelAdmin):
         </div>
         """)
 
+    training_form_button.short_description = "Formulario de Entrenamiento"
+
     def get_readonly_fields(self, request, obj=None):
         readonly = ['training_form_button', 'evaluation_form_button']
         
@@ -112,6 +114,10 @@ class CategoryTemplateAdmin(admin.ModelAdmin):
         if obj and obj.evaluation_type == 'SELF':
             if not hasattr(request.user, 'profile') or request.user.profile.role != 'doctor':
                 readonly.append('self_evaluation_form')
+                
+
+        readonly.append('training_form')
+                
         
         return readonly
 

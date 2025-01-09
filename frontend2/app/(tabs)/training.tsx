@@ -40,6 +40,12 @@ const TrainingScreen = () => {
   }, []);
 
   useEffect(() => {
+    const categoryWithoutIcon = { ...selectedCategory };
+    delete categoryWithoutIcon.icon;
+    console.log("Category without icon:", categoryWithoutIcon);
+  }, [selectedCategory]);
+
+  useEffect(() => {
     console.log("Vista actual:", view);
     if (view === "recommendations") {
       console.log("Datos de recomendaciones:", {

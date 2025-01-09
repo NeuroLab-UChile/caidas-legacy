@@ -235,6 +235,7 @@ class CategoryTemplate(models.Model):
       
     # Para autoevaluación
     return self.evaluation_form.get('question_nodes', [])
+  
 
 class CategoryTemplateEditor(models.Model):
     """Modelo intermedio para manejar permisos de edición de templates"""
