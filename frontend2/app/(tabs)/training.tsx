@@ -303,7 +303,29 @@ const TrainingScreen = () => {
       )}
       {view === "training" && (
         <>
-          {trainingState.currentNodeId ? (
+          {selectedCategory.training_form?.training_nodes?.length === 0 ? (
+            <View style={styles.completedContainer}>
+              <View style={styles.completedCard}>
+                <View style={styles.completedIconContainer}>
+                  <Ionicons name="fitness-outline" size={80} color="#9CA3AF" />
+                </View>
+                <Text style={styles.completedTitle}>
+                  Sin Entrenamiento Disponible
+                </Text>
+                <Text style={styles.completedDescription}>
+                  No hay ejercicios configurados para esta categoría.
+                </Text>
+
+                <TouchableOpacity
+                  style={styles.backToMenuButton}
+                  onPress={() => setView(null)}
+                >
+                  <Ionicons name="arrow-back" size={24} color="#4B5563" />
+                  <Text style={styles.backToMenuText}>Volver al Menú</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          ) : trainingState.currentNodeId ? (
             renderNode(trainingState.currentNodeId)
           ) : (
             <View style={styles.completedContainer}>
