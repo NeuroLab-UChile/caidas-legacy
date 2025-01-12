@@ -207,79 +207,38 @@ document.addEventListener('DOMContentLoaded', function() {
                 credentials: 'same-origin'
             })
             .then(response => {
-                console.log('Respuesta recibida:', {
-                    status: response.status,
-                    statusText: response.statusText,
-                    headers: Object.fromEntries(response.headers.entries())
-                });
-                
-                return response.text().then(text => {
-                    if (!response.ok) {
-                        console.error('Error en respuesta:', text);
-                        try {
-                            const errorData = JSON.parse(text);
-                            throw new Error(errorData.message || errorData.error || `Error ${response.status}`);
-                        } catch (e) {
-                            throw new Error(`Error ${response.status}: ${text}`);
-                        }
-                    }
-                    return text;
-                });
+                if (!response.ok) {
+                    return response.text().then(text => {
+                        throw new Error(`HTTP ${response.status}: ${text}`);
+                    });
+                }
+                return response.text();
             })
             .then(text => {
-                console.log('Texto de respuesta completo:', text);
                 try {
                     // Intentar parsear como JSON
                     const data = JSON.parse(text);
-                    console.log('Datos JSON parseados:', data);
-                    
-                    // Verificar si tenemos una URL de video en la respuesta
-                    if (data.video_url) {
-                        console.log('Video subido exitosamente:', data.video_url);
-                    }
-                    
-                    if (data.success || data.status === 'success' || data.video_url) {
-                        console.log('Guardado exitoso, recargando página...');
-                        // Esperar un momento antes de recargar para asegurar que el servidor procesó todo
-                        setTimeout(() => {
-                            window.location.reload();
-                        }, 1000);
+                    if (data.success) {
+                        console.log('Guardado exitoso');
+                        window.location.reload();
                     } else {
                         throw new Error(data.message || 'Error desconocido');
                     }
                 } catch (e) {
-                    console.log('Error al parsear JSON, verificando si es HTML...');
-                    // Si la respuesta contiene una ruta de video, considerarla exitosa
-                    if (text.includes('/media/recommendations/videos/')) {
-                        console.log('Video subido exitosamente, recargando página...');
-                        setTimeout(() => {
-                            window.location.reload();
-                        }, 1000);
-                        return;
-                    }
-                    
+                    // Si no es JSON o hay error, verificar si es una redirección HTML
                     if (text.includes('<html') || text.includes('<!DOCTYPE html>')) {
-                        if (text.includes('error') || text.includes('Error')) {
-                            console.error('Respuesta HTML contiene error:', text);
-                            throw new Error('Error en la respuesta del servidor');
-                        }
-                        console.log('Respuesta HTML detectada, recargando página...');
-                        setTimeout(() => {
-                            window.location.reload();
-                        }, 1000);
+                        console.log('Respuesta HTML recibida, recargando página...');
+                        window.location.reload();
                     } else {
-                        console.error('Respuesta no válida:', text);
                         throw new Error('Respuesta inválida del servidor');
                     }
                 }
             })
             .catch(error => {
                 console.error('Error completo:', error);
-                console.error('Stack trace:', error.stack);
                 alert('Error al guardar los cambios: ' + error.message);
             })
             .finally(() => {
-                console.log('Finalizando proceso de envío...');
                 if (submitButton) {
                     submitButton.disabled = false;
                     submitButton.textContent = 'Guardar cambios';

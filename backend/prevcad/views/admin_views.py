@@ -176,55 +176,60 @@ def handle_uploaded_file(file):
 @user_passes_test(lambda u: u.is_staff)
 def update_recommendation(request, object_id):
     try:
-        data = json.loads(request.body.decode('utf-8'))
+        # Debug de los datos recibidos
+        print("Files:", request.FILES)
+        print("POST data:", request.POST)
+        
         health_category = get_object_or_404(HealthCategory, id=object_id)
         recommendation = health_category.recommendation
 
-        # Actualizar los campos
-        recommendation.use_default = data.get('use_default', False)
-        recommendation.text = data.get('text', '')
-        recommendation.status_color = data.get('status_color', 'gris')
-        recommendation.is_draft = data.get('is_draft', True)
-        
-        if data.get('sign'):
-            recommendation.is_signed = True
-            recommendation.signed_by = request.user.username
-            recommendation.signed_at = timezone.now()
-        
+        # Manejar el video si está presente
+        if 'video' in request.FILES:
+            try:
+                video_file = request.FILES['video']
+                print(f"Procesando video: {video_file.name} ({video_file.size} bytes)")
+                
+                # Validar el archivo
+                if video_file.size > 100 * 1024 * 1024:  # 100MB limit
+                    return JsonResponse({
+                        'status': 'error',
+                        'message': 'El archivo es demasiado grande'
+                    }, status=400)
+
+                # Guardar el video
+                recommendation.video = video_file
+                recommendation.save()
+                print(f"Video guardado: {recommendation.video.url}")
+
+            except Exception as e:
+                print(f"Error procesando video: {str(e)}")
+                return JsonResponse({
+                    'status': 'error',
+                    'message': f'Error al procesar el video: {str(e)}'
+                }, status=500)
+
+        # Actualizar otros campos
+        recommendation.use_default = request.POST.get('use_default') == 'true'
+        recommendation.text = request.POST.get('text', '')
+        recommendation.status_color = request.POST.get('status_color', 'gris')
+        recommendation.is_draft = request.POST.get('is_draft') == 'true'
         recommendation.updated_by = request.user.username
         recommendation.save()
 
         return JsonResponse({
             'status': 'success',
             'message': 'Recomendación actualizada correctamente',
-            'recommendation': {
-                'text': recommendation.text,
-                'status_color': recommendation.status_color,
-                'use_default': recommendation.use_default,
-                'is_draft': recommendation.is_draft,
-                'is_signed': recommendation.is_signed,
-                'signed_by': recommendation.signed_by,
-                'signed_at': recommendation.signed_at.isoformat() if recommendation.signed_at else None,
-                'updated_by': recommendation.updated_by,
-                'updated_at': recommendation.updated_at.isoformat()
-            }
+            'video_url': recommendation.video.url if recommendation.video else None
         })
 
-    except json.JSONDecodeError:
-        return JsonResponse({
-            'status': 'error',
-            'message': 'Error en el formato de los datos enviados'
-        }, status=400)
-    except HealthCategory.DoesNotExist:
-        return JsonResponse({
-            'status': 'error',
-            'message': 'Categoría de salud no encontrada'
-        }, status=404)
     except Exception as e:
+        import traceback
+        print("Error completo:")
+        print(traceback.format_exc())
         return JsonResponse({
             'status': 'error',
             'message': str(e)
-        }, status=500) 
+        }, status=500)
 
 @staff_member_required
 def save_professional_evaluation(request, category_id):

@@ -17,6 +17,7 @@ import { ActivityNodeType } from "@/components/ActivityNodes";
 import EmptyState from "../containers/EmptyState";
 import { DoctorRecommendations } from "@/components/DoctorRecommendations";
 import { getCategoryStatus } from "@/utils/categoryHelpers";
+import Video from "react-native-video";
 
 const TrainingScreen = () => {
   const { selectedCategory, fetchCategories } = useCategories();
@@ -130,14 +131,7 @@ const TrainingScreen = () => {
   );
 
   const renderDoctorReview = () => {
-    console.log("Rendering doctor review with:", {
-      recommendations: selectedCategory?.recommendations,
-      hasText: Boolean(selectedCategory?.recommendations?.text),
-      text: selectedCategory?.recommendations?.text,
-    });
-
-    // Verificar si hay recomendaciones y texto
-    if (!selectedCategory?.recommendations?.text) {
+    if (!selectedCategory?.recommendations) {
       return (
         <View style={styles.emptyStateContainer}>
           <Ionicons name="document-text-outline" size={48} color="#9CA3AF" />
@@ -148,28 +142,77 @@ const TrainingScreen = () => {
       );
     }
 
-    // Extraer los datos necesarios
-    const {
-      status = { color: "#808080", text: "Sin estado" },
-      text,
-      updated_at,
-    } = selectedCategory.recommendations;
+    const { status, text, media_url, updated_at, professional } =
+      selectedCategory.recommendations;
 
     return (
-      <View style={styles.recommendationContent}>
-        <View style={styles.statusContainer}>
-          <View style={[styles.statusDot, { backgroundColor: status.color }]} />
-          <Text style={styles.statusText}>{status.text}</Text>
+      <ScrollView style={styles.recommendationsContainer}>
+        <View style={styles.recommendationsCard}>
+          <View style={styles.recommendationsHeader}>
+            <View style={styles.iconContainer}>
+              <Ionicons name="medical" size={32} color="#4CAF50" />
+            </View>
+            <Text style={styles.recommendationsTitle}>
+              Recomendaciones Médicas
+            </Text>
+          </View>
+
+          {professional && (
+            <View style={styles.professionalContainer}>
+              <View style={styles.professionalHeader}>
+                <Ionicons name="person" size={20} color="#4B5563" />
+                <Text style={styles.professionalName}>{professional.name}</Text>
+              </View>
+              {professional.role && (
+                <Text style={styles.professionalRole}>{professional.role}</Text>
+              )}
+            </View>
+          )}
+
+          {status && (
+            <View style={styles.statusContainer}>
+              <View
+                style={[styles.statusDot, { backgroundColor: status.color }]}
+              />
+              <Text style={styles.statusText}>{status.text}</Text>
+            </View>
+          )}
+
+          <View style={styles.recommendationContent}>
+            {text && (
+              <View style={styles.recommendationTextContainer}>
+                <Text style={styles.recommendationText}>{text}</Text>
+              </View>
+            )}
+
+            {media_url && (
+              <View style={styles.videoContainer}>
+                <Video
+                  source={{ uri: media_url }}
+                  useNativeControls
+                  resizeMode="contain"
+                  isLooping={false}
+                  style={styles.video}
+                />
+              </View>
+            )}
+
+            {updated_at && (
+              <Text style={styles.updatedAtText}>
+                Actualizado: {new Date(updated_at).toLocaleDateString()}
+              </Text>
+            )}
+          </View>
+
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => setView(null)}
+          >
+            <Ionicons name="arrow-back" size={24} color="white" />
+            <Text style={styles.backButtonText}>Volver al Menú</Text>
+          </TouchableOpacity>
         </View>
-
-        <Text style={styles.recommendationText}>{text}</Text>
-
-        {updated_at && (
-          <Text style={styles.updatedAtText}>
-            Actualizado: {new Date(updated_at).toLocaleDateString()}
-          </Text>
-        )}
-      </View>
+      </ScrollView>
     );
   };
 
@@ -668,6 +711,13 @@ const styles = StyleSheet.create({
     backgroundColor: "white",
     padding: 16,
     borderRadius: 8,
+  },
+  videoContainer: {
+    marginBottom: 20,
+  },
+  video: {
+    width: "100%",
+    height: 200,
   },
 });
 export default TrainingScreen;

@@ -198,7 +198,7 @@ class HealthCategorySerializer(serializers.ModelSerializer):
             status = self.get_status(obj)
             recommendation = obj.get_or_create_recommendation()
 
-            # Obtener información del profesional directamente del objeto
+            # Obtener información del profesional
             professional_info = None
             professional_role = None
             
@@ -217,6 +217,7 @@ class HealthCategorySerializer(serializers.ModelSerializer):
                     'text': status['text']
                 },
                 'text': recommendation.text if recommendation else None,
+                'media_url': recommendation.get_media_url() if recommendation else None,
                 'updated_at': recommendation.updated_at if recommendation else None,
                 'is_draft': recommendation.is_draft if recommendation else True,
                 'professional': {

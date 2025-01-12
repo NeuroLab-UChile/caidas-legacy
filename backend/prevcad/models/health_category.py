@@ -9,6 +9,7 @@ from .recommendation import Recommendation
 from django.db.models.signals import post_save, pre_delete
 from django.dispatch import receiver
 
+
 class HealthCategoryEditor(models.Model):
     health_category = models.ForeignKey('HealthCategory', on_delete=models.CASCADE)
     editor = models.ForeignKey('UserProfile', on_delete=models.CASCADE)
@@ -54,7 +55,6 @@ class HealthCategory(models.Model):
             
             # Obtener el nombre y rol del usuario
             user_name = self.user.user.get_full_name() or self.user.user.username
-            user_role = UserTypes(self.user.role).label if self.user.role else "Sin rol"
             
             status = self.get_status()
             status_indicator = {
@@ -64,7 +64,7 @@ class HealthCategory(models.Model):
                 'gris': '•'
             }.get(status['recommendation_status'], '•')
             
-            return f"{template_name} - {user_name} ({user_role}) {status_indicator}"
+            return f"{template_name} - {user_name} {status_indicator}"
         except Exception:
             return "Categoría Sin Nombre"
 

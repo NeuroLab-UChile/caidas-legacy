@@ -19,6 +19,38 @@ from django.core.handlers.wsgi import WSGIRequest
 from threading import current_thread
 from django.db import transaction
 from ..models.user_types import UserTypes
+from django.db.models import Q
+from django.db import connection
+import time
+
+
+
+class UserProfileFilter(admin.SimpleListFilter):
+    title = _('Usuario')  # Nombre que aparece en el panel
+    parameter_name = 'user_filter'  # Parámetro en la URL
+
+    def lookups(self, request, model_admin):
+        """
+        Retorna lista de tuplas (valor, texto) para las opciones del filtro
+        """
+        users = set()
+        for obj in model_admin.model.objects.select_related('user__user').all():
+            if obj.user and obj.user.user:
+                user = obj.user.user
+                # Tupla con (id, nombre completo (username))
+                users.add((
+                    str(obj.user.id),
+                    f"{user.get_full_name()} ({user.username})"
+                ))
+        return sorted(users, key=lambda x: x[1].lower())
+
+    def queryset(self, request, queryset):
+        """
+        Retorna el queryset filtrado basado en el valor seleccionado
+        """
+        if not self.value():
+            return queryset
+        return queryset.filter(user_id=self.value())
 
 
 
@@ -32,8 +64,20 @@ class HealthCategoryAdmin(admin.ModelAdmin):
         'get_edit_status'
     ]
 
+    list_filter = (
+        UserProfileFilter,
+        'template',
+    )
+
+    search_fields = (
+        'user__user__username',
+        'user__user__first_name',
+        'user__user__last_name',
+        'template__name',
+    )
+
     # Definir los campos base del modelo
-    base_fields = ['user', 'template']
+    base_fields = ['user_profile', 'template']
 
     # Definir los campos de solo lectura
     readonly_fields = (
@@ -155,7 +199,15 @@ class HealthCategoryAdmin(admin.ModelAdmin):
     def get_recommendation_status(self, obj):
         """Muestra el estado de la recomendación con estilos mejorados"""
         try:
-            recommendation = obj.recommendation
+            recommendation = getattr(obj, 'recommendation', None)
+            if not recommendation:
+                return format_html(
+                    '<span style="'
+                    'color: #6B7280;'
+                    'font-size: 0.875rem;'
+                    'font-style: italic;'
+                    '">Sin recomendación</span>'
+                )
             
             # Configuración de estados con estilos y símbolos
             status_config = {
@@ -198,10 +250,8 @@ class HealthCategoryAdmin(admin.ModelAdmin):
                 publication_status.append(("Borrador", "#6B7280"))  # Gris
             else:
                 publication_status.append(("Publicado", "#059669"))  # Verde
-                if recommendation.is_signed:
-                    publication_status.append(("Firmado", "#2563EB"))  # Azul
             
-            # Construir el HTML con estilos inline (para no depender de Tailwind)
+            # Construir el HTML con estilos inline
             status_html = f'''
                 <div style="display: flex; flex-direction: column; gap: 8px;">
                     <div style="
@@ -243,12 +293,13 @@ class HealthCategoryAdmin(admin.ModelAdmin):
             return format_html(status_html)
             
         except Exception as e:
+            print(f"Error en get_recommendation_status: {e}")
             return format_html(
                 '<span style="'
                 'color: #6B7280;'
-                'font-size: 0.75rem;'
+                'font-size: 0.875rem;'
                 'font-style: italic;'
-                '">Sin recomendación</span>'
+                '">Error al cargar estado</span>'
             )
 
     get_recommendation_status.short_description = "Estado de Recomendación"
@@ -323,12 +374,7 @@ class HealthCategoryAdmin(admin.ModelAdmin):
             context = {
                 'recommendation': recommendation,
                 'health_category': obj,
-                'default_recommendations': {
-                    'verde': 'No ha sufrido caídas en el último año. Mantenga su rutina de ejercicios y consultas médicas regulares.',
-                    'amarillo': 'Ha sufrido una caída en el último año. Considere adoptar medidas preventivas.',
-                    'rojo': 'Ha sufrido múltiples caídas. Se requiere evaluación médica inmediata y plan de prevención personalizado.',
-                    'gris': 'Pendiente de evaluación.'
-                },
+                'default_recommendations': obj.template.default_recommendations,
                 'can_edit': can_edit,
                 'user_role': user_role,
                 'user_role_label': user_role_label,
@@ -371,43 +417,62 @@ class HealthCategoryAdmin(admin.ModelAdmin):
         return super().response_change(request, obj)
 
     def save_model(self, request, obj, form, change):
-        """
-        Procesa los campos de recomendación antes de guardar el modelo
-        """
-        try:
-            with transaction.atomic():
-                # Obtener los datos de la recomendación del POST
-                recommendation_data = {
-                    'text': request.POST.get('recommendation_text', ''),
-                    'status': request.POST.get('recommendation_status', 'gris'),  # Valor por defecto 'gris'
-                    'is_draft': request.POST.get('recommendation_is_draft') == 'true',
-                    'use_default': request.POST.get('recommendation_use_default') == 'true'
-                }
+        from django.db import connection
+        import time
 
-                # Debug
-                print("Datos de recomendación recibidos:", recommendation_data)
+        max_attempts = 3
+        attempt = 0
 
-                # Guardar el modelo principal primero
-                super().save_model(request, obj, form, change)
-
-                # Obtener o crear la recomendación
-                recommendation = obj.recommendation if hasattr(obj, 'recommendation') else Recommendation(health_category=obj)
+        while attempt < max_attempts:
+            try:
+                with transaction.atomic():
+                    # Guardar objeto principal
+                    super().save_model(request, obj, form, change)
+                    
+                    # Obtener o crear recomendación
+                    recommendation = obj.get_or_create_recommendation()
+                    
+                    # Manejar archivo de video
+                    if 'video' in request.FILES:
+                        if recommendation.video:
+                            recommendation.video.delete(save=False)
+                        recommendation.video = request.FILES['video']
+                    
+                    # Guardar otros campos
+                    recommendation.text = request.POST.get('text', '')
+                    recommendation.status_color = request.POST.get('status_color', 'gris')
+                    recommendation.is_draft = request.POST.get('is_draft') == 'true'
+                    recommendation.updated_by = request.user.username
+                    recommendation.updated_at = timezone.now()
+                    
+                    # Guardar cambios
+                    recommendation.save()
+                    
+                    messages.success(request, "Recomendación guardada correctamente")
+                    return JsonResponse({
+                        'success': True,
+                        'message': 'Cambios guardados correctamente'
+                    })
+                    
+                break  # Si llegamos aquí, todo salió bien
                 
-                # Asignar valores asegurando que no sean None
-                recommendation.text = recommendation_data['text']
-                recommendation.status_color = recommendation_data['status']
-                recommendation.is_draft = recommendation_data['is_draft']
-                recommendation.use_default = recommendation_data['use_default']
-                recommendation.updated_at = timezone.now()
-                recommendation.save()
-
-        except Exception as e:
-            self.message_user(
-                request,
-                f"Error al guardar los cambios: {str(e)}",
-                level=messages.ERROR
-            )
-            raise
+            except OperationalError as e:
+                attempt += 1
+                if attempt == max_attempts:
+                    messages.error(request, "Error al guardar: Base de datos ocupada")
+                    return JsonResponse({
+                        'success': False,
+                        'error': 'Error al guardar: Base de datos ocupada'
+                    }, status=503)
+                time.sleep(0.5)  # Esperar antes de reintentar
+                
+            except Exception as e:
+                print("Error al guardar:", str(e))
+                messages.error(request, f"Error al guardar: {str(e)}")
+                return JsonResponse({
+                    'success': False,
+                    'error': str(e)
+                }, status=500)
 
     def get_urls(self):
         urls = super().get_urls()
