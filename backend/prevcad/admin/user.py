@@ -60,27 +60,92 @@ class CustomUserAdmin(BaseUserAdmin):
     list_display_links = ('get_avatar', 'username')
     inlines = [UserProfileInline, AppointmentInline]
     
-    fieldsets = (
-        (None, {'fields': ('username', 'password')}),
-        ('Información Personal', {
-            'fields': (
-                'first_name',
-                'last_name',
-                'email',
-            ),
-            'classes': ('wide',)
-        }),
-        ('Permisos', {
-            'fields': (
+    def has_add_permission(self, request):
+        """Permitir que cualquier usuario staff pueda crear usuarios"""
+        return request.user.is_staff
+
+    def get_fieldsets(self, request, obj=None):
+        if obj is None:  # Cuando se está creando un nuevo usuario
+            return (
+                (None, {
+                    'fields': ('username', 'password1', 'password2')
+                }),
+                ('Información Personal', {
+                    'fields': ('first_name', 'last_name', 'email')
+                }),
+                ('Permisos Básicos', {
+                    'fields': ('is_active', 'groups'),
+                }),
+            )
+        
+        # Para edición de usuarios existentes
+        fieldsets = [
+            (None, {'fields': ('username', 'password')}),
+            ('Información Personal', {
+                'fields': ('first_name', 'last_name', 'email'),
+            }),
+        ]
+        
+        # Mostrar permisos completos solo a admins
+        if hasattr(request.user, 'profile') and request.user.profile.role == 'ADMIN':
+            fieldsets.append(
+                ('Permisos', {
+                    'fields': (
+                        'is_active',
+                        'is_staff',
+                        'is_superuser',
+                        'groups',
+                        'user_permissions',
+                    ),
+                })
+            )
+        
+        return fieldsets
+
+    def get_readonly_fields(self, request, obj=None):
+        if obj is None:  # Si es creación, no hay campos de solo lectura
+            return []
+            
+        if not hasattr(request.user, 'profile') or request.user.profile.role != 'ADMIN':
+            return [
                 'is_active',
                 'is_staff',
                 'is_superuser',
                 'groups',
                 'user_permissions',
-            ),
-            'classes': ('collapse',)
+            ]
+        return []
+
+    def save_model(self, request, obj, form, change):
+        if not change:  # Si es un nuevo usuario
+            obj.is_staff = True  # Hacer staff por defecto
+            # Asegurarse de que se guarde la contraseña correctamente
+            if hasattr(form, 'cleaned_data'):
+                password = form.cleaned_data.get('password1')
+                if password:
+                    obj.set_password(password)
+        
+        super().save_model(request, obj, form, change)
+
+    add_fieldsets = (
+        (None, {
+            'classes': ('wide',),
+            'fields': ('username', 'password1', 'password2'),
+        }),
+        ('Información Personal', {
+            'fields': ('first_name', 'last_name', 'email'),
+        }),
+        ('Permisos Básicos', {
+            'fields': ('is_active', 'groups'),
         }),
     )
+
+    def has_change_permission(self, request, obj=None):
+        return request.user.is_staff
+
+    def has_delete_permission(self, request, obj=None):
+        # Solo los admin pueden eliminar usuarios
+        return hasattr(request.user, 'profile') and request.user.profile.role == 'ADMIN'
 
     def get_avatar(self, obj):
         if hasattr(obj, 'profile') and obj.profile.profile_image:
@@ -146,17 +211,14 @@ class CustomUserAdmin(BaseUserAdmin):
         css = {
             'all': (
                 'https://cdn.tailwindcss.com',
-                'admin/css/custom_admin.css',
                 'admin/css/forms.css',
                 'admin/css/widgets.css',
-                'admin/css/calendar.css',
-                'admin/css/DateTimeShortcuts.css',
             )
-
         }
         js = (
-            'admin/js/calendar.js',
-            'admin/js/admin/DateTimeShortcuts.js',
+            'admin/js/core.js',
+            'admin/js/vendor/jquery/jquery.js',
+            'admin/js/jquery.init.js',
         )
 
 # Registrar el admin personalizado

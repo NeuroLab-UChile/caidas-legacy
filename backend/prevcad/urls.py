@@ -9,6 +9,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from .views import admin_views
 from .views.appointment_view import AppointmentViewSet
+from .views.admin_views import video_node_view, update_training_form
 
 
 router = routers.DefaultRouter(trailing_slash=False)
@@ -41,4 +42,9 @@ urlpatterns = [
   path('admin/prevcad/healthcategory/<int:category_id>/save-professional-evaluation/',
        admin_views.save_professional_evaluation,
        name='admin_save_professional_evaluation'),
-]
+  path('api/video-nodes/', video_node_view, name='video-node-create'),
+  path('api/video-nodes/<str:node_id>/', video_node_view, name='video-node-update'),
+  path('admin/categorytemplate/<int:template_id>/update_training_form/', 
+       update_training_form, 
+       name='update_training_form'),
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

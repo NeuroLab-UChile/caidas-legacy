@@ -17,7 +17,7 @@ import { ActivityNodeType } from "@/components/ActivityNodes";
 import EmptyState from "../containers/EmptyState";
 import { DoctorRecommendations } from "@/components/DoctorRecommendations";
 import { getCategoryStatus } from "@/utils/categoryHelpers";
-import Video from "react-native-video";
+import { Video } from "expo-av";
 
 const TrainingScreen = () => {
   const { selectedCategory, fetchCategories } = useCategories();
@@ -131,6 +131,8 @@ const TrainingScreen = () => {
   );
 
   const renderDoctorReview = () => {
+    console.log("Rendering doctor review:", selectedCategory?.recommendations);
+
     if (!selectedCategory?.recommendations) {
       return (
         <View style={styles.emptyStateContainer}>
@@ -157,7 +159,7 @@ const TrainingScreen = () => {
             </Text>
           </View>
 
-          {professional && (
+          {professional?.name && (
             <View style={styles.professionalContainer}>
               <View style={styles.professionalHeader}>
                 <Ionicons name="person" size={20} color="#4B5563" />
@@ -172,18 +174,28 @@ const TrainingScreen = () => {
           {status && (
             <View style={styles.statusContainer}>
               <View
-                style={[styles.statusDot, { backgroundColor: status.color }]}
+                style={[
+                  styles.statusDot,
+                  { backgroundColor: status.color || "#808080" },
+                ]}
               />
-              <Text style={styles.statusText}>{status.text}</Text>
+              <Text style={styles.statusText}>
+                {status.text || "Estado no definido"}
+              </Text>
             </View>
           )}
 
           <View style={styles.recommendationContent}>
-            {text && (
-              <View style={styles.recommendationTextContainer}>
-                <Text style={styles.recommendationText}>{text}</Text>
-              </View>
-            )}
+            <View style={styles.recommendationTextContainer}>
+              <Text
+                style={[
+                  styles.recommendationText,
+                  !text && { fontStyle: "italic" },
+                ]}
+              >
+                {text || "No hay recomendaciones específicas en este momento."}
+              </Text>
+            </View>
 
             {media_url && (
               <View style={styles.videoContainer}>
@@ -191,8 +203,11 @@ const TrainingScreen = () => {
                   source={{ uri: media_url }}
                   useNativeControls
                   resizeMode="contain"
-                  isLooping={false}
+                  shouldPlay={false}
                   style={styles.video}
+                  onError={(error) => {
+                    console.error("Error loading video:", error);
+                  }}
                 />
               </View>
             )}
@@ -224,7 +239,7 @@ const TrainingScreen = () => {
       <CategoryHeader name={selectedCategory.name} />
       {!view && (
         <View style={styles.viewSelection}>
-          {selectedCategory?.recommendations?.text && (
+          {selectedCategory?.recommendations && (
             <TouchableOpacity
               style={styles.optionCard}
               onPress={() => {
@@ -259,91 +274,7 @@ const TrainingScreen = () => {
           </TouchableOpacity>
         </View>
       )}
-      {view === "recommendations" && (
-        <ScrollView style={styles.recommendationsContainer}>
-          <View style={styles.recommendationsCard}>
-            <View style={styles.recommendationsHeader}>
-              <View style={styles.iconContainer}>
-                <Ionicons name="medical" size={32} color="#4CAF50" />
-              </View>
-              <Text style={styles.recommendationsTitle}>
-                Recomendaciones Médicas
-              </Text>
-            </View>
-
-            <View style={styles.recommendationContent}>
-              {selectedCategory?.recommendations?.status && (
-                <View style={styles.statusContainer}>
-                  <View
-                    style={[
-                      styles.statusDot,
-                      {
-                        backgroundColor:
-                          selectedCategory.recommendations.status.color,
-                      },
-                    ]}
-                  />
-                  <Text style={styles.statusText}>
-                    {selectedCategory.recommendations.status.text}
-                  </Text>
-                </View>
-              )}
-
-              {(selectedCategory?.recommendations?.professional ||
-                selectedCategory?.recommendations?.updated_at) && (
-                <View style={styles.professionalContainer}>
-                  <View style={styles.professionalHeader}>
-                    <Ionicons name="person" size={16} color="#6B7280" />
-                    <Text style={styles.professionalName}>
-                      {selectedCategory.recommendations.professional?.name ||
-                        "Sin asignar"}
-                    </Text>
-                  </View>
-                  <Text style={styles.professionalRole}>
-                    {selectedCategory.recommendations.professional?.role ||
-                      "Profesional de la salud"}
-                  </Text>
-                  {selectedCategory.recommendations.updated_at && (
-                    <Text style={styles.dateText}>
-                      Actualizado el
-                      {new Date(
-                        selectedCategory.recommendations.updated_at
-                      ).toLocaleDateString()}
-                    </Text>
-                  )}
-                </View>
-              )}
-
-              <View style={styles.recommendationTextWrapper}>
-                {selectedCategory?.recommendations?.text ? (
-                  <Text style={styles.recommendationText}>
-                    {selectedCategory.recommendations.text}
-                  </Text>
-                ) : (
-                  <View style={styles.emptyStateContainer}>
-                    <Ionicons
-                      name="document-text-outline"
-                      size={48}
-                      color="#9CA3AF"
-                    />
-                    <Text style={styles.emptyStateText}>
-                      No hay recomendaciones disponibles
-                    </Text>
-                  </View>
-                )}
-              </View>
-            </View>
-
-            <TouchableOpacity
-              style={styles.backButton}
-              onPress={() => setView(null)}
-            >
-              <Ionicons name="arrow-back" size={20} color="white" />
-              <Text style={styles.backButtonText}>Volver</Text>
-            </TouchableOpacity>
-          </View>
-        </ScrollView>
-      )}
+      {view === "recommendations" && renderDoctorReview()}
       {view === "training" && (
         <>
           {selectedCategory.training_form?.training_nodes?.length === 0 ? (
@@ -713,11 +644,15 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   videoContainer: {
-    marginBottom: 20,
+    marginTop: 16,
+    width: "100%",
+    aspectRatio: 16 / 9,
+    borderRadius: 8,
+    overflow: "hidden",
   },
   video: {
     width: "100%",
-    height: 200,
+    height: "100%",
   },
 });
 export default TrainingScreen;

@@ -70,6 +70,29 @@ class UserProfile(models.Model):
             # Por defecto, asignar como paciente
             self.role = UserTypes.PATIENT
 
+    def get_roles(self):
+        """
+        Retorna lista de roles del usuario.
+        Si el rol está almacenado como string múltiple, lo divide.
+        """
+        if not self.role:
+            return []
+            
+        # Si el rol contiene múltiples roles separados por algún delimitador
+        if ',' in self.role:
+            return [role.strip().upper() for role in self.role.split(',')]
+        if '_' in self.role:
+            return [role.strip().upper() for role in self.role.split('_')]
+            
+        # Si es un solo rol
+        return [self.role.upper()]
+
+    def has_role(self, role):
+        """
+        Verifica si el usuario tiene un rol específico
+        """
+        return role.upper() in self.get_roles()
+
     class Meta:
         verbose_name = 'Perfil de Usuario'
         verbose_name_plural = 'Perfiles de Usuario'

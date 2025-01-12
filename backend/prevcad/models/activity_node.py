@@ -40,6 +40,27 @@ class ActivityNode(models.Model):
     def next_node_id(self, value):
         self._next_node_id = value
 
+    def get_media_url(self, request=None):
+        """Método base para obtener URL absoluta de archivos multimedia"""
+        media_field = None
+        
+        if hasattr(self, 'video'):
+            media_field = self.video
+        elif hasattr(self, 'image'):
+            media_field = self.image
+        elif hasattr(self, 'content') and isinstance(self.content, (models.ImageField, models.FileField)):
+            media_field = self.content
+            
+        if media_field and media_field:
+            try:
+                if request:
+                    return request.build_absolute_uri(media_field.url)
+                return media_field.url
+            except Exception as e:
+                print(f"Error getting media URL: {e}")
+                return None
+        return None
+
     class Meta:
         abstract = True
 
@@ -153,57 +174,26 @@ class WeeklyRecipeNode(ActivityNode):
 
 
 class VideoNode(ActivityNode):
-    title = models.CharField(max_length=200)
+    title = models.CharField(max_length=200, blank=True, null=True)
+    content = models.TextField(blank=True, null=True)
     video = models.FileField(
-        upload_to='training_videos/',
-        validators=[
-            FileExtensionValidator(
-                allowed_extensions=['mp4', 'webm', 'mov']
-            )
-        ]
-    )
-    thumbnail = models.ImageField(
-        upload_to='video_thumbnails/',
+        upload_to='videos/',
+        validators=[FileExtensionValidator(allowed_extensions=['mp4', 'mov', 'webm'])],
         null=True,
         blank=True
     )
-    description = models.TextField(null=True, blank=True)
-    duration = models.DurationField(null=True, blank=True)
-    
-    def save(self, *args, **kwargs):
-        if not self.pk and not self.thumbnail and self.video:  # Si es nuevo y no tiene thumbnail
-            try:
-                # Generar thumbnail del video
-                from moviepy.editor import VideoFileClip
-                clip = VideoFileClip(self.video.path)
-                
-                # Guardar duración
-                self.duration = clip.duration
-                
-                # Generar y guardar thumbnail
-                thumbnail_path = f'video_thumbnails/{self.video.name.split("/")[-1]}.jpg'
-                clip.save_frame(thumbnail_path, t=1.0)  # Captura el frame al segundo 1
-                self.thumbnail = thumbnail_path
-                
-                clip.close()
-            except Exception as e:
-                print(f"Error generating thumbnail: {e}")
-                
-        super().save(*args, **kwargs)
-
-    def get_video_url(self):
-        if self.video:
-            return self.video.url
-        return None
-
-    def get_thumbnail_url(self):
-        if self.thumbnail:
-            return self.thumbnail.url
-        return None
 
     class Meta:
         verbose_name = "Video"
         verbose_name_plural = "Videos"
+
+    def get_video_url(self, request=None):
+        if self.video and hasattr(self.video, 'url'):
+            if request:
+                return request.build_absolute_uri(self.video.url)
+            return self.video.url
+        return None
+
 
 
 class TextNode(ActivityNode):
@@ -212,5 +202,9 @@ class TextNode(ActivityNode):
 
 class ImageNode(ActivityNode):
     content = models.ImageField(upload_to='images/', null=True, blank=True)
+
+    def get_image_url(self, request=None):
+        """Obtiene la URL absoluta de la imagen"""
+        return self.get_media_url(request)
  
 

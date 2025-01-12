@@ -55,20 +55,49 @@ class CategoryTemplateAdmin(admin.ModelAdmin):
         'is_readonly'
     )
 
+    def is_admin_user(self, request):
+        """
+        Verifica si el usuario tiene perfil de administrador
+        """
+        return hasattr(request.user, 'profile') and request.user.profile.role == 'ADMIN'
+
+    def has_change_permission(self, request, obj=None):
+        """Solo usuarios admin pueden editar"""
+        return self.is_admin_user(request)
+
+    def has_add_permission(self, request):
+        """Solo usuarios admin pueden crear"""
+        return self.is_admin_user(request)
+
+    def has_delete_permission(self, request, obj=None):
+        """Solo usuarios admin pueden eliminar"""
+        return self.is_admin_user(request)
+
+    def get_readonly_fields(self, request, obj=None):
+        """Si no es admin, todos los campos son de solo lectura"""
+        if not self.is_admin_user(request):
+            return [field.name for field in self.model._meta.fields]
+        return ['training_form_button', 'evaluation_form_button', 'training_form']
+
     def get_fieldsets(self, request, obj=None):
+        # Fieldsets base para todos los usuarios
         fieldsets = [
             ('Información Básica', {
                 'fields': ('name', 'description', 'icon', 'is_active')
-            }),
-            ('Configuración de Permisos', {
-                'fields': ('allowed_editor_roles', 'is_readonly'),
-                'description': 'Define quién puede editar las instancias y si son de solo lectura',
             }),
             ('Tipo de Evaluación', {
                 'fields': ('evaluation_type',),
             }),
         ]
         
+        # Agregar configuración de permisos para superusuarios y admins
+        if self.is_admin_user(request):
+            fieldsets.insert(1, ('Configuración de Permisos', {
+                'fields': ('allowed_editor_roles', 'is_readonly'),
+                'description': 'Define quién puede editar las instancias y si son de solo lectura',
+            }))
+        
+        # Agregar campos de formularios según el tipo de evaluación
         if obj and obj.evaluation_type == 'SELF':
             fieldsets.extend([
                 ('Formulario de Evaluación', {
@@ -104,22 +133,6 @@ class CategoryTemplateAdmin(admin.ModelAdmin):
         """)
 
     training_form_button.short_description = "Formulario de Entrenamiento"
-
-    def get_readonly_fields(self, request, obj=None):
-        readonly = ['training_form_button', 'evaluation_form_button']
-        
-        if not request.user.is_superuser:
-            readonly.append('evaluation_type')
-        
-        if obj and obj.evaluation_type == 'SELF':
-            if not hasattr(request.user, 'profile') or request.user.profile.role != 'doctor':
-                readonly.append('self_evaluation_form')
-                
-
-        readonly.append('training_form')
-                
-        
-        return readonly
 
     def preview_icon(self, obj):
         if obj.icon:

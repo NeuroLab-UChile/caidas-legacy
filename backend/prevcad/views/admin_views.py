@@ -19,12 +19,17 @@ from prevcad.models import HealthCategory
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib import admin
 from django.urls import path
+from rest_framework import status
+from rest_framework.decorators import api_view, parser_classes
+from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.response import Response
+from ..models import VideoNode
 
 logger = logging.getLogger(__name__)
 
 @require_POST
 @csrf_exempt
-@doctor_required
+@user_passes_test(lambda u: u.is_staff)
 def update_evaluation_form(request, template_id):
     """
     Actualiza el formulario de evaluación de una plantilla de categoría.
@@ -86,7 +91,7 @@ def update_evaluation_form(request, template_id):
 
 @require_POST
 @csrf_exempt
-@doctor_required
+@user_passes_test(lambda u: u.is_staff)
 def update_training_form(request, template_id):
     """
     Actualiza el formulario de evaluación de una plantilla de categoría.
@@ -317,3 +322,64 @@ def save_professional_evaluation(request, category_id):
             'success': False,
             'error': str(e)
         }, status=500) 
+    
+@api_view(['GET', 'POST', 'PUT'])
+@parser_classes([MultiPartParser, FormParser])
+@csrf_exempt
+@user_passes_test(lambda u: u.is_staff)
+def video_node_view(request, node_id=None):
+    """
+    Maneja la creación y actualización de VideoNodes
+    """
+    logger.info(f"Recibida solicitud {request.method} para video_node_view. ID: {node_id}")
+    
+    try:
+        # Para solicitudes GET, devolver el video existente
+        if request.method == 'GET' and node_id:
+            try:
+                video_node = VideoNode.objects.get(id=node_id)
+                return JsonResponse({
+                    'status': 'success',
+                    'id': video_node.id,
+                    'media_url': video_node.get_video_url(request),
+                    'title': video_node.title,
+                    'content': video_node.content
+                })
+            except VideoNode.DoesNotExist:
+                return JsonResponse({
+                    'status': 'error',
+                    'message': 'Video no encontrado'
+                }, status=404)
+
+        # Para PUT y POST
+        if request.method == 'PUT' and node_id:
+            try:
+                video_node = VideoNode.objects.get(id=node_id)
+            except VideoNode.DoesNotExist:
+                video_node = VideoNode(id=node_id)
+        else:
+            video_node = VideoNode()
+
+        # Actualizar campos
+        video_node.title = request.data.get('title', '')
+        video_node.content = request.data.get('content', '')
+        if 'video' in request.FILES:
+            video_node.video = request.FILES['video']
+        video_node.type = 'VIDEO_NODE'
+        video_node.save()
+
+        return JsonResponse({
+            'status': 'success',
+            'message': 'Video guardado correctamente',
+            'id': video_node.id,
+            'media_url': video_node.get_video_url(request),
+            'title': video_node.title,
+            'content': video_node.content
+        })
+
+    except Exception as e:
+        logger.error(f"Error en video_node_view: {str(e)}", exc_info=True)
+        return JsonResponse({
+            'status': 'error',
+            'message': str(e)
+        }, status=500)

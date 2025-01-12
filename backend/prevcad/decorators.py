@@ -8,51 +8,53 @@ logger = logging.getLogger(__name__)
 def doctor_required(view_func):
     @wraps(view_func)
     def _wrapped_view(request, *args, **kwargs):
-        response_params = {
-            'json_dumps_params': {'indent': 2, 'ensure_ascii': False},
-            'content_type': 'application/json'
-        }
+        if not request.user.is_authenticated:
+            return JsonResponse({
+                'status': 'error',
+                'code': 'authentication_required',
+                'message': _('Debes iniciar sesión para acceder')
+            }, status=401)
 
-        # Debug: Imprimir información del usuario
-        logger.debug(f"User: {request.user.username}")
-        logger.debug(f"Is authenticated: {request.user.is_authenticated}")
-        
         try:
-            user_profile = request.user.profile  # Usando related_name 'profile'
-            logger.debug(f"User role: {user_profile.role}")
-            logger.debug(f"Role type: {type(user_profile.role)}")
-            logger.debug(f"Is doctor?: {user_profile.role == 'doctor'}")
+            user_profile = request.user.profile
+            # Obtener roles como lista
+            user_roles = user_profile.get_roles()
             
-            # Verificar el rol usando valores de las constantes
-            if user_profile.role.lower() != 'doctor':  # Normalizar a minúsculas
+            logger.debug(f"User roles: {user_roles}")
+            logger.debug(f"Is doctor in roles?: {'DOCTOR' in user_roles}")
+
+            # Verificar si DOCTOR está en los roles del usuario
+            if 'DOCTOR' not in user_roles:
                 return JsonResponse({
                     'status': 'error',
                     'code': 'doctor_required',
                     'message': _('Acceso denegado - Se requiere ser doctor'),
                     'details': {
-                        'reason': _(f'Tu rol actual es {user_profile.get_role_display()}, pero esta acción requiere ser Doctor'),
-                        'current_role': user_profile.get_role_display(),
-                        'required_role': 'Doctor',
+                        'reason': _('Esta acción requiere ser Doctor'),
+                        'current_roles': user_roles,
+                        'required_role': 'DOCTOR',
                         'debug_info': {
-                            'role_value': user_profile.role,
-                            'role_type': str(type(user_profile.role)),
-                            'role_display': user_profile.get_role_display()
+                            'all_roles': user_roles,
+                            'has_doctor_role': 'DOCTOR' in user_roles
                         }
                     }
-                }, status=403, **response_params)
+                }, status=403)
 
-        except Exception as e:
-            logger.error(f"Error checking doctor role: {str(e)}", exc_info=True)
+            return view_func(request, *args, **kwargs)
+
+        except AttributeError as e:
+            logger.error(f"Error accessing user profile: {e}")
             return JsonResponse({
                 'status': 'error',
-                'code': 'role_check_error',
-                'message': _('Error verificando rol'),
-                'details': {
-                    'error': str(e),
-                    'type': str(type(e))
-                }
-            }, status=500, **response_params)
-
-        return view_func(request, *args, **kwargs)
+                'code': 'profile_error',
+                'message': _('Error al verificar el perfil de usuario')
+            }, status=500)
+        except Exception as e:
+            logger.error(f"Unexpected error in doctor_required decorator: {e}")
+            return JsonResponse({
+                'status': 'error',
+                'code': 'unknown_error',
+                'message': _('Error inesperado al verificar permisos')
+            }, status=500)
 
     return _wrapped_view
