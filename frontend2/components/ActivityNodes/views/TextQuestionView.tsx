@@ -16,8 +16,8 @@ export function TextQuestionView({ data, setResponse }: TextQuestionProps) {
   const [answer, setAnswer] = useState("");
 
   useEffect(() => {
-    setAnswer("");
-    setResponse(null);
+    setAnswer("No hay respuesta");
+    setResponse({ answer: "No hay respuesta" });
   }, [data.id, data.question]);
 
   const handleTextChange = (text: string) => {

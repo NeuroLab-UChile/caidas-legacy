@@ -7,3 +7,4 @@ from .filters import HealthStatusFilter
 
 from .appointment import AppointmentAdmin
 from .user import CustomUserAdmin
+from .action_log import ActionLogAdmin

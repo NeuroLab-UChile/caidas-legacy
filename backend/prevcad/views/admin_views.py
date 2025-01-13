@@ -25,6 +25,8 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.response import Response
 from ..models import VideoNode
 
+
+
 logger = logging.getLogger(__name__)
 
 @require_POST
@@ -94,62 +96,44 @@ def update_evaluation_form(request, template_id):
 @user_passes_test(lambda u: u.is_staff)
 def update_training_form(request, template_id):
     """
-    Actualiza el formulario de evaluación de una plantilla de categoría.
+    Actualiza el formulario de entrenamiento de una plantilla de categoría.
     """
     try:
-        obj = get_object_or_404(CategoryTemplate, id=template_id)
-        new_form_data = request.POST.get('training_form')
+        template = get_object_or_404(CategoryTemplate, id=template_id)
         
-        if not new_form_data:
+        if request.method != 'POST':
             return JsonResponse({
-                'status': 'error', 
-                'message': 'No se recibieron datos del formulario',
-                'details': None
-            }, status=400, json_dumps_params={'indent': 2, 'ensure_ascii': False})
-        
-        new_form = json.loads(new_form_data)
-        if "training_nodes" not in new_form or not isinstance(new_form["training_nodes"], list):
+                'status': 'error',
+                'message': 'Método no permitido'
+            }, status=405)
+
+        try:
+            form_data = json.loads(request.POST.get('training_form', '{}'))
+            training_nodes = form_data.get('training_nodes', [])
+            
+            # Actualizar el training_form del template
+            template.training_form = {
+                'training_nodes': training_nodes
+            }
+            template.save(update_fields=['training_form'])
+
             return JsonResponse({
-                'status': 'error', 
-                'message': 'Estructura de datos inválida',
-                'details': {
-                    'required_fields': ['training_nodes'],
-                    'received_fields': list(new_form.keys())
-                }
-            }, status=400, json_dumps_params={'indent': 2, 'ensure_ascii': False})
+                'status': 'success',
+                'message': 'Formulario de entrenamiento actualizado'
+            })
 
-        obj.training_form = new_form
-        obj.save(update_fields=["training_form"])
-        
-        return JsonResponse({
-            'status': 'success',
-            'message': 'Formulario de entrenamiento actualizado correctamente',
-            'data': {
-                'template_id': template_id,
-                'updated_at': obj.updated_at.isoformat() if hasattr(obj, 'updated_at') else None,
-                'nodes_count': len(new_form.get('training_nodes', []))
-            }
-        }, json_dumps_params={'indent': 2, 'ensure_ascii': False})
-
-    except json.JSONDecodeError:
-        return JsonResponse({
-            'status': 'error',
-            'message': 'Error al decodificar JSON',
-            'details': {
-                'received_data': new_form_data[:100] + '...' if len(new_form_data) > 100 else new_form_data
-            }
-        }, status=400, json_dumps_params={'indent': 2, 'ensure_ascii': False})
+        except json.JSONDecodeError:
+            return JsonResponse({
+                'status': 'error',
+                'message': 'Error al procesar los datos del formulario'
+            }, status=400)
 
     except Exception as e:
-        logger.error(f"Error updating training form: {str(e)}", exc_info=True)
+        logger.error(f"Error en update_training_form: {str(e)}")
         return JsonResponse({
             'status': 'error',
-            'message': 'Error interno del servidor',
-            'details': {
-                'error_type': type(e).__name__,
-                'error_message': str(e)
-            }
-        }, status=500, json_dumps_params={'indent': 2, 'ensure_ascii': False})
+            'message': 'Error al actualizar el formulario'
+        }, status=500)
 
 def handle_uploaded_file(file):
     """
@@ -179,6 +163,7 @@ def handle_uploaded_file(file):
 @require_http_methods(["POST"])
 @csrf_protect
 @user_passes_test(lambda u: u.is_staff)
+
 def update_recommendation(request, object_id):
     try:
         # Debug de los datos recibidos
@@ -237,6 +222,7 @@ def update_recommendation(request, object_id):
         }, status=500)
 
 @staff_member_required
+
 def save_professional_evaluation(request, category_id):
     """
     Vista de admin para guardar la evaluación profesional
@@ -323,63 +309,3 @@ def save_professional_evaluation(request, category_id):
             'error': str(e)
         }, status=500) 
     
-@api_view(['GET', 'POST', 'PUT'])
-@parser_classes([MultiPartParser, FormParser])
-@csrf_exempt
-@user_passes_test(lambda u: u.is_staff)
-def video_node_view(request, node_id=None):
-    """
-    Maneja la creación y actualización de VideoNodes
-    """
-    logger.info(f"Recibida solicitud {request.method} para video_node_view. ID: {node_id}")
-    
-    try:
-        # Para solicitudes GET, devolver el video existente
-        if request.method == 'GET' and node_id:
-            try:
-                video_node = VideoNode.objects.get(id=node_id)
-                return JsonResponse({
-                    'status': 'success',
-                    'id': video_node.id,
-                    'media_url': video_node.get_video_url(request),
-                    'title': video_node.title,
-                    'content': video_node.content
-                })
-            except VideoNode.DoesNotExist:
-                return JsonResponse({
-                    'status': 'error',
-                    'message': 'Video no encontrado'
-                }, status=404)
-
-        # Para PUT y POST
-        if request.method == 'PUT' and node_id:
-            try:
-                video_node = VideoNode.objects.get(id=node_id)
-            except VideoNode.DoesNotExist:
-                video_node = VideoNode(id=node_id)
-        else:
-            video_node = VideoNode()
-
-        # Actualizar campos
-        video_node.title = request.data.get('title', '')
-        video_node.content = request.data.get('content', '')
-        if 'video' in request.FILES:
-            video_node.video = request.FILES['video']
-        video_node.type = 'VIDEO_NODE'
-        video_node.save()
-
-        return JsonResponse({
-            'status': 'success',
-            'message': 'Video guardado correctamente',
-            'id': video_node.id,
-            'media_url': video_node.get_video_url(request),
-            'title': video_node.title,
-            'content': video_node.content
-        })
-
-    except Exception as e:
-        logger.error(f"Error en video_node_view: {str(e)}", exc_info=True)
-        return JsonResponse({
-            'status': 'error',
-            'message': str(e)
-        }, status=500)

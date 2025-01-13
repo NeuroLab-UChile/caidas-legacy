@@ -8,6 +8,7 @@ from .appointment import Appointment
 from .user_profile import UserProfile
 from .evaluation import EvaluationForm
 from .recommendation import Recommendation
+from .action_log import ActionLog
 
 
 __all__ = [

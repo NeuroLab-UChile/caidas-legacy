@@ -8,12 +8,14 @@ from prevcad.models.user_profile import UserProfile
 from prevcad.serializers.user_profile_serializer import UserProfileSerializer, UserSerializer
 import os
 import logging
+from ..decorators import log_action
 
 logger = logging.getLogger(__name__)
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 @parser_classes([MultiPartParser, FormParser])
+@log_action('PROFILE_UPDATE', 'Actualización de imagen de perfil')
 def uploadProfileImage(request):
     try:
         # Obtener o crear perfil
@@ -64,6 +66,7 @@ def uploadProfileImage(request):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
+@log_action('PROFILE_VIEW', 'Visualización de perfil')
 def getProfile(request):
     try:
         # Asegurar que existe el perfil
@@ -83,6 +86,7 @@ def getProfile(request):
 
 @api_view(['DELETE'])
 @permission_classes([IsAuthenticated])
+@log_action('PROFILE_UPDATE', 'Eliminación de imagen de perfil')
 def deleteProfileImage(request):
     try:
         profile = request.user.profile

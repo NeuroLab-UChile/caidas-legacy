@@ -529,6 +529,7 @@
             if (mediaFile) {
                 formData.append('media_file', mediaFile);
                 nodeData.media_pending = true;
+                nodeData.media_url = mediaFile.name;
             }
             
             // Actualizar la lista global de nodos
@@ -751,38 +752,124 @@
 
     function handleFilePreview(event) {
         const file = event.target.files[0];
-        if (!file) return;
+        console.log('Archivo seleccionado:', file);
 
-        const preview = document.getElementById('mediaPreview');
-        preview.innerHTML = '';
-        preview.classList.remove('hidden');
-
-        if (file.type.startsWith('video/')) {
-            preview.innerHTML = `
-                <div class="current-media-preview">
-                    <div class="current-media-label">Vista previa:</div>
-                    <div class="video-thumbnail">
-                        <span class="media-name">${file.name}</span>
-                    </div>
-                    <div class="media-name">Video seleccionado</div>
-                </div>
-            `;
-        } else if (file.type.startsWith('image/')) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                preview.innerHTML = `
-                    <div class="current-media-preview">
-                        <div class="current-media-label">Vista previa:</div>
-                        <img src="${e.target.result}" 
-                             alt="Preview" 
-                             class="media-thumbnail">
-                        <div class="media-name">${file.name}</div>
-                    </div>
-                `;
-            };
-            reader.readAsDataURL(file);
+        if (!file) {
+            console.log('No se seleccionó ningún archivo');
+            return;
         }
+
+        // Obtener el ID del nodo existente o del contenedor padre
+        const nodeContainer = event.target.closest('.video-node-container');
+        const nodeId = nodeContainer ? nodeContainer.dataset.nodeId : null;
+        
+        console.log('ID del nodo:', nodeId);
+
+        if (!nodeId) {
+            console.error('No se encontró ID del nodo');
+            return;
+        }
+
+        // Crear FormData
+        const formData = new FormData();
+        formData.append('video', file);
+        
+        // Obtener otros campos del mismo contenedor
+        const titleInput = nodeContainer.querySelector('[name="title"]');
+        const contentInput = nodeContainer.querySelector('[name="content"]');
+        
+        formData.append('title', titleInput ? titleInput.value : '');
+        formData.append('content', contentInput ? contentInput.value : '');
+
+        // Siempre usar PUT para actualizar el nodo existente
+        const url = `/api/video-nodes/${nodeId}/`;
+        console.log('Actualizando nodo:', url);
+
+        fetch(url, {
+            method: 'PUT',
+            body: formData,
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken')
+            }
+        })
+        .then(response => {
+            console.log('Respuesta del servidor:', {
+                status: response.status,
+                statusText: response.statusText
+            });
+            return response.json();
+        })
+        .then(data => {
+            console.log('Datos recibidos:', data);
+            
+            if (data.status === 'success') {
+                updateVideoPreview(nodeContainer, data.media_url, file.name);
+            } else {
+                throw new Error(data.message || 'Error al actualizar el video');
+            }
+        })
+        .catch(error => {
+            console.error('Error en la petición:', error);
+            alert('Error al actualizar el video: ' + error.message);
+        });
     }
+
+    function updateVideoPreview(container, videoUrl, fileName) {
+        console.log('Actualizando preview con:', {
+            videoUrl: videoUrl,
+            fileName: fileName
+        });
+
+        const preview = container.querySelector('.mediaPreview');
+        if (!preview) return;
+
+        preview.innerHTML = `
+            <div class="current-media-preview">
+                <div class="current-media-label">Video actual:</div>
+                <div class="video-thumbnail">
+                    <video 
+                        controls 
+                        width="320"
+                        class="rounded-lg shadow-md"
+                        style="max-width: 100%; height: auto;"
+                    >
+                        <source src="${videoUrl}?t=${Date.now()}" type="video/mp4">
+                        Tu navegador no soporta la reproducción de video.
+                    </video>
+                    <div class="mt-2 text-sm text-gray-600">
+                        <span class="media-name">${fileName}</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    // Función auxiliar para obtener el token CSRF
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    // Añadir listener para el cambio de archivo
+    document.addEventListener('DOMContentLoaded', function() {
+        const fileInput = document.querySelector('input[type="file"]');
+        if (fileInput) {
+            console.log('FileInput encontrado:', fileInput);
+            fileInput.addEventListener('change', handleFilePreview);
+        } else {
+            console.error('No se encontró el input de archivo');
+        }
+    });
 
     renderNodes(trainingNodes, 'TRAINING');
     renderNodes(evaluationNodes, 'EVALUATION');
