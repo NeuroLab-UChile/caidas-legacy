@@ -4,6 +4,25 @@
 
 <div class="professional-evaluation bg-white rounded-lg shadow p-4">
     {% if evaluation_form %}
+        <h2 class="evaluation-title">Evaluación Profesional</h2>
+
+        <!-- Tags de evaluación -->
+        <div class="evaluation-tags-container">
+            <h3 class="tags-title">Etiquetas de evaluación</h3>
+            <div class="tags-wrapper">
+                {% for tag in evaluation_tags %}
+                    <span class="tag">
+                        <svg class="tag-icon" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M17.707 9.293a1 1 0 010 1.414l-7 7a1 1 0 01-1.414 0l-7-7A.997.997 0 012 10V5a3 3 0 013-3h5c.256 0 .512.098.707.293l7 7zM5 6a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd"/>
+                        </svg>
+                        {{ tag }}
+                    </span>
+                {% empty %}
+                    <span class="no-tags">No hay etiquetas definidas</span>
+                {% endfor %}
+            </div>
+        </div>
+        
         <!-- Estado de la evaluación -->
         <div class="evaluation-status mb-4">
             {% if evaluation_form.completed_date %}
@@ -45,8 +64,10 @@
                             id="observations"
                             name="professional_responses[observations]"
                             rows="4"
-                            class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
-                            placeholder="Ingrese sus observaciones profesionales aquí..."
+                            {% if not can_edit %}readonly{% endif %}
+                            class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md
+                                   {% if not can_edit %}bg-gray-50 cursor-not-allowed{% endif %}"
+                            placeholder="{% if can_edit %}Ingrese sus observaciones profesionales aquí...{% else %}No tiene permisos para editar este campo{% endif %}"
                         >{{ professional_responses.observations|default:"" }}</textarea>
                     </div>
                 </div>
@@ -61,30 +82,38 @@
                             id="diagnosis"
                             name="professional_responses[diagnosis]"
                             rows="4"
-                            class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
-                            placeholder="Ingrese el diagnóstico aquí..."
+                            {% if not can_edit %}readonly{% endif %}
+                            class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md
+                                   {% if not can_edit %}bg-gray-50 cursor-not-allowed{% endif %}"
+                            placeholder="{% if can_edit %}Ingrese el diagnóstico aquí...{% else %}No tiene permisos para editar este campo{% endif %}"
                         >{{ professional_responses.diagnosis|default:"" }}</textarea>
                     </div>
                 </div>
 
-                <!-- Botones de acción -->
-                <div class="flex justify-end space-x-3">
-                    <button 
-                        type="submit" 
-                        name="save_draft" 
-                        value="true"
-                        class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                    >
-                        Guardar borrador
-                    </button>
-                    <button 
-                        type="button"
-                        class="save-evaluation inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                        data-complete="true"
-                    >
-                        Completar evaluación
-                    </button>
-                </div>
+                <!-- Botones de acción solo visibles si puede editar -->
+                {% if can_edit %}
+                    <div class="flex justify-end space-x-3">
+                        <button 
+                            type="submit" 
+                            name="save_draft" 
+                            value="true"
+                            class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                        >
+                            Guardar borrador
+                        </button>
+                        <button 
+                            type="button"
+                            class="save-evaluation inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                            data-complete="true"
+                        >
+                            Completar evaluación
+                        </button>
+                    </div>
+                {% else %}
+                    <div class="text-sm text-gray-500 italic text-center bg-gray-50 p-3 rounded-md">
+                        No tiene permisos para editar esta evaluación
+                    </div>
+                {% endif %}
             </div>
         </form>
 
@@ -258,12 +287,87 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <style>
+.evaluation-title {
+    font-size: 1.125rem;
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+    color: white;
+}
+
+.evaluation-tags-container {
+    margin-bottom: 2rem;
+}
+
+.tags-title {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: white;
+    margin-bottom: 0.75rem;
+}
+
+.tags-wrapper {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    background-color: #4338ca;
+    color: white;
+    transition: all 0.2s ease;
+}
+
+.tag:hover {
+    background-color: #3730a3;
+}
+
+.tag-icon {
+    width: 1rem;
+    height: 1rem;
+    margin-right: 0.375rem;
+    fill: currentColor;
+}
+
+.no-tags {
+    font-size: 0.875rem;
+    color: white;
+}
+
+/* Animación suave al cargar */
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(-1rem); }
+    from { opacity: 0; transform: translateY(-10px); }
     to { opacity: 1; transform: translateY(0); }
 }
 
-.animate-fade-in {
-    animation: fadeIn 0.3s ease-out;
+.tag {
+    animation: fadeIn 0.3s ease-out forwards;
+}
+
+/* Hacer las tags más interactivas */
+.tag {
+    cursor: default;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.tag:active {
+    transform: translateY(1px);
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+    .tags-wrapper {
+        gap: 0.375rem;
+    }
+    
+    .tag {
+        padding: 0.2rem 0.5rem;
+        font-size: 0.8125rem;
+    }
 }
 </style>

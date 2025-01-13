@@ -1,6 +1,7 @@
 from django.db import models
 from django.utils import timezone
 from django.core.validators import FileExtensionValidator
+from django.conf import settings
 
 class Recommendation(models.Model):
     health_category = models.OneToOneField(
@@ -33,11 +34,10 @@ class Recommendation(models.Model):
     use_default = models.BooleanField(default=False)
     updated_by = models.CharField(max_length=255, null=True, blank=True)
     updated_at = models.DateTimeField(auto_now=True)
+    
+    
 
-    def get_media_url(self):
-        if self.video:
-            return self.video.url
-        return None
+   
 
     def __str__(self):
         return f"Recomendación para {self.health_category}" 
@@ -62,3 +62,4 @@ class Recommendation(models.Model):
         if self.video:
             self.video.delete(save=False)
         super().delete(*args, **kwargs) 
+

@@ -9,8 +9,17 @@ from prevcad.serializers.user_profile_serializer import UserProfileSerializer, U
 import os
 import logging
 from ..decorators import log_action
+from django.conf import settings
 
 logger = logging.getLogger(__name__)
+
+def get_absolute_url(request, url):
+    if url.startswith('http'):
+        return url
+    return f"{settings.DOMAIN}{url}"
+
+def get_media_url(path):
+    return f"{settings.DOMAIN}/media/{path}"
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])

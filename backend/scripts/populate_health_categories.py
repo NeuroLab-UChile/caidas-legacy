@@ -98,7 +98,8 @@ def populate_category_templates_from_file(file_path):
                 'is_active': True,
                 'icon': icon_path,
                 'training_form': training_form,
-                'evaluation_form': template_info.get('evaluation_form', None)
+                'evaluation_form': template_info.get('evaluation_form', None),
+                'evaluation_tags': template_info.get('evaluation_tags', [])
             }
 
             default_recommendations = template_info.get('default_recommendations', {})
@@ -111,7 +112,9 @@ def populate_category_templates_from_file(file_path):
             
             template, created = CategoryTemplate.objects.update_or_create(
                 name=template_info['name'],
-                defaults=defaults
+                defaults=defaults,
+              
+
             )
 
             if created:

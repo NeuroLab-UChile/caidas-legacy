@@ -8,13 +8,31 @@
         {% block form_top %}{% endblock %}
         
         <!-- Tu contenido existente -->
+         
         
-        <!-- Asegúrate de incluir los botones de submit estándar del admin -->
-        <div class="submit-row">
-            <input type="submit" value="{% trans 'Save' %}" class="default" name="_save">
-            <input type="submit" value="{% trans 'Save and continue editing' %}" name="_continue">
-            <input type="submit" value="{% trans 'Save and add another' %}" name="_addanother">
-        </div>
+        <!-- Botones de submit condicionados por permisos -->
+        {% if can_edit and not is_readonly %}
+            <div class="submit-row">
+                <input type="submit" value="{% trans 'Save' %}" class="default" name="_save">
+                <input type="submit" value="{% trans 'Save and continue editing' %}" name="_continue">
+                <input type="submit" value="{% trans 'Save and add another' %}" name="_addanother">
+            </div>
+        {% else %}
+            <div class="submit-row-disabled">
+                <p class="text-sm text-gray-500 italic p-4 bg-gray-50 rounded-lg">
+                    No tienes permisos para modificar esta categoría
+                </p>
+            </div>
+        {% endif %}
     </form>
 </div>
+
+<style>
+    .submit-row-disabled {
+        margin: 1rem 0;
+        text-align: right;
+        border-top: 1px solid #eee;
+        padding-top: 1rem;
+    }
+</style>
 {% endblock %} 

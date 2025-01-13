@@ -52,7 +52,7 @@ export interface Recommendation {
   };
   text: string;
   updated_at: string;
-  media_url?: string;
+  video_url?: string;
 }
 
 /**

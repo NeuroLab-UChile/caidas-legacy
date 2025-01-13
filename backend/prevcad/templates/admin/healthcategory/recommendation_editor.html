@@ -236,10 +236,16 @@
 
         <!-- Botón de submit -->
         <div class="mt-6 flex justify-end">
-            <button type="submit" 
-                    class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-                Guardar cambios
-            </button>
+            {% if can_edit and not is_readonly %}
+                <button type="submit" 
+                        class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                    Guardar cambios
+                </button>
+            {% else %}
+                <div class="text-sm text-gray-500 italic">
+                    No tienes permisos para modificar esta recomendación
+                </div>
+            {% endif %}
         </div>
     </form>
 </div>

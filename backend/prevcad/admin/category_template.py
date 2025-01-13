@@ -75,6 +75,7 @@ class CategoryTemplateAdmin(admin.ModelAdmin):
 
     def get_readonly_fields(self, request, obj=None):
         """Si no es admin, todos los campos son de solo lectura"""
+    
         if not self.is_admin_user(request):
             return [field.name for field in self.model._meta.fields]
         return ['training_form_button', 'evaluation_form_button', 'training_form']
@@ -102,6 +103,14 @@ class CategoryTemplateAdmin(admin.ModelAdmin):
             fieldsets.extend([
                 ('Formulario de Evaluación', {
                     'fields': ('evaluation_form_button',),
+                    
+                }),
+            ])
+
+        if obj and obj.evaluation_type == 'PROFESSIONAL':
+            fieldsets.extend([
+                ('Formulario de Evaluación', {
+                    'fields': ('evaluation_tags',),
                 }),
             ])
 
@@ -110,6 +119,13 @@ class CategoryTemplateAdmin(admin.ModelAdmin):
         }))
 
         return fieldsets
+
+    def display_tags(self, obj):
+        """Muestra los tags en formato legible"""
+        if obj.evaluation_tags:
+            return ", ".join(obj.evaluation_tags)
+        return "-"
+    display_tags.short_description = "Tags de Evaluación"
 
     def evaluation_form_button(self, obj):
         return mark_safe(f"""

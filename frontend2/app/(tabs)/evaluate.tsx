@@ -213,7 +213,7 @@ const EvaluateScreen = () => {
                 // Limpiar las respuestas en el backend
                 await apiService.categories.saveResponses(
                   selectedCategory.id,
-                  []
+                  new FormData()
                 );
 
                 // Reiniciar el estado local
@@ -326,13 +326,7 @@ const EvaluateScreen = () => {
       const node = getCurrentNode(nodeId);
       if (!node) throw new Error("Nodo no encontrado");
 
-      // Log para debug
-
       const formattedResponse = formatNodeResponse(node, response);
-
-      // Log para debug
-      console.log("Formatted Response:", formattedResponse);
-
       const newResponses = {
         ...Object.fromEntries(
           evaluationState.responses.map((r) => [r.nodeId, r.response])
@@ -349,18 +343,39 @@ const EvaluateScreen = () => {
       if (isCompleted && selectedCategory?.id) {
         setLoading(true);
         try {
+          // Crear y enviar FormData
+          const formData = new FormData();
+
+          // Agregar las respuestas como JSON string
+          formData.append("responses", JSON.stringify(newResponses));
+
+          // Agregar las imágenes si existen
+          if (
+            formattedResponse.type === "IMAGE_QUESTION" &&
+            formattedResponse.answer?.images
+          ) {
+            formattedResponse.answer.images.forEach(
+              (imageUri: string, index: number) => {
+                formData.append(`image_${nodeId}`, {
+                  uri: imageUri,
+                  type: "image/jpeg",
+                  name: `image_${nodeId}_${index}.jpg`,
+                } as any);
+              }
+            );
+          }
+
           await apiService.categories.saveResponses(
             selectedCategory.id,
-            newResponses
+            formData
           );
           await fetchCategories();
-          console.log("newResponses", newResponses);
 
           setEvaluationState({
             currentNodeId: null,
             responses: Object.entries(newResponses).map(([key, value]) => ({
               nodeId: parseInt(key),
-              response: value as NodeResponse["response"], // Assuming NodeResponse is defined elsewhere with a 'response' property of the correct type
+              response: value as NodeResponse["response"],
             })),
             completed: true,
             history: [],
@@ -370,14 +385,7 @@ const EvaluateScreen = () => {
             },
           });
 
-          Alert.alert("Éxito", "Evaluación guardada correctamente", [
-            {
-              text: "OK",
-              onPress: () => {
-                // No hacer nada aquí para mantener el estado completado
-              },
-            },
-          ]);
+          Alert.alert("Éxito", "Evaluación guardada correctamente");
         } catch (error) {
           console.error("Error saving responses:", error);
           Alert.alert("Error", "No se pudo guardar la evaluación");
@@ -389,7 +397,7 @@ const EvaluateScreen = () => {
           ...prev,
           responses: Object.entries(newResponses).map(([key, value]) => ({
             nodeId: parseInt(key),
-            response: value as NodeResponse["response"], // Assuming NodeResponse is defined elsewhere with a 'response' property of the correct type
+            response: value as NodeResponse["response"],
           })),
           currentNodeId: nextNodeId,
           completed: false,

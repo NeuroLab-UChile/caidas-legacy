@@ -236,10 +236,12 @@
         <!-- Dynamic content -->
       </div>
       <div class="flex justify-end gap-2 mt-4">
-        <button id="addQuestionBtn" class="btn btn-primary" onclick="openAddQuestionModal()">
-          Agregar
-        </button>
         <button class="btn btn-secondary" onclick="closeModal()">Cerrar</button>
+        {% if can_edit %}
+            <button id="addQuestionBtn" class="btn btn-primary" onclick="openAddQuestionModal()">
+                Agregar
+            </button>
+        {% endif %}
       </div>
     </div>
   </div>
@@ -312,7 +314,9 @@
 
         <div class="flex justify-end gap-2 mt-4">
           <button type="button" class="btn btn-secondary" onclick="closeQuestionModal()">Cancelar</button>
-          <button type="submit" class="btn btn-primary">Guardar</button>
+          {% if can_edit %}
+              <button type="submit" class="btn btn-primary">Guardar</button>
+          {% endif %}
         </div>
       </form>
     </div>
@@ -503,19 +507,23 @@
 
     function saveQuestion(event) {
         event.preventDefault();
+        console.log('Iniciando saveQuestion');
         
         const contentType = document.getElementById('contentType').value;
         const nodeId = document.getElementById('nodeId').value;
         const questionText = document.getElementById('questionText').value;
-        const mediaFile = document.getElementById('mediaFile').files[0];
+        const mediaFile = document.getElementById('mediaFile')?.files[0];
 
-        if (!contentType || !questionText) {
-            alert('Por favor complete todos los campos requeridos');
-            return;
-        }
+        console.log('Datos iniciales:', {
+            contentType,
+            nodeId,
+            questionText,
+            hasMediaFile: !!mediaFile
+        });
 
         const formData = new FormData();
         
+        // Crear el objeto del nodo
         const nodeData = {
             id: nodeId ? parseInt(nodeId) : Date.now(),
             content: questionText,
@@ -524,38 +532,64 @@
                 document.getElementById('questionType').value
         };
 
+        console.log('NodeData creado:', nodeData);
+
         if (contentType === 'TRAINING') {
-            // Si hay un archivo multimedia nuevo
             if (mediaFile) {
                 formData.append('media_file', mediaFile);
                 nodeData.media_pending = true;
                 nodeData.media_url = mediaFile.name;
+            } else if (nodeId) {
+                const existingNode = trainingNodes.find(n => n.id === parseInt(nodeId));
+                if (existingNode?.media_url) {
+                    nodeData.media_url = existingNode.media_url;
+                }
+            }
+
+            // Crear nuevo array en lugar de modificar el existente
+            let newTrainingNodes = [...trainingNodes];
+            const existingIndex = newTrainingNodes.findIndex(node => node.id === nodeData.id);
+            
+            if (existingIndex !== -1) {
+                newTrainingNodes[existingIndex] = nodeData;
+            } else {
+                newTrainingNodes.push(nodeData);
             }
             
-            // Actualizar la lista global de nodos
-            trainingNodes.push(nodeData);
-            
+            // Actualizar la variable global
+            window.trainingNodes = newTrainingNodes;
+
             formData.append('training_form', JSON.stringify({
-                training_nodes: trainingNodes
+                training_nodes: newTrainingNodes
             }));
+
+            console.log('Training nodes actualizados:', newTrainingNodes);
         } else {
             nodeData.question = questionText;
             delete nodeData.content;
             
             if (['MULTIPLE_CHOICE_QUESTION', 'SINGLE_CHOICE_QUESTION'].includes(nodeData.type)) {
-                if (options.length < 2) {
-                    alert('Se requieren al menos 2 opciones para preguntas de selección');
-                    return;
-                }
                 nodeData.options = options;
             }
             
-            // Actualizar la lista global de nodos
-            evaluationNodes.push(nodeData);
+            // Crear nuevo array en lugar de modificar el existente
+            let newEvaluationNodes = [...evaluationNodes];
+            const existingIndex = newEvaluationNodes.findIndex(node => node.id === nodeData.id);
             
+            if (existingIndex !== -1) {
+                newEvaluationNodes[existingIndex] = nodeData;
+            } else {
+                newEvaluationNodes.push(nodeData);
+            }
+            
+            // Actualizar la variable global
+            window.evaluationNodes = newEvaluationNodes;
+
             formData.append('evaluation_form', JSON.stringify({
-                question_nodes: evaluationNodes
+                question_nodes: newEvaluationNodes
             }));
+
+            console.log('Evaluation nodes actualizados:', newEvaluationNodes);
         }
 
         const endpoint = contentType === 'TRAINING' ?
@@ -569,13 +603,10 @@
             },
             body: formData
         })
-        .then(response => {
-            if (!response.ok) throw new Error('Error en la respuesta del servidor');
-            return response.json();
-        })
+        .then(response => response.json())
         .then(data => {
+            console.log('Respuesta del servidor:', data);
             if (data.status === 'success') {
-                // Actualizar la vista sin recargar
                 renderNodes(contentType === 'TRAINING' ? trainingNodes : evaluationNodes, contentType);
                 closeQuestionModal();
                 alert('Guardado correctamente');

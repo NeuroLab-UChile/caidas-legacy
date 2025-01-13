@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from prevcad.models import HealthCategory, CategoryTemplate
+from django.conf import settings
 
 class HealthCategorySerializer(serializers.ModelSerializer):
     # Campos básicos
@@ -197,6 +198,7 @@ class HealthCategorySerializer(serializers.ModelSerializer):
         try:
             status = self.get_status(obj)
             recommendation = obj.get_or_create_recommendation()
+            request = self.context.get('request')
 
             # Obtener información del profesional
             professional_info = None
@@ -210,14 +212,14 @@ class HealthCategorySerializer(serializers.ModelSerializer):
                     
                 if hasattr(recommendation, 'professional_role') and recommendation.professional_role:
                     professional_role = recommendation.professional_role
-            
+            domain = settings.DOMAIN if hasattr(settings, 'DOMAIN') else ''
             base_recommendation = {
                 'status': {
                     'color': status['color'],
                     'text': status['text']
                 },
                 'text': recommendation.text if recommendation else None,
-                'media_url': recommendation.get_media_url() if recommendation else None,
+                'video_url': domain + recommendation.video.url if recommendation else None,
                 'updated_at': recommendation.updated_at if recommendation else None,
                 'is_draft': recommendation.is_draft if recommendation else True,
                 'professional': {
@@ -244,3 +246,26 @@ class HealthCategorySerializer(serializers.ModelSerializer):
             'last_updated': None,
             'professional_reviewed': None
         }
+
+    def get_media_url(self, request=None):
+        """Método base para obtener URL absoluta de archivos multimedia"""
+        media_field = None
+        
+        if hasattr(self, 'video'):
+            media_field = self.video
+        elif hasattr(self, 'image'):
+            media_field = self.image
+        elif hasattr(self, 'content') and isinstance(self.content, (models.ImageField, models.FileField)):
+            media_field = self.content
+            
+        if media_field and media_field:
+            try:
+                if request:
+                    return request.build_absolute_uri(media_field.url)
+                # Si no hay request, usar el dominio de settings
+                domain = settings.DOMAIN if hasattr(settings, 'DOMAIN') else ''
+                return f"{domain}{media_field.url}"
+            except Exception as e:
+                print(f"Error getting media URL: {e}")
+                return None
+        return None

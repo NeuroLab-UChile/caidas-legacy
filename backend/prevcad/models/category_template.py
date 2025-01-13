@@ -83,6 +83,12 @@ class CategoryTemplate(models.Model):
         verbose_name="Solo lectura global"
     )
 
+  evaluation_tags = models.JSONField(
+        default=list,
+        help_text="Etiquetas para la evaluación",
+        verbose_name="Etiquetas de evaluación"
+    )
+
   @property
   def available_roles(self):
         """Retorna lista de choices para roles disponibles"""

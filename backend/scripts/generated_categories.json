@@ -131,34 +131,10 @@
       "prev_risk": "Ha disminuido su actividad física. Considere comenzar una rutina de ejercicios suaves.",
       "risk": "Su actividad física es insuficiente. Considere aumentar su actividad física con ejercicios suaves."
     },
-    "evaluation_type": "SELF",
-    "evaluation_form": {
-      "question_nodes": [
-        {
-          "id": 1,
-          "type": "SINGLE_CHOICE_QUESTION",
-          "question": "¿Realiza actividad física regularmente?",
-          "options": [
-            "Sí, diariamente",
-            "Algunas veces por semana",
-            "No realizo"
-          ]
-        },
-        {
-          "id": 2,
-          "type": "SCALE_QUESTION",
-          "question": "En una escala del 1 al 10, ¿qué tan activo se siente?",
-          "min_value": 1,
-          "max_value": 10,
-          "step": 1
-        },
-        {
-          "id": 3,
-          "type": "TEXT_QUESTION",
-          "question": "¿Qué le impide realizar actividad física con más frecuencia?"
-        }
-      ]
-    },
+    "evaluation_type": "PROFESSIONAL",
+    "evaluation_tags": [
+      "exercise"
+    ],
     "training_form": {
       "training_nodes": [
         {
@@ -389,29 +365,11 @@
       "prev_risk": "Ha notado dificultades para ver objetos a corta distancia. Considere consultar a un oculista.",
       "risk": "Ha notado dificultades para ver objetos a corta distancia. Considere consultar a un oculista."
     },
-    "evaluation_type": "SELF",
-    "evaluation_form": {
-      "question_nodes": [
-        {
-          "id": 1,
-          "type": "SINGLE_CHOICE_QUESTION",
-          "question": "¿Ha notado dificultades para ver objetos a corta distancia?",
-          "options": [
-            "Sí",
-            "No"
-          ]
-        },
-        {
-          "id": 2,
-          "type": "SINGLE_CHOICE_QUESTION",
-          "question": "¿Utiliza audífonos para mejorar su audición?",
-          "options": [
-            "Sí",
-            "No"
-          ]
-        }
-      ]
-    },
+    "evaluation_type": "PROFESSIONAL",
+    "evaluation_tags": [
+      "vision",
+      "hearing"
+    ],
     "training_form": {
       "training_nodes": [
         {
@@ -433,25 +391,11 @@
       "prev_risk": "Ha disminuido su actividad física. Considere comenzar una rutina de ejercicios suaves.",
       "risk": "Su actividad física es insuficiente. Considere aumentar su actividad física con ejercicios suaves."
     },
-    "evaluation_type": "SELF",
-    "evaluation_form": {
-      "question_nodes": [
-        {
-          "id": 1,
-          "type": "SINGLE_CHOICE_QUESTION",
-          "question": "¿Toma más de tres medicamentos diferentes diariamente?",
-          "options": [
-            "Sí",
-            "No"
-          ]
-        },
-        {
-          "id": 2,
-          "type": "TEXT_QUESTION",
-          "question": "¿Alguna vez ha olvidado tomar su medicación? Si es así, ¿por qué?"
-        }
-      ]
-    },
+    "evaluation_type": "PROFESSIONAL",
+    "evaluation_tags": [
+      "medication",
+      "safety"
+    ],
     "training_form": {
       "training_nodes": [
         {
@@ -473,25 +417,11 @@
       "prev_risk": "Ha notado dificultades para concentrarse durante el día. Considere consultar a un especialista.",
       "risk": "Ha notado dificultades para concentrarse durante el día. Considere consultar a un especialista."
     },
-    "evaluation_type": "SELF",
-    "evaluation_form": {
-      "question_nodes": [
-        {
-          "id": 1,
-          "type": "SINGLE_CHOICE_QUESTION",
-          "question": "¿Se siente generalmente enfocado durante el día?",
-          "options": [
-            "Sí",
-            "No"
-          ]
-        },
-        {
-          "id": 2,
-          "type": "TEXT_QUESTION",
-          "question": "¿Cuáles son las principales distracciones que enfrenta?"
-        }
-      ]
-    },
+    "evaluation_type": "PROFESSIONAL",
+    "evaluation_tags": [
+      "mind",
+      "emotion"
+    ],
     "training_form": {
       "training_nodes": [
         {
@@ -513,25 +443,10 @@
       "prev_risk": "Ha sufrido una caída en el último año. Considere adoptar medidas preventivas.",
       "risk": "Ha sufrido una caída en el último año. Considere adoptar medidas preventivas."
     },
-    "evaluation_type": "SELF",
-    "evaluation_form": {
-      "question_nodes": [
-        {
-          "id": 1,
-          "type": "SINGLE_CHOICE_QUESTION",
-          "question": "¿Ha sufrido alguna caída en el último año?",
-          "options": [
-            "Sí",
-            "No"
-          ]
-        },
-        {
-          "id": 2,
-          "type": "TEXT_QUESTION",
-          "question": "Describa brevemente las circunstancias de su caída más reciente."
-        }
-      ]
-    },
+    "evaluation_type": "PROFESSIONAL",
+    "evaluation_tags": [
+      "falls"
+    ],
     "training_form": {
       "training_nodes": [
         {
@@ -553,25 +468,11 @@
       "prev_risk": "Ha disminuido su actividad física. Considere comenzar una rutina de ejercicios suaves.",
       "risk": "Su actividad física es insuficiente. Considere aumentar su actividad física con ejercicios suaves."
     },
-    "evaluation_type": "SELF",
-    "evaluation_form": {
-      "question_nodes": [
-        {
-          "id": 1,
-          "type": "SINGLE_CHOICE_QUESTION",
-          "question": "¿Realiza ejercicios de fortalecimiento muscular regularmente?",
-          "options": [
-            "Sí",
-            "No"
-          ]
-        },
-        {
-          "id": 2,
-          "type": "TEXT_QUESTION",
-          "question": "¿Ha sufrido fracturas en el pasado? Si es así, ¿en qué zonas?"
-        }
-      ]
-    },
+    "evaluation_type": "PROFESSIONAL",
+    "evaluation_tags": [
+      "bone",
+      "muscle"
+    ],
     "training_form": {
       "training_nodes": [
         {

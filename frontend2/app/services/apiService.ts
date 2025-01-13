@@ -128,16 +128,26 @@ class ApiClient {
       return this.handleResponse<Category>(response);
     },
 
-    saveResponses: async (categoryId: number, responses: any): Promise<ApiResponse<any>> => {
-      const response = await fetch(
-        this.getUrl(`/health-categories/${categoryId}/responses/`),
-        {
+    saveResponses: async (categoryId: number, formData: FormData): Promise<ApiResponse<any>> => {
+      try {
+        const response = await fetch(`${API_URL}/health-categories/${categoryId}/responses/`, {
           method: 'POST',
-          headers: await this.getHeaders(),
-          body: JSON.stringify({ responses }),
+          body: formData,
+          headers: {
+            'Accept': 'application/json',
+            // No incluir 'Content-Type' - será establecido automáticamente con FormData
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
         }
-      );
-      return this.handleResponse(response);
+
+        return await response.json();
+      } catch (error) {
+        console.error('Error in saveResponses:', error);
+        throw error;
+      }
     },
 
     getAll: async (): Promise<ApiResponse<Category[]>> => {

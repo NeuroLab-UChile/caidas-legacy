@@ -15,6 +15,9 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.authentication import TokenAuthentication
 from django.contrib.auth.models import User
 from django.contrib.auth import get_user_model
+from django.core.files.storage import default_storage
+from django.conf import settings
+import os
 
 from prevcad.models import UserProfile
 
@@ -43,62 +46,118 @@ class HealthCategoryListView(APIView):
 def save_evaluation_responses(request, category_id):
     print("\n=== Debug save_evaluation_responses ===")
     print(f"Request data: {request.data}")
+    print(f"Request FILES: {request.FILES}")
+    print(f"Content Type: {request.content_type}")
     
     try:
-        # Obtener el perfil del usuario
         user_profile = get_object_or_404(UserProfile, user=request.user)
-        
-        # Buscar la categoría asegurándose que pertenece al usuario
-        health_category = get_object_or_404(
-            HealthCategory, 
-            id=category_id, 
-            user=user_profile
-        )
-        
-        # Validar que tenemos un formulario de evaluación
-        if not hasattr(health_category, 'evaluation_form'):
-            return Response({
-                'status': 'error',
-                'message': 'La categoría no tiene un formulario de evaluación'
-            }, status=status.HTTP_400_BAD_REQUEST)
-        
+        health_category = get_object_or_404(HealthCategory, id=category_id, user=user_profile)
         evaluation_form = health_category.evaluation_form
         
-        # Validar las respuestas recibidas
+        # Obtener y parsear las respuestas
         responses = request.data.get('responses', {})
-        if not isinstance(responses, dict):
-            responses = {}
+        if isinstance(responses, str):
+            responses = json.loads(responses)
         
-        # Actualizar las respuestas
+        print("\nRespuestas recibidas:", responses)
+        
+        # Procesar cada respuesta
+        for node_id, response in responses.items():
+            print(f"\nProcesando node_id: {node_id}")
+            print(f"Tipo de respuesta: {response.get('type')}")
+            
+            if isinstance(response, dict) and response.get('type') == 'IMAGE_QUESTION':
+                # Buscar archivos de imagen para este nodo
+                image_files = [
+                    f for f in request.FILES.items()
+                    if f[0].startswith(f'image_{node_id}')
+                ]
+                
+                print(f"Archivos de imagen encontrados para node {node_id}: {len(image_files)}")
+                
+                if image_files:
+                    processed_images = []
+                    for key, image_file in image_files:
+                        try:
+                            print(f"\nProcesando archivo: {image_file.name}")
+                            print(f"Tipo de contenido: {image_file.content_type}")
+                            print(f"Tamaño: {image_file.size} bytes")
+                            
+                            # Validar que es una imagen
+                            if not image_file.content_type.startswith('image/'):
+                                print(f"Archivo no válido: {image_file.name}")
+                                continue
+                            
+                            # Crear nombre único para la imagen
+                            timestamp = timezone.now().strftime('%Y%m%d_%H%M%S')
+                            extension = os.path.splitext(image_file.name)[1].lower() or '.jpg'
+                            filename = f'question_{node_id}_{timestamp}{extension}'
+                            
+                            # Definir la ruta relativa
+                            relative_path = os.path.join(
+                                'evaluation_images',
+                                f'category_{category_id}',
+                                filename
+                            )
+                            
+                            print(f"Ruta relativa: {relative_path}")
+                            
+                            # Asegurar que el directorio existe
+                            full_path = os.path.join(settings.MEDIA_ROOT, 'evaluation_images', f'category_{category_id}')
+                            os.makedirs(full_path, exist_ok=True)
+                            
+                            # Guardar la imagen
+                            saved_path = default_storage.save(relative_path, image_file)
+                            print(f"Archivo guardado en: {saved_path}")
+                            
+                            # Construir la URL
+                            image_url = request.build_absolute_uri(settings.MEDIA_URL + saved_path)
+                            print(f"URL generada: {image_url}")
+                            
+                            processed_images.append({
+                                'url': image_url,
+                                'filename': filename,
+                                'timestamp': timezone.now().isoformat()
+                            })
+                            
+                        except Exception as e:
+                            print(f"Error procesando imagen: {str(e)}")
+                            continue
+                    
+                    if processed_images:
+                        # Actualizar la respuesta con las imágenes procesadas
+                        responses[node_id] = {
+                            'type': 'IMAGE_QUESTION',
+                            'answer': {
+                                'images': processed_images
+                            }
+                        }
+                        print(f"Respuesta actualizada para node {node_id}: {responses[node_id]}")
+                    else:
+                        print(f"No se procesaron imágenes para node {node_id}")
+                else:
+                    print(f"No se encontraron archivos de imagen para node {node_id}")
+        
+        # Actualizar el formulario de evaluación
         if evaluation_form.responses is None:
             evaluation_form.responses = {}
             
         evaluation_form.responses.update(responses)
-        
-        # Actualizar fecha de completado con la zona horaria correcta
-        if responses:
-            current_time = timezone.localtime(timezone.now())
-            evaluation_form.completed_date = current_time
-            print(f"Fecha de completado: {current_time}")
-            
         evaluation_form.save()
         
-        # Eliminar las recomendaciones si existen
-        if hasattr(health_category, 'recommendations'):
-            health_category.recommendations = None
-            health_category.save()
+        print("\nRespuestas guardadas en la base de datos:")
+        print(evaluation_form.responses)
         
         return Response({
             'status': 'success',
             'message': 'Respuestas guardadas correctamente',
             'data': {
-                'responses_count': len(responses),
-                'completed_date': evaluation_form.completed_date.isoformat() if evaluation_form.completed_date else None
+                'responses': evaluation_form.responses
             }
         })
-            
+        
     except Exception as e:
-        print(f"Error saving responses: {str(e)}")
+        print(f"Error guardando respuestas: {str(e)}")
         return Response({
             'status': 'error',
             'message': f'Error al guardar las respuestas: {str(e)}'

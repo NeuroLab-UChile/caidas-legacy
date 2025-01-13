@@ -24,6 +24,8 @@ from rest_framework.decorators import api_view, parser_classes
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.response import Response
 from ..models import VideoNode
+from rest_framework import serializers
+from rest_framework.reverse import reverse
 
 
 
@@ -58,6 +60,27 @@ def update_evaluation_form(request, template_id):
                 }
             }, status=400, json_dumps_params={'indent': 2, 'ensure_ascii': False})
 
+        # Obtener nodos actuales
+        current_form = obj.evaluation_form or {'question_nodes': []}
+        current_nodes = {node['id']: node for node in current_form.get('question_nodes', [])}
+        
+        # Procesar cada nodo nuevo/actualizado
+        updated_nodes = []
+        for node in new_form['question_nodes']:
+            node_id = node.get('id')
+            if node_id in current_nodes:
+                # Actualizar nodo existente manteniendo datos previos
+                current_node = current_nodes[node_id].copy()
+                current_node.update(node)
+                updated_nodes.append(current_node)
+                logger.debug(f"Actualizando nodo existente: {node_id}")
+            else:
+                # Agregar nuevo nodo
+                updated_nodes.append(node)
+                logger.debug(f"Agregando nuevo nodo: {node_id}")
+
+        # Actualizar el formulario con los nodos procesados
+        new_form['question_nodes'] = updated_nodes
         obj.evaluation_form = new_form
         obj.save(update_fields=["evaluation_form"])
         
@@ -67,7 +90,7 @@ def update_evaluation_form(request, template_id):
             'data': {
                 'template_id': template_id,
                 'updated_at': obj.updated_at.isoformat() if hasattr(obj, 'updated_at') else None,
-                'nodes_count': len(new_form.get('question_nodes', []))
+                'nodes_count': len(updated_nodes)
             }
         }, json_dumps_params={'indent': 2, 'ensure_ascii': False})
 
@@ -76,7 +99,7 @@ def update_evaluation_form(request, template_id):
             'status': 'error',
             'message': 'Error al decodificar JSON',
             'details': {
-                'received_data': new_form_data[:100] + '...' if len(new_form_data) > 100 else new_form_data
+                'received_data': new_form_data[:100] + '...' if new_form_data else None
             }
         }, status=400, json_dumps_params={'indent': 2, 'ensure_ascii': False})
 
@@ -99,41 +122,91 @@ def update_training_form(request, template_id):
     Actualiza el formulario de entrenamiento de una plantilla de categoría.
     """
     try:
-        template = get_object_or_404(CategoryTemplate, id=template_id)
+        obj = get_object_or_404(CategoryTemplate, id=template_id)
         
-        if request.method != 'POST':
+        # Obtener datos del formulario como string
+        new_form_data = request.POST.get('training_form')
+        
+        if not new_form_data:
             return JsonResponse({
-                'status': 'error',
-                'message': 'Método no permitido'
-            }, status=405)
+                'status': 'error', 
+                'message': 'No se recibieron datos del formulario',
+                'details': None
+            }, status=400, json_dumps_params={'indent': 2, 'ensure_ascii': False})
+        
+        # Parsear el JSON
+        new_form = json.loads(new_form_data)
+        
+        # Validar estructura
+        if "training_nodes" not in new_form or not isinstance(new_form["training_nodes"], list):
+            return JsonResponse({
+                'status': 'error', 
+                'message': 'Estructura de datos inválida',
+                'details': {
+                    'required_fields': ['training_nodes'],
+                    'received_fields': list(new_form.keys())
+                }
+            }, status=400, json_dumps_params={'indent': 2, 'ensure_ascii': False})
 
-        try:
-            form_data = json.loads(request.POST.get('training_form', '{}'))
-            training_nodes = form_data.get('training_nodes', [])
+        # Obtener nodos actuales del objeto existente
+        current_form = obj.training_form or {'training_nodes': []}
+        current_nodes = {str(node['id']): node for node in current_form.get('training_nodes', [])}
+        
+        # Procesar cada nodo nuevo/actualizado
+        updated_nodes = []
+        for node in new_form['training_nodes']:
+            node_id = str(node.get('id'))  # Convertir ID a string para comparación consistente
             
-            # Actualizar el training_form del template
-            template.training_form = {
-                'training_nodes': training_nodes
+            if node_id in current_nodes:
+                # Actualizar nodo existente manteniendo datos previos
+                current_node = current_nodes[node_id].copy()
+                current_node.update(node)
+                updated_nodes.append(current_node)
+                logger.debug(f"Actualizando nodo existente: {node_id}")
+            else:
+                # Agregar nuevo nodo
+                updated_nodes.append(node)
+                logger.debug(f"Agregando nuevo nodo: {node_id}")
+
+        # Actualizar el formulario completo
+        obj.training_form = {
+            'training_nodes': updated_nodes
+        }
+        
+        # Guardar solo el campo actualizado
+        obj.save(update_fields=['training_form'])
+        
+        # Retornar respuesta exitosa
+        return JsonResponse({
+            'status': 'success',
+            'message': 'Formulario de entrenamiento actualizado correctamente',
+            'data': {
+                'template_id': template_id,
+                'updated_at': obj.updated_at.isoformat() if hasattr(obj, 'updated_at') else None,
+                'nodes_count': len(updated_nodes),
+                'nodes': updated_nodes  # Incluir los nodos actualizados en la respuesta
             }
-            template.save(update_fields=['training_form'])
+        }, json_dumps_params={'indent': 2, 'ensure_ascii': False})
 
-            return JsonResponse({
-                'status': 'success',
-                'message': 'Formulario de entrenamiento actualizado'
-            })
-
-        except json.JSONDecodeError:
-            return JsonResponse({
-                'status': 'error',
-                'message': 'Error al procesar los datos del formulario'
-            }, status=400)
-
-    except Exception as e:
-        logger.error(f"Error en update_training_form: {str(e)}")
+    except json.JSONDecodeError:
         return JsonResponse({
             'status': 'error',
-            'message': 'Error al actualizar el formulario'
-        }, status=500)
+            'message': 'Error al decodificar JSON',
+            'details': {
+                'received_data': new_form_data[:100] + '...' if new_form_data else None
+            }
+        }, status=400, json_dumps_params={'indent': 2, 'ensure_ascii': False})
+
+    except Exception as e:
+        logger.error(f"Error updating training form: {str(e)}", exc_info=True)
+        return JsonResponse({
+            'status': 'error',
+            'message': 'Error interno del servidor',
+            'details': {
+                'error_type': type(e).__name__,
+                'error_message': str(e)
+            }
+        }, status=500, json_dumps_params={'indent': 2, 'ensure_ascii': False})
 
 def handle_uploaded_file(file):
     """

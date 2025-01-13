@@ -5,6 +5,7 @@ import {
   StyleSheet,
   ActivityIndicator,
   Dimensions,
+  TouchableOpacity,
 } from "react-native";
 import { Video } from "expo-av";
 import * as FileSystem from "expo-file-system";
@@ -26,46 +27,57 @@ interface VideoNodeViewProps {
     }[];
     media_url?: string;
   };
+  onNext?: () => void;
 }
 
-export const VideoNodeView: React.FC<VideoNodeViewProps> = ({ data }) => {
+export const VideoNodeView: React.FC<VideoNodeViewProps> = ({
+  data,
+  onNext,
+}) => {
   const videoRef = useRef<Video>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [localVideoUri, setLocalVideoUri] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isVideoComplete, setIsVideoComplete] = useState(false);
+
+  const getVideoUrl = () => {
+    if (!data.media_url) return null;
+    return data.media_url.startsWith("http")
+      ? data.media_url
+      : `${process.env.BASE_URL || "http://localhost:8000"}/media/${
+          data.media_url
+        }`;
+  };
 
   const downloadVideo = async (url: string) => {
     try {
       setIsLoading(true);
       setError(null);
-      console.log("Starting video download from:", url);
+      console.log("Downloading video from:", url);
+      console.log("Downloading video from:", data);
 
       const fileName = url.split("/").pop() || "video.mp4";
       const fileUri = `${FileSystem.cacheDirectory}${fileName}`;
-      console.log("Target file URI:", fileUri);
 
       const fileInfo = await FileSystem.getInfoAsync(fileUri);
-      console.log("File info:", fileInfo);
-
       if (fileInfo.exists) {
-        console.log("Video found in cache:", fileUri);
+        console.log("Video found in cache");
+
         setLocalVideoUri(fileUri);
         setIsLoading(false);
         return;
       }
 
-      console.log("Downloading video to:", fileUri);
       const downloadResult = await FileSystem.downloadAsync(url, fileUri);
-      console.log("Download result:", downloadResult);
+      console.log("Download completed:", downloadResult);
 
       if (downloadResult.status === 200) {
-        console.log("Download successful, setting URI:", downloadResult.uri);
         setLocalVideoUri(downloadResult.uri);
       } else {
         throw new Error(`Download failed with status ${downloadResult.status}`);
       }
     } catch (err) {
-      console.error("Error in downloadVideo:", err);
+      console.error("Error downloading video:", err);
       setError(err instanceof Error ? err.message : "Error downloading video");
     } finally {
       setIsLoading(false);
@@ -73,40 +85,12 @@ export const VideoNodeView: React.FC<VideoNodeViewProps> = ({ data }) => {
   };
 
   useEffect(() => {
-    console.log("=== VIDEO NODE DATA ===");
-    console.log(JSON.stringify(data, null, 2));
-    console.log("=== MEDIA INFO ===");
-    console.log({
-      mediaUrl: data.media_url,
-      mediaType: data.media_type,
-      isPending: data.media_pending,
-      originalFilename: data.original_filename,
-      id: data.id,
-      type: data.type,
-      content: data.content,
-    });
-    console.log("=== MEDIA ARRAY (if exists) ===");
-    if (data.media && Array.isArray(data.media)) {
-      console.log(JSON.stringify(data.media, null, 2));
-    }
-    console.log("========================");
-
-    const videoUrl = data.media_url;
-
-    if (data.media_pending) {
-      setError("El video está siendo procesado...");
-      setIsLoading(false);
-      return;
+    const videoUrl = getVideoUrl();
+    if (videoUrl) {
+      downloadVideo(videoUrl);
     }
 
-    if (!videoUrl) {
-      setError("URL del video no disponible");
-      setIsLoading(false);
-      return;
-    }
-
-    downloadVideo(videoUrl);
-
+    // Limpiar caché al desmontar
     return () => {
       if (localVideoUri) {
         FileSystem.deleteAsync(localVideoUri, { idempotent: true }).catch(
@@ -116,23 +100,11 @@ export const VideoNodeView: React.FC<VideoNodeViewProps> = ({ data }) => {
     };
   }, [data]);
 
-  const finalVideoUri = localVideoUri;
-
-  useEffect(() => {
-    console.log("Final video URI updated:", finalVideoUri);
-  }, [finalVideoUri]);
+  const finalVideoUri = localVideoUri || getVideoUrl();
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>{data.description}</Text>
-
-      {__DEV__ && (
-        <View style={styles.debugInfo}>
-          <Text style={styles.debugText}>Media URL: {data.media_url}</Text>
-          <Text style={styles.debugText}>Local URI: {localVideoUri}</Text>
-          <Text style={styles.debugText}>Final URI: {finalVideoUri}</Text>
-        </View>
-      )}
 
       <View style={styles.videoContainer}>
         {finalVideoUri && !error && (
@@ -145,6 +117,11 @@ export const VideoNodeView: React.FC<VideoNodeViewProps> = ({ data }) => {
             isMuted={true}
             resizeMode="contain"
             isLooping={false}
+            onPlaybackStatusUpdate={(status) => {
+              if (status.isLoaded && status.didJustFinish) {
+                setIsVideoComplete(true);
+              }
+            }}
             onLoadStart={() => {
               console.log("Video load started with URI:", finalVideoUri);
               setIsLoading(true);
@@ -173,7 +150,7 @@ export const VideoNodeView: React.FC<VideoNodeViewProps> = ({ data }) => {
             <Text style={styles.errorText}>Error: {error}</Text>
             {__DEV__ && (
               <Text style={styles.debugText}>
-                Original URL: {data.media_url || "No URL"}
+                Original URL: {getVideoUrl() || "No URL"}
                 {"\n"}
                 Local URI: {localVideoUri || "No local file"}
               </Text>
@@ -182,11 +159,16 @@ export const VideoNodeView: React.FC<VideoNodeViewProps> = ({ data }) => {
         )}
       </View>
 
-      {__DEV__ && (
-        <View style={styles.debugContainer}>
-          <Text style={styles.debugTitle}>Debug Info:</Text>
-          <Text style={styles.debugText}>{JSON.stringify(data, null, 2)}</Text>
-        </View>
+      {(isVideoComplete || __DEV__) && onNext && (
+        <TouchableOpacity
+          style={styles.nextButton}
+          onPress={() => {
+            console.log("Navegando al siguiente desde VideoNodeView");
+            onNext();
+          }}
+        >
+          <Text style={styles.nextButtonText}>Continuar</Text>
+        </TouchableOpacity>
       )}
     </View>
   );
@@ -241,32 +223,17 @@ const styles = StyleSheet.create({
     fontSize: 12,
     textAlign: "center",
   },
-  debugInfo: {
-    padding: 8,
-    backgroundColor: "#f0f0f0",
-    borderRadius: 4,
-    marginBottom: 8,
+  nextButton: {
+    backgroundColor: theme.colors.primary,
+    padding: 16,
+    borderRadius: 8,
+    alignItems: "center",
+    marginTop: 20,
+    marginHorizontal: 16,
   },
-  debugText: {
-    fontSize: 12,
-    color: "#666",
-    fontFamily: "monospace",
-  },
-  debugContainer: {
-    margin: 10,
-    padding: 10,
-    backgroundColor: "#f0f0f0",
-    borderRadius: 5,
-  },
-  debugTitle: {
-    fontSize: 14,
-    fontWeight: "bold",
-    marginBottom: 5,
-    color: "#333",
-  },
-  debugText: {
-    fontSize: 12,
-    fontFamily: "monospace",
-    color: "#666",
+  nextButtonText: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "600",
   },
 });

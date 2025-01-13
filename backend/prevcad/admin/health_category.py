@@ -61,7 +61,8 @@ class HealthCategoryAdmin(admin.ModelAdmin):
         'get_template_name',
         'get_completion_date',
         'get_recommendation_status',
-        'get_edit_status'
+        'get_edit_status',
+        'get_evaluation_type'
     ]
 
     list_filter = (
@@ -89,9 +90,16 @@ class HealthCategoryAdmin(admin.ModelAdmin):
         'get_completion_date',
         'get_detailed_responses',
         'get_recommendation_editor',
-        'get_professional_evaluation'
+        'get_professional_evaluation',
+        'get_evaluation_type',
+        
+      
         
     )
+
+    def get_evaluation_type(self, obj):
+        return obj.template.evaluation_type if obj.template else 'Sin template'
+    get_evaluation_type.short_description = 'Tipo de Evaluación'
 
     def format_datetime(self, date):
         """Función auxiliar para formatear fechas de manera consistente"""
@@ -128,6 +136,7 @@ class HealthCategoryAdmin(admin.ModelAdmin):
                 'professional_responses': professional_responses,
                 'completed_date': evaluation_form.completed_date,
                 'is_completed': bool(evaluation_form.completed_date),
+                'evaluation_tags': obj.template.evaluation_tags if obj.template else []
             }
             
             # Especificar la ruta completa
@@ -167,34 +176,55 @@ class HealthCategoryAdmin(admin.ModelAdmin):
     get_completion_status.short_description = "Estado"
 
     def get_completion_date(self, obj):
-        """Muestra la fecha de completado con formato mejorado"""
+        """Muestra la fecha de completado según el tipo de evaluación"""
         try:
-            date_info = self.format_datetime(obj.evaluation_form.completed_date)
-            if not date_info:
-                return format_html(
-                    '<span style="color: #6B7280; font-style: italic;">No completado</span>'
-                )
+            if not obj.template:
+                return '-'
 
-            return format_html(
-                '<div style="display: flex; flex-direction: column; gap: 4px;">'
-                '<div style="color: #059669; font-weight: 500;">'
-                '<span style="display: inline-block; width: 8px; height: 8px; '
-                'background-color: #059669; border-radius: 50%; margin-right: 6px;'
-                '"></span>Completado'
-                '</div>'
-                '<div style="color: #374151;">{}</div>'
-                '<div style="color: #6B7280; font-style: italic;">hace {}</div>'
-                '</div>',
-                date_info['formatted'],
-                date_info['timesince']
+            evaluation_type = obj.template.evaluation_type
+            
+            # Intentar obtener o crear el form si no existe
+            from prevcad.models import EvaluationForm
+            evaluation_form, created = EvaluationForm.objects.get_or_create(
+                health_category=obj,
+                defaults={
+                    'responses': {},
+                    'professional_responses': {},
+                    'question_nodes': obj.template.evaluation_form.get('question_nodes', []) if obj.template.evaluation_form else []
+                }
             )
+            
+            def format_date(date):
+                """Formatea la fecha de manera más legible"""
+                if not date:
+                    return None
+                from django.utils import formats
+                return formats.date_format(date, "d/m/Y H:i")
+            
+            # Para evaluaciones normales
+            if evaluation_type == 'SELF':
+                if evaluation_form.responses:
+                    date_info = format_date(evaluation_form.completed_date)
+                    return f'✅ {date_info}' if date_info else '✅ Completado'
+                return '⏳ Pendiente'
+            
+            # Para evaluaciones profesionales
+            else:
+                if evaluation_form.professional_responses:
+                    date_info = format_date(evaluation_form.completed_date)
+                    return f'✅ {date_info}' if date_info else '✅ Completado'
+                elif evaluation_form.responses:
+                    date_info = format_date(evaluation_form.completed_date)
+                    return f'⏳ Evaluado el {date_info}' if date_info else '⏳ Por evaluar'
+                return '⏳ Pendiente'
+            
         except Exception as e:
-            return format_html(
-                '<span style="color: #6B7280; font-style: italic;">'
-                'Error al mostrar fecha: {}</span>', str(e)
-            )
+            print(f"Error en get_completion_date para HealthCategory {obj.id}: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            return f'❌ Error: {str(e)}'
 
-    get_completion_date.short_description = "Fecha de Completado"
+    get_completion_date.short_description = 'Estado'
 
     def get_recommendation_status(self, obj):
         """Muestra el estado de la recomendación con estilos mejorados"""
@@ -645,7 +675,7 @@ class HealthCategoryAdmin(admin.ModelAdmin):
                 return format_html(
                     '<span style="color: #DC2626; padding: 4px 8px; '
                     'background: #FEF2F2; border-radius: 4px; font-size: 0.875rem;">'
-                    '🔒 Solo lectura</span>'
+                    '�� Solo lectura</span>'
                 )
             elif can_edit:
                 return format_html(
@@ -669,13 +699,18 @@ class HealthCategoryAdmin(admin.ModelAdmin):
         """Guarda el request en el thread local para acceso posterior"""
         from threading import current_thread
         setattr(current_thread(), '_current_request', request)
+        extra_context = extra_context or {}
+        extra_context['can_edit'] = self.has_change_permission(request, self.get_object(request, object_id))
         return super().changelist_view(request, extra_context)
 
     def change_view(self, request, object_id, form_url='', extra_context=None):
         """Guarda el request en el thread local para acceso posterior"""
         from threading import current_thread
         setattr(current_thread(), '_current_request', request)
+        extra_context = extra_context or {}
+        extra_context['can_edit'] = self.has_change_permission(request, self.get_object(request, object_id))
         return super().change_view(request, object_id, form_url, extra_context)
+    
 
     def has_change_permission(self, request, obj=None):
         """Controla el permiso de edición"""
@@ -707,10 +742,12 @@ class HealthCategoryAdmin(admin.ModelAdmin):
                     'get_completion_status',
                     'get_completion_date',
                     'get_detailed_responses',
+                   
                 )
             }),
         ]
         return fieldsets
+    
 
     def get_edit_status_message(self, obj, can_edit, is_readonly):
         """Genera un mensaje detallado sobre el estado de edición"""

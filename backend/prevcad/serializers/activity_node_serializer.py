@@ -138,17 +138,26 @@ class VideoNodeSerializer(serializers.Serializer):
     media_url = serializers.SerializerMethodField()
 
     def get_media_url(self, obj):
-        if not obj.get('media'):
-            return None
-            
-        # Limpiar la ruta y asegurar formato correcto
-        path = obj['media'].replace('/media/', '').lstrip('/')
-        base_url = getattr(settings, 'BASE_URL', 'http://localhost:8000')
-        return f"{base_url.rstrip('/')}/media/{path}"
+        if hasattr(obj, 'media_url') and obj.media_url:
+            request = self.context.get('request')
+            if request is not None:
+                return request.build_absolute_uri(f"{settings.MEDIA_URL}{obj.media_url}")
+            # Si no hay request, construir la URL con el dominio de settings
+            domain = settings.DOMAIN if hasattr(settings, 'DOMAIN') else ''
+            return f"{domain}{settings.MEDIA_URL}{obj.media_url}"
+        return None
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
         data['type'] = 'VIDEO_NODE'
+        # Asegurarse de que media_url incluya el dominio completo
+        if instance.video:
+            request = self.context.get('request')
+            if request is not None:
+                data['media_url'] = request.build_absolute_uri(instance.video.url)
+            else:
+                domain = settings.DOMAIN if hasattr(settings, 'DOMAIN') else ''
+                data['media_url'] = f"{domain}{instance.video.url}"
         return data
 
 class TextNodeSerializer(serializers.ModelSerializer):
@@ -165,8 +174,12 @@ class ImageNodeSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
     def get_media_url(self, obj):
-        if obj.media_url:
-            return f"{settings.MEDIA_URL}{obj.media_url}"
+        if obj.content:
+            request = self.context.get('request')
+            if request is not None:
+                return request.build_absolute_uri(obj.content.url)
+            domain = settings.DOMAIN if hasattr(settings, 'DOMAIN') else ''
+            return f"{domain}{obj.content.url}"
         return None
 
 

@@ -3,6 +3,7 @@ from django.contrib.auth.models import User
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.core.validators import FileExtensionValidator
+from django.conf import settings
 
 
 class ActivityNode(models.Model):
@@ -55,7 +56,9 @@ class ActivityNode(models.Model):
             try:
                 if request:
                     return request.build_absolute_uri(media_field.url)
-                return media_field.url
+                # Si no hay request, usar el dominio de settings
+                domain = settings.DOMAIN if hasattr(settings, 'DOMAIN') else ''
+                return f"{domain}{media_field.url}"
             except Exception as e:
                 print(f"Error getting media URL: {e}")
                 return None
@@ -187,12 +190,7 @@ class VideoNode(ActivityNode):
         verbose_name = "Video"
         verbose_name_plural = "Videos"
 
-    def get_video_url(self, request=None):
-        if self.video and hasattr(self.video, 'url'):
-            if request:
-                return request.build_absolute_uri(self.video.url)
-            return self.video.url
-        return None
+
 
 
 
