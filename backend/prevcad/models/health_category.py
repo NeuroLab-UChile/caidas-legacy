@@ -110,17 +110,36 @@ class HealthCategory(models.Model):
         self.evaluation_form.save()
 
     def save_recommendation(self, text, status_color, updated_by, is_draft=True):
-        """Guarda o actualiza la recomendación"""
-        if not hasattr(self, 'recommendation'):
-            self.recommendation = Recommendation.objects.create(
-                health_category=self
-            )
+        """
+        Guarda o actualiza la recomendación
         
-        self.recommendation.text = text
-        self.recommendation.status_color = status_color
-        self.recommendation.updated_by = updated_by
-        self.recommendation.is_draft = is_draft
-        self.recommendation.save()
+        Args:
+            text (str): Texto de la recomendación
+            status_color (str): Color del estado ('verde', 'amarillo', 'rojo', 'gris')
+            updated_by (UserProfile): Usuario que realiza la actualización
+            is_draft (bool): Si es un borrador o no
+        """
+        try:
+            recommendation = self.get_or_create_recommendation()
+            
+            # Actualizar campos
+            recommendation.text = text
+            recommendation.status_color = status_color
+            recommendation.updated_by = updated_by
+            recommendation.is_draft = is_draft
+            recommendation.updated_at = timezone.now()
+            
+            # Si no es borrador, marcar como firmado
+            if not is_draft:
+                recommendation.is_signed = True
+                recommendation.signed_by = updated_by.get_full_name()
+                recommendation.signed_at = timezone.now()
+            
+            recommendation.save()
+            return True, "Recomendación guardada exitosamente"
+            
+        except Exception as e:
+            return False, f"Error al guardar la recomendación: {str(e)}"
 
     def get_status(self):
         try:

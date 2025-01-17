@@ -35,24 +35,21 @@ class UserProfile(models.Model):
     @property
     def role(self):
         """Obtiene el rol del usuario basado en su grupo"""
-        return self.user.groups.first().name if self.user.groups.exists() else None
+        group = self.user.groups.first()
+        if not group:
+            return None
+        return group.name
 
-    @role.setter
-    def role(self, role_name):
-        """Establece el rol del usuario cambiando su grupo"""
-        if role_name not in UserTypes.values:
-            raise ValueError(f"Rol inválido: {role_name}")
-        
-        # Limpiar grupos existentes
-        self.user.groups.clear()
-        
-        # Agregar al nuevo grupo
-        group = Group.objects.get(name=role_name)
-        self.user.groups.add(group)
-        
-        # Actualizar is_staff según el tipo de usuario
-        self.user.is_staff = UserTypes.is_professional(role_name) or UserTypes.is_staff(role_name)
-        self.user.save()
+    @property
+    def role_label(self):
+        """Obtiene la etiqueta amigable del rol del usuario"""
+        role = self.role
+        if not role:
+            return "Sin rol"
+        try:
+            return UserTypes(role).label
+        except ValueError:
+            return role
 
     def is_professional(self):
         """Verifica si el usuario es un profesional de la salud"""
@@ -72,20 +69,32 @@ class UserProfile(models.Model):
 
     def get_roles(self):
         """
-        Retorna lista de roles del usuario.
-        Si el rol está almacenado como string múltiple, lo divide.
+        Retorna lista de roles del usuario con sus etiquetas.
         """
         if not self.role:
             return []
             
-        # Si el rol contiene múltiples roles separados por algún delimitador
+        roles = []
         if ',' in self.role:
-            return [role.strip().upper() for role in self.role.split(',')]
-        if '_' in self.role:
-            return [role.strip().upper() for role in self.role.split('_')]
+            role_values = [role.strip().upper() for role in self.role.split(',')]
+        elif '_' in self.role:
+            role_values = [role.strip().upper() for role in self.role.split('_')]
+        else:
+            role_values = [self.role.upper()]
             
-        # Si es un solo rol
-        return [self.role.upper()]
+        for role_value in role_values:
+            try:
+                roles.append({
+                    'value': role_value,
+                    'label': UserTypes(role_value).label
+                })
+            except ValueError:
+                roles.append({
+                    'value': role_value,
+                    'label': role_value
+                })
+                
+        return roles
 
     def has_role(self, role):
         """
@@ -98,8 +107,7 @@ class UserProfile(models.Model):
         verbose_name_plural = 'Perfiles de Usuario'
 
     def __str__(self):
-        role = self.role or 'Sin rol'
-        return f"{self.user.username} - {role}"
+        return f"{self.user.username} - {self.role_label}"
 
 @receiver(post_save, sender=User)
 def create_user_profile(sender, instance, created, **kwargs):

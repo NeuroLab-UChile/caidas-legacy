@@ -214,13 +214,22 @@
                     </div>
                 {% endif %}
 
+                <!-- Solo mostrar los controles de video si puede editar y no es readonly -->
                 {% if can_edit and not is_readonly %}
                     <div class="space-y-4">
-                        <input type="file" 
-                               id="video-input"
-                               name="video"
-                               accept="video/*"
-                               class="w-full p-2 border rounded-lg">
+                        <div class="relative">
+                            <input type="file" 
+                                   id="video-input"
+                                   name="video"
+                                   accept="video/*"
+                                   class="block w-full text-sm text-gray-500
+                                          file:mr-4 file:py-2 file:px-4
+                                          file:rounded-md file:border-0
+                                          file:text-sm file:font-semibold
+                                          file:bg-indigo-50 file:text-indigo-700
+                                          hover:file:bg-indigo-100
+                                          cursor-pointer">
+                        </div>
 
                         {% if recommendation.video %}
                             <button type="button" 
@@ -230,20 +239,41 @@
                             </button>
                         {% endif %}
                     </div>
+                {% else %}
+                    {% if not recommendation.video %}
+                        <div class="text-sm text-gray-500 italic bg-gray-50 p-4 rounded-lg">
+                            No hay video disponible
+                        </div>
+                    {% endif %}
                 {% endif %}
             </div>
         </div>
 
-        <!-- Botón de submit -->
-        <div class="mt-6 flex justify-end">
+        <!-- Botones de acción -->
+        <div class="mt-6 flex justify-end space-x-3">
             {% if can_edit and not is_readonly %}
-                <button type="submit" 
-                        class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-                    Guardar cambios
+                <button 
+                    type="button"
+                    name="save_draft" 
+                    class="save-recommendation inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                    data-complete="false"
+                >
+                    Guardar borrador
+                </button>
+                <button 
+                    type="button"
+                    class="save-recommendation inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                    data-complete="true"
+                >
+                    Completar recomendación
                 </button>
             {% else %}
-                <div class="text-sm text-gray-500 italic">
-                    No tienes permisos para modificar esta recomendación
+                <div class="text-sm text-gray-500 italic text-center bg-gray-50 p-3 rounded-md">
+                    {% if is_readonly %}
+                        Esta recomendación está en modo solo lectura
+                    {% else %}
+                        No tiene permisos para editar esta recomendación
+                    {% endif %}
                 </div>
             {% endif %}
         </div>

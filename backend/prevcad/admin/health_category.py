@@ -56,13 +56,26 @@ class UserProfileFilter(admin.SimpleListFilter):
 
 @admin.register(HealthCategory)
 class HealthCategoryAdmin(admin.ModelAdmin):
-    list_display = [
+    # Definir el orden específico de los campos
+    fields = (
+        'get_completion_date',
         'get_user_info',
         'get_template_name',
-        'get_completion_date',
         'get_recommendation_status',
-        'get_edit_status',
-        'get_evaluation_type'
+        'get_evaluation_type',
+        'get_user_permissions',
+        'get_professional_evaluation',
+        'get_recommendation_editor',
+        'get_detailed_responses',
+    )
+
+    list_display = [
+        'get_completion_date',
+        'get_user_info',
+        'get_template_name',
+        'get_recommendation_status',
+        'get_evaluation_type',
+        'get_user_permissions'
     ]
 
     list_filter = (
@@ -78,7 +91,7 @@ class HealthCategoryAdmin(admin.ModelAdmin):
     )
 
     # Definir los campos base del modelo
-    base_fields = ['user_profile', 'template']
+    base_fields = ['template']
 
     # Definir los campos de solo lectura
     readonly_fields = (
@@ -91,10 +104,9 @@ class HealthCategoryAdmin(admin.ModelAdmin):
         'get_detailed_responses',
         'get_recommendation_editor',
         'get_professional_evaluation',
+        'get_user_permissions',
         'get_evaluation_type',
-        
-      
-        
+        'get_recommendation_status',
     )
 
     def get_evaluation_type(self, obj):
@@ -123,7 +135,13 @@ class HealthCategoryAdmin(admin.ModelAdmin):
         """Renderiza el formulario de evaluación profesional"""
         if not hasattr(obj, 'template') or obj.template.evaluation_type != 'PROFESSIONAL':
             return None
-            
+        
+        request = getattr(self, 'request', None)
+        if not request:
+            return "Error: No se pudo obtener el contexto de la solicitud"
+        
+        user_profile = getattr(request.user, 'profile', None)
+
         try:
             evaluation_form = obj.get_or_create_evaluation_form()
             professional_responses = evaluation_form.professional_responses or {}
@@ -136,7 +154,8 @@ class HealthCategoryAdmin(admin.ModelAdmin):
                 'professional_responses': professional_responses,
                 'completed_date': evaluation_form.completed_date,
                 'is_completed': bool(evaluation_form.completed_date),
-                'evaluation_tags': obj.template.evaluation_tags if obj.template else []
+                'evaluation_tags': obj.template.evaluation_tags if obj.template else [],
+                'can_edit': obj.template.can_user_edit(user_profile)
             }
             
             # Especificar la ruta completa
@@ -377,7 +396,7 @@ class HealthCategoryAdmin(admin.ModelAdmin):
 
     def get_recommendation_editor(self, obj):
         """Renderiza el editor de recomendaciones"""
-        request = getattr(current_thread(), '_current_request', None)
+        request = getattr(self, 'request', None)
         if not request:
             return "Error: No se pudo obtener el contexto de la solicitud"
 
@@ -639,7 +658,7 @@ class HealthCategoryAdmin(admin.ModelAdmin):
             user_profile = getattr(request.user, 'profile', None)
             
             # Si el usuario no puede editar o el template está en readonly
-            if not obj.can_user_edit(user_profile) or obj.template.is_readonly:
+            if not obj.template.can_user_edit(user_profile) or obj.template.is_readonly:
                 # Hacer todos los campos readonly excepto los que ya lo son
                 all_fields = [f.name for f in self.model._meta.fields]
                 readonly.extend([f for f in all_fields if f not in readonly])
@@ -652,171 +671,106 @@ class HealthCategoryAdmin(admin.ModelAdmin):
         
         return list(set(readonly))  # Eliminar duplicados
 
-    def get_edit_status(self, obj):
-        """Muestra el estado de edición del objeto"""
+ 
+
+    def changelist_view(self, request, extra_context=None):
+        """Guarda la request en el admin"""
+        self.request = request  # Guardamos la request directamente en self
+        return super().changelist_view(request, extra_context)
+
+    def changeform_view(self, request, object_id=None, form_url='', extra_context=None):
+        """Guarda la request en el admin"""
+        self.request = request  # Guardamos la request directamente en self
+        return super().changeform_view(request, object_id, form_url, extra_context)
+
+    def get_user_permissions(self, obj):
+        """Muestra los permisos del usuario actual para esta categoría"""
         try:
-            # Obtener el request del thread local actual
-            from django.core.handlers.wsgi import WSGIRequest
-            from threading import current_thread
-            request = getattr(current_thread(), '_current_request', None)
-            
-            if not request or not isinstance(request, WSGIRequest):
+            request = getattr(self, 'request', None)
+            if not request:
                 return format_html(
-                    '<span style="color: #6B7280; padding: 4px 8px; '
-                    'background: #F3F4F6; border-radius: 4px; font-size: 0.875rem;">'
-                    '⚠️ Estado desconocido</span>'
+                    '<span style="color: #6B7280;">Sin información</span>'
                 )
 
             user_profile = getattr(request.user, 'profile', None)
-            can_edit = obj.can_user_edit(user_profile)
-            is_readonly = obj.template.is_readonly
+            can_edit = obj.template.can_user_edit(user_profile)
+            is_readonly = obj.template.is_readonly if obj.template else True
 
-            if is_readonly:
-                return format_html(
-                    '<span style="color: #DC2626; padding: 4px 8px; '
-                    'background: #FEF2F2; border-radius: 4px; font-size: 0.875rem;">'
-                    '�� Solo lectura</span>'
-                )
-            elif can_edit:
-                return format_html(
-                    '<span style="color: #059669; padding: 4px 8px; '
-                    'background: #ECFDF5; border-radius: 4px; font-size: 0.875rem;">'
-                    '✏️ Editable</span>'
-                )
+            # Construir lista de permisos
+            permissions = []
+            
+  
+            # Verificar permisos específicos
+            if can_edit and not is_readonly:
+                permissions.append((
+                    "✏️ Puede editar",
+                    "#059669",  # Verde
+                    "#ECFDF5"
+                ))
+            elif is_readonly:
+                permissions.append((
+                    "🔒 Solo lectura",
+                    "#DC2626",  # Rojo
+                    "#FEF2F2"
+                ))
             else:
-                return format_html(
-                    '<span style="color: #6B7280; padding: 4px 8px; '
-                    'background: #F3F4F6; border-radius: 4px; font-size: 0.875rem;">'
-                    '🚫 Sin permisos</span>'
-                )
+                permissions.append((
+                    "🚫 Sin acceso",
+                    "#6B7280",  # Gris
+                    "#F3F4F6"
+                ))
+
+            # Mostrar rol del usuario
+            user_role = getattr(user_profile, 'role', None)
+            if user_role:
+                permissions.append((
+                    f"👤 {UserTypes(user_role).label}",
+                    "#4F46E5",  # Índigo
+                    "#EEF2FF"
+                ))
+
+            # Construir HTML con los permisos
+            html = '<div style="display: flex; gap: 4px; flex-direction: column;">'
+            for text, color, bg_color in permissions:
+                html += f'''
+                    <span style="
+                        color: {color};
+                        background: {bg_color};
+                        padding: 2px 8px;
+                        border-radius: 4px;
+                        font-size: 0.75rem;
+                        white-space: nowrap;
+                    ">{text}</span>
+                '''
+            html += '</div>'
+
+            return format_html(html)
+
         except Exception as e:
             return format_html(
                 '<span style="color: #DC2626;">Error: {}</span>', str(e)
             )
-    get_edit_status.short_description = "Estado de Edición"
 
-    def changelist_view(self, request, extra_context=None):
-        """Guarda el request en el thread local para acceso posterior"""
-        from threading import current_thread
-        setattr(current_thread(), '_current_request', request)
-        extra_context = extra_context or {}
-        extra_context['can_edit'] = self.has_change_permission(request, self.get_object(request, object_id))
-        return super().changelist_view(request, extra_context)
-
-    def change_view(self, request, object_id, form_url='', extra_context=None):
-        """Guarda el request en el thread local para acceso posterior"""
-        from threading import current_thread
-        setattr(current_thread(), '_current_request', request)
-        extra_context = extra_context or {}
-        extra_context['can_edit'] = self.has_change_permission(request, self.get_object(request, object_id))
-        return super().change_view(request, object_id, form_url, extra_context)
-    
-
-    def has_change_permission(self, request, obj=None):
-        """Controla el permiso de edición"""
-        if obj is None:
-            return True  # Permitir acceso a la lista
-            
-        user_profile = getattr(request.user, 'profile', None)
-        if request.user.is_superuser:
-            return True
-            
-        return obj.can_user_edit(user_profile)
+    get_user_permissions.short_description = "Permisos"
+    get_user_permissions.allow_tags = True
 
     def get_fieldsets(self, request, obj=None):
-        """Define los fieldsets incluyendo el editor de recomendaciones"""
-        fieldsets = [
-            ('Información Base', {
+        """Define el orden específico de los campos en el formulario"""
+        return [
+            (None, {
                 'fields': (
-                    'user',
-                    'template',
-                )
-            }),
-            ('Recomendación', {
-                'fields': ('get_recommendation_editor',),
-                'classes': ('wide',)
-            }),
-            ('Estado de Completación', {
-                'fields': (
-                    'get_professional_evaluation',
-                    'get_completion_status',
                     'get_completion_date',
+                    'get_user_info',
+                    'get_template_name',
+                    'get_recommendation_status',
+                    'get_evaluation_type',
+                    'get_user_permissions',
+                    'get_professional_evaluation',
+                    'get_recommendation_editor',
                     'get_detailed_responses',
-                   
                 )
             }),
         ]
-        return fieldsets
-    
-
-    def get_edit_status_message(self, obj, can_edit, is_readonly):
-        """Genera un mensaje detallado sobre el estado de edición"""
-        if not obj:
-            return ''
-
-        styles = {
-            'container': 'padding: 15px; border-radius: 8px; margin: 10px 0;',
-            'title': 'font-size: 1.1em; font-weight: bold; margin-bottom: 10px;',
-            'message': 'margin: 5px 0;',
-            'info': 'margin-top: 10px; font-size: 0.9em; color: #666;',
-            'readonly': 'background: #FEF2F2; border: 1px solid #FCA5A5;',
-            'editable': 'background: #ECFDF5; border: 1px solid #6EE7B7;',
-            'no_permission': 'background: #F3F4F6; border: 1px solid #D1D5DB;'
-        }
-
-        if is_readonly:
-            return f"""
-            <div style="{styles['container']} {styles['readonly']}">
-                <div style="{styles['title']}">🔒 Modo Solo Lectura</div>
-                <div style="{styles['message']}">
-                    Esta categoría está configurada como solo lectura y no puede ser modificada.
-                </div>
-                <div style="{styles['info']}">
-                    • El template está configurado como solo lectura<br>
-                    • Solo los administradores pueden modificar este estado
-                </div>
-            </div>
-            """
-        elif can_edit:
-            role_info = f"como {getattr(obj.user.user.profile, 'role', 'Usuario')}"
-            return f"""
-            <div style="{styles['container']} {styles['editable']}">
-                <div style="{styles['title']}">✏️ Edición Permitida</div>
-                <div style="{styles['message']}">
-                    Tienes permisos para editar esta categoría {role_info}.
-                </div>
-                <div style="{styles['info']}">
-                    • Puedes modificar los campos no marcados como "solo lectura"<br>
-                    • Los cambios quedarán registrados con tu usuario
-                </div>
-            </div>
-            """
-        else:
-            return f"""
-            <div style="{styles['container']} {styles['no_permission']}">
-                <div style="{styles['title']}">🚫 Sin Permisos de Edición</div>
-                <div style="{styles['message']}">
-                    No tienes los permisos necesarios para editar esta categoría.
-                </div>
-                <div style="{styles['info']}">
-                    • Tu rol actual no está en la lista de roles permitidos<br>
-                    • Contacta a un administrador si necesitas acceso
-                </div>
-            </div>
-            """
-
-  
-        
-
-    def can_user_edit(self, obj, user_profile):
-        """Verifica si un usuario puede editar la categoría"""
-        if not user_profile:
-            return False
-            
-        user_role = getattr(user_profile, 'role', None)
-        template_roles = obj.template.allowed_editor_roles if obj.template else []
-        
-        return user_role in template_roles
 
     class Media:
         css = {

@@ -3,7 +3,7 @@
 
 {% block content %}
 <div id="content-main">
-    {% if is_doctor %}
+    {% if can_edit %}
         {# Formulario completo para doctores #}
         <form {% if has_file_field %}enctype="multipart/form-data" {% endif %}action="{{ form_url }}" method="post" id="{{ opts.model_name }}_form" novalidate>
             {% csrf_token %}
