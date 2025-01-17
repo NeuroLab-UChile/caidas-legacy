@@ -155,7 +155,8 @@ class HealthCategoryAdmin(admin.ModelAdmin):
                 'completed_date': evaluation_form.completed_date,
                 'is_completed': bool(evaluation_form.completed_date),
                 'evaluation_tags': obj.template.evaluation_tags if obj.template else [],
-                'can_edit': obj.template.can_user_edit(user_profile)
+                'can_edit': obj.template.can_user_edit(user_profile),
+               
             }
             
             # Especificar la ruta completa

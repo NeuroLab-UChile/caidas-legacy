@@ -326,4 +326,71 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+
+    const buttons = document.querySelectorAll('.save-recommendation');
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    
+    // Obtener el ID de la categoría de la URL
+    const path = window.location.pathname;
+    const match = path.match(/\/healthcategory\/(\d+)/);
+    const categoryId = match ? match[1] : null;
+    
+    if (!categoryId) {
+        console.error('No se pudo extraer el ID de la categoría de la URL');
+        return;
+    }
+    
+    buttons.forEach(button => {
+        button.addEventListener('click', async function(e) {
+            e.preventDefault();
+            const complete = this.dataset.complete === 'true';
+            
+            try {
+                const url = `/admin/prevcad/healthcategory/${categoryId}/save-recommendation/`;
+                
+                const requestData = {
+                    text: document.getElementById('recommendation-text').value,
+                    status_color: document.getElementById('status-color').value,
+                    is_draft: !complete
+                };
+                
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: JSON.stringify(requestData)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    await Swal.fire({
+                        icon: 'success',
+                        title: complete ? 'Recomendación completada' : 'Borrador guardado',
+                        text: data.message,
+                        confirmButtonText: 'Aceptar',
+                        confirmButtonColor: '#4F46E5'
+                    });
+                    
+                    window.location.reload();
+                } else {
+                    throw new Error(data.error || 'Error al guardar');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Ha ocurrido un error al guardar la recomendación: ' + error.message,
+                    confirmButtonColor: '#EF4444'
+                });
+            }
+        });
+    });
 }); 
