@@ -66,7 +66,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 input = document.createElement('input');
                 input.type = name === 'video' ? 'file' : 'hidden';
                 input.name = name;
-                form.appendChild(input);
+                
             }
             if (name !== 'video') {
                 input.value = typeof value === 'boolean' ? String(value) : value;
@@ -167,35 +167,17 @@ document.addEventListener('DOMContentLoaded', function() {
         // Event listener para el formulario
         addSafeEventListener(form, 'submit', function(e) {
             e.preventDefault();
-            console.log('Formulario enviado');
-
-            const submitButton = form.querySelector('[type="submit"]');
-            if (submitButton) {
-                submitButton.disabled = true;
-                submitButton.textContent = 'Guardando...';
-            }
-
             const formData = new FormData(form);
-            
-            // Agregar campos manualmente
-            formData.append('text', document.getElementById('recommendation-text')?.value || '');
-            formData.append('status_color', document.getElementById('status-color')?.value || 'gris');
-            formData.append('is_draft', document.getElementById('is-draft')?.checked || false);
-            formData.append('recommendation_use_default', document.getElementById('use-default')?.checked || false);
 
-            // Agregar el video si existe
-            const videoInput = document.getElementById('video-input');
-            if (videoInput && videoInput.files[0]) {
-                formData.append('video', videoInput.files[0]);
+            // Añadir múltiples archivos de video al FormData
+            if (elements.videoInput && elements.videoInput.files.length > 0) {
+                Array.from(elements.videoInput.files).forEach((file, index) => {
+                    formData.append(`videos`, file); // Usa el mismo nombre para múltiples videos
+                });
             }
 
             // Obtener el CSRF token
-            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
-            if (!csrfToken) {
-                console.error('CSRF token no encontrado');
-                alert('Error: CSRF token no encontrado');
-                return;
-            }
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 
             fetch(form.action || window.location.href, {
                 method: 'POST',
@@ -207,83 +189,24 @@ document.addEventListener('DOMContentLoaded', function() {
                 credentials: 'same-origin'
             })
             .then(response => {
-                console.log('Respuesta recibida:', {
-                    status: response.status,
-                    statusText: response.statusText,
-                    headers: Object.fromEntries(response.headers.entries())
-                });
-                
-                return response.text().then(text => {
-                    if (!response.ok) {
-                        console.error('Error en respuesta:', text);
-                        try {
-                            const errorData = JSON.parse(text);
-                            throw new Error(errorData.message || errorData.error || `Error ${response.status}`);
-                        } catch (e) {
-                            throw new Error(`Error ${response.status}: ${text}`);
-                        }
-                    }
-                    return text;
-                });
+                if (!response.ok) {
+                    return response.text().then(text => {
+                        throw new Error(text);
+                    });
+                }
+                return response.json();
             })
-            .then(text => {
-                console.log('Texto de respuesta completo:', text);
-                try {
-                    // Intentar parsear como JSON
-                    const data = JSON.parse(text);
-                    console.log('Datos JSON parseados:', data);
-                    
-                    // Verificar si tenemos una URL de video en la respuesta
-                    if (data.video_url) {
-                        console.log('Video subido exitosamente:', data.video_url);
-                    }
-                    
-                    if (data.success || data.status === 'success' || data.video_url) {
-                        console.log('Guardado exitoso, recargando página...');
-                        // Esperar un momento antes de recargar para asegurar que el servidor procesó todo
-                        setTimeout(() => {
-                            window.location.reload();
-                        }, 1000);
-                    } else {
-                        throw new Error(data.message || 'Error desconocido');
-                    }
-                } catch (e) {
-                    console.log('Error al parsear JSON, verificando si es HTML...');
-                    // Si la respuesta contiene una ruta de video, considerarla exitosa
-                    if (text.includes('/media/recommendations/videos/')) {
-                        console.log('Video subido exitosamente, recargando página...');
-                        setTimeout(() => {
-                            window.location.reload();
-                        }, 1000);
-                        return;
-                    }
-                    
-                    if (text.includes('<html') || text.includes('<!DOCTYPE html>')) {
-                        if (text.includes('error') || text.includes('Error')) {
-                            console.error('Respuesta HTML contiene error:', text);
-                            throw new Error('Error en la respuesta del servidor');
-                        }
-                        console.log('Respuesta HTML detectada, recargando página...');
-                        setTimeout(() => {
-                            window.location.reload();
-                        }, 1000);
-                    } else {
-                        console.error('Respuesta no válida:', text);
-                        throw new Error('Respuesta inválida del servidor');
-                    }
+            .then(data => {
+                if (data.success) {
+                    console.log('Guardado exitoso');
+                    window.location.reload();
+                } else {
+                    throw new Error(data.error || 'Error al guardar');
                 }
             })
             .catch(error => {
-                console.error('Error completo:', error);
-                console.error('Stack trace:', error.stack);
-                alert('Error al guardar los cambios: ' + error.message);
-            })
-            .finally(() => {
-                console.log('Finalizando proceso de envío...');
-                if (submitButton) {
-                    submitButton.disabled = false;
-                    submitButton.textContent = 'Guardar cambios';
-                }
+                console.error('Error:', error);
+                alert('Ha ocurrido un error al guardar la recomendación: ' + error.message);
             });
         });
 
@@ -295,24 +218,23 @@ document.addEventListener('DOMContentLoaded', function() {
         console.warn('No se encontraron todos los elementos necesarios para el editor de recomendaciones');
     }
 
-    // Agregar al inicio del archivo, dentro del DOMContentLoaded
+    // Manejo de múltiples videos
     const videoInput = document.getElementById('video-input');
-    const removeVideoBtn = document.getElementById('remove-video');
 
     if (videoInput) {
-        videoInput.addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (file) {
-                if (file.size > 100 * 1024 * 1024) {
-                    alert('El archivo es demasiado grande. Máximo 100MB.');
-                    this.value = '';
-                } else {
-                    console.log('Video seleccionado:', file.name);
-                    updateHiddenFields();
-                }
+        videoInput.addEventListener('change', function() {
+            const files = this.files;
+            if (files.length > 0) {
+                console.log('Videos seleccionados:');
+                Array.from(files).forEach(file => {
+                    console.log(file.name);
+                    // Aquí puedes agregar cualquier lógica adicional que necesites para cada archivo
+                });
             }
         });
     }
+
+    const removeVideoBtn = document.getElementById('remove-video');
 
     if (removeVideoBtn) {
         removeVideoBtn.addEventListener('click', function() {
@@ -346,12 +268,14 @@ document.addEventListener('DOMContentLoaded', function() {
             const complete = this.dataset.complete === 'true';
             
             try {
-                const url = `/admin/prevcad/healthcategory/${categoryId}/save-recommendation/`;
+                const url = `/admin/healthcategory/${categoryId}/update-recommendation/`;
                 
                 const requestData = {
                     text: document.getElementById('recommendation-text').value,
                     status_color: document.getElementById('status-color').value,
-                    is_draft: !complete
+                    is_draft: !complete,
+                    recommendation_use_default: document.getElementById('use-default').checked,
+                    video: document.getElementById('video-input').files[0]
                 };
                 
                 const response = await fetch(url, {
@@ -370,26 +294,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 const data = await response.json();
                 
                 if (data.success) {
-                    await Swal.fire({
-                        icon: 'success',
-                        title: complete ? 'Recomendación completada' : 'Borrador guardado',
-                        text: data.message,
-                        confirmButtonText: 'Aceptar',
-                        confirmButtonColor: '#4F46E5'
-                    });
-                    
+                    console.log('Guardado exitoso');
                     window.location.reload();
                 } else {
                     throw new Error(data.error || 'Error al guardar');
                 }
             } catch (error) {
                 console.error('Error:', error);
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: 'Ha ocurrido un error al guardar la recomendación: ' + error.message,
-                    confirmButtonColor: '#EF4444'
-                });
+                alert('Ha ocurrido un error al guardar la recomendación: ' + error.message);
             }
         });
     });

@@ -22,6 +22,7 @@ from ..models.user_types import UserTypes
 from django.db.models import Q
 from django.db import connection
 import time
+from django.db.models import Case, When, Value, IntegerField
 
 
 
@@ -107,7 +108,9 @@ class HealthCategoryAdmin(admin.ModelAdmin):
         'get_user_permissions',
         'get_evaluation_type',
         'get_recommendation_status',
+      
     )
+    
 
     def get_evaluation_type(self, obj):
         return obj.template.evaluation_type if obj.template else 'Sin template'
@@ -431,16 +434,7 @@ class HealthCategoryAdmin(admin.ModelAdmin):
                 'is_readonly': obj.template.is_readonly if obj.template else True,
             }
 
-            # Debug de permisos
-            print(f"""
-            Debug Permisos:
-            - Usuario: {request.user.username}
-            - Rol: {user_role}
-            - Label: {user_role_label}
-            - Puede editar: {can_edit}
-            - Template readonly: {obj.template.is_readonly if obj.template else True}
-            """)
-
+         
             return render_to_string(
                 'admin/healthcategory/recommendation_editor.html',
                 context,
@@ -472,6 +466,8 @@ class HealthCategoryAdmin(admin.ModelAdmin):
 
         max_attempts = 3
         attempt = 0
+        
+
 
         while attempt < max_attempts:
             try:
@@ -495,10 +491,12 @@ class HealthCategoryAdmin(admin.ModelAdmin):
                     recommendation.updated_by = request.user.username
                     recommendation.updated_at = timezone.now()
                     
+                    
                     # Guardar cambios
                     recommendation.save()
+                                    # Añadir un mensaje según el estado de la recomendación
+        
                     
-                    messages.success(request, "Recomendación guardada correctamente")
                     return JsonResponse({
                         'success': True,
                         'message': 'Cambios guardados correctamente'
@@ -515,6 +513,10 @@ class HealthCategoryAdmin(admin.ModelAdmin):
                         'error': 'Error al guardar: Base de datos ocupada'
                     }, status=503)
                 time.sleep(0.5)  # Esperar antes de reintentar
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Error al guardar: Base de datos ocupada'
+                }, status=503)
                 
             except Exception as e:
                 print("Error al guardar:", str(e))
@@ -524,21 +526,7 @@ class HealthCategoryAdmin(admin.ModelAdmin):
                     'error': str(e)
                 }, status=500)
 
-    def get_urls(self):
-        urls = super().get_urls()
-        custom_urls = [
-            path(
-                '<path:object_id>/save-professional-evaluation/',
-                self.admin_site.admin_view(self.save_professional_evaluation),
-                name='healthcategory_save_evaluation',
-            ),
-            path(
-                '<int:category_id>/update-recommendation/',
-                self.admin_site.admin_view(self.update_recommendation_view),
-                name='update-recommendation',
-            ),
-        ]
-        return custom_urls + urls
+
 
     def save_professional_evaluation(self, request, object_id):
         """Vista para guardar la evaluación profesional"""
@@ -773,8 +761,28 @@ class HealthCategoryAdmin(admin.ModelAdmin):
             }),
         ]
 
-    class Media:
-        css = {
-            'all': ('admin/css/custom_admin.css',)
-        }
-        js = ('admin/js/recommendation_editor.js',) 
+   
+        
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        user_profile = getattr(request.user, 'profile', None)
+
+        if user_profile and user_profile.role:
+            # Ordenar manualmente obteniendo los IDs ordenados
+            ordered_ids = [
+            obj.id for obj in sorted(
+                qs,
+                key=lambda obj: user_profile.role in (obj.template.allowed_editor_roles or []),
+                reverse=True  # Los permitidos primero
+            )
+            ]
+            # Reconstruir el queryset con los IDs ordenados
+            return qs.filter(id__in=ordered_ids).order_by(
+            Case(
+                *[When(id=id, then=pos) for pos, id in enumerate(ordered_ids)],
+                default=0
+            )
+            )
+
+        return qs

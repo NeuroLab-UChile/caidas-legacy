@@ -212,8 +212,6 @@ def update_category_template(request, template_id):
         return Response({'error': 'Template not found'}, status=404)
 
 
-
-
 @api_view(['POST'])
 def create_health_category(request):
     try:
@@ -286,3 +284,159 @@ def get_health_category_detail(request, category_id):
             'message': str(e)
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+@api_view(['POST'])
+def save_professional_evaluation(request, category_id):
+    """
+    Vista de admin para guardar la evaluación profesional
+    """
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Método no permitido'}, status=405)
+
+    try:
+        # Obtener la categoría de salud
+        health_category = HealthCategory.objects.get(id=category_id)
+        
+        # Obtener los datos del request
+        data = json.loads(request.body)
+        evaluation_form = health_category.get_or_create_evaluation_form()
+        
+        # Debug
+        print("Estado inicial:", {
+            'is_draft': evaluation_form.is_draft,
+            'completed_date': evaluation_form.completed_date
+        })
+        
+        # Obtener y actualizar las respuestas profesionales
+        professional_responses = data.get('professional_responses', {})
+        if evaluation_form.professional_responses is None:
+            evaluation_form.professional_responses = {}
+        evaluation_form.professional_responses.update(professional_responses)
+        
+        # Manejar el estado de completado
+        if data.get('complete', False):
+            print("Marcando como completado...")  # Debug
+            now = timezone.now()
+            
+            # Actualizar el formulario
+            evaluation_form.is_draft = False
+            evaluation_form.completed_date = now
+            
+            # Actualizar la recomendación
+            try:
+                recommendation = health_category.get_or_create_recommendation()
+                if recommendation:
+                    recommendation.is_draft = False
+                    recommendation.updated_by = request.user.username
+                    recommendation.updated_at = now
+                    recommendation.save()
+                    print("Recomendación actualizada")  # Debug
+            except Exception as e:
+                print(f"Error actualizando recomendación: {e}")
+        
+        # Guardar y verificar
+        evaluation_form.save()
+        evaluation_form.refresh_from_db()
+        
+        # Debug final
+        print("Estado final:", {
+            'is_draft': evaluation_form.is_draft,
+            'completed_date': evaluation_form.completed_date,
+            'professional_responses': evaluation_form.professional_responses
+        })
+
+        return JsonResponse({
+            'success': True,
+            'message': 'Evaluación guardada correctamente',
+            'is_draft': evaluation_form.is_draft,
+            'completed_date': evaluation_form.completed_date.isoformat() if evaluation_form.completed_date else None,
+            'professional_responses': evaluation_form.professional_responses
+        })
+
+    except HealthCategory.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'error': 'Categoría de salud no encontrada'
+        }, status=404)
+    except json.JSONDecodeError:
+        return JsonResponse({
+            'success': False,
+            'error': 'Datos JSON inválidos'
+        }, status=400)
+    except Exception as e:
+        import traceback
+        print("Error completo:")
+        print(traceback.format_exc())
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500) 
+    
+
+
+@api_view(['POST'])
+def update_recommendation(request, category_id):
+  """
+  Vista de admin para actualizar la recomendación
+  """
+  if request.method != 'POST':
+    return JsonResponse({'error': 'Método no permitido'}, status=405)
+
+  try: 
+    print("=== Debug update_recommendation ===")
+    print('request.POST:', request.POST)
+
+    # Recuperar la categoría de salud y su recomendación
+    health_category = get_object_or_404(HealthCategory, id=category_id)
+    recommendation = health_category.recommendation
+
+    # Manejar el video si está presente en request.POST
+    if 'videos' in request.FILES:
+      try:
+        video_file = request.FILES['videos']
+        print(f"Procesando video: {video_file.name} ({video_file.size} bytes)")
+        
+        # Validar el archivo
+        if video_file.size > 100 * 1024 * 1024:  # Límite de 100 MB
+          return JsonResponse({
+            'status': 'error',
+            'message': 'El archivo de video es demasiado grande'
+          }, status=400)
+
+        # Guardar el video en el sistema de almacenamiento
+        recommendation.video = video_file
+        recommendation.save()
+        print(f"Video guardado: {recommendation.video.url}")
+
+      except Exception as e:
+        print(f"Error procesando video: {str(e)}")
+        return JsonResponse({
+          'status': 'error',
+          'message': f'Error al procesar el video: {str(e)}'
+        }, status=500)
+
+    # Actualizar otros campos de la recomendación
+    recommendation.use_default = request.POST.get('use_default') == 'true'
+    if recommendation.use_default:
+        recommendation.text = health_category.template.default_recommendations[recommendation.status_color]
+
+    else:
+        recommendation.text = request.POST.get('text', '')
+    recommendation.status_color = request.POST.get('status_color', 'gris')
+    recommendation.is_draft = request.POST.get('is_draft') == 'true'
+    recommendation.updated_by = request.user.username
+    recommendation.save()
+
+    return JsonResponse({
+      'status': 'success',
+      'message': 'Recomendación actualizada correctamente',
+      'video_url': recommendation.video.url if recommendation.video else None
+    })
+
+  except Exception as e:
+    import traceback
+    print("Error completo:")
+    print(traceback.format_exc())
+    return JsonResponse({
+      'status': 'error',
+      'message': str(e)
+    }, status=500)

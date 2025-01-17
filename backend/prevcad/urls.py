@@ -4,7 +4,7 @@ from prevcad.models import HealthCategory
 
 from prevcad.views.profiles import getProfile, uploadProfileImage, deleteProfileImage
 from prevcad.views.text_recomendations import TextRecomendationsView
-from prevcad.views.health_categories import HealthCategoryListView, save_evaluation_responses, create_health_category, update_health_category
+from prevcad.views.health_categories import HealthCategoryListView, save_evaluation_responses, create_health_category, update_health_category, update_recommendation, save_professional_evaluation
 from django.conf import settings
 from django.conf.urls.static import static
 from .views import admin_views
@@ -36,13 +36,13 @@ urlpatterns = [
        name='update_health_category'),
   path('admin/update-evaluation-form/<int:template_id>/', admin_views.update_evaluation_form, name='update_evaluation_form'),
   path('admin/update-training-form/<int:template_id>/', admin_views.update_training_form, name='update_training_form'),
-  path('admin/prevcad/healthcategory/<int:object_id>/update_recommendation/', 
-       admin_views.update_recommendation, 
+  path('admin/healthcategory/<int:category_id>/update-recommendation/', 
+       update_recommendation, 
        name='update_recommendation'),
-  path('admin/prevcad/healthcategory/<int:category_id>/save-professional-evaluation/',
-       admin_views.save_professional_evaluation,
-       name='admin_save_professional_evaluation'),
-
+ 
+  path('admin/healthcategory/<int:category_id>/save-professional-evaluation/',
+       save_professional_evaluation,
+       name='save_professional_evaluation'),
   path('admin/categorytemplate/<int:template_id>/update_training_form/', 
        update_training_form, 
        name='update_training_form'),

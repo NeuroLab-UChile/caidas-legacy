@@ -116,7 +116,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     async function saveEvaluation(complete = false) {
         try {
-            const url = "{% url 'save_professional_evaluation' category_id=health_category.id %}";
+            const url = "{% url 'save_professional_evaluation' categoryId %}";
             const requestData = {
                 professional_responses: {
                     observations: document.getElementById('observations').value,

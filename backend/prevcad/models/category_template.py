@@ -12,6 +12,11 @@ class CategoryTemplate(models.Model):
   """
   Template for health categories
   """
+  def __str__(self):
+    return self.name
+  class Meta:
+    verbose_name = 'Dominio'
+    verbose_name_plural = 'Dominios'
   # Basic information
   name = models.CharField(max_length=200)
   icon = models.ImageField(
@@ -255,6 +260,8 @@ class CategoryTemplateEditor(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
+        verbose_name = "Template de Dominio",
+        verbose_name_plural = "Templates de Dominio",
         unique_together = ['template', 'user']
 
 

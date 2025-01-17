@@ -3,7 +3,13 @@ module.exports = {
     "./templates/**/*.html",
     "./**/templates/**/*.html",
     "./static/admin/**/*.{js,css}",
-    "./prevcad/**/templates/**/*.html"
+    "./prevcad/**/templates/**/*.html",
+    "./static/**/*.{js,css}",
+    "./prevcad/**/static/**/*.{js,css}",
+    "./prevcad/**/templates/**/*.html",
+    "./prevcad/**/static/**/*.{js,css}",
+    "./prevcad/**/templates/**/*.html",
+    "./prevcad/**/static/**/*.{js,css}",
   ],
   theme: {
     extend: {

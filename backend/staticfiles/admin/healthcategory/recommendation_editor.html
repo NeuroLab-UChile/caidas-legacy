@@ -323,7 +323,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Función para crear campos ocultos
     function createHiddenFields() {
         const fields = {
-            'recommendation_text': elements.recommendationText?.value ,
+            'recommendation_text': elements.recommendationText?.value ?? '',
             'recommendation_status': elements.statusColor?.value ?? 'gris',
             'recommendation_is_draft': elements.isDraft?.checked ?? false,
             'recommendation_use_default': elements.defaultRadio?.checked ?? false,
@@ -375,7 +375,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        if (useDefault.checked || !recommendationText.value) {
+        if (useDefault.checked) {
             const status = statusColor.value; // verde, amarillo, rojo, gris
             console.log('Current status:', status);
             console.log('Available recommendations:', defaultRecommendations);

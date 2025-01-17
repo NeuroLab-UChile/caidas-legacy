@@ -22,6 +22,11 @@ class HealthCategoryEditor(models.Model):
 
 class HealthCategory(models.Model):
     # Campos que siempre son readonly
+    class Meta:
+        verbose_name = "Perfil de Salud"
+        verbose_name_plural = "Perfiles de Salud"
+        ordering = ['-evaluation_form__completed_date', 'recommendation__is_draft', '-user__user__last_name', '-template__allowed_editor_roles']
+
     READONLY_FIELDS = {'user', 'template', 'created_at'}
 
     user = models.ForeignKey(
@@ -42,11 +47,11 @@ class HealthCategory(models.Model):
         blank=True
     )
     evaluation_history = models.JSONField(default=list)
+ 
 
-    class Meta:
-        verbose_name = "Categoría de Salud"
-        verbose_name_plural = "Categorías de Salud"
-        ordering = ['-created_at']
+
+    
+   
 
     def __str__(self):
         """Retorna una representación en string más amigable del objeto"""
@@ -240,46 +245,8 @@ class HealthCategory(models.Model):
             )
             self.editors.add(*editors)
 
-    def update_recommendation(self, text, professional_name=None, is_draft=True):
-        """
-        Actualiza la recomendación asociada a esta categoría de salud.
-        
-        Args:
-            text (str): Texto de la recomendación
-            professional_name (str, optional): Nombre del profesional
-            is_draft (bool, default=True): Si es un borrador
-        """
-        try:
-            recommendation = self.recommendation
-        except AttributeError:
-            # Si no existe la recomendación, crear una nueva
-            from prevcad.models import Recommendation
-            recommendation = Recommendation.objects.create(
-                category=self,
-                text="",
-                status_color="gris"
-            )
 
-        # Actualizar los campos
-        recommendation.text = text
-        recommendation.is_draft = is_draft
-        recommendation.updated_at = timezone.now()
-        
-        if professional_name:
-            recommendation.professional = {
-                "name": professional_name
-            }
-            
-        if not is_draft:
-            recommendation.is_signed = True
-            recommendation.signed_by = professional_name
-            recommendation.signed_at = timezone.now()
-
-        recommendation.save()
-        
-        return recommendation
-
-
+ 
     @property
     def recommendations(self):
         """

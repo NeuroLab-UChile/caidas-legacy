@@ -54,6 +54,7 @@ class CategoryTemplateAdmin(admin.ModelAdmin):
         'evaluation_type',
         'is_readonly'
     )
+    
 
     def is_admin_user(self, request):
         """
