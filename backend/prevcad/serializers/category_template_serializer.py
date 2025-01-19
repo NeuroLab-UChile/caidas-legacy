@@ -12,3 +12,5 @@ class CategoryTemplateSerializer(serializers.ModelSerializer):
         if obj.icon:
             return obj.get_icon_base64()
         return None
+    
+

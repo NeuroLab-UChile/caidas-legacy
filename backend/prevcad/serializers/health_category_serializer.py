@@ -235,6 +235,7 @@ class HealthCategorySerializer(serializers.ModelSerializer):
 
     def get_training_form(self, obj):
         return self.get_template_attribute(obj, 'training_form')
+    
 
     def get_default_status(self):
         """Helper para obtener estado por defecto"""

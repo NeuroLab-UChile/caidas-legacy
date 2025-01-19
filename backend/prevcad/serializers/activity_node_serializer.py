@@ -141,7 +141,8 @@ class VideoNodeSerializer(serializers.Serializer):
         if hasattr(obj, 'media_url') and obj.media_url:
             request = self.context.get('request')
             if request is not None:
-                return request.build_absolute_uri(f"{settings.MEDIA_URL}{obj.media_url}")
+                domain = settings.DOMAIN if hasattr(settings, 'DOMAIN') else ''
+                return request.build_absolute_uri(f"{domain}{obj.media_url}")
             # Si no hay request, construir la URL con el dominio de settings
             domain = settings.DOMAIN if hasattr(settings, 'DOMAIN') else ''
             return f"{domain}{settings.MEDIA_URL}{obj.media_url}"
@@ -154,7 +155,8 @@ class VideoNodeSerializer(serializers.Serializer):
         if instance.video:
             request = self.context.get('request')
             if request is not None:
-                data['media_url'] = request.build_absolute_uri(instance.video.url)
+                domain = settings.DOMAIN if hasattr(settings, 'DOMAIN') else ''
+                data['media_url'] = request.build_absolute_uri(f"{domain}{instance.video.url}")
             else:
                 domain = settings.DOMAIN if hasattr(settings, 'DOMAIN') else ''
                 data['media_url'] = f"{domain}{instance.video.url}"
@@ -177,7 +179,8 @@ class ImageNodeSerializer(serializers.ModelSerializer):
         if obj.content:
             request = self.context.get('request')
             if request is not None:
-                return request.build_absolute_uri(obj.content.url)
+                domain = settings.DOMAIN if hasattr(settings, 'DOMAIN') else ''
+                return request.build_absolute_uri(f"{domain}{obj.content.url}")
             domain = settings.DOMAIN if hasattr(settings, 'DOMAIN') else ''
             return f"{domain}{obj.content.url}"
         return None
