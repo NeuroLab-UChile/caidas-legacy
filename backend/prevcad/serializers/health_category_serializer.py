@@ -192,6 +192,7 @@ class HealthCategorySerializer(serializers.ModelSerializer):
 
     def get_recommendations(self, obj):
         """Obtener recomendaciones"""
+        from django.conf import settings
         if not obj.template:
             return None
 
@@ -199,10 +200,12 @@ class HealthCategorySerializer(serializers.ModelSerializer):
             status = self.get_status(obj)
             recommendation = obj.get_or_create_recommendation()
             request = self.context.get('request')
+            
 
             # Obtener información del profesional
             professional_info = None
             professional_role = None
+           
             
             if recommendation:
                 if hasattr(recommendation, 'professional_name') and recommendation.professional_name:

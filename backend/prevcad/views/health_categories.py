@@ -390,30 +390,13 @@ def update_recommendation(request, category_id):
     recommendation = health_category.recommendation
 
     # Manejar el video si está presente en request.POST
-    if 'videos' in request.FILES:
-      try:
-        video_file = request.FILES['videos']
-        print(f"Procesando video: {video_file.name} ({video_file.size} bytes)")
-        
-        # Validar el archivo
-        if video_file.size > 100 * 1024 * 1024:  # Límite de 100 MB
-          return JsonResponse({
-            'status': 'error',
-            'message': 'El archivo de video es demasiado grande'
-          }, status=400)
-
-        # Guardar el video en el sistema de almacenamiento
+    video_file = request.FILES.get('video')
+    if video_file:
         recommendation.video = video_file
         recommendation.save()
         print(f"Video guardado: {recommendation.video.url}")
 
-      except Exception as e:
-        print(f"Error procesando video: {str(e)}")
-        return JsonResponse({
-          'status': 'error',
-          'message': f'Error al procesar el video: {str(e)}'
-        }, status=500)
-
+   
     # Actualizar otros campos de la recomendación
     recommendation.use_default = request.POST.get('use_default') == 'true'
     if recommendation.use_default:
