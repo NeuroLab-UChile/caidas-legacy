@@ -332,8 +332,8 @@
 
   <script>
     
-    const trainingNodes = JSON.parse(document.getElementById('training-form-data').textContent || '{}').training_nodes || [];
-    const evaluationNodes = JSON.parse(document.getElementById('evaluation-form-data').textContent || '{}').question_nodes || [];
+    const trainingNodes = JSON.parse(document.getElementById('training-form-data').textContent || '{}')?.training_nodes || [];
+    const evaluationNodes = JSON.parse(document.getElementById('evaluation-form-data').textContent || '{}')?.question_nodes || [];
     if (trainingNodes.length > 0) {
       console.log('trainingNodes', trainingNodes)
     }
@@ -552,6 +552,7 @@
                 formData.append('media_file', mediaFile);
                 nodeData.media_pending = true;
                 nodeData.media_url = mediaFile.name;
+                nodeData.media_file = mediaFile;
             } else if (nodeId) {
                 const existingNode = trainingNodes.find(n => n.id === parseInt(nodeId));
                 if (existingNode?.media_url) {

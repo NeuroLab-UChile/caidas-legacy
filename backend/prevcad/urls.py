@@ -1,6 +1,6 @@
 from rest_framework import routers
 from django.urls import path, include
-from prevcad.models import HealthCategory
+
 
 from prevcad.views.profiles import getProfile, uploadProfileImage, deleteProfileImage
 from prevcad.views.text_recomendations import TextRecomendationsView
@@ -10,6 +10,7 @@ from django.conf.urls.static import static
 from .views import admin_views
 from .views.appointment_view import AppointmentViewSet
 from .views.admin_views import update_training_form
+import os
 
 
 router = routers.DefaultRouter(trailing_slash=False)

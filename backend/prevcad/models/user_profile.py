@@ -6,6 +6,7 @@ import uuid
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from .user_types import UserTypes
+from prevcad.utils import build_media_url
 
 
 
@@ -108,6 +109,9 @@ class UserProfile(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.role_label}"
+    
+    def get_media_url(self, request=None):
+        return build_media_url(self.profile_image, request)
 
 @receiver(post_save, sender=User)
 def create_user_profile(sender, instance, created, **kwargs):

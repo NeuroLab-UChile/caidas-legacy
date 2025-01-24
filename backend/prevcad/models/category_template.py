@@ -7,6 +7,7 @@ from django.db.models.signals import post_save, m2m_changed
 from django.dispatch import receiver
 from .user_types import UserTypes
 from django.core.exceptions import ValidationError
+from prevcad.utils import build_media_url
 
 class CategoryTemplate(models.Model):
   """
@@ -23,6 +24,7 @@ class CategoryTemplate(models.Model):
     upload_to='health_categories_icons',
     null=True,
     blank=True
+    
   )
 
   description = models.TextField(blank=True)
@@ -151,13 +153,9 @@ class CategoryTemplate(models.Model):
         return None
         
       # Construir la ruta correcta usando MEDIA_ROOT
-      relative_path = str(self.icon).lstrip('/')  # Eliminar slash inicial si existe
-      icon_path = os.path.join(settings.MEDIA_ROOT, relative_path)
+
+      icon_path = build_media_url(self.icon, is_backend=True)
       
-      print(f"Debug - Icon paths:")
-      print(f"MEDIA_ROOT: {settings.MEDIA_ROOT}")
-      print(f"Relative path: {relative_path}")
-      print(f"Full path: {icon_path}")
       
       # Verificar que el archivo existe
       if not os.path.exists(icon_path):
@@ -185,16 +183,22 @@ class CategoryTemplate(models.Model):
       print(f"Icon value: {self.icon}")
       return None
     
-  def get_ordered_training_nodes(self):
+  def get_ordered_training_nodes(self, request=None):
     """Retorna los nodos de entrenamiento ordenados"""
+    from prevcad.serializers.activity_node_serializer import ActivityNodeSerializer
+    
     if not self.training_form:
-      return []
-      
-    nodes = self.training_form['training_nodes']  
+        return []
+        
+    nodes = self.training_form.get('training_nodes', [])
+    serialized_nodes = []
+    
     for i, node in enumerate(nodes):
-      node['next_node_id'] = nodes[i + 1]['id'] if i < len(nodes) - 1 else None
+        node_serializer = ActivityNodeSerializer(node, context={'request': request})
+        print('node_serializer.data',node_serializer.data)
+        serialized_nodes.append(node_serializer.data)
 
-    return nodes
+    return serialized_nodes
 
   def save(self, *args, **kwargs):
     is_new = self.pk is None

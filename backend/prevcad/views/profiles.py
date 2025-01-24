@@ -19,7 +19,8 @@ def get_absolute_url(request, url):
     return f"{settings.DOMAIN}{url}"
 
 def get_media_url(path):
-    return f"{settings.DOMAIN}/media/{path}"
+    from django.conf import settings
+    return f"{settings.DOMAIN}/{settings.MEDIA_URL}/{path}"
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])

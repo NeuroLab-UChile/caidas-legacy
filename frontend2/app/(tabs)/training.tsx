@@ -83,13 +83,8 @@ const TrainingScreen = () => {
     if (selectedCategory?.training_form?.training_nodes) {
       console.log("=== TRAINING NODES DETAILS ===");
       selectedCategory.training_form.training_nodes.forEach((node, index) => {
-        console.log(`Node ${index + 1}:`, {
-          id: node.id,
-          type: node.type,
-          content: node.content,
-          description: node.description,
-          media_url: node.media_url,
-          next_node: node.next_node,
+        console.log(`Node elisa ${index + 1}:`, {
+          node,
         });
       });
       console.log("Current Node ID:", trainingState.currentNodeId);

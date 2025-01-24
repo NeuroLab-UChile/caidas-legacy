@@ -4,6 +4,7 @@ from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.core.validators import FileExtensionValidator
 from django.conf import settings
+from prevcad.utils import build_media_url
 
 
 class ActivityNode(models.Model):
@@ -41,28 +42,7 @@ class ActivityNode(models.Model):
     def next_node_id(self, value):
         self._next_node_id = value
 
-    def get_media_url(self, request=None):
-        """Método base para obtener URL absoluta de archivos multimedia"""
-        media_field = None
-        
-        if hasattr(self, 'video'):
-            media_field = self.video
-        elif hasattr(self, 'image'):
-            media_field = self.image
-        elif hasattr(self, 'content') and isinstance(self.content, (models.ImageField, models.FileField)):
-            media_field = self.content
-            
-        if media_field and media_field:
-            try:
-                if request:
-                    return request.build_absolute_uri(media_field.url)
-                # Si no hay request, usar el dominio de settings
-                domain = settings.DOMAIN if hasattr(settings, 'DOMAIN') else ''
-                return f"{domain}{media_field.url}"
-            except Exception as e:
-                print(f"Error getting media URL: {e}")
-                return None
-        return None
+
 
     class Meta:
         abstract = True
@@ -179,12 +159,18 @@ class WeeklyRecipeNode(ActivityNode):
 class VideoNode(ActivityNode):
     title = models.CharField(max_length=200, blank=True, null=True)
     content = models.TextField(blank=True, null=True)
-    video = models.FileField(
+    media_file = models.FileField(
         upload_to='videos/',
-        validators=[FileExtensionValidator(allowed_extensions=['mp4', 'mov', 'webm'])],
+        validators=[FileExtensionValidator(allowed_extensions=['mp4', 'mov'])],
         null=True,
         blank=True
     )
+    
+
+    def get_media_url(self, request=None):
+        return build_media_url(self.media_file, request,is_backend=True)
+
+
 
     class Meta:
         verbose_name = "Video"
@@ -198,11 +184,12 @@ class TextNode(ActivityNode):
     content = models.TextField(null=True, blank=True)
 
 
-class ImageNode(ActivityNode):
-    content = models.ImageField(upload_to='images/', null=True, blank=True)
 
-    def get_image_url(self, request=None):
-        """Obtiene la URL absoluta de la imagen"""
-        return self.get_media_url(request)
- 
+
+class ImageNode(ActivityNode):
+    media_file = models.ImageField(upload_to='images/', null=True, blank=True)
+
+    def get_media_url(self, request=None):
+        return build_media_url(self.media_file, request)
+
 

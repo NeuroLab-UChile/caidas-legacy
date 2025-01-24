@@ -77,7 +77,8 @@ export interface TrainingNode {
   id: number;
   type: string;
   content: string;
-  options?: any[];
+  media_url?: string;
+  description?: string;
 }
 
 /**

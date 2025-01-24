@@ -42,11 +42,7 @@ export const VideoNodeView: React.FC<VideoNodeViewProps> = ({
 
   const getVideoUrl = () => {
     if (!data.media_url) return null;
-    return data.media_url.startsWith("http")
-      ? data.media_url
-      : `${process.env.BASE_URL || "http://localhost:8000"}/media/${
-          data.media_url
-        }`;
+    return data.media_url;
   };
 
   const downloadVideo = async (url: string) => {

@@ -2,6 +2,7 @@ from django.db import models
 from django.utils import timezone
 from django.core.validators import FileExtensionValidator
 from django.conf import settings
+from prevcad.utils import build_media_url
 
 class Recommendation(models.Model):
     health_category = models.OneToOneField(
@@ -26,7 +27,7 @@ class Recommendation(models.Model):
         blank=True,
         validators=[
             FileExtensionValidator(
-                allowed_extensions=['mp4', 'mov', 'avi', 'webm']
+                allowed_extensions=['mp4', 'mov']
             )
         ]
     )
@@ -35,9 +36,11 @@ class Recommendation(models.Model):
     updated_by = models.CharField(max_length=255, null=True, blank=True)
     updated_at = models.DateTimeField(auto_now=True)
     
+
+    def get_media_url(self, request=None):
+        return build_media_url(self.video, request)
     
 
-   
 
     def __str__(self):
         return f"Recomendación para {self.health_category}" 
