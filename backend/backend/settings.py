@@ -32,12 +32,14 @@ FILE_UPLOAD_MAX_MEMORY_SIZE = 104857600  # 100MB
 SECRET_KEY = '@f7g(%shzq5li)m=vs_##1-jm(hh&-s!k$f*70f%96q4r_*s@7'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = [
     '10.0.2.2', #needed for Android emulator
     'localhost',
     '127.0.0.1',
+    '200.89.79.54',
+    'caidas.uchile.cl',
     '[::1]',
         '192.168.1.5',
 ]
@@ -45,6 +47,7 @@ ALLOWED_HOSTS = [
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:8000",
     "http://127.0.0.1:8000",
+    "http://200.89.79.54:8000"
 ]
 
 CORS_ALLOW_ALL_ORIGINS = True

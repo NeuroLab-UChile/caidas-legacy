@@ -20,8 +20,8 @@ python manage.py makemigrations
 python manage.py migrate
 python manage.py runserver &
 cd "$SCRIPT_DIR/frontend"
-flutter pub get
-flutter run -d chrome
+#flutter pub get
+#flutter run -d chrome
 
 
 
