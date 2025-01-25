@@ -15,14 +15,17 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.authentication import TokenAuthentication
 from django.contrib.auth.models import User
 from django.contrib.auth import get_user_model
+
 from django.core.files.storage import default_storage
 from django.conf import settings
 import os
 
+from prevcad.utils import build_media_url
+
 from prevcad.models import UserProfile
 
 class HealthCategoryListView(APIView):
-    permission_classes = [IsAuthenticated]
+
     
     def get(self, request):
         print("=== Debug HealthCategoryListView ===")
@@ -44,36 +47,36 @@ class HealthCategoryListView(APIView):
 
 @api_view(['POST'])
 def save_evaluation_responses(request, category_id):
-    print("\n=== Debug save_evaluation_responses ===")
-    print(f"Request data: {request.data}")
-    print(f"Request FILES: {request.FILES}")
-    print(f"Content Type: {request.content_type}")
-    
     try:
+        # Verificar que el usuario esté autenticado
+        if not request.user.is_authenticated:
+            return Response({
+                'status': 'error',
+                'message': 'Usuario no autenticado'
+            }, status=status.HTTP_401_UNAUTHORIZED)
+            
+        # Obtener el perfil del usuario autenticado
         user_profile = get_object_or_404(UserProfile, user=request.user)
-        health_category = get_object_or_404(HealthCategory, id=category_id, user=user_profile)
-        evaluation_form = health_category.evaluation_form
+        
+        # Obtener la categoría de salud específica para este usuario
+        health_category = get_object_or_404(
+            HealthCategory, 
+            id=category_id,
+            user=user_profile
+        )
         
         # Obtener y parsear las respuestas
         responses = request.data.get('responses', {})
         if isinstance(responses, str):
             responses = json.loads(responses)
-        
-        print("\nRespuestas recibidas:", responses)
-        
-        # Procesar cada respuesta
-        for node_id, response in responses.items():
-            print(f"\nProcesando node_id: {node_id}")
-            print(f"Tipo de respuesta: {response.get('type')}")
             
+        # Procesar imágenes y actualizar respuestas
+        for node_id, response in responses.items():
             if isinstance(response, dict) and response.get('type') == 'IMAGE_QUESTION':
-                # Buscar archivos de imagen para este nodo
                 image_files = [
                     f for f in request.FILES.items()
                     if f[0].startswith(f'image_{node_id}')
                 ]
-                
-                print(f"Archivos de imagen encontrados para node {node_id}: {len(image_files)}")
                 
                 if image_files:
                     processed_images = []
@@ -111,7 +114,8 @@ def save_evaluation_responses(request, category_id):
                             print(f"Archivo guardado en: {saved_path}")
                             
                             # Construir la URL
-                            image_url = request.build_absolute_uri(settings.MEDIA_URL + saved_path)
+                            image_url = build_media_url(saved_path, request, is_backend=False)
+                            
                             print(f"URL generada: {image_url}")
                             
                             processed_images.append({
@@ -138,29 +142,26 @@ def save_evaluation_responses(request, category_id):
                 else:
                     print(f"No se encontraron archivos de imagen para node {node_id}")
         
-        # Actualizar el formulario de evaluación
+        # Guardar las respuestas en el formulario de evaluación
+        evaluation_form = health_category.get_or_create_evaluation_form()
         if evaluation_form.responses is None:
             evaluation_form.responses = {}
+
+        evaluation_form.completed_date = timezone.now()
             
         evaluation_form.responses.update(responses)
         evaluation_form.save()
         
-        print("\nRespuestas guardadas en la base de datos:")
-        print(evaluation_form.responses)
-        
         return Response({
             'status': 'success',
-            'message': 'Respuestas guardadas correctamente',
-            'data': {
-                'responses': evaluation_form.responses
-            }
+            'message': 'Respuestas guardadas correctamente'
         })
         
     except Exception as e:
         print(f"Error guardando respuestas: {str(e)}")
         return Response({
             'status': 'error',
-            'message': f'Error al guardar las respuestas: {str(e)}'
+            'message': str(e)
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['PATCH'])
@@ -375,51 +376,52 @@ def save_professional_evaluation(request, category_id):
 
 @api_view(['POST'])
 def update_recommendation(request, category_id):
-  """
-  Vista de admin para actualizar la recomendación
-  """
-  if request.method != 'POST':
-    return JsonResponse({'error': 'Método no permitido'}, status=405)
+    """
+    Vista de admin para actualizar la recomendación
+    """
 
-  try: 
-    print("=== Debug update_recommendation ===")
-    print('request.POST:', request.POST)
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Método no permitido'}, status=405)
 
-    # Recuperar la categoría de salud y su recomendación
-    health_category = get_object_or_404(HealthCategory, id=category_id)
-    recommendation = health_category.recommendation
+    try: 
+        print("=== Debug update_recommendation ===")
+        print('request.POST:', request.POST)
 
-    # Manejar el video si está presente en request.POST
-    video_file = request.FILES.get('video')
-    if video_file:
-        recommendation.video = video_file
+        # Recuperar la categoría de salud y su recomendación
+        health_category = get_object_or_404(HealthCategory, id=category_id)
+        recommendation = health_category.recommendation
+
+        # Manejar el video si está presente en request.POST
+        video_file = request.FILES.get('video')
+        if video_file:
+            recommendation.video = video_file
+            recommendation.save()
+            print(f"Video guardado: {recommendation.video.url}")
+
+       
+        # Actualizar otros campos de la recomendación
+        recommendation.use_default = request.POST.get('use_default') == 'true'
+        if recommendation.use_default:
+            recommendation.text = health_category.template.default_recommendations[recommendation.status_color]
+
+        else:
+            recommendation.text = request.POST.get('text', '')
+        recommendation.status_color = request.POST.get('status_color', 'gris')
+        recommendation.is_draft = request.POST.get('is_draft') == 'true'
+        recommendation.updated_by = request.user.username
         recommendation.save()
-        print(f"Video guardado: {recommendation.video.url}")
 
-   
-    # Actualizar otros campos de la recomendación
-    recommendation.use_default = request.POST.get('use_default') == 'true'
-    if recommendation.use_default:
-        recommendation.text = health_category.template.default_recommendations[recommendation.status_color]
+        return JsonResponse({
+            'status': 'success',
+            'message': 'Recomendación actualizada correctamente',
+            'video_url': recommendation.video.url if recommendation.video else None
+        })
 
-    else:
-        recommendation.text = request.POST.get('text', '')
-    recommendation.status_color = request.POST.get('status_color', 'gris')
-    recommendation.is_draft = request.POST.get('is_draft') == 'true'
-    recommendation.updated_by = request.user.username
-    recommendation.save()
-
-    return JsonResponse({
-      'status': 'success',
-      'message': 'Recomendación actualizada correctamente',
-      'video_url': recommendation.video.url if recommendation.video else None
-    })
-
-  except Exception as e:
-    import traceback
-    print("Error completo:")
-    print(traceback.format_exc())
-    return JsonResponse({
-      'status': 'error',
-      'message': str(e)
-    }, status=500)
+    except Exception as e:
+        import traceback
+        print("Error completo:")
+        print(traceback.format_exc())
+        return JsonResponse({
+            'status': 'error',
+            'message': str(e)
+        }, status=500)

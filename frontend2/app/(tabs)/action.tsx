@@ -45,7 +45,9 @@ export default function ActionScreen() {
         <Text style={styles.errorText}>{error}</Text>
         <TouchableOpacity
           style={styles.retryButton}
-          onPress={() => window.location.reload()}
+          onPress={() => {
+            router.push("/(tabs)/action");
+          }}
         >
           <Text style={styles.retryText}>Reintentar</Text>
         </TouchableOpacity>

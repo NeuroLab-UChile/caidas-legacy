@@ -30,20 +30,64 @@ class ApiClient {
   private baseUrl: string;
   private prevcadPrefix: string;
   private lastTokenValidation: number = 0;
-  private tokenValidationInterval: number = 60000; // 1 minuto
+  private tokenValidationInterval: number = 300000; // 5 minutos
+  private tokenRefreshThreshold: number = 60000; // 1 minuto antes de expirar
 
   constructor() {
     this.baseUrl = API_URL;
     this.prevcadPrefix = '/prevcad';
+    this.initializeTokenRefresh();
   }
 
-  private shouldValidateToken(): boolean {
-    const now = Date.now();
-    if (now - this.lastTokenValidation > this.tokenValidationInterval) {
-      this.lastTokenValidation = now;
+  private async initializeTokenRefresh() {
+    // Verificar token al iniciar
+    await this.validateAndRefreshToken();
+
+    // Configurar intervalo de verificación
+    setInterval(async () => {
+      await this.validateAndRefreshToken();
+    }, this.tokenValidationInterval);
+  }
+
+  private async validateAndRefreshToken(): Promise<boolean> {
+    try {
+      const token = await AsyncStorage.getItem('auth_token');
+      if (!token) return false;
+
+      const tokenData = this.parseJwt(token);
+      if (!tokenData) return false;
+
+      // Verificar si el token expirará pronto
+      const expirationTime = tokenData.exp * 1000; // Convertir a milisegundos
+      const currentTime = Date.now();
+
+      if (expirationTime - currentTime < this.tokenRefreshThreshold) {
+        const refreshToken = await AsyncStorage.getItem('refresh_token');
+        if (!refreshToken) return false;
+
+        const newToken = await authService.refreshToken(refreshToken);
+        return !!newToken;
+      }
+
       return true;
+    } catch (error) {
+      console.error('Error validating token:', error);
+      return false;
     }
-    return false;
+  }
+
+  private parseJwt(token: string) {
+    try {
+      const base64Url = token.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const jsonPayload = decodeURIComponent(atob(base64).split('').map(c =>
+        '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)
+      ).join(''));
+      return JSON.parse(jsonPayload);
+    } catch (error) {
+      console.error('Error parsing JWT:', error);
+      return null;
+    }
   }
 
   public async getHeaders(includeAuth: boolean = true): Promise<HeadersInit> {
@@ -57,20 +101,14 @@ class ApiClient {
         throw new Error('No auth token found');
       }
 
-      // Solo validar el token si ha pasado el intervalo
-      if (this.shouldValidateToken()) {
-        const isValid = await authService.validateToken(token);
+      // Solo validar si es necesario
+      if (Date.now() - this.lastTokenValidation > this.tokenValidationInterval) {
+        const isValid = await this.validateAndRefreshToken();
         if (!isValid) {
-          const refreshToken = await AsyncStorage.getItem('refresh_token');
-          if (refreshToken) {
-            const newToken = await authService.refreshToken(refreshToken);
-            if (newToken) {
-              headers['Authorization'] = `Bearer ${newToken}`;
-              return headers;
-            }
-          }
+          await authService.logout();
           throw new Error('Session expired');
         }
+        this.lastTokenValidation = Date.now();
       }
 
       headers['Authorization'] = `Bearer ${token}`;
@@ -79,22 +117,34 @@ class ApiClient {
     return headers;
   }
 
+
   private async handleResponse<T>(response: Response): Promise<ApiResponse<T>> {
     if (response.status === 401) {
+      const token = await AsyncStorage.getItem('auth_token');
       const refreshToken = await AsyncStorage.getItem('refresh_token');
-      if (refreshToken) {
-        const newToken = await authService.refreshToken(refreshToken);
-        if (newToken) {
-          const newResponse = await fetch(response.url, {
-            ...response,
-            headers: {
-              ...response.headers,
-              'Authorization': `Bearer ${newToken}`
-            }
-          });
-          return this.handleResponse(newResponse);
+
+      if (token && refreshToken) {
+        // Intentar validar el token actual primero
+        const isValid = await authService.validateToken(token);
+        if (!isValid) {
+          // Si no es válido, intentar refrescar
+          const newToken = await authService.refreshToken(refreshToken);
+          if (newToken) {
+            // Reintentar la petición original con el nuevo token
+            const newResponse = await fetch(response.url, {
+              ...response,
+              headers: {
+                ...response.headers,
+                'Authorization': `Bearer ${newToken}`
+              }
+            });
+            return this.handleResponse(newResponse);
+          }
         }
       }
+
+      // Si no se pudo recuperar la sesión, hacer logout
+      await authService.logout();
       throw new Error('Session expired');
     }
 
@@ -121,7 +171,7 @@ class ApiClient {
         this.getUrl('/health-categories/create'),
         {
           method: 'POST',
-          headers: await this.getHeaders(),
+          headers: await this.getHeaders(true),
           body: JSON.stringify({ template_id: templateId }),
         }
       );
@@ -130,14 +180,13 @@ class ApiClient {
 
     saveResponses: async (categoryId: number, formData: FormData): Promise<ApiResponse<any>> => {
       try {
-        const response = await fetch(`${API_URL}/health-categories/${categoryId}/responses/`, {
-          method: 'POST',
-          body: formData,
-          headers: {
-            'Accept': 'application/json',
-            // No incluir 'Content-Type' - será establecido automáticamente con FormData
-          },
-        });
+        const response = await fetch(
+          this.getUrl(`/health-categories/${categoryId}/responses/`),
+          {
+            method: 'POST',
+            body: formData,
+            headers: await this.getHeaders(true),
+          });
 
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
@@ -160,7 +209,7 @@ class ApiClient {
         const response = await fetch(
           this.getUrl('/health_categories/'),
           {
-            headers: await this.getHeaders(),
+            headers: await this.getHeaders(true),
           }
         );
         return this.handleResponse<Category[]>(response);
@@ -174,7 +223,7 @@ class ApiClient {
       const response = await fetch(
         this.getUrl(`/health_categories/${id}`),
         {
-          headers: await this.getHeaders(),
+          headers: await this.getHeaders(true),
         }
       );
       return this.handleResponse<Category>(response);

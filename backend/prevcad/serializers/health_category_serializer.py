@@ -1,8 +1,6 @@
 from rest_framework import serializers
-
+from prevcad.models import HealthCategory, CategoryTemplate
 from django.conf import settings
-from prevcad.utils import build_media_url
-from prevcad.models import HealthCategory
 
 class HealthCategorySerializer(serializers.ModelSerializer):
     # Campos básicos
@@ -18,10 +16,9 @@ class HealthCategorySerializer(serializers.ModelSerializer):
     # Campos de estado y recomendaciones
     status = serializers.SerializerMethodField()
     recommendations = serializers.SerializerMethodField()
-    training_form = serializers.SerializerMethodField()
+    
     # Campos adicionales
-
-  
+    training_form = serializers.SerializerMethodField()
 
     STATUS_COLORS = {
         'verde': {'color': '#008000', 'text': 'No Riesgoso'},
@@ -29,13 +26,6 @@ class HealthCategorySerializer(serializers.ModelSerializer):
         'rojo': {'color': '#FF0000', 'text': 'Riesgoso'},
         'gris': {'color': '#808080', 'text': 'Neutral'},
     }
-
-    def to_representation(self, instance):
-        data = super().to_representation(instance)
-        
-        return data
-
-
 
     class Meta:
         model = HealthCategory
@@ -46,15 +36,14 @@ class HealthCategorySerializer(serializers.ModelSerializer):
             'description',
             'evaluation_type',
             'evaluation_form',
+          
             'status',
             'recommendations',
             'training_form',
-           
           
        
         
         ]
-
 
     def get_template_attribute(self, obj, attr, default=None):
         """Helper para obtener atributos del template de forma segura"""
@@ -68,12 +57,6 @@ class HealthCategorySerializer(serializers.ModelSerializer):
         except Exception as e:
             print(f"Error getting evaluation attribute {attr}: {str(e)}")
             return default
-
-
-    def get_training_form(self, obj):
-        training_form = self.get_template_attribute(obj, 'training_form')
-
-        return training_form
 
     def get_recommendation_attribute(self, obj, attr, default=None):
         """Helper para obtener atributos de recommendation de forma segura"""
@@ -116,11 +99,16 @@ class HealthCategorySerializer(serializers.ModelSerializer):
         eval_form = obj.get_or_create_evaluation_form()
         if eval_form:
             # Debug
+            print("Procesando evaluation_form para:", obj.template.name if obj.template else "No template")
+            
             template = obj.template
             question_nodes = []
             
             if template:
                 # Debug
+                print("Tipo de evaluación:", template.evaluation_type)
+                
+                
                 # Si es evaluación profesional
                 if template.evaluation_type == 'PROFESSIONAL':
                     question_nodes = [
@@ -137,6 +125,7 @@ class HealthCategorySerializer(serializers.ModelSerializer):
                             'required': True
                         }
                     ]
+                    print("Nodos profesionales creados:", question_nodes)  # Debug
                 # Si es autoevaluación
                 else:
                     try:
@@ -145,6 +134,7 @@ class HealthCategorySerializer(serializers.ModelSerializer):
                             question_nodes = template.get_question_nodes()
                          
                         else:
+                            print("El template no tiene método get_question_nodes")  # Debug
                             # Intentar obtener nodos del root_node
                             if hasattr(template, 'root_node') and template.root_node:
                                 question_nodes = [
@@ -158,12 +148,14 @@ class HealthCategorySerializer(serializers.ModelSerializer):
                                     for node in template.root_node.get_descendants()
                                     if node.type == 'QUESTION'
                                 ]
-    
+                                print("Nodos obtenidos del root_node:", question_nodes)  # Debug
                     except Exception as e:
                         print("Error obteniendo nodos:", str(e))  # Debug
                         question_nodes = []
             
-
+            # Debug final
+            print("Nodos finales a devolver:", question_nodes)
+            
             return {
                 'completed_date': eval_form.completed_date,
                 'responses': eval_form.responses,
@@ -198,7 +190,7 @@ class HealthCategorySerializer(serializers.ModelSerializer):
             print(f"Error getting status: {str(e)}")
             return self.get_default_status()
 
-    def get_recommendations(self, obj, request=None):
+    def get_recommendations(self, obj):
         """Obtener recomendaciones"""
         from django.conf import settings
         if not obj.template:
@@ -207,10 +199,8 @@ class HealthCategorySerializer(serializers.ModelSerializer):
         try:
             status = self.get_status(obj)
             recommendation = obj.get_or_create_recommendation()
-
-            recommendation.media_url = build_media_url(recommendation.video, request, is_backend=False) if recommendation.video else None
+            request = self.context.get('request')
             
-        
 
             # Obtener información del profesional
             professional_info = None
@@ -225,14 +215,14 @@ class HealthCategorySerializer(serializers.ModelSerializer):
                     
                 if hasattr(recommendation, 'professional_role') and recommendation.professional_role:
                     professional_role = recommendation.professional_role
-
+            domain = settings.DOMAIN if hasattr(settings, 'DOMAIN') else ''
             base_recommendation = {
                 'status': {
                     'color': status['color'],
                     'text': status['text']
                 },
                 'text': recommendation.text if recommendation else None,
-                'video_url': recommendation.media_url if recommendation else None,
+                'video_url': domain + recommendation.video.url if recommendation else None,
                 'updated_at': recommendation.updated_at if recommendation else None,
                 'is_draft': recommendation.is_draft if recommendation else True,
                 'professional': {
@@ -246,7 +236,9 @@ class HealthCategorySerializer(serializers.ModelSerializer):
             print(f"Error getting recommendations: {str(e)}")
             return None
 
-
+    def get_training_form(self, obj):
+        return self.get_template_attribute(obj, 'training_form')
+    
 
     def get_default_status(self):
         """Helper para obtener estado por defecto"""
@@ -259,5 +251,25 @@ class HealthCategorySerializer(serializers.ModelSerializer):
             'professional_reviewed': None
         }
 
-    
+    def get_media_url(self, request=None):
+        """Método base para obtener URL absoluta de archivos multimedia"""
+        media_field = None
         
+        if hasattr(self, 'video'):
+            media_field = self.video
+        elif hasattr(self, 'image'):
+            media_field = self.image
+        elif hasattr(self, 'content') and isinstance(self.content, (models.ImageField, models.FileField)):
+            media_field = self.content
+            
+        if media_field and media_field:
+            try:
+                if request:
+                    return request.build_absolute_uri(media_field.url)
+                # Si no hay request, usar el dominio de settings
+                domain = settings.DOMAIN if hasattr(settings, 'DOMAIN') else ''
+                return f"{domain}{media_field.url}"
+            except Exception as e:
+                print(f"Error getting media URL: {e}")
+                return None
+        return None

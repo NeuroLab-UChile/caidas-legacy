@@ -1,4 +1,4 @@
-{% load i18n admin_urls static admin_modify %}
+{% load static %}
 
 <div class="container mx-auto">
   {# Banner de permisos mejorado #}
@@ -118,8 +118,8 @@
           <div class="flex items-center space-x-4">
             <input type="radio" 
                    id="use-custom"
-                   name="recommendation-type" 
-                   value="custom"
+                   name="use-default" 
+                   value="false"
                    {% if not recommendation.use_default %}checked{% endif %}
                    {% if not can_edit %}disabled{% endif %}
                    class="h-5 w-5 text-blue-600 border-gray-300 focus:ring-blue-500">
@@ -207,48 +207,36 @@
         <h3 class="text-lg font-semibold text-gray-800 mb-4">Video Informativo</h3>
         
         <div class="space-y-4">
-            <!-- Video actual si existe -->
-            {% if recommendation.video %}
-                <div class="relative w-full" style="padding-top: 56.25%">
-                    <video 
-                        controls 
-                        class="absolute top-0 left-0 w-full h-full rounded-lg shadow-md object-cover"
-                    >
-                        <source src="{{ recommendation.video.url }}" type="video/mp4">
-                        <source src="{{ recommendation.video.url }}" type="video/quicktime">
-                        Tu navegador no soporta el elemento video.
-                    </video>
-                </div>
-            {% endif %}
-
-            <!-- Input para nuevo video -->
-            <div class="mt-4">
-                <label for="video-input" class="block text-sm font-medium text-gray-700 mb-2">
-                    {% if recommendation.video %}
-                        Actualizar video
-                    {% else %}
-                        Subir nuevo video
-                    {% endif %}
-                </label>
-                <input type="file" 
-                       id="video-input"
-                       name="video"
-                       accept="video/*"
-                       class="block w-full text-sm text-gray-500
-                              file:mr-4 file:py-2.5 file:px-4
-                              file:rounded-lg file:border-0
-                              file:text-sm file:font-semibold
-                              file:bg-blue-50 file:text-blue-700
-                              hover:file:bg-blue-100"
-                >
+          {% if recommendation.video %}
+            <div class="aspect-w-16 aspect-h-9 mb-4">
+              <video controls class="w-full rounded-lg shadow-sm">
+                <source src="{{ recommendation.video.url }}" type="video/mp4">
+                Tu navegador no soporta el elemento video.
+              </video>
             </div>
+          {% endif %}
 
-            <!-- Contenedor para la vista previa del nuevo video -->
-            <div id="video-preview" class="mt-4"></div>
+          <!-- Permitir múltiples archivos -->
+          <div class="space-y-4">
+            <div class="relative">
+              <input type="file" 
+                     id="video-input"
+                     name="video"
+                     accept="video/*"
+                     multiple
+                     class="block w-full text-sm text-gray-500
+                            file:mr-4 file:py-2 file:px-4
+                            file:border-0 file:text-sm file:font-semibold
+                            file:bg-blue-50 file:text-blue-700
+                            hover:file:bg-blue-100
+                            {% if not can_edit %}disabled{% endif %}">
+            </div>
+            <p class="text-xs text-gray-500">Sube uno o más videos en formato MP4.</p>
+          </div>
         </div>
       </div>
         <!-- Botones de acción -->
-        <div class="mt-6 tw-flex tw-justify-end tw-space-x-3">
+        <div class="mt-6 flex justify-end space-x-3">
             {% if can_edit %}
                 <button 
                     type="button"
@@ -281,178 +269,307 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    
-    const videoInput = document.getElementById('video-input');
-    const videoPreview = document.getElementById('video-preview');
+    // Obtener las recomendaciones por defecto
+    let defaultRecommendations = {};
+    try {
+        const defaultRecommendationsElement = document.getElementById('defaultRecommendations');
+        if (defaultRecommendationsElement) {
+            defaultRecommendations = JSON.parse(defaultRecommendationsElement.textContent);
+            console.log('Default recommendations loaded:', defaultRecommendations);
+        } else {
+            console.error('Elemento defaultRecommendations no encontrado');
+        }
+    } catch (e) {
+        console.error('Error parsing default recommendations:', e);
+    }
 
-    // Manejar el guardado
-    document.querySelectorAll('.save-recommendation').forEach(button => {
-        button.addEventListener('click', async function(e) {
-            e.stopPropagation();
+    // Buscar el formulario principal de Django admin
+    const form = document.querySelector('#healthcategory_form') || 
+                document.querySelector('form[method="post"]') ||
+                document.querySelector('form');
+
+    // Verificar si tenemos un formulario válido
+    if (!form) {
+        console.error('No se encontró el formulario');
+        return;
+    }
+
+    // Obtener elementos de forma segura
+    const elements = {
+        defaultRadio: document.getElementById('use-default'),
+        customRadio: document.getElementById('use-custom'),
+        recommendationText: document.getElementById('recommendation-text'),
+        statusColor: document.getElementById('status-color'),
+        isDraft: document.getElementById('is-draft'),
+        videoInput: document.getElementById('video-input'),
+        removeVideoBtn: document.getElementById('remove-video')
+    };
+
+    // Debug de elementos encontrados
+    console.log('Elementos encontrados:', {
+        form: !!form,
+        defaultRadio: !!elements.defaultRadio,
+        customRadio: !!elements.customRadio,
+        recommendationText: !!elements.recommendationText,
+        statusColor: !!elements.statusColor,
+        isDraft: !!elements.isDraft,
+        videoInput: !!elements.videoInput,
+        removeVideoBtn: !!elements.removeVideoBtn
+    });
+
+    // Crear objeto para almacenar campos ocultos
+    const hiddenFields = {};
+
+    // Función para crear campos ocultos
+    function createHiddenFields() {
+        console.log("Creating hidden fields", elements)
+        const fields = {
+            'recommendation_text': elements.recommendationText?.value ,
+            'recommendation_status': elements.statusColor?.value ?? 'gris',
+            'recommendation_is_draft': elements.isDraft?.checked ?? false,
+            'recommendation_use_default': elements.defaultRadio?.checked ?? false,
+            'video': elements.videoInput?.files[0]?.name ?? '',
+            
+        };
+
+        Object.entries(fields).forEach(([name, value]) => {
+            let input = form.querySelector(`input[name="${name}"]`);
+            if (!input) {
+                input = document.createElement('input');
+                input.type = name === 'video' ? 'file' : 'hidden';
+                input.name = name;
+                
+            }
+            if (name !== 'video') {
+                input.value = typeof value === 'boolean' ? String(value) : value;
+            }
+            hiddenFields[name] = input;
+        });
+    }
+
+    // Función para actualizar campos ocultos
+    function updateHiddenFields() {
+        const updates = {
+            'recommendation_text': elements.recommendationText?.value ?? '',
+            'recommendation_status': elements.statusColor?.value ?? 'gris',
+            'recommendation_is_draft': elements.isDraft?.checked ?? false,
+            'recommendation_use_default': elements.defaultRadio?.checked ?? false,
+            'video': elements.videoInput?.files[0]?.name ?? ''
+        };
+
+        Object.entries(updates).forEach(([name, value]) => {
+            if (hiddenFields[name] && name !== 'video') {
+                hiddenFields[name].value = typeof value === 'boolean' ? String(value) : value;
+            }
+        });
+
+        console.log('Campos actualizados:', updates);
+    }
+
+    // Función para actualizar el texto de recomendación
+    function updateRecommendationText() {
+        const recommendationText = document.getElementById('recommendation-text');
+        const statusColor = document.getElementById('status-color');
+        const useDefault = document.getElementById('use-default');
+        
+        if (!recommendationText || !statusColor || !useDefault) {
+            console.warn('Elementos no encontrados');
+            return;
+        }
+
+        if (useDefault.checked || !recommendationText.value) {
+            const status = statusColor.value; // verde, amarillo, rojo, gris
+            console.log('Current status:', status);
+            console.log('Available recommendations:', defaultRecommendations);
+            
+            // Mapear el estado al nombre de la clave correcta
+            const statusKeyMap = {
+                'verde': 'no_risk',
+                'amarillo': 'prev_risk',
+                'rojo': 'risk',
+                'gris': 'pending'
+            };
+
+            const key = statusKeyMap[status];
+            const defaultText = defaultRecommendations[key] || '';
+            console.log('Selected default text:', defaultText);
+            
+            if (defaultText) {
+                recommendationText.value = defaultText;
+                recommendationText.disabled = true;
+            } else {
+                console.warn(`No se encontró texto por defecto para el estado: ${status}`);
+            }
+        } else {
+            recommendationText.disabled = false;
+        }
+        
+        updateHiddenFields();
+    }
+
+    // Función segura para añadir event listeners
+    function addSafeEventListener(element, event, handler) {
+        if (element) {
+            element.addEventListener(event, handler);
+        } else {
+            console.warn(`Elemento no encontrado para evento ${event}`);
+        }
+    }
+
+    // Inicializar solo si tenemos los elementos necesarios
+    if (elements.recommendationText && elements.statusColor && elements.defaultRadio && elements.customRadio && elements.videoInput) {
+        // Event listeners para campos principales
+        addSafeEventListener(elements.recommendationText, 'input', updateHiddenFields);
+        addSafeEventListener(elements.statusColor, 'change', () => {
+            updateHiddenFields();
+            updateRecommendationText();
+        });
+        addSafeEventListener(elements.isDraft, 'change', updateHiddenFields);
+
+        // Event listeners para radios
+        if (elements.defaultRadio && elements.customRadio) {
+            [elements.defaultRadio, elements.customRadio].forEach(radio => {
+                addSafeEventListener(radio, 'change', () => {
+                    updateHiddenFields();
+                    updateRecommendationText();
+                });
+            });
+        }
+
+        // Event listener para el formulario
+        addSafeEventListener(form, 'submit', function(e) {
             e.preventDefault();
-            
-            const formData = new FormData();
-            
-            // Agregar campos básicos
-            formData.append('recommendation_text', document.getElementById('recommendation-text').value);
-            formData.append('recommendation_status', document.getElementById('status-color').value);
-            formData.append('recommendation_is_draft', document.getElementById('is-draft').checked);
-            formData.append('recommendation_use_default', document.getElementById('use-default').checked);
-            
-            // Agregar el archivo de video si existe
-            if (videoInput && videoInput.files.length > 0) {
-              console.log(videoInput)
-                const videoFile = videoInput.files[0]; // Tomar solo el primer archivo
-                formData.append('video', videoFile); // Cambiar 'videos[0]' por 'video'
+            const formData = new FormData(form);
+
+            // Añadir múltiples archivos de video al FormData
+            if (elements.videoInput && elements.videoInput.files.length > 0) {
+                Array.from(elements.videoInput.files).forEach((file, index) => {
+                    formData.append(`videos`, file); // Usa el mismo nombre para múltiples videos
+                });
             }
 
+            // Obtener el CSRF token
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            const url = "{% url 'update_recommendation' category_id=health_category.id %}";
+            
+
+            fetch(url, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': csrfToken,
+               
+                },
+                credentials: 'same-origin'
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.text().then(text => {
+                        throw new Error(text);
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    console.log('Guardado exitoso');
+                    window.location.reload();
+                } else {
+                    throw new Error(data.error || 'Error al guardar');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Ha ocurrido un error al guardar la recomendación: ' + error.message);
+            });
+        });
+
+        // Inicializar
+        createHiddenFields();
+        updateHiddenFields();
+        updateRecommendationText();
+    } else {
+        console.warn('No se encontraron todos los elementos necesarios para el editor de recomendaciones');
+    }
+
+    // Manejo de múltiples videos
+    const videoInput = document.getElementById('video-input');
+
+    if (videoInput) {
+        videoInput.addEventListener('change', function() {
+            const files = this.files;
+            if (files.length > 0) {
+                console.log('Videos seleccionados:');
+                Array.from(files).forEach(file => {
+                    console.log(file.name);
+                    // Aquí puedes agregar cualquier lógica adicional que necesites para cada archivo
+                });
+            }
+        });
+    }
+
+    const removeVideoBtn = document.getElementById('remove-video');
+
+    if (removeVideoBtn) {
+        removeVideoBtn.addEventListener('click', function() {
+            if (confirm('¿Estás seguro de que deseas eliminar el video?')) {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'remove_video';
+                input.value = 'true';
+                form.appendChild(input);
+                form.submit();
+            }
+        });
+    }
+
+    const buttons = document.querySelectorAll('.save-recommendation');
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    
+    // Obtener el ID de la categoría de la URL
+    const path = window.location.pathname;
+    const match = path.match(/\/healthcategory\/(\d+)/);
+    const categoryId = match ? match[1] : null;
+    
+    if (!categoryId) {
+        console.error('No se pudo extraer el ID de la categoría de la URL');
+        return;
+    }
+
+ 
+    buttons.forEach(button => {
+        button.addEventListener('click', async function(e) {
+            e.preventDefault();
+            const complete = this.dataset.complete === 'true';
+            url = "{% url 'update_recommendation' category_id=health_category.id %}";
+            
             try {
-                const url = '{% url "update_recommendation" category_id=health_category.id %}';
+                const formData = new FormData(form);
+                formData.append('category_id', categoryId);
+                formData.append('csrfmiddlewaretoken', csrfToken);
+                formData.append('use_default', elements.defaultRadio.checked ? 'true' : 'false');
+                formData.append('status_color', elements.statusColor.value);
+                formData.append('text', elements.recommendationText.value);
+                formData.append('video', elements.videoInput.files[0]);
+
                 const response = await fetch(url, {
                     method: 'POST',
                     body: formData,
                     headers: {
-                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
+                        'X-CSRFToken': csrfToken,
+                    },
                 });
 
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    console.error('Error response:', errorText);
-                    throw new Error(`Error del servidor: ${response.status}`);
-                }
-
-                const data = await response.json();
-                console.log('Respuesta del servidor:', data);
-
-                if (data.status === 'success') {
-                    // Actualizar la vista del video si se proporcionó una nueva URL
-                    if (data.video_url) {
-                        const videoContainer = document.querySelector('video');
-                        if (videoContainer) {
-                            const videoSource = videoContainer.querySelector('source');
-                            if (videoSource) {
-                                videoSource.src = data.video_url;
-                                videoContainer.load(); // Recargar el video con la nueva fuente
-                            }
-                        }
-                    }
-
-                    // Mostrar mensaje de éxito
-                    window.parent.django.jQuery(window.parent.document).trigger('django:message', {
-                        level: 'success',
-                        message: 'Recomendación guardada correctamente'
-                    });
-                    
-                    // Recargar después de un breve delay
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 1500);
+                if (response.ok) {
+                    window.location.reload();
+                } else {
+                    throw new Error('Error al guardar la recomendación');
                 }
             } catch (error) {
                 console.error('Error:', error);
-                window.parent.django.jQuery(window.parent.document).trigger('django:message', {
-                    level: 'error',
-                    message: 'Error al guardar: ' + error.message
-                });
+                alert('Ha ocurrido un error al guardar la recomendación: ' + error.message);
             }
         });
     });
-
-    // Manejar la vista previa del video
-    if (videoInput) {
-        videoInput.addEventListener('change', function(e) {
-            e.stopPropagation();
-            
-            if (videoInput.files.length > 0) {
-                const file = videoInput.files[0];
-            if (file) {
-                console.log('Video seleccionado:', {
-                    nombre: file.name,
-                    tipo: file.type,
-                    tamaño: file.size
-                });
-
-                if (file.type.startsWith('video/')) {
-                    const videoURL = URL.createObjectURL(file);
-                    videoPreview.innerHTML = `
-                        <div class="space-y-3">
-                            <div class="relative w-full" style="padding-top: 56.25%">
-                                <video 
-                                    controls 
-                                    class="absolute top-0 left-0 w-full h-full rounded-lg shadow-md object-cover"
-                                >
-                                    <source src="${videoURL}" type="${file.type}">
-                                    Tu navegador no soporta el elemento video.
-                                </video>
-                            </div>
-                            <div class="bg-blue-50 rounded-lg p-4">
-                                <div class="flex items-center justify-between">
-                                    <div class="flex items-center space-x-2">
-                                        <span class="text-blue-500">📁</span>
-                                        <span class="text-sm font-medium text-blue-700">
-                                            ${file.name}
-                                        </span>
-                                    </div>
-                                    <span class="text-sm text-blue-600">
-                                        ${(file.size / (1024 * 1024)).toFixed(2)} MB
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                }
-            }
-        
-          }})
-    }
-
-    // Limpiar recursos al desmontar
-    window.addEventListener('beforeunload', () => {
-        const video = videoPreview.querySelector('video source');
-        if (video?.src) {
-            URL.revokeObjectURL(video.src);
-        }
-    });
-});
-</script>
-
-<style>
-/* Estilos para la vista previa del video */
-.video-preview-container {
-    background-color: #000;
-    border-radius: 0.5rem;
-    overflow: hidden;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-/* Animación de carga */
-@keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: .5; }
-}
-
-.loading-pulse {
-    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-
-/* Mejorar la apariencia del video */
-video {
-    background-color: #000;
-}
-
-/* Estilo para el contenedor de información del archivo */
-.file-info {
-    background-color: #f8fafc;
-    border: 1px solid #e2e8f0;
-    border-radius: 0.5rem;
-    padding: 0.75rem;
-    margin-top: 0.5rem;
-}
-
-.file-info-text {
-    color: #475569;
-    font-size: 0.875rem;
-}
-</style> 
+})
+</script> 

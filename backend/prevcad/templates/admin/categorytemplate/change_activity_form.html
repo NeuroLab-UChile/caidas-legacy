@@ -552,7 +552,6 @@
                 formData.append('media_file', mediaFile);
                 nodeData.media_pending = true;
                 nodeData.media_url = mediaFile.name;
-                nodeData.media_file = mediaFile;
             } else if (nodeId) {
                 const existingNode = trainingNodes.find(n => n.id === parseInt(nodeId));
                 if (existingNode?.media_url) {

@@ -1,5 +1,5 @@
 {% extends "admin/change_form.html" %}
-{% load i18n admin_urls static admin_modify %}
+{% load i18n admin_urls static %}
 
 {% block content %}
 <div id="content-main">
@@ -13,33 +13,14 @@
                 <fieldset class="module aligned {{ fieldset.classes }}">
                     {% if fieldset.name %}<h2>{{ fieldset.name }}</h2>{% endif %}
                     {% for line in fieldset %}
-                        <div class="form-row{% if line.fields|length_is:'1' and line.errors %} errors{% endif %}{% if not line.has_visible_field %} hidden{% endif %}{% for field in line %}{% if field.field.name %} field-{{ field.field.name }}{% endif %}{% endfor %}">
-                            {% for field in line %}
-                                <div{% if not line.fields|length_is:'1' %} class="fieldBox{% if field.field.name %} field-{{ field.field.name }}{% endif %}{% if not field.is_readonly and field.errors %} errors{% endif %}{% if field.field.is_hidden %} hidden{% endif %}"{% elif field.is_checkbox %} class="checkbox-row"{% endif %}>
-                                    {% if not line.fields|length_is:'1' and not field.is_readonly %}{{ field.errors }}{% endif %}
-                                    {% if field.is_checkbox %}
-                                        {{ field.field }}{{ field.label_tag }}
-                                    {% else %}
-                                        {{ field.label_tag }}
-                                        {% if field.is_readonly %}
-                                            <div class="readonly">{{ field.contents }}</div>
-                                        {% else %}
-                                            {{ field.field }}
-                                        {% endif %}
-                                    {% endif %}
-                                    {% if field.field.help_text %}
-                                        <div class="help">{{ field.field.help_text|safe }}</div>
-                                    {% endif %}
-                                </div>
-                            {% endfor %}
-                        </div>
+               
                     {% endfor %}
                 </fieldset>
             {% endfor %}
         </div>
         
         <!-- Botones de submit condicionados por permisos -->
-        {% if can_edit and not is_readonly %}
+        {% if not is_readonly %}
             <div class="submit-row">
                 <input type="submit" value="{% trans 'Save' %}" class="default" name="_save">
                 <input type="submit" value="{% trans 'Save and continue editing' %}" name="_continue">

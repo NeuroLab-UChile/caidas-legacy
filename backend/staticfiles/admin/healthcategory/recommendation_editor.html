@@ -118,8 +118,8 @@
           <div class="flex items-center space-x-4">
             <input type="radio" 
                    id="use-custom"
-                   name="recommendation-type" 
-                   value="custom"
+                   name="use-default" 
+                   value="false"
                    {% if not recommendation.use_default %}checked{% endif %}
                    {% if not can_edit %}disabled{% endif %}
                    class="h-5 w-5 text-blue-600 border-gray-300 focus:ring-blue-500">
@@ -221,7 +221,7 @@
             <div class="relative">
               <input type="file" 
                      id="video-input"
-                     name="videos"
+                     name="video"
                      accept="video/*"
                      multiple
                      class="block w-full text-sm text-gray-500
@@ -322,12 +322,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Función para crear campos ocultos
     function createHiddenFields() {
+        console.log("Creating hidden fields", elements)
         const fields = {
-            'recommendation_text': elements.recommendationText?.value ?? '',
+            'recommendation_text': elements.recommendationText?.value ,
             'recommendation_status': elements.statusColor?.value ?? 'gris',
             'recommendation_is_draft': elements.isDraft?.checked ?? false,
             'recommendation_use_default': elements.defaultRadio?.checked ?? false,
-            'video': elements.videoInput?.files[0]?.name ?? ''
+            'video': elements.videoInput?.files[0]?.name ?? '',
+            
         };
 
         Object.entries(fields).forEach(([name, value]) => {
@@ -375,7 +377,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        if (useDefault.checked) {
+        if (useDefault.checked || !recommendationText.value) {
             const status = statusColor.value; // verde, amarillo, rojo, gris
             console.log('Current status:', status);
             console.log('Available recommendations:', defaultRecommendations);
@@ -415,7 +417,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Inicializar solo si tenemos los elementos necesarios
-    if (elements.recommendationText && elements.statusColor) {
+    if (elements.recommendationText && elements.statusColor && elements.defaultRadio && elements.customRadio && elements.videoInput) {
         // Event listeners para campos principales
         addSafeEventListener(elements.recommendationText, 'input', updateHiddenFields);
         addSafeEventListener(elements.statusColor, 'change', () => {
@@ -448,13 +450,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Obtener el CSRF token
             const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            const url = "{% url 'update_recommendation' category_id=health_category.id %}";
+            
 
-            fetch(form.action || window.location.href, {
+            fetch(url, {
                 method: 'POST',
                 body: formData,
                 headers: {
                     'X-CSRFToken': csrfToken,
-                    'X-Requested-With': 'XMLHttpRequest'
+               
                 },
                 credentials: 'same-origin'
             })
@@ -532,54 +536,35 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
     }
 
-    async function handleFormSubmit(complete) {
-        const formData = new FormData(form);
-        formData.append('is_draft', !complete);
-
-        // Log the form data for debugging
-        console.log('Form Data:');
-        formData.forEach((value, key) => {
-            console.log(`${key}:`, value);
-        });
-
-        const url = "{% url 'update_recommendation' category_id=health_category.id %}";
-
-        try {
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': csrfToken
-                },
-                body: formData
-            });
-
-            console.log('Response status:', response.status);
-
-            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-            const data = await response.json();
-
-            console.log('Response data:', data);
-
-            if (data.status === 'success') {
-                console.log('Guardado exitoso');
-                window.location.reload();
-            } else {
-                throw new Error(data.message || 'Error al guardar');
-            }
-        } catch (error) {
-            console.error('Error:', error);
-            alert('Ha ocurrido un error al guardar la recomendación: ' + error.message);
-        }
-    }
-
-    
+ 
     buttons.forEach(button => {
         button.addEventListener('click', async function(e) {
             e.preventDefault();
             const complete = this.dataset.complete === 'true';
+            url = "{% url 'update_recommendation' category_id=health_category.id %}";
             
             try {
-                handleFormSubmit(complete);
+                const formData = new FormData(form);
+                formData.append('category_id', categoryId);
+                formData.append('csrfmiddlewaretoken', csrfToken);
+                formData.append('use_default', elements.defaultRadio.checked ? 'true' : 'false');
+                formData.append('status_color', elements.statusColor.value);
+                formData.append('text', elements.recommendationText.value);
+                formData.append('video', elements.videoInput.files[0]);
+
+                const response = await fetch(url, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRFToken': csrfToken,
+                    },
+                });
+
+                if (response.ok) {
+                    window.location.reload();
+                } else {
+                    throw new Error('Error al guardar la recomendación');
+                }
             } catch (error) {
                 console.error('Error:', error);
                 alert('Ha ocurrido un error al guardar la recomendación: ' + error.message);

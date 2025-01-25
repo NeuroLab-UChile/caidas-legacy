@@ -58,6 +58,8 @@ class UserProfileFilter(admin.SimpleListFilter):
 @admin.register(HealthCategory)
 class HealthCategoryAdmin(admin.ModelAdmin):
     # Definir el orden específico de los campos
+   
+    recommendation_editor_template = 'admin/healthcategory/recommendation_editor.html'
     fields = (
         'get_completion_date',
         'get_user_info',
@@ -401,6 +403,7 @@ class HealthCategoryAdmin(admin.ModelAdmin):
     def get_recommendation_editor(self, obj):
         """Renderiza el editor de recomendaciones"""
         request = getattr(self, 'request', None)
+    
         if not request:
             return "Error: No se pudo obtener el contexto de la solicitud"
 
@@ -432,6 +435,8 @@ class HealthCategoryAdmin(admin.ModelAdmin):
                 'user_role': user_role,
                 'user_role_label': user_role_label,
                 'is_readonly': obj.template.is_readonly if obj.template else True,
+                'is_draft': recommendation.is_draft,
+                
             }
 
          
@@ -439,6 +444,7 @@ class HealthCategoryAdmin(admin.ModelAdmin):
                 'admin/healthcategory/recommendation_editor.html',
                 context,
                 request=request
+
             )
 
         except Exception as e:
@@ -606,7 +612,7 @@ class HealthCategoryAdmin(admin.ModelAdmin):
                     [group.name for group in request.user.groups.all()] or ["Profesional de la salud"]
                 )
 
-                if not recommendation.is_draft and data.get('is_signed'):
+                if not recommendation.is_draft:
                     recommendation.signed_by = request.user.username
                     recommendation.signed_at = now
 
@@ -786,3 +792,14 @@ class HealthCategoryAdmin(admin.ModelAdmin):
             )
 
         return qs
+
+    class Media:
+        css = {
+            'all': (
+                'https://cdn.tailwindcss.com',
+                'admin/css/forms.css',
+                'admin/css/widgets.css',
+                
+            )
+        }
+        

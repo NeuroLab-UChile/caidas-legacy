@@ -5,10 +5,9 @@ from .user_profile import UserProfile
 from .category_template import CategoryTemplate
 from .evaluation import EvaluationForm
 from .recommendation import Recommendation
-from prevcad.utils import build_media_url
+
 from django.db.models.signals import post_save, pre_delete
 from django.dispatch import receiver
-
 
 
 class HealthCategoryEditor(models.Model):
@@ -233,10 +232,6 @@ class HealthCategory(models.Model):
                 question_nodes=self.template.evaluation_form if self.template else {}
             )
 
-
-    def get_media_url(self, request=None):
-        return build_media_url(self.recommendation.image, request)
-    
     def save(self, *args, **kwargs):
         is_new = self.pk is None
         super().save(*args, **kwargs)

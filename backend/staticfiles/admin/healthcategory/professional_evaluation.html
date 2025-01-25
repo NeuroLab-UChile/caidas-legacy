@@ -104,6 +104,7 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form');
     const buttons = document.querySelectorAll('.save-evaluation');
     const draftButton = document.querySelector('[name="save_draft"]');
     const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
@@ -114,9 +115,16 @@ document.addEventListener('DOMContentLoaded', function() {
     
     if (!categoryId) return;
 
-    async function saveEvaluation(complete = false) {
+    async function saveEvaluation(e, complete = false) {
+        e.stopPropagation();
+        e.preventDefault();
+        
+        // Deshabilitar botones mientras se guarda
+        const allButtons = [...buttons, draftButton].filter(Boolean);
+        allButtons.forEach(btn => btn.disabled = true);
+        
         try {
-            const url = "{% url 'save_professional_evaluation' categoryId %}";
+            const url = "{% url 'save_professional_evaluation' category_id=health_category.id %}";
             const requestData = {
                 professional_responses: {
                     observations: document.getElementById('observations').value,
@@ -125,11 +133,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 complete: complete
             };
             
+            console.log('Enviando datos:', requestData);
+            
             const response = await fetch(url, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRFToken': csrfToken
+                    'X-CSRFToken': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest'
                 },
                 body: JSON.stringify(requestData)
             });
@@ -138,41 +149,50 @@ document.addEventListener('DOMContentLoaded', function() {
             const data = await response.json();
             
             if (data.success) {
-                // Usar el sistema de mensajes de Django Admin
                 window.parent.django.jQuery(window.parent.document).trigger('django:message', {
                     level: 'success',
                     message: complete ? 'Evaluación completada exitosamente' : 'Borrador guardado exitosamente'
                 });
                 
-                // Recargar después de un breve delay
                 setTimeout(() => {
                     window.location.reload();
                 }, 1500);
             }
         } catch (error) {
             console.error('Error:', error);
-            // Mostrar error usando el sistema de mensajes de Django Admin
             window.parent.django.jQuery(window.parent.document).trigger('django:message', {
                 level: 'error',
                 message: 'Error al guardar: ' + error.message
             });
+            
+            allButtons.forEach(btn => btn.disabled = false);
         }
+    }
+
+    // Prevenir envío del formulario
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            e.stopPropagation();
+            e.preventDefault();
+        }, { capture: true });
     }
 
     // Manejar click en botón de completar
     buttons.forEach(button => {
         button.addEventListener('click', (e) => {
+            e.stopPropagation();
             e.preventDefault();
-            saveEvaluation(true);
-        });
+            saveEvaluation(e, true);
+        }, { capture: true });
     });
 
     // Manejar click en botón de guardar borrador
     if (draftButton) {
         draftButton.addEventListener('click', (e) => {
+            e.stopPropagation();
             e.preventDefault();
-            saveEvaluation(false);
-        });
+            saveEvaluation(e, false);
+        }, { capture: true });
     }
 });
 </script>

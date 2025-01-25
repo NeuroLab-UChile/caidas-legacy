@@ -76,7 +76,18 @@ const authService = {
         },
         body: JSON.stringify({ token }),
       });
-      return response.ok;
+
+      if (!response.ok) {
+        // Si el token no es válido, intentar refrescarlo automáticamente
+        const refreshToken = await AsyncStorage.getItem('refresh_token');
+        if (refreshToken) {
+          const newToken = await authService.refreshToken(refreshToken);
+          return newToken !== null;
+        }
+        return false;
+      }
+
+      return true;
     } catch {
       return false;
     }
@@ -92,13 +103,17 @@ const authService = {
         body: JSON.stringify({ refresh: refreshToken }),
       });
 
-      if (!response.ok) throw new Error('No se pudo refrescar el token');
+      if (!response.ok) {
+        await authService.logout();
+        return null;
+      }
 
       const data = await response.json();
       await AsyncStorage.setItem('auth_token', data.access);
       return data.access;
     } catch (error) {
       console.error('Error refreshing token:', error);
+      await authService.logout();
       return null;
     }
   },

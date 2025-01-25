@@ -15,15 +15,7 @@
         </thead>
         <tbody>
             <!-- Debug info -->
-            <tr>
-                <td colspan="5" style="background: #fff3cd; padding: 10px; font-family: monospace; font-size: 12px;">
-                    <strong>Debug Responses:</strong><br>
-                    {% for node_id, response in responses.items %}
-                        <div>Node {{ node_id }}: {{ response|pprint }}</div>
-                    {% endfor %}
-                </td>
-            </tr>
-
+    
             {% for node_id, response in responses.items %}
                 <tr>
                     <td style="border:1px solid #ddd; padding:8px;">{{ response.id|default:node_id }}</td>
