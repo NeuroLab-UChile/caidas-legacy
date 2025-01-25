@@ -111,7 +111,7 @@ export const VideoNodeView: React.FC<VideoNodeViewProps> = ({
             useNativeControls
             shouldPlay={false}
             isMuted={true}
-            resizeMode="contain"
+            resizeMode={undefined}
             isLooping={false}
             onPlaybackStatusUpdate={(status) => {
               if (status.isLoaded && status.didJustFinish) {

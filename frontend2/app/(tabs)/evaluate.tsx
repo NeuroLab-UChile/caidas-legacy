@@ -343,27 +343,43 @@ const EvaluateScreen = () => {
       if (isCompleted && selectedCategory?.id) {
         setLoading(true);
         try {
-          // Crear y enviar FormData
           const formData = new FormData();
 
           // Agregar las respuestas como JSON string
-          formData.append("responses", JSON.stringify(newResponses));
+          const responsesObj: Record<string, any> = {};
+          Object.entries(newResponses).forEach(([key, value]) => {
+            responsesObj[key] = value;
+          });
+          formData.append("responses", JSON.stringify(responsesObj));
 
-          // Agregar las imágenes si existen
-          if (
-            formattedResponse.type === "IMAGE_QUESTION" &&
-            formattedResponse.answer?.images
-          ) {
-            formattedResponse.answer.images.forEach(
-              (imageUri: string, index: number) => {
-                formData.append(`image_${nodeId}`, {
-                  uri: imageUri,
-                  type: "image/jpeg",
-                  name: `image_${nodeId}_${index}.jpg`,
-                } as any);
+          // Procesar imágenes si existen
+          Object.entries(newResponses).forEach(
+            ([key, value]: [string, any]) => {
+              if (value.type === "IMAGE_QUESTION" && value.answer?.images) {
+                value.answer.images.forEach(
+                  (imageUri: string, index: number) => {
+                    // Crear un nombre único para cada imagen
+                    const imageName = `image_${key}_${index}.jpg`;
+
+                    // Agregar la imagen al FormData con el nombre correcto
+                    formData.append(`image_${key}`, {
+                      uri: imageUri,
+                      type: "image/jpeg",
+                      name: imageName,
+                    } as any);
+                  }
+                );
               }
-            );
-          }
+            }
+          );
+
+          console.log(
+            "Enviando FormData con imágenes:",
+            Array.from(formData.entries()).map(([key, value]) => ({
+              key,
+              type: value instanceof File ? "File" : typeof value,
+            }))
+          );
 
           await apiService.categories.saveResponses(
             selectedCategory.id,

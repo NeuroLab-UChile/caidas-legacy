@@ -48,17 +48,15 @@ class HealthCategoryListView(APIView):
 @api_view(['POST'])
 def save_evaluation_responses(request, category_id):
     try:
-        # Verificar que el usuario esté autenticado
+        # Verificar autenticación
         if not request.user.is_authenticated:
             return Response({
                 'status': 'error',
                 'message': 'Usuario no autenticado'
             }, status=status.HTTP_401_UNAUTHORIZED)
             
-        # Obtener el perfil del usuario autenticado
+        # Obtener el perfil y la categoría
         user_profile = get_object_or_404(UserProfile, user=request.user)
-        
-        # Obtener la categoría de salud específica para este usuario
         health_category = get_object_or_404(
             HealthCategory, 
             id=category_id,
@@ -73,10 +71,11 @@ def save_evaluation_responses(request, category_id):
         # Procesar imágenes y actualizar respuestas
         for node_id, response in responses.items():
             if isinstance(response, dict) and response.get('type') == 'IMAGE_QUESTION':
-                image_files = [
-                    f for f in request.FILES.items()
-                    if f[0].startswith(f'image_{node_id}')
-                ]
+                # Obtener todas las imágenes para este nodo específico
+                image_files = sorted([
+                    (k, f) for k, f in request.FILES.items()
+                    if k.startswith(f'image_{node_id}')
+                ], key=lambda x: x[0])
                 
                 if image_files:
                     processed_images = []
@@ -92,7 +91,7 @@ def save_evaluation_responses(request, category_id):
                                 continue
                             
                             # Crear nombre único para la imagen
-                            timestamp = timezone.now().strftime('%Y%m%d_%H%M%S')
+                            timestamp = timezone.now().strftime('%Y%m%d_%H%M%S_%f')
                             extension = os.path.splitext(image_file.name)[1].lower() or '.jpg'
                             filename = f'question_{node_id}_{timestamp}{extension}'
                             
@@ -115,7 +114,6 @@ def save_evaluation_responses(request, category_id):
                             
                             # Construir la URL
                             image_url = build_media_url(saved_path, request, is_backend=False)
-                            
                             print(f"URL generada: {image_url}")
                             
                             processed_images.append({
@@ -129,14 +127,13 @@ def save_evaluation_responses(request, category_id):
                             continue
                     
                     if processed_images:
-                        # Actualizar la respuesta con las imágenes procesadas
+                        # Actualizar la respuesta con todas las imágenes procesadas
                         responses[node_id] = {
                             'type': 'IMAGE_QUESTION',
                             'answer': {
                                 'images': processed_images
                             }
                         }
-                        print(f"Respuesta actualizada para node {node_id}: {responses[node_id]}")
                     else:
                         print(f"No se procesaron imágenes para node {node_id}")
                 else:
@@ -146,9 +143,8 @@ def save_evaluation_responses(request, category_id):
         evaluation_form = health_category.get_or_create_evaluation_form()
         if evaluation_form.responses is None:
             evaluation_form.responses = {}
-
-        evaluation_form.completed_date = timezone.now()
             
+        evaluation_form.completed_date = timezone.now()
         evaluation_form.responses.update(responses)
         evaluation_form.save()
         

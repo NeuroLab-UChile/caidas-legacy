@@ -728,7 +728,7 @@
         contentTypeSelect.value = type;
         contentTypeSelect.disabled = true; // Disable type change
         questionTextInput.value = type === 'TRAINING' ? node.content : node.question;
-        mediaUrlInput.value = node.media_url || ''; // Set the current media URL
+        mediaUrlInput.value = node.media_file || ''; // Set the current media URL
 
         // Toggle fields based on type
         toggleContentType();

@@ -24,21 +24,14 @@
                     <td style="border:1px solid #ddd; padding:8px;">
                         {% if response.type == 'IMAGE_QUESTION' %}
                             <!-- Debug info para IMAGE_QUESTION -->
-                            <div style="background: #e2e3e5; padding: 5px; margin-bottom: 5px; font-size: 11px;">
-                                <strong>Debug Image Data:</strong><br>
-                                answer: {{ response.answer|pprint }}<br>
-                                images: {{ response.answer.images|pprint }}
-                            </div>
-
+                       
                             {% if response.answer.images %}
                                 <div style="display: flex; flex-wrap: wrap; gap: 8px; padding: 8px; 
                                      background: #f8f9fa; border-radius: 6px; max-width: 440px; 
                                      max-height: 300px; overflow-y: auto; align-content: flex-start;">
                                     {% for img in response.answer.images %}
                                         <!-- Debug info para cada imagen -->
-                                        <div style="margin-bottom: 5px; font-size: 11px;">
-                                            <strong>Image Data:</strong> {{ img|pprint }}
-                                        </div>
+                                      
 
                                         <div style="position: relative; width: 100px; height: 100px; 
                                              flex: 0 0 auto; border-radius: 6px; overflow: hidden; 

@@ -148,7 +148,9 @@ const TrainingScreen = () => {
 
         // Obtener el siguiente nodo
         const nextNode =
-          selectedCategory?.training_form?.training_nodes[currentIndex + 1];
+          currentIndex !== undefined
+            ? selectedCategory?.training_form?.training_nodes[currentIndex + 1]
+            : undefined;
         console.log("Next node:", nextNode);
 
         if (nextNode) {
@@ -245,8 +247,10 @@ const TrainingScreen = () => {
           }
         );
 
-        const { uri } = await downloadResumable.downloadAsync();
-        setLocalVideoUri(uri);
+        const downloadResult = await downloadResumable.downloadAsync();
+        if (downloadResult) {
+          setLocalVideoUri(downloadResult.uri);
+        }
       } else {
         setLocalVideoUri(localUri);
       }
