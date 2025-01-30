@@ -228,12 +228,12 @@
 {% block content %}
   {{ block.super }}
 
-  <!-- Modal Unificado -->
+  <!-- Modal para gestión de formulario -->
   <div id="formModal" class="modal-overlay hidden">
     <div class="modal-content">
       <h2 id="modalTitle" class="modal-title">Gestión de Formulario</h2>
       <div id="questionsList" class="overflow-y-auto max-h-[400px]">
-        <!-- Dynamic content -->
+        <!-- Contenido dinámico -->
       </div>
       <div class="flex justify-end gap-2 mt-4">
         <button class="btn btn-secondary" onclick="closeModal()">Cerrar</button>
@@ -308,7 +308,7 @@
                  accept="video/*,image/*"
                  onchange="handleFilePreview(event)">
           <div id="mediaPreview" class="mt-4 hidden">
-            <!-- Preview del contenido multimedia -->
+            <!-- Vista previa del contenido multimedia -->
           </div>
         </div>
 
@@ -519,39 +519,34 @@
 
     function saveQuestion(event) {
         event.preventDefault();
-        console.log('Iniciando saveQuestion');
-        
         const contentType = document.getElementById('contentType').value;
         const nodeId = document.getElementById('nodeId').value;
         const questionText = document.getElementById('questionText').value;
-        const mediaFile = document.getElementById('mediaFile')?.files[0];
+        const mediaFile = document.getElementById('mediaFile')?.files[0]
 
-        console.log('Datos iniciales:', {
-            contentType,
-            nodeId,
-            questionText,
-            hasMediaFile: !!mediaFile
-        });
-
-        const formData = new FormData();
-        
-        // Crear el objeto del nodo
         const nodeData = {
             id: nodeId ? parseInt(nodeId) : Date.now(),
-            content: questionText,
+            content: questionText || '',
             type: contentType === 'TRAINING' ? 
                 document.getElementById('trainingType').value + '_NODE' :
                 document.getElementById('questionType').value
         };
 
-        console.log('NodeData creado:', nodeData);
-
+        const formData = new FormData();
+        
+        // Crear el objeto del nodo
         if (contentType === 'TRAINING') {
             if (mediaFile) {
               console.log(mediaFile)
-                formData.append('media_file', mediaFile);
+              if (mediaFile.type === 'video/mp4') {
+                formData.append('video', mediaFile);
                 nodeData.media_pending = true;
                 nodeData.media_url = mediaFile.name;
+              } else {
+                formData.append('image', mediaFile);
+                nodeData.media_pending = true;
+                nodeData.media_url = mediaFile.name;
+              }
             } else if (nodeId) {
                 const existingNode = trainingNodes.find(n => n.id === parseInt(nodeId));
                 if (existingNode?.media_url) {
@@ -821,138 +816,28 @@
 
     function handleFilePreview(event) {
         const file = event.target.files[0];
-        console.log('Archivo seleccionado:', file);
-
-        if (!file) {
-            console.log('No se seleccionó ningún archivo');
-            return;
-        }
-
-        const nodeId = document.getElementById('nodeId').value;
-        console.log('ID del nodo:', nodeId);
-
-        if (!nodeId) {
-            console.error('No se encontró ID del nodo');
-            return;
-        }
-
-        const formData = new FormData();
-        formData.append('media_file', file);
-
-        // Encontrar el nodo actual en trainingNodes
-        const currentNode = trainingNodes.find(node => node.id === parseInt(nodeId));
-        if (!currentNode) {
-            console.error('No se encontró el nodo en trainingNodes');
-            return;
-        }
-
-        // Actualizar el nodo con la información del archivo
-        currentNode.media_pending = true;
-        
-        // Crear nuevo array en lugar de modificar el existente
-        const updatedTrainingNodes = trainingNodes.map(node => 
-            node.id === parseInt(nodeId) ? currentNode : node
-        );
-
-        formData.append('training_form', JSON.stringify({
-            training_nodes: updatedTrainingNodes
-        }));
-
-        const url = "{% url 'update_training_form' original.id %}";
-        
-        fetch(url, {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-            },
-            body: formData
-        })
-        .then(response => {
-            if (!response.ok) {
-                return response.text().then(text => {
-                    console.error('Server response:', text);
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                });
-            }
-            return response.json();
-        })
-        .then(data => {
-            console.log('Respuesta del servidor:', data);
-            
-            if (data.status === 'success') {
-                // Construir la URL del archivo correctamente
-                let mediaUrl = '';
-                
-                if (data.media_url) {
-                    // Si la URL ya viene con /media/, usarla directamente
-                    mediaUrl = data.media_url.startsWith('/media/') ? 
-                        data.media_url : 
-                        `/media/${data.media_url.replace(/^\//, '')}`;
-                } else if (file.name) {
-                    // Si no hay URL del servidor, construir una con el nombre del archivo
-                    const fileName = file.name.replace(/\s+/g, ''); // Eliminar espacios
-                    mediaUrl = `/media/${fileName}`;
-                }
-
-                console.log('URL del medio construida:', mediaUrl); // Debug
-
-                if (mediaUrl) {
-                    const mediaContainer = document.getElementById('mediaContainer');
-                    updateVideoPreview(mediaContainer, mediaUrl, file.name);
-                    
-                    // Actualizar el nodo con la URL correcta
-                    currentNode.media_url = mediaUrl;
-                    window.trainingNodes = updatedTrainingNodes;
-                    
-                    alert('Archivo subido correctamente');
-                } else {
-                    throw new Error('No se pudo obtener la URL del archivo');
-                }
-            } else {
-                throw new Error(data.message || 'Error al actualizar el archivo');
-            }
-        })
-        .catch(error => {
-            console.error('Error en la petición:', error);
-            alert('Error al actualizar el archivo: ' + error.message);
-        });
-    }
-
-    function updateVideoPreview(container, videoUrl, fileName) {
-        console.log('Actualizando preview con:', {
-            videoUrl: videoUrl,
-            fileName: fileName
-        });
-
-        const mediaPreview = container.querySelector('#mediaPreview');
-        if (!mediaPreview) {
-            console.error('No se encontró el contenedor de preview');
-            return;
-        }
-
-        // Asegurarse de que la URL del video esté correctamente formateada
-        const formattedVideoUrl = videoUrl.replace(/\/\//g, '/').replace(/^\/?media\//, '/media/');
-
+        const mediaPreview = document.getElementById('mediaPreview');
         mediaPreview.classList.remove('hidden');
-        mediaPreview.innerHTML = `
-            <div class="current-media-preview">
-                <div class="current-media-label">Video actual:</div>
-                <div class="video-thumbnail">
-                    <video 
-                        controls 
-                        width="320"
-                        class="rounded-lg shadow-md"
-                        style="max-width: 100%; height: auto;"
-                    >
-                        <source src="${formattedVideoUrl}" type="video/mp4">
-                        Tu navegador no soporta la reproducción de video.
-                    </video>
-                    <div class="mt-2 text-sm text-gray-600">
-                        <span class="media-name">${fileName}</span>
-                    </div>
-                </div>
-            </div>
-        `;
+
+        if (file.type.startsWith('video/')) {
+            const videoUrl = URL.createObjectURL(file);
+            mediaPreview.innerHTML = `
+                <video controls width="320">
+                    <source src="${videoUrl}" type="${file.type}">
+                    Tu navegador no soporta la reproducción de video.
+                </video>
+                <div class="media-name">${file.name}</div>
+            `;
+        } else {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                mediaPreview.innerHTML = `
+                    <img src="${e.target.result}" class="media-thumbnail" alt="Vista previa">
+                    <div class="media-name">${file.name}</div>
+                `;
+            };
+            reader.readAsDataURL(file);
+        }
     }
 
     // Función auxiliar para obtener el token CSRF

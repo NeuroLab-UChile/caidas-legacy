@@ -397,11 +397,11 @@ def update_recommendation(request, category_id):
        
         # Actualizar otros campos de la recomendación
         recommendation.use_default = request.POST.get('use_default') == 'true'
-        if recommendation.use_default:
-            recommendation.text = health_category.template.default_recommendations[recommendation.status_color]
 
-        else:
-            recommendation.text = request.POST.get('text', '')
+  
+
+ 
+        recommendation.text = request.POST.get('text', '')
         recommendation.status_color = request.POST.get('status_color', 'gris')
         recommendation.is_draft = request.POST.get('is_draft') == 'true'
         recommendation.updated_by = request.user.username

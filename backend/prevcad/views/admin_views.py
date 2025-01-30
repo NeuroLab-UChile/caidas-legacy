@@ -125,62 +125,56 @@ def update_training_form(request, template_id):
     """
     try:
         obj = get_object_or_404(CategoryTemplate, id=template_id)
-        
-        # Manejar archivo de media si existe
-        media_file = None
-        if 'video' in request.FILES:
-            media_file = request.FILES['video']
-            file_type = 'VIDEO'
-        elif 'media_file' in request.FILES:
-            media_file = request.FILES['media_file']
-            file_type = 'IMAGE'
-            
-        if media_file:
-            # Crear directorio si no existe
-            print("-----> media_file", media_file)
-            upload_dir = os.path.join(settings.MEDIA_ROOT, 'uploads')
-            os.makedirs(upload_dir, exist_ok=True)
-            
-            # Guardar archivo
-            file_path = os.path.join('videos' if file_type == 'VIDEO' else 'images', media_file.name)
-            saved_path = handle_uploaded_file(media_file, request)
-            
-            # Obtener y actualizar el nodo actual
-            training_form_data = json.loads(request.POST.get('training_form', '{}'))
-            nodes = training_form_data.get('training_nodes', [])
-            print("-----> nodes", nodes)
-            
-            for node in nodes:
-                if node.get('media_pending'):
-                    node['media_url'] = saved_path
-                    node['media_pending'] = False
-                    break
-            
-            # Actualizar el formulario
-            obj.training_form = {'training_nodes': nodes}
-            obj.save(update_fields=['training_form'])
 
-            print("-----> nodes", nodes)
-            return JsonResponse({
-                'status': 'success',
-                'message': 'Formulario de entrenamiento actualizado correctamente',
-                'data': {
-                    'nodes': nodes,
-                    'template_id': template_id,
-                    'nodes_count': len(nodes)
-                }
-            }, json_dumps_params={'indent': 2, 'ensure_ascii': False})
-            
-        # Si no hay archivo, procesar el resto del formulario normalmente
-        new_form_data = request.POST.get('training_form')
-        if not new_form_data:
+        # Manejar archivos de media si existen
+        media_files = request.FILES.getlist('media_file')  # Cambiado para manejar múltiples archivos
+
+        if not media_files:
             return JsonResponse({
                 'status': 'error',
-                'message': 'No se recibieron datos del formulario'
+                'message': 'No se recibieron archivos multimedia.'
             }, status=400)
 
-        # Procesar el formulario como antes...
-        
+        # Crear directorio si no existe
+        upload_dir = os.path.join(settings.MEDIA_ROOT, 'uploads')
+        os.makedirs(upload_dir, exist_ok=True)
+
+        # Obtener y actualizar el nodo actual
+        training_form_data = json.loads(request.POST.get('training_form', '{}'))
+        nodes = training_form_data.get('training_nodes', [])
+        print("-----> nodes", nodes)
+
+        # Procesar cada archivo multimedia
+        for media_file in media_files:
+            if media_file:
+                print("-----> media_file", media_file)
+                
+                # Guardar archivo
+                saved_path = handle_uploaded_file(media_file, request)
+
+                # Asignar la URL del archivo guardado a un nodo correspondiente
+                for node in nodes:
+                    if node.get('media_pending'):
+                        node['media_url'] = saved_path
+                        node['media_pending'] = False
+                        print(f"Actualizando nodo {node['id']} con media_url: {saved_path}")
+                        break  # Salir del bucle después de asignar el archivo
+
+        # Actualizar el formulario
+        obj.training_form = {'training_nodes': nodes}
+        obj.save(update_fields=['training_form'])
+
+        print("-----> nodes actualizados", nodes)
+        return JsonResponse({
+            'status': 'success',
+            'message': 'Formulario de entrenamiento actualizado correctamente',
+            'data': {
+                'nodes': nodes,
+                'template_id': template_id,
+                'nodes_count': len(nodes)
+            }
+        }, json_dumps_params={'indent': 2, 'ensure_ascii': False})
+
     except Exception as e:
         logger.error(f"Error updating training form: {str(e)}", exc_info=True)
         return JsonResponse({
