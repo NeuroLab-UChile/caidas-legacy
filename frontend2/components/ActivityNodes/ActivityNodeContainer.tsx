@@ -15,6 +15,7 @@ import { theme } from "@/src/theme";
 import { ActivityNodeViews } from "./index";
 import { ResultNodeView } from "./views/ResultNodeView";
 import { VideoNodeView } from "./views/VideoNodeView";
+import { ImageNodeView } from "./views/ImageNode";
 
 interface ActivityNodeContainerProps {
   type:
@@ -80,17 +81,7 @@ export function ActivityNodeContainer({
       case "VIDEO_NODE":
         return <VideoNodeView data={data} />;
       case "IMAGE_NODE":
-        return (
-          <View style={styles.contentContainer}>
-            <Image
-              source={{ uri: data.image_url }}
-              style={styles.image}
-              resizeMode="cover"
-            />
-            <Text style={styles.title}>{data.title}</Text>
-            <Text style={styles.description}>{data.description}</Text>
-          </View>
-        );
+        return <ImageNodeView data={data} />;
       default:
         if (NodeComponent) {
           return (

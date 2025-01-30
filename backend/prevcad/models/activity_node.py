@@ -118,6 +118,12 @@ class WeeklyRecipeNode(ActivityNode):
         ('DINNER', 'Cena')
     ]
 
+    PHYSICAL_ACTIVITY_TYPES = [
+        ('LIGHT', 'Actividad Física Ligera'),
+        ('MODERATE', 'Actividad Física Moderada'),
+        ('HEAVY', 'Actividad Física Intensa')
+    ]
+
     title = models.CharField(max_length=200, default="Plan Semanal WeTrain")
     description = models.TextField(default="Plan de alimentación personalizado")
     
@@ -190,6 +196,6 @@ class ImageNode(ActivityNode):
     media_file = models.ImageField(upload_to='images/', null=True, blank=True)
 
     def get_media_url(self, request=None):
-        return build_media_url(self.media_file, request)
+        return build_media_url(self.media_file, request, is_backend=True)
 
 

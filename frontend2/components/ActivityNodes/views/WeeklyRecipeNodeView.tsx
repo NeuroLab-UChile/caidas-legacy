@@ -3,32 +3,35 @@ import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { theme } from "@/src/theme";
 
 interface MealInfo {
-  meal: string;
-  proteins: string;
+  meal?: string;
+  proteins?: string;
   notes?: string;
+  activity?: string;
+  duration?: string;
+  intensity?: string;
 }
 
-interface DayMeals {
+interface DaySchedule {
   BREAKFAST?: MealInfo;
   LUNCH?: MealInfo;
   DINNER?: MealInfo;
+  MORNING?: MealInfo;
+  AFTERNOON?: MealInfo;
 }
 
 interface WeeklyPlan {
-  [key: string]: DayMeals;
+  [key: string]: DaySchedule;
 }
 
 interface RecipeNodeViewProps {
-  data:
-    | {
-        description: string;
-        id: number;
-        next_node_id: number | null;
-        title: string;
-        type: string;
-        weekly_plan: WeeklyPlan;
-      }
-    | Array<any>;
+  data: {
+    description: string;
+    id: number;
+    next_node_id: number | null;
+    title: string;
+    type: string;
+    weekly_plan: WeeklyPlan;
+  };
 }
 
 const DAY_NAMES = {
@@ -41,64 +44,82 @@ const DAY_NAMES = {
   SUN: "Domingo",
 };
 
-const MEAL_NAMES = {
+const SCHEDULE_NAMES = {
+  // Comidas
   BREAKFAST: "Desayuno",
   LUNCH: "Almuerzo",
   DINNER: "Cena",
+  // Ejercicios
+  MORNING: "Mañana",
+  AFTERNOON: "Tarde",
 };
 
 export const WeeklyRecipeNodeView: React.FC<RecipeNodeViewProps> = ({
   data,
 }) => {
-  const nodeData = data as {
-    description: string;
-    id: number;
-    next_node_id: number | null;
-    title: string;
-    type: string;
-    weekly_plan: WeeklyPlan;
+  // Determinar si es un plan de ejercicios basado en la presencia de 'activity' en el primer elemento
+  const isExercisePlan =
+    Object.values(data.weekly_plan)[0]?.MORNING?.activity !== undefined;
+
+  const renderScheduleItem = (scheduleInfo: MealInfo, scheduleType: string) => {
+    if (!scheduleInfo) return null;
+
+    return (
+      <View style={styles.scheduleContainer}>
+        <View
+          style={[
+            styles.verticalLine,
+            {
+              backgroundColor:
+                scheduleType === "MORNING" || scheduleType === "BREAKFAST"
+                  ? theme.colors.primary
+                  : theme.colors.text,
+            },
+          ]}
+        />
+        <View style={styles.scheduleContent}>
+          <Text style={styles.scheduleType}>
+            {SCHEDULE_NAMES[scheduleType as keyof typeof SCHEDULE_NAMES]}
+          </Text>
+
+          {isExercisePlan ? (
+            <>
+              <Text style={styles.activityText}>{scheduleInfo.activity}</Text>
+              <View style={styles.detailsContainer}>
+                <Text style={styles.durationText}>{scheduleInfo.duration}</Text>
+                <Text style={styles.intensityText}>
+                  {scheduleInfo.intensity}
+                </Text>
+              </View>
+            </>
+          ) : (
+            <>
+              <Text style={styles.mealText}>{scheduleInfo.meal}</Text>
+              {scheduleInfo.proteins && (
+                <Text style={styles.proteinsText}>{scheduleInfo.proteins}</Text>
+              )}
+              {scheduleInfo.notes && (
+                <Text style={styles.notesText}>{scheduleInfo.notes}</Text>
+              )}
+            </>
+          )}
+        </View>
+      </View>
+    );
   };
-  console.log("recipe node data", nodeData);
-  const weeklyPlan = nodeData.weekly_plan;
 
   return (
     <ScrollView style={styles.container}>
-      <Text style={styles.title}>{nodeData.title}</Text>
-      <Text style={styles.description}>{nodeData.description}</Text>
+      <Text style={styles.title}>{data.title}</Text>
+      <Text style={styles.description}>{data.description}</Text>
 
-      {Object.entries(weeklyPlan).map(([day, meals]) => (
+      {Object.entries(data.weekly_plan).map(([day, schedule]) => (
         <View key={day} style={styles.dayContainer}>
           <Text style={styles.dayTitle}>
             {DAY_NAMES[day as keyof typeof DAY_NAMES]}
           </Text>
-          {Object.entries(meals as Record<string, any>).map(
-            ([mealType, mealInfo]) => (
-              <View key={mealType} style={styles.mealContainer}>
-                {/* Línea vertical de color */}
-                <View
-                  style={[
-                    styles.verticalLine,
-                    mealType === "BREAKFAST" && {
-                      backgroundColor: theme.colors.primary,
-                    },
-                    mealType === "LUNCH" && {
-                      backgroundColor: theme.colors.text,
-                    },
-                    mealType === "DINNER" && {
-                      backgroundColor: theme.colors.primary,
-                    },
-                  ]}
-                />
-                {/* Contenido */}
-                <View style={styles.mealContent}>
-                  <Text style={styles.mealType}>
-                    {MEAL_NAMES[mealType as keyof typeof MEAL_NAMES]}
-                  </Text>
-                  <Text style={styles.mealText}>{mealInfo.meal}</Text>
-                  <Text style={styles.proteinsText}>{mealInfo.proteins}</Text>
-                </View>
-              </View>
-            )
+          {Object.entries(schedule).map(([scheduleType, scheduleInfo]) =>
+            renderScheduleItem(scheduleInfo, scheduleType)
           )}
         </View>
       ))}
@@ -127,7 +148,7 @@ const styles = StyleSheet.create({
   },
   dayContainer: {
     marginBottom: 24,
-    padding: 8,
+    padding: 16,
     backgroundColor: theme.colors.card,
     borderRadius: 12,
     shadowColor: "#000",
@@ -142,9 +163,8 @@ const styles = StyleSheet.create({
     color: theme.colors.text,
     marginBottom: 12,
   },
-  mealContainer: {
+  scheduleContainer: {
     flexDirection: "row",
-    alignItems: "center",
     marginBottom: 12,
   },
   verticalLine: {
@@ -153,10 +173,10 @@ const styles = StyleSheet.create({
     marginRight: 8,
     borderRadius: 2,
   },
-  mealContent: {
+  scheduleContent: {
     flex: 1,
   },
-  mealType: {
+  scheduleType: {
     fontSize: 16,
     fontWeight: "bold",
     color: theme.colors.text,
@@ -167,16 +187,45 @@ const styles = StyleSheet.create({
     color: theme.colors.textSecondary,
     marginBottom: 4,
   },
+  activityText: {
+    fontSize: 14,
+    color: theme.colors.textSecondary,
+    marginBottom: 4,
+    fontWeight: "500",
+  },
+  detailsContainer: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  durationText: {
+    fontSize: 12,
+    color: theme.colors.text,
+    backgroundColor: theme.colors.primary,
+    padding: 4,
+    borderRadius: 4,
+    overflow: "hidden",
+  },
+  intensityText: {
+    fontSize: 12,
+    color: theme.colors.text,
+    backgroundColor: theme.colors.primary,
+    padding: 4,
+    borderRadius: 4,
+    overflow: "hidden",
+  },
   proteinsText: {
     fontSize: 12,
     color: theme.colors.text,
     backgroundColor: theme.colors.primary,
     padding: 4,
     borderRadius: 4,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    fontWeight: "600",
     width: 100,
+    textAlign: "center",
+  },
+  notesText: {
+    fontSize: 12,
+    color: theme.colors.textSecondary,
+    fontStyle: "italic",
+    marginTop: 4,
   },
 });

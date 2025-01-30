@@ -81,6 +81,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.locale.LocaleMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
 ]
 
 # Configuración de Django Rest Framework
@@ -194,9 +195,11 @@ LOCALE_PATHS = [
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'prevcad', 'templates'),
+    os.path.join(BASE_DIR, 'prevcad', 'static'),
 ]
 
+# Usar WhiteNoise para servir archivos estáticos
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 

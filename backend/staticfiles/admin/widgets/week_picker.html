@@ -1,9 +1,0 @@
-<input
-  type="week"
-  name="{{ widget.name }}"
-  value="{{ widget.value|default:'' }}"
-  id="{{ widget.attrs.id }}"
-  {% for attr, value in widget.attrs.items %}
-  {{ attr }}="{{ value }}"
-  {% endfor %}
-/> 

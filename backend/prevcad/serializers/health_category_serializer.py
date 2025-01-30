@@ -222,7 +222,7 @@ class HealthCategorySerializer(serializers.ModelSerializer):
                     'text': status['text']
                 },
                 'text': recommendation.text if recommendation else None,
-                'video_url': domain + recommendation.video.url if recommendation else None,
+                'video_url': recommendation.video.url if recommendation.video and recommendation.video.url else None,
                 'updated_at': recommendation.updated_at if recommendation else None,
                 'is_draft': recommendation.is_draft if recommendation else True,
                 'professional': {

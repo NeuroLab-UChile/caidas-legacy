@@ -21,6 +21,7 @@ import { DoctorRecommendations } from "@/components/DoctorRecommendations";
 import { getCategoryStatus } from "@/utils/categoryHelpers";
 import { Video, ResizeMode, AVPlaybackStatus } from "expo-av";
 import * as FileSystem from "expo-file-system";
+import { theme } from "@/src/theme";
 
 type TrainingState = {
   currentNodeId: number | null;
@@ -262,12 +263,7 @@ const TrainingScreen = () => {
 
   const renderVideo = () => {
     if (!localVideoUri) {
-      return (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#4CAF50" />
-          <Text style={styles.loadingText}>Preparando video...</Text>
-        </View>
-      );
+      return <></>;
     }
 
     return (
@@ -358,27 +354,25 @@ const TrainingScreen = () => {
               </Text>
             </View>
 
-            <View style={styles.videoContainer}>
-              {videoError ? (
-                <View style={styles.errorContainer}>
-                  <Ionicons name="alert-circle" size={40} color="#FF6B6B" />
-                  <Text style={styles.errorText}>{videoError}</Text>
-                  <TouchableOpacity
-                    style={styles.retryButton}
-                    onPress={() => {
-                      setVideoError(null);
-                      if (video_url) {
-                        prepareVideo(video_url);
-                      }
-                    }}
-                  >
-                    <Text style={styles.retryButtonText}>Reintentar</Text>
-                  </TouchableOpacity>
-                </View>
-              ) : (
-                renderVideo()
-              )}
-            </View>
+            {videoError ? (
+              <View style={styles.errorContainer}>
+                <Ionicons name="alert-circle" size={40} color="#FF6B6B" />
+                <Text style={styles.errorText}>{videoError}</Text>
+                <TouchableOpacity
+                  style={styles.retryButton}
+                  onPress={() => {
+                    setVideoError(null);
+                    if (video_url) {
+                      prepareVideo(video_url);
+                    }
+                  }}
+                >
+                  <Text style={styles.retryButtonText}>Reintentar</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              renderVideo()
+            )}
 
             {updated_at && (
               <Text style={styles.updatedAtText}>
@@ -399,12 +393,22 @@ const TrainingScreen = () => {
     );
   };
 
+  const handleBack = () => {
+    setView(null);
+  };
+
   if (loading) return <LoadingIndicator />;
   if (!selectedCategory) return <EmptyState view="training" />;
 
   return (
     <ScrollView style={styles.container}>
       <CategoryHeader name={selectedCategory.name} />
+      {view === "recommendations" && (
+        <TouchableOpacity style={styles.backButton} onPress={handleBack}>
+          <Ionicons name="arrow-back" size={24} color="#4B5563" />
+          <Text style={styles.backButtonText}>Volver</Text>
+        </TouchableOpacity>
+      )}
       {!view && (
         <View style={styles.viewSelection}>
           {selectedCategory?.recommendations && (
@@ -721,22 +725,14 @@ const styles = StyleSheet.create({
   backButton: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#4CAF50",
+    backgroundColor: "#f0f0f0",
     paddingVertical: 14,
     paddingHorizontal: 24,
     borderRadius: 12,
-    shadowColor: "#4CAF50",
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 4,
+    marginBottom: 16,
   },
   backButtonText: {
-    color: "white",
+    color: "#4B5563",
     fontSize: 16,
     fontWeight: "600",
     marginLeft: 8,
