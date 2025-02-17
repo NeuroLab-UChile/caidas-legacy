@@ -48,6 +48,7 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:8000",
     "http://127.0.0.1:8000",
     "http://200.89.79.54:8000",
+    "http://172.27.25.110:8000",
     "http://192.168.1.5:8000",
     "http://192.168.100.29:8081",
     "http://192.168.100.29:8080",
@@ -56,7 +57,6 @@ CORS_ALLOWED_ORIGINS = [
 CORS_ALLOW_ALL_ORIGINS = True
 
 CORS_ALLOW_CREDENTIALS = True # Needed for cookies, thus for JWT authentication
-
 
 # Application definition
 INSTALLED_APPS = [
