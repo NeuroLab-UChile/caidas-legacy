@@ -9,7 +9,7 @@ from .user_profile import UserProfile
 from .evaluation import EvaluationForm
 from .recommendation import Recommendation
 from .action_log import ActionLog
-
+from .user import User
 
 __all__ = [
   'CategoryTemplate',
@@ -33,5 +33,5 @@ __all__ = [
   'ImageNode',
   'WeeklyRecipeNode',
   'UserProfile',
-
+  'User',
 ]
