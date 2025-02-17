@@ -19,7 +19,8 @@
       "newArchEnabled": true,
       "infoPlist": {
         "NSPhotoLibraryUsageDescription": "La aplicación necesita acceso a tus fotos para subir imágenes de perfil."
-      }
+      },
+      "bundleIdentifier": "com.anonymous.frontend2"
     },
     "android": {
       "adaptiveIcon": {
@@ -30,8 +31,10 @@
         "android.permission.CAMERA",
         "android.permission.READ_EXTERNAL_STORAGE",
         "android.permission.WRITE_EXTERNAL_STORAGE",
-        "android.permission.MEDIA_LIBRARY"
-      ]
+        "android.permission.MEDIA_LIBRARY",
+        "android.permission.RECORD_AUDIO"
+      ],
+      "package": "com.anonymous.frontend2"
     },
     "web": {
       "favicon": "./assets/favicon.png"
