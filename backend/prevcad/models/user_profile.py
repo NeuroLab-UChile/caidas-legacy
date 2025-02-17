@@ -10,8 +10,6 @@ from prevcad.utils import build_media_url
 
 
 
-
-
 class UserProfile(models.Model):
     user = models.OneToOneField(
         User,
