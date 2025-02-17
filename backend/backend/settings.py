@@ -39,23 +39,19 @@ DEBUG = True
 ALLOWED_HOSTS = [
     'localhost',
     '127.0.0.1',
-    '200.89.79.54',
-    '172.27.25.110',
-    '*',
+    'caidas.uchile.cl',
 ]
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:8000",
     "http://127.0.0.1:8000",
-    "http://200.89.79.54:8000",
-    "http://172.27.25.110:8000",
     "http://caidas.uchile.cl",
     "https://caidas.uchile.cl",
 ]
 
 CORS_ALLOW_ALL_ORIGINS = True
 
-CORS_ALLOW_CREDENTIALS = True # Needed for cookies, thus for JWT authentication
+CORS_ALLOW_CREDENTIALS = True
 
 # Añadir configuraciones adicionales de CORS
 CORS_ALLOW_METHODS = [
@@ -89,8 +85,6 @@ SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 CSRF_TRUSTED_ORIGINS = [
     "http://caidas.uchile.cl",
     "https://caidas.uchile.cl",
-    "http://200.89.79.54:8000",
-    "http://localhost:8000",
 ]
 
 # Application definition
@@ -126,6 +120,9 @@ MIDDLEWARE = [
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
     ),
 }
 
