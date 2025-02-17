@@ -29,6 +29,7 @@ const authService = {
       });
 
       const data = await response.json();
+      console.log("Datos de autenticación:", data);
 
       if (!response.ok) {
         console.error("Error de autenticación:", data);
@@ -51,6 +52,9 @@ const authService = {
       const response = await fetch(`${API_URL}/prevcad/user/profile/`, {
         headers: {
           'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          
         },
       });
 

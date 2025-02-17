@@ -65,8 +65,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
 
       try {
+        console.log("Intentando obtener perfil con token:", response.access);
         const profile = await authService.getUserInfo(response.access);
         if (profile) {
+          console.log("Perfil obtenido:", profile);
           setUserProfile(profile);
           setIsAuthenticated(true);
           return true;
