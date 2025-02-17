@@ -10,6 +10,7 @@ import os
 import logging
 from ..decorators import log_action
 from django.conf import settings
+from prevcad.models.user import User
 
 logger = logging.getLogger(__name__)
 
@@ -89,7 +90,9 @@ def getProfile(request):
         
         # Verificar si existe el perfil
         try:
-            profile = request.user.profile
+            user = User.objects.get(id=request.user.id)
+            profile = user.profile
+            
             logger.info(f"Perfil encontrado: {profile}")
         except Exception as profile_error:
             logger.error(f"Error al obtener perfil: {str(profile_error)}")
