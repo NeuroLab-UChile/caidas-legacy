@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/2.2/ref/settings/
 
 import os
 import logging
+logging.basicConfig(level=logging.DEBUG)
 
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
@@ -33,18 +34,14 @@ FILE_UPLOAD_MAX_MEMORY_SIZE = 104857600  # 100MB
 SECRET_KEY = '@f7g(%shzq5li)m=vs_##1-jm(hh&-s!k$f*70f%96q4r_*s@7'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = [
-    '10.0.2.2', #needed for Android emulator
     'localhost',
     '127.0.0.1',
     '200.89.79.54',
-    'caidas.uchile.cl',
-    '[::1]',
-        '192.168.1.5',
-        'exp://192.168.100.29:8081',
-        'exp://192.168.100.29:8080',
+    '172.27.25.110',
+    '*',
 ]
 
 CORS_ALLOWED_ORIGINS = [
