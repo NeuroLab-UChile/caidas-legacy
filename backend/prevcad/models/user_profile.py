@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import models
 from django.contrib.auth.models import User, Group
 from django.core.exceptions import ValidationError
@@ -12,7 +13,7 @@ from prevcad.utils import build_media_url
 
 class UserProfile(models.Model):
     user = models.OneToOneField(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name='profile'
     )
@@ -59,12 +60,16 @@ class UserProfile(models.Model):
         return UserTypes.is_staff(self.role)
 
     def save(self, *args, **kwargs):
+        """
+        Override del método save para manejar la creación inicial
+        """
         creating = not self.pk
         super().save(*args, **kwargs)
         
         if creating and not self.user.groups.exists():
-            # Por defecto, asignar como paciente
-            self.role = UserTypes.PATIENT
+            # Asignar rol por defecto
+            default_group, _ = Group.objects.get_or_create(name=UserTypes.PATIENT.value)
+            self.user.groups.add(default_group)
 
     def get_roles(self):
         """
