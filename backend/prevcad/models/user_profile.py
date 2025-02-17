@@ -1,10 +1,9 @@
 from django.conf import settings
 from django.db import models
-from django.contrib.auth.models import User, Group
+from django.contrib.auth.models import Group
 from django.core.exceptions import ValidationError
 from django.db import transaction
 import uuid
-from .user import User
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from .user_types import UserTypes
@@ -13,7 +12,7 @@ from prevcad.utils import build_media_url
 
 class UserProfile(models.Model):
     user = models.OneToOneField(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name='profile'
     )
@@ -36,9 +35,7 @@ class UserProfile(models.Model):
     def role(self):
         """Obtiene el rol del usuario basado en su grupo"""
         group = self.user.groups.first()
-        if not group:
-            return None
-        return group.name
+        return group.name if group else None
 
     @property
     def role_label(self):
@@ -111,13 +108,14 @@ class UserProfile(models.Model):
         verbose_name_plural = 'Perfiles de Usuario'
 
     def __str__(self):
-        return f"{self.user.username} - {self.role_label}"
+        return f"Perfil de {self.user.username}"
     
     def get_media_url(self, request=None):
         return build_media_url(self.profile_image, request)
 
-@receiver(post_save, sender=User)
+@receiver(post_save, sender=settings.AUTH_USER_MODEL)
 def create_user_profile(sender, instance, created, **kwargs):
     """Crear perfil automáticamente al crear un usuario"""
     if created:
         UserProfile.objects.create(user=instance) 
+

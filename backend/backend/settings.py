@@ -251,6 +251,3 @@ INTERNAL_IPS = [
 
 # Configuración de django-admin-tailwind
 
-# Especifica el modelo de usuario personalizado
-AUTH_USER_MODEL = 'prevcad.User'
-

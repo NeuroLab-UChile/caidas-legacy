@@ -16,6 +16,7 @@ class AppointmentInline(admin.TabularInline):
     fields = ('date', 'title', 'description', 'user')
     readonly_fields = ('created_at',)
 
+
 class UserProfileInline(admin.StackedInline):
     model = UserProfile
     can_delete = False
