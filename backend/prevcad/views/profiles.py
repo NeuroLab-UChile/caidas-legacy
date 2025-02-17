@@ -76,27 +76,37 @@ def uploadProfileImage(request):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
-@log_action('PROFILE_VIEW', 'Visualización de perfil')
 def getProfile(request):
-    print("\n" + "="*50)
-    print("PETICIÓN RECIBIDA EN GET_PROFILE")
-    print(f"Headers: {dict(request.headers)}")
-    print(f"Usuario: {request.user}")
-    print(f"Auth: {request.auth}")
-    print(f"Method: {request.method}")
-    print("="*50 + "\n")
+    logger.info("="*50)
+    logger.info("INICIO DE getProfile")
+    logger.info(f"Usuario autenticado: {request.user}")
+    logger.info(f"Auth: {request.auth}")
     
     try:
-        # Asegurar que existe el perfil
-        profile = request.user.profile
-        if not profile:
+        # Verificar si el usuario existe
+        logger.info(f"ID del usuario: {request.user.id}")
+        logger.info(f"Username: {request.user.username}")
+        
+        # Verificar si existe el perfil
+        try:
+            profile = request.user.profile
+            logger.info(f"Perfil encontrado: {profile}")
+        except Exception as profile_error:
+            logger.error(f"Error al obtener perfil: {str(profile_error)}")
+            # Intentar crear el perfil
+            from prevcad.models import UserProfile
             profile = UserProfile.objects.create(user=request.user)
+            logger.info(f"Perfil creado: {profile}")
         
         serializer = UserSerializer(request.user, context={'request': request})
+        logger.info("Serialización exitosa")
         return Response(serializer.data)
         
     except Exception as e:
-        logger.error(f"Error en getProfile: {str(e)}")
+        logger.error(f"Error general en getProfile: {str(e)}")
+        logger.error(f"Tipo de error: {type(e)}")
+        import traceback
+        logger.error(f"Traceback: {traceback.format_exc()}")
         return Response(
             {'error': str(e)},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
