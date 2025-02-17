@@ -4,16 +4,16 @@ from django.contrib.auth.models import User, Group
 from django.core.exceptions import ValidationError
 from django.db import transaction
 import uuid
+from .user import User
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from .user_types import UserTypes
 from prevcad.utils import build_media_url
 
 
-
 class UserProfile(models.Model):
     user = models.OneToOneField(
-        settings.AUTH_USER_MODEL,
+        User,
         on_delete=models.CASCADE,
         related_name='profile'
     )
