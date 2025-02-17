@@ -19,6 +19,7 @@ export interface LoginCredentials {
 const authService = {
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
     try {
+      console.log(API_URL);
       const response = await fetch(`${API_URL}/token/`, {
         method: 'POST',
         headers: {
