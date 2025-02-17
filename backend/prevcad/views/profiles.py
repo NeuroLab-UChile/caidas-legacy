@@ -78,6 +78,14 @@ def uploadProfileImage(request):
 @permission_classes([IsAuthenticated])
 @log_action('PROFILE_VIEW', 'Visualización de perfil')
 def getProfile(request):
+    print("\n" + "="*50)
+    print("PETICIÓN RECIBIDA EN GET_PROFILE")
+    print(f"Headers: {dict(request.headers)}")
+    print(f"Usuario: {request.user}")
+    print(f"Auth: {request.auth}")
+    print(f"Method: {request.method}")
+    print("="*50 + "\n")
+    
     try:
         # Asegurar que existe el perfil
         profile = request.user.profile
