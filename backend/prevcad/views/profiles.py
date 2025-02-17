@@ -91,7 +91,7 @@ def getProfile(request):
         # Verificar si existe el perfil
         try:
             user = User.objects.get(id=request.user.id)
-            profile = user.profile
+            profile = UserProfile.objects.get(user=user)
             
             logger.info(f"Perfil encontrado: {profile}")
         except Exception as profile_error:
