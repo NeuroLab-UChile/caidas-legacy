@@ -16,7 +16,6 @@ import { Ionicons } from "@expo/vector-icons";
 import apiService from "../services/apiService";
 import { theme } from "@/src/theme";
 import * as ImagePicker from "expo-image-picker";
-import { UserProfile } from '../services/apiService';
 
 const { width } = Dimensions.get("window");
 
@@ -25,24 +24,20 @@ export default function ProfileScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
 
-  const getUserInfo = async () => {
+  const loadProfile = async () => {
     try {
       const response = await apiService.user.getProfile();
-      
-      if (response.success && response.data) {
-        setUser(response.data);
-      } else {
-        console.error('Error getting user info:', response.error);
-        Alert.alert('Error', 'No se pudo obtener la información del perfil');
-      }
+      console.log("response", response);
+      setUser(response.data);
     } catch (error) {
-      console.error('Error en getUserInfo:', error);
-      Alert.alert('Error', 'Ocurrió un error al obtener el perfil');
+      console.error("Error al cargar perfil:", error);
+    } finally {
+      setIsInitialLoading(false);
     }
   };
 
   useEffect(() => {
-    getUserInfo();
+    loadProfile();
   }, []);
 
   const handleImageSelected = async (uri: string) => {
@@ -53,7 +48,7 @@ export default function ProfileScreen() {
       const response = await apiService.user.uploadProfileImage(uri);
 
       // Forzar una recarga completa del perfil
-      await getUserInfo();
+      await loadProfile();
 
       // Agregar un timestamp a la URL de la imagen para forzar la recarga
       if (response.data?.profile?.profile_image) {
