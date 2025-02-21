@@ -28,51 +28,75 @@ def get_media_url(path):
 @parser_classes([MultiPartParser, FormParser])
 @log_action('PROFILE_UPDATE', 'Actualización de imagen de perfil')
 def uploadProfileImage(request):
+    logger.info("="*50)
+    logger.info("Iniciando uploadProfileImage")
+    logger.info(f"Usuario: {request.user}")
+    logger.info(f"FILES: {request.FILES}")
+    logger.info(f"Headers: {request.headers}")
+
     try:
-        # Obtener o crear perfil
-        print("request.user", request.user)
-        user = User.objects.get(id=request.user.id)
-        profile = user.profile
-    
-        if not profile:
-            profile = UserProfile.objects.create(user=request.user)
-            
-        logger.info(f"Procesando imagen para usuario: {request.user.username}")
-        
-        image = request.FILES.get('profile_image')
-        if not image:
+        # Verificar si hay archivo
+        if 'profile_image' not in request.FILES:
+            logger.error("No se encontró 'profile_image' en request.FILES")
             return Response(
                 {'error': 'No se proporcionó ninguna imagen'}, 
                 status=status.HTTP_400_BAD_REQUEST
             )
+
+        image = request.FILES['profile_image']
+        logger.info(f"Imagen recibida: {image.name}, tamaño: {image.size}")
+
+        # Obtener o crear perfil
+        try:
+            user = User.objects.get(id=request.user.id)
+            logger.info(f"Usuario encontrado: {user.username}")
             
-        logger.info(f"Imagen recibida: {image.name}")
-        
-        # Eliminar imagen anterior si existe
+            profile = UserProfile.objects.get_or_create(user=user)[0]
+            logger.info(f"Perfil obtenido/creado para: {user.username}")
+        except Exception as e:
+            logger.error(f"Error al obtener/crear perfil: {str(e)}", exc_info=True)
+            raise
+
+        # Crear directorio
+        try:
+            upload_path = f'profile_images/{request.user.id}'
+            full_path = os.path.join(settings.MEDIA_ROOT, upload_path)
+            os.makedirs(full_path, exist_ok=True)
+            logger.info(f"Directorio creado: {full_path}")
+        except Exception as e:
+            logger.error(f"Error al crear directorio: {str(e)}", exc_info=True)
+            raise
+
+        # Eliminar imagen anterior
         if profile.profile_image:
             try:
+                old_path = profile.profile_image.path
                 profile.profile_image.delete(save=False)
-                logger.info("Imagen anterior eliminada")
+                logger.info(f"Imagen anterior eliminada: {old_path}")
             except Exception as e:
                 logger.warning(f"Error al eliminar imagen anterior: {str(e)}")
-        
-        # Crear directorio si no existe
-        upload_path = f'profile_images/{request.user.id}'
-        os.makedirs(os.path.join('media', upload_path), exist_ok=True)
-        
+
         # Guardar nueva imagen
-        filename = f'{upload_path}/{image.name}'
-        profile.profile_image = default_storage.save(filename, image)
-        profile.save()
-        
-        logger.info(f"Imagen guardada: {filename}")
-        
-        # Serializar la respuesta
-        serializer = UserSerializer(request.user, context={'request': request})
-        return Response(serializer.data)
-        
+        try:
+            filename = f'{upload_path}/{image.name}'
+            profile.profile_image = default_storage.save(filename, image)
+            profile.save()
+            logger.info(f"Nueva imagen guardada: {filename}")
+        except Exception as e:
+            logger.error(f"Error al guardar nueva imagen: {str(e)}", exc_info=True)
+            raise
+
+        # Serializar respuesta
+        try:
+            serializer = UserSerializer(request.user, context={'request': request})
+            logger.info("Perfil serializado exitosamente")
+            return Response(serializer.data)
+        except Exception as e:
+            logger.error(f"Error al serializar respuesta: {str(e)}", exc_info=True)
+            raise
+
     except Exception as e:
-        logger.error(f"Error en uploadProfileImage: {str(e)}", exc_info=True)
+        logger.error(f"Error general en uploadProfileImage: {str(e)}", exc_info=True)
         return Response(
             {'error': str(e)},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
