@@ -39,7 +39,8 @@ DEBUG = True
 ALLOWED_HOSTS = [
     'localhost',
     '127.0.0.1',
-    'caidas.uchile.cl',
+    'caidas.uchile.cl','200.89.79.54'
+
 ]
 
 CORS_ALLOWED_ORIGINS = [
