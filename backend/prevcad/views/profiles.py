@@ -30,7 +30,10 @@ def get_media_url(path):
 def uploadProfileImage(request):
     try:
         # Obtener o crear perfil
-        profile = request.user.profile
+        print("request.user", request.user)
+        user = User.objects.get(id=request.user.id)
+        profile = user.profile
+    
         if not profile:
             profile = UserProfile.objects.create(user=request.user)
             
