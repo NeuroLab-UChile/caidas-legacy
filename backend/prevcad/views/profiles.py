@@ -78,42 +78,38 @@ def uploadProfileImage(request):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def getProfile(request):
-    logger.info("="*50)
-    logger.info("INICIO DE getProfile")
-    logger.info(f"Usuario autenticado: {request.user}")
-    logger.info(f"Auth: {request.auth}")
-    logger.info(f"Headers: {request.headers}")
-    logger.info(f"META: {request.META.get('HTTP_AUTHORIZATION', 'No auth header')}")
-    
     try:
-        # Verificar si el usuario existe
-        logger.info(f"ID del usuario: {request.user.id}")
-        logger.info(f"Username: {request.user.username}")
+        logger.info("="*50)
+        logger.info("Iniciando getProfile")
+        logger.info(f"Usuario: {request.user}")
+        logger.info(f"Auth: {request.auth}")
+        logger.info(f"Headers: {request.headers}")
         
-        # Verificar si existe el perfil
+        if not request.user.is_authenticated:
+            logger.warning("Usuario no autenticado")
+            return Response(
+                {'error': 'No autenticado'},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+        
         try:
-            user = User.objects.get(id=request.user.id)
-            profile = UserProfile.objects.get(user=user)
+            profile = request.user.profile
+            from prevcad.serializers.user_profile_serializer import UserSerializer
+            serializer = UserSerializer(request.user)
+            logger.info("Perfil serializado exitosamente")
+            return Response(serializer.data)
             
-            logger.info(f"Perfil encontrado: {profile}")
-        except Exception as profile_error:
-            logger.error(f"Error al obtener perfil: {str(profile_error)}")
-            # Intentar crear el perfil
-            from prevcad.models import UserProfile
-            profile = UserProfile.objects.create(user=request.user)
-            logger.info(f"Perfil creado: {profile}")
-        
-        serializer = UserSerializer(request.user, context={'request': request})
-        logger.info("Serialización exitosa")
-        return Response(serializer.data)
-        
+        except Exception as e:
+            logger.error(f"Error procesando perfil: {str(e)}")
+            return Response(
+                {'error': str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+            
     except Exception as e:
         logger.error(f"Error general en getProfile: {str(e)}")
-        logger.error(f"Tipo de error: {type(e)}")
-        import traceback
-        logger.error(f"Traceback: {traceback.format_exc()}")
         return Response(
-            {'error': str(e)},
+            {'error': 'Error interno del servidor'},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
