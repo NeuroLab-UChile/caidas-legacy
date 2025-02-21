@@ -131,13 +131,16 @@ class ApiClient {
           const newToken = await authService.refreshToken(refreshToken);
           if (newToken) {
             // Reintentar la petición original con el nuevo token
-            const newResponse = await fetch(response.url, {
-              ...response,
-              headers: {
-                ...response.headers,
-                'Authorization': `Bearer ${newToken}`
+            const newResponse = await fetch(
+              response.url,
+              {
+                ...response,
+                headers: {
+                  ...response.headers,
+                  'Authorization': `Bearer ${newToken}`
+                }
               }
-            });
+            );
             return this.handleResponse(newResponse);
           }
         }
@@ -236,13 +239,68 @@ class ApiClient {
   // User Management
   public user = {
     getProfile: async (): Promise<ApiResponse<UserProfile>> => {
-      const response = await fetch(
-        this.getUrl('/user/profile/'),
-        {
-          headers: await this.getHeaders(),
+      try {
+        const token = await AsyncStorage.getItem('auth_token');
+        const url = this.getUrl('/user/profile/');
+        
+        console.log('URL completa:', url);
+        console.log('Token:', token?.substring(0, 20) + '...');
+        
+        const headers = {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+        };
+        
+        console.log('Headers completos:', headers);
+        
+        const response = await fetch(url, { 
+            method: 'GET',
+            headers: headers,
+            credentials: 'include'  // Importante para CORS
+        });
+        
+        console.log('Response status:', response.status);
+        const responseText = await response.text();
+        console.log('Response body:', responseText);
+        
+        if (response.status === 401) {
+          console.log('Token expirado, intentando refrescar...');
+          const refreshToken = await AsyncStorage.getItem('refresh_token');
+          
+          if (!refreshToken) {
+            console.log('No hay refresh token disponible');
+            throw new Error('No refresh token available');
+          }
+
+          const newToken = await authService.refreshToken(refreshToken);
+          console.log('Nuevo token obtenido:', newToken?.substring(0, 20) + '...');
+
+          if (newToken) {
+            const newHeaders = {
+              ...headers,
+              'Authorization': `Bearer ${newToken}`
+            };
+            console.log('Reintentando con nuevos headers:', newHeaders);
+
+            const newResponse = await fetch(url, { headers: newHeaders });
+            console.log('Nueva respuesta status:', newResponse.status);
+
+            if (newResponse.ok) {
+              return this.handleResponse<UserProfile>(newResponse);
+            }
+          }
+
+          console.log('Fallo al refrescar token, haciendo logout');
+          await authService.logout();
+          throw new Error('Session expired');
         }
-      );
-      return this.handleResponse<UserProfile>(response);
+
+        return this.handleResponse<UserProfile>(response);
+      } catch (error) {
+        console.error('Error completo:', error);
+        throw error;
+      }
     },
 
     updateProfile: async (data: Partial<UserProfile>): Promise<ApiResponse<UserProfile>> => {

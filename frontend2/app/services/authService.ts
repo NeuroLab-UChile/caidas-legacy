@@ -1,5 +1,6 @@
 import { API_URL } from '@/constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { apiService } from './apiService';
 
 export interface AuthResponse {
   user: {
@@ -49,23 +50,8 @@ const authService = {
 
   async getUserInfo(token: string) {
     try {
-      const response = await fetch(`${API_URL}/prevcad/user/profile/`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          
-        },
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error("Error obteniendo perfil:", errorData);
-        throw new Error('Error obteniendo información del usuario');
-      }
-
-      const data = await response.json();
-      return data;
+      const response = await apiService.user.getProfile();
+      return response.data;
     } catch (error) {
       console.error('Error getting user info:', error);
       throw error;
@@ -100,26 +86,37 @@ const authService = {
 
   async refreshToken(refreshToken: string): Promise<string | null> {
     try {
-      const response = await fetch(`${API_URL}/token/refresh/`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ refresh: refreshToken }),
-      });
+        console.log('Intentando refrescar token con:', refreshToken.substring(0, 20) + '...');
+        
+        const response = await fetch(`${API_URL}/token/refresh/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ refresh: refreshToken }),
+        });
 
-      if (!response.ok) {
-        await authService.logout();
-        return null;
-      }
+        console.log('Refresh response status:', response.status);
+        const data = await response.json();
+        console.log('Refresh response data:', data);
 
-      const data = await response.json();
-      await AsyncStorage.setItem('auth_token', data.access);
-      return data.access;
+        if (!response.ok) {
+            console.error('Error refreshing token:', data);
+            await this.logout();
+            return null;
+        }
+
+        // Guardar tanto el nuevo access token como el refresh token
+        await AsyncStorage.setItem('auth_token', data.access);
+        if (data.refresh) {
+            await AsyncStorage.setItem('refresh_token', data.refresh);
+        }
+
+        return data.access;
     } catch (error) {
-      console.error('Error refreshing token:', error);
-      await authService.logout();
-      return null;
+        console.error('Error en refreshToken:', error);
+        await this.logout();
+        return null;
     }
   },
 

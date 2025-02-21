@@ -82,6 +82,8 @@ def getProfile(request):
     logger.info("INICIO DE getProfile")
     logger.info(f"Usuario autenticado: {request.user}")
     logger.info(f"Auth: {request.auth}")
+    logger.info(f"Headers: {request.headers}")
+    logger.info(f"META: {request.META.get('HTTP_AUTHORIZATION', 'No auth header')}")
     
     try:
         # Verificar si el usuario existe
