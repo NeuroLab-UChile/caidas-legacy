@@ -94,8 +94,24 @@ sudo truncate -s 0 /var/www/we-flow/backend/django.log
 
 2. Asignar permisos correctos al backend
 
+
+# Asignar propiedad a www-data (usuario de Apache)
+sudo chown -R www-data:www-data /var/www/we-flow/backend/media
+
+# Dar permisos de escritura
+sudo chmod -R 775 /var/www/we-flow/backend/media
+
+# Dar permisos a media
 sudo chown -R www-data:www-data /var/www/we-flow/backend
 sudo chmod -R 755 /var/www/we-flow/backend
+sudo mkdir -p /var/www/we-flow/backend/media/profile_images
+
+# Verificar permisos
+ls -la /var/www/we-flow/backend/media
+ls -la /var/www/we-flow/backend/media/profile_images
+
+# Reiniciar Apache
+sudo systemctl restart apache2
 
 3. Recargar el servicio Apache2
 
