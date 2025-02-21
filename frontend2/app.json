@@ -56,7 +56,13 @@
     },
     "extra": {
       "disableHotReloadR": true,
-      "apiUrl": "https://caidas.uchile.cl/api"
+      "apiUrl": "https://caidas.uchile.cl/api",
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "ef29226d-8b91-41b0-a6e9-fdc541659041"
+      }
     }
   }
 }

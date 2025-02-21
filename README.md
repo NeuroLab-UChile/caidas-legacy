@@ -79,6 +79,14 @@ cd frontend
 npm install
 npx expo start
 
+
+Build Apk
+# Para una versión de desarrollo/preview
+eas build -p android --profile preview
+
+# O si prefieres la versión de producción
+eas build -p android --profile production
+
 Despliegue en Producción
 
 1. Configurar Apache2 para Django
