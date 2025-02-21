@@ -1,3 +1,4 @@
+from django.contrib.auth import get_user_model
 from rest_framework.decorators import api_view, permission_classes, parser_classes
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.permissions import IsAuthenticated
@@ -10,7 +11,9 @@ import os
 import logging
 from ..decorators import log_action
 from django.conf import settings
-from prevcad.models.user import User
+
+# Obtener el modelo User correcto
+User = get_user_model()
 
 logger = logging.getLogger(__name__)
 
@@ -46,11 +49,12 @@ def uploadProfileImage(request):
         image = request.FILES['profile_image']
         logger.info(f"Imagen recibida: {image.name}, tamaño: {image.size}")
 
+        # Usar directamente request.user en lugar de buscar el usuario
+        user = request.user
+        logger.info(f"Usuario: {user.username}")
+        
         # Obtener o crear perfil
         try:
-            user = User.objects.get(id=request.user.id)
-            logger.info(f"Usuario encontrado: {user.username}")
-            
             profile = UserProfile.objects.get_or_create(user=user)[0]
             logger.info(f"Perfil obtenido/creado para: {user.username}")
         except Exception as e:

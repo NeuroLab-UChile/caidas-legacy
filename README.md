@@ -89,6 +89,9 @@ sudo systemctl restart apache2
 sudo tail -f /var/log/apache2/error.log  # Ver logs de errores
 sudo tail -f /var/www/we-flow/backend/django.log  # Ver logs de Django
 
+# Limpiar el log actual
+sudo truncate -s 0 /var/www/we-flow/backend/django.log
+
 2. Asignar permisos correctos al backend
 
 sudo chown -R www-data:www-data /var/www/we-flow/backend
