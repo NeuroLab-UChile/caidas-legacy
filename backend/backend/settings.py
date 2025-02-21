@@ -260,34 +260,33 @@ LOGGING = {
         },
     },
     'handlers': {
-        'console': {
-            'class': 'logging.StreamHandler',
-            'formatter': 'verbose',
-        },
         'file': {
+            'level': 'DEBUG',
             'class': 'logging.FileHandler',
             'filename': os.path.join(BASE_DIR, 'django.log'),
             'formatter': 'verbose',
-            # Si el archivo no existe, créalo
-            'mode': 'a+',
+        },
+        'console': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
         },
     },
     'loggers': {
-        'django': {
+        '': {  # Root logger
             'handlers': ['console', 'file'],
-            'level': 'INFO',
+            'level': 'DEBUG',
+        },
+        'prevcad': {  # App logger
+            'handlers': ['console', 'file'],
+            'level': 'DEBUG',
             'propagate': True,
         },
     },
 }
 
-# Asegúrate de que el directorio de logs existe
+# Asegurarse de que el archivo de log existe y tiene los permisos correctos
 LOG_FILE = os.path.join(BASE_DIR, 'django.log')
-LOG_DIR = os.path.dirname(LOG_FILE)
-if not os.path.exists(LOG_DIR):
-    try:
-        os.makedirs(LOG_DIR)
-    except Exception as e:
-        # Si no podemos crear el directorio, usamos solo el console handler
-        LOGGING['loggers']['django']['handlers'] = ['console']
+if not os.path.exists(LOG_FILE):
+    open(LOG_FILE, 'a').close()
 
