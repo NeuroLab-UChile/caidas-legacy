@@ -248,6 +248,7 @@ INTERNAL_IPS = [
 
 # Configuración de django-admin-tailwind
 
+# Configuración de logs
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -258,29 +259,34 @@ LOGGING = {
         },
     },
     'handlers': {
-        'file': {
-            'level': 'DEBUG',
-            'class': 'logging.FileHandler',
-            'filename': '/var/www/we-flow/backend/django.log',
-            'formatter': 'verbose',
-        },
         'console': {
-            'level': 'DEBUG',
             'class': 'logging.StreamHandler',
             'formatter': 'verbose',
+        },
+        'file': {
+            'class': 'logging.FileHandler',
+            'filename': os.path.join(BASE_DIR, 'django.log'),
+            'formatter': 'verbose',
+            # Si el archivo no existe, créalo
+            'mode': 'a+',
         },
     },
     'loggers': {
         'django': {
-            'handlers': ['file', 'console'],
-            'level': 'DEBUG',
-            'propagate': True,
-        },
-        'prevcad': {  # tu aplicación
-            'handlers': ['file', 'console'],
-            'level': 'DEBUG',
+            'handlers': ['console', 'file'],
+            'level': 'INFO',
             'propagate': True,
         },
     },
 }
+
+# Asegúrate de que el directorio de logs existe
+LOG_FILE = os.path.join(BASE_DIR, 'django.log')
+LOG_DIR = os.path.dirname(LOG_FILE)
+if not os.path.exists(LOG_DIR):
+    try:
+        os.makedirs(LOG_DIR)
+    except Exception as e:
+        # Si no podemos crear el directorio, usamos solo el console handler
+        LOGGING['loggers']['django']['handlers'] = ['console']
 
