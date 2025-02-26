@@ -61,7 +61,7 @@ pip install -r backend/requirements.txt
 Crear un archivo .env en la carpeta backend con las siguientes variables:
 
 SECRET_KEY=tu_clave_secreta
-DEBUG=True
+DEBUG=False
 DATABASE_URL=postgres://usuario:password@localhost:5432/weflow_db
 
 5. Aplicar migraciones y crear un superusuario
