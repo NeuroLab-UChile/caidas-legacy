@@ -37,9 +37,7 @@ SECRET_KEY = '@f7g(%shzq5li)m=vs_##1-jm(hh&-s!k$f*70f%96q4r_*s@7'
 DEBUG = True
 
 ALLOWED_HOSTS = [
-    'localhost',
-    '127.0.0.1',
-    'caidas.uchile.cl','200.89.79.54'
+    '*'
 
 ]
 

@@ -87,6 +87,23 @@ eas build -p android --profile preview
 # O si prefieres la versión de producción
 eas build -p android --profile production
 
+ Crear un link interno para compartir
+eas build:share
+
+# O subir a la Play Store en modo interno/testing
+eas submit -p android --profile preview
+
+# Para subir a producción
+eas submit -p android --profile production
+
+npm install -g firebase-tools
+
+# Luego distribuye la app
+firebase appdistribution:distribute [ruta-a-tu-apk] \
+  --app [tu-app-id] \
+  --groups "testers"
+
+  
 Despliegue en Producción
 
 1. Configurar Apache2 para Django
