@@ -18,9 +18,16 @@ User = get_user_model()
 logger = logging.getLogger(__name__)
 
 def get_absolute_url(request, url):
+    """
+    Convierte una URL relativa en absoluta
+    """
     if url.startswith('http'):
         return url
-    return f"{settings.DOMAIN}{url}"
+    
+    # Obtener el dominio del settings.py
+    domain = settings.DOMAIN.rstrip('/')
+    url = url.lstrip('/')
+    return f"{domain}/{url}"
 
 def get_media_url(path):
     from django.conf import settings
@@ -113,11 +120,8 @@ def getProfile(request):
         logger.info("="*50)
         logger.info("Iniciando getProfile")
         logger.info(f"Usuario: {request.user}")
-        logger.info(f"Auth: {request.auth}")
-        logger.info(f"Headers: {request.headers}")
         
         if not request.user.is_authenticated:
-            logger.warning("Usuario no autenticado")
             return Response(
                 {'error': 'No autenticado'},
                 status=status.HTTP_401_UNAUTHORIZED
@@ -125,8 +129,12 @@ def getProfile(request):
         
         try:
             profile = request.user.profile
-            from prevcad.serializers.user_profile_serializer import UserSerializer
-            serializer = UserSerializer(request.user)
+            # Asegurarse de que la URL de la imagen sea absoluta
+            if profile.profile_image:
+                profile_image_url = get_absolute_url(request, profile.profile_image.url)
+                logger.info(f"URL de imagen de perfil: {profile_image_url}")
+            
+            serializer = UserSerializer(request.user, context={'request': request})
             logger.info("Perfil serializado exitosamente")
             return Response(serializer.data)
             

@@ -46,11 +46,8 @@ export default function ProfileScreen() {
       console.log("Subiendo imagen:", uri);
 
       const response = await apiService.user.uploadProfileImage(uri);
+      console.log("Respuesta de subida:", response.data);
 
-      // Forzar una recarga completa del perfil
-      await loadProfile();
-
-      // Agregar un timestamp a la URL de la imagen para forzar la recarga
       if (response.data?.profile?.profile_image) {
         const timestamp = new Date().getTime();
         const imageUrlWithTimestamp = `${response.data.profile.profile_image}?t=${timestamp}`;
@@ -62,6 +59,8 @@ export default function ProfileScreen() {
           },
         }));
       }
+
+      await loadProfile();
     } catch (error) {
       console.error("Error al subir la imagen:", error);
       Alert.alert(
@@ -81,7 +80,6 @@ export default function ProfileScreen() {
         {
           text: "Cambiar",
           onPress: () => {
-            // Llamar directamente a showImageSourceOptions desde ImageUploader
             showImageSourceOptions();
           },
         },
@@ -184,9 +182,7 @@ export default function ProfileScreen() {
         <View style={styles.profileImageSection}>
           <TouchableOpacity
             style={styles.imageContainer}
-            onPress={
-              user?.profile?.profile_image ? handleImageOptions : undefined
-            }
+            onPress={user?.profile?.profile_image ? handleImageOptions : showImageSourceOptions}
             activeOpacity={0.7}
           >
             {user?.profile?.profile_image ? (
@@ -195,9 +191,10 @@ export default function ProfileScreen() {
                   key={user?.profile?.profile_image}
                   source={{
                     uri: user?.profile?.profile_image,
-                    cache: "reload",
+                    cache: 'reload',
                   }}
                   style={styles.existingImage}
+                  onError={(e) => console.log('Error loading image:', e.nativeEvent.error)}
                 />
                 <View style={styles.editButton}>
                   <Ionicons name="pencil" size={16} color="black" />
@@ -210,7 +207,11 @@ export default function ProfileScreen() {
                   { backgroundColor: theme.colors.border },
                 ]}
               >
-                <ImageUploader onImageSelected={handleImageSelected} />
+                <Ionicons 
+                  name="person-circle-outline" 
+                  size={60} 
+                  color={theme.colors.text}
+                />
               </View>
             )}
           </TouchableOpacity>
@@ -342,6 +343,7 @@ const styles = StyleSheet.create({
     borderRadius: 60,
     borderWidth: 3,
     borderColor: "white",
+    backgroundColor: theme.colors.border,
   },
   placeholderImage: {
     width: "100%",

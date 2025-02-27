@@ -15,16 +15,27 @@ import { HapticTab } from "@/components/HapticTab";
 import { theme } from "@/src/theme";
 import authService from "../services/authService";
 import { ScrollLayout } from "@/components/ScrollLayout";
+import { Ionicons } from '@expo/vector-icons';
 
 const BOTTOM_TAB_HEIGHT = 83;
 const MIDDLE_BUTTON_SIZE = 76;
 const { width } = Dimensions.get("window");
 const SCREEN_WIDTH = width * 0.95;
 
+// Definimos los tipos de iconos que estamos usando
+type IconNames = 
+  | "calendar"
+  | "checkbox"
+  | "walk"
+  | "person"
+  | "power"
+  | "chevron-back"
+  | "folder";
+
 interface MenuItem {
   name: string;
   title: string;
-  icon?: string;
+  icon: IconNames | undefined;
   customIcon?: any;
 }
 
@@ -37,7 +48,7 @@ const leftMenuItems: MenuItem[] = [
   {
     name: "evaluate",
     title: "EVALUAR",
-    icon: "checkmark.square",
+    icon: "checkbox",
   },
 ];
 
@@ -45,7 +56,7 @@ const rightMenuItems: MenuItem[] = [
   {
     name: "training",
     title: "ENTRENAR",
-    icon: "figure.walk",
+    icon: "walk",
   },
   {
     name: "profile",
@@ -59,6 +70,7 @@ const hiddenItems: MenuItem[] = [
     name: "action",
     title: "WE-TRAIN",
     customIcon: require("@/assets/images/logo_color.png"),
+    icon: undefined
   },
   {
     name: "category-detail",
@@ -78,77 +90,51 @@ export default function TabLayout() {
   };
 
   return (
-    <View
-      style={[styles.container, { backgroundColor: theme.colors.background }]}
-    >
+    <View style={styles.container}>
       <ScrollLayout>
         <Tabs
           screenOptions={({ route }) => ({
-            tabBarActiveTintColor: "#FFFFFF",
-            tabBarInactiveTintColor: "#FFFFFF80",
+            tabBarActiveTintColor: theme.colors.background,
+            tabBarInactiveTintColor: theme.colors.background + '80',
             headerShown: true,
             tabBarButton: HapticTab,
             headerTitle: () => {
-              const item = [
-                ...leftMenuItems,
-                ...rightMenuItems,
-                ...hiddenItems,
-              ].find((item) => item.name === route.name);
+              const item = [...leftMenuItems, ...rightMenuItems, ...hiddenItems]
+                .find((item) => item.name === route.name);
               return (
-                <Text style={[styles.headerTitle, { color: "#FFFFFF" }]}>
+                <Text style={[styles.headerTitle, { color: theme.colors.background }]}>
                   {item?.title || route.name}
                 </Text>
               );
             },
             headerStyle: {
-              backgroundColor: "#000000",
+              backgroundColor: theme.colors.text,
               elevation: 0,
               shadowOpacity: 0,
               height: route.name === "category-detail" ? 100 : 60,
             },
             headerTitleAlign: "center",
-            header: ({ route, options }) => {
-              const item = [
-                ...leftMenuItems,
-                ...rightMenuItems,
-                ...hiddenItems,
-              ].find((item) => item.name === route.name);
+            header: ({ route }) => {
+              const item = [...leftMenuItems, ...rightMenuItems, ...hiddenItems]
+                .find((item) => item.name === route.name);
+              
               return (
-                <View style={styles.headerContainer}>
+                <View style={[styles.headerContainer, { backgroundColor: theme.colors.text }]}>
                   <View style={styles.headerTopRow}>
-                    {(route.name === "events" ||
-                      route.name === "category-detail") && (
+                    {(route.name === "events" || route.name === "category-detail") && (
                       <TouchableOpacity
-                        onPress={() => {
-                          if (route.name === "events") {
-                            router.push("/(tabs)/action");
-                          } else if (route.name === "category-detail") {
-                            router.push("/(tabs)/action");
-                          }
-                        }}
+                        onPress={() => router.push("/(tabs)/action")}
                         style={styles.backArrowButton}
                       >
-                        <IconSymbol
-                          name="chevron.left"
+                        <Ionicons
+                          name="chevron-back"
                           size={24}
-                          color={theme.colors.text}
+                          color={theme.colors.background}
                         />
                       </TouchableOpacity>
                     )}
 
-                    <Text
-                      style={[
-                        styles.headerTitle,
-                        {
-                          color: theme.colors.text,
-                          marginLeft:
-                            route.name === "events" ||
-                            route.name === "category-detail"
-                              ? 0
-                              : 8,
-                        },
-                      ]}
-                    >
+                    <Text style={[styles.headerTitle, { color: theme.colors.background }]}>
                       {item?.title || route.name}
                     </Text>
 
@@ -158,10 +144,7 @@ export default function TabLayout() {
                           "Cerrar Sesión",
                           "¿Estás seguro que deseas salir?",
                           [
-                            {
-                              text: "Cancelar",
-                              style: "cancel",
-                            },
+                            { text: "Cancelar", style: "cancel" },
                             {
                               text: "Salir",
                               style: "destructive",
@@ -170,42 +153,23 @@ export default function TabLayout() {
                                   await authService.logout();
                                   router.replace("/sign-in");
                                 } catch (error) {
-                                  console.error(
-                                    "Error al cerrar sesión:",
-                                    error
-                                  );
-                                  Alert.alert(
-                                    "Error",
-                                    "No se pudo cerrar la sesión"
-                                  );
+                                  console.error("Error al cerrar sesión:", error);
+                                  Alert.alert("Error", "No se pudo cerrar la sesión");
                                 }
                               },
                             },
                           ]
                         );
                       }}
-                      style={[
-                        styles.logoutButton,
-                        {
-                          backgroundColor: theme.colors.background,
-                          borderWidth: 2,
-                          borderColor: theme.colors.border,
-                        },
-                      ]}
+                      style={[styles.logoutButton, { backgroundColor: theme.colors.text }]}
                     >
                       <View style={styles.logoutContent}>
                         <IconSymbol
                           name="power"
                           size={18}
-                          color={theme.colors.text}
-                          style={styles.logoutIcon}
+                          color={theme.colors.background}
                         />
-                        <Text
-                          style={[
-                            styles.logoutText,
-                            { color: theme.colors.text },
-                          ]}
-                        >
+                        <Text style={[styles.logoutText, { color: theme.colors.background }]}>
                           Salir
                         </Text>
                       </View>
@@ -214,114 +178,40 @@ export default function TabLayout() {
                 </View>
               );
             },
-            headerLeft: undefined,
             tabBarStyle: {
-              backgroundColor: "#000000",
+              backgroundColor: theme.colors.text,
               borderTopWidth: 2,
               borderLeftWidth: 2,
               borderRightWidth: 2,
-              borderColor: "#000000",
+              borderColor: theme.colors.text,
               borderBottomWidth: 0,
-            },
-
-            tabBarItemStyle: {
-              width: SCREEN_WIDTH / 5, // Reducir ancho proporcional de cada botón
-              height: BOTTOM_TAB_HEIGHT - 20,
-              paddingTop: 4,
+              height: BOTTOM_TAB_HEIGHT,
             },
             tabBarLabelStyle: {
               fontSize: 9,
               fontWeight: "600",
-              position: "relative",
-              top: 0,
-              display: "flex",
               marginTop: 4,
+              color: theme.colors.background,
             },
-            tabBarIcon: ({ color, focused }) => {
-              const item = [...leftMenuItems, ...rightMenuItems].find(
-                (item) => item.name === route.name
-              );
+            tabBarIcon: ({ focused }) => {
+              const item = [...leftMenuItems, ...rightMenuItems]
+                .find((item) => item.name === route.name);
               if (!item) return null;
 
               return (
-                <View
-                  style={[
-                    styles.iconContainer,
-                    focused && styles.activeIconContainer,
-                  ]}
-                >
-                  {item.customIcon ? (
-                    <Image
-                      source={item.customIcon}
-                      style={{
-                        width: 24,
-                        height: 24,
-                      }}
-                      resizeMode="contain"
-                    />
-                  ) : (
-                    <IconSymbol
+                <View style={[
+                  styles.iconContainer,
+                  focused && styles.activeIconContainer
+                ]}>
+                  {item.icon && (
+                    <Ionicons
+                      name={item.icon}
                       size={24}
-                      name={item.icon as any}
-                      color={focused ? theme.colors.text : color}
+                      color={focused ? theme.colors.background : theme.colors.background + '80'}
                     />
                   )}
                 </View>
               );
-            },
-            headerRight: () => (
-              <TouchableOpacity
-                onPress={() => {
-                  Alert.alert(
-                    "Cerrar Sesión",
-                    "¿Estás seguro que deseas salir?",
-                    [
-                      {
-                        text: "Cancelar",
-                        style: "cancel",
-                      },
-                      {
-                        text: "Salir",
-                        style: "destructive",
-                        onPress: async () => {
-                          try {
-                            await authService.logout();
-                            router.replace("/login");
-                          } catch (error) {
-                            console.error("Error al cerrar sesión:", error);
-                            Alert.alert("Error", "No se pudo cerrar la sesión");
-                          }
-                        },
-                      },
-                    ]
-                  );
-                }}
-                style={[
-                  styles.logoutButton,
-                  {
-                    backgroundColor: theme.colors.background,
-                    borderWidth: 2,
-                    borderColor: theme.colors.border,
-                  },
-                ]}
-              >
-                <View style={styles.logoutContent}>
-                  <IconSymbol
-                    name="power"
-                    size={20}
-                    color={theme.colors.text}
-                    style={styles.logoutIcon}
-                  />
-                  <Text
-                    style={[styles.logoutText, { color: theme.colors.text }]}
-                  >
-                    Salir
-                  </Text>
-                </View>
-              </TouchableOpacity>
-            ),
-            tabBarIconStyle: {
-              marginBottom: 4,
             },
           })}
         >
@@ -333,9 +223,6 @@ export default function TabLayout() {
                 title: item.title,
                 headerTitle: item.title,
                 tabBarLabel: item.title,
-                tabBarIcon: ({ color }) => (
-                  <IconSymbol size={24} name={item.icon as any} color={color} />
-                ),
               }}
             />
           ))}
@@ -348,28 +235,6 @@ export default function TabLayout() {
                 title: item.title,
                 headerTitle: item.title,
                 tabBarButton: () => null,
-                tabBarIcon: ({ color, focused }) => {
-                  if (item.customIcon) {
-                    return (
-                      <Image
-                        source={item.customIcon}
-                        style={{
-                          width: 24,
-                          height: 24,
-                          tintColor: focused ? theme.colors.text : color,
-                        }}
-                        resizeMode="contain"
-                      />
-                    );
-                  }
-                  return (
-                    <IconSymbol
-                      size={24}
-                      name={item.icon as any}
-                      color={focused ? theme.colors.text : color}
-                    />
-                  );
-                },
               }}
             />
           ))}
@@ -382,9 +247,6 @@ export default function TabLayout() {
                 title: item.title,
                 headerTitle: item.title,
                 tabBarLabel: item.title,
-                tabBarIcon: ({ color }) => (
-                  <IconSymbol size={24} name={item.icon as any} color={color} />
-                ),
               }}
             />
           ))}
@@ -394,42 +256,18 @@ export default function TabLayout() {
       <TouchableOpacity
         onPress={handleMiddleButtonPress}
         activeOpacity={0.8}
-        style={[
-          styles.middleButton,
-          {
-            backgroundColor: "#000000",
-          },
-        ]}
+        style={[styles.middleButton, { backgroundColor: theme.colors.text }]}
       >
-        <View
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            height: MIDDLE_BUTTON_SIZE / 2,
-            borderTopLeftRadius: MIDDLE_BUTTON_SIZE / 2,
-            borderTopRightRadius: MIDDLE_BUTTON_SIZE / 2,
-            borderWidth: 2,
-            borderColor: "#000000",
-            borderBottomWidth: 0,
-          }}
-        />
-        <View
-          style={{
-            marginTop: 10,
-            alignItems: "center",
-          }}
-        >
+        <View style={[styles.middleButtonTop, { borderColor: theme.colors.text }]} />
+        <View style={styles.middleButtonContent}>
           <Image
             source={require("@/assets/images/logo_color.png")}
-            style={{
-              width: 40,
-              height: 40,
-            }}
+            style={styles.middleButtonLogo}
             resizeMode="contain"
           />
-          <Text style={[styles.logoText, { color: "#FFFFFF" }]}>WE-TRAIN</Text>
+          <Text style={[styles.middleButtonText, { color: theme.colors.background }]}>
+            WE-TRAIN
+          </Text>
         </View>
       </TouchableOpacity>
     </View>
@@ -439,75 +277,37 @@ export default function TabLayout() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  backButton: {
-    alignSelf: "flex-start",
-    padding: 8,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
     backgroundColor: theme.colors.background,
   },
-  backButtonText: {
-    fontSize: 16,
-    fontWeight: "600",
+  headerContainer: {
+    paddingTop: 40,
+    paddingHorizontal: 16,
+    paddingBottom: 8,
   },
-  tabBar: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: BOTTOM_TAB_HEIGHT - 15, // Altura ajustada si es necesario
-    elevation: 0,
-    shadowColor: "transparent",
+  headerTopRow: {
     flexDirection: "row",
-    justifyContent: "space-around", // Reducir espacio horizontal
-    paddingHorizontal: 10, // Margen horizontal reducido
-    paddingBottom: 12,
-    overflow: "hidden",
-  },
-  middleButton: {
-    backgroundColor: "#000000",
-    position: "absolute",
-    bottom: 40,
-    left: (width - MIDDLE_BUTTON_SIZE) / 2,
-    width: MIDDLE_BUTTON_SIZE,
-    height: MIDDLE_BUTTON_SIZE,
-    borderTopLeftRadius: MIDDLE_BUTTON_SIZE / 2,
-    borderTopRightRadius: MIDDLE_BUTTON_SIZE / 2,
-    justifyContent: "center",
+    justifyContent: "space-between",
     alignItems: "center",
-    zIndex: 1000,
-    elevation: 8,
+    paddingVertical: 4,
   },
-  buttonIcon: {
-    marginBottom: 2,
-  },
-  logoText: {
-    fontSize: 9,
-    fontWeight: "bold",
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    flex: 1,
     textAlign: "center",
-    letterSpacing: 0.5,
-    marginTop: 10,
   },
-  activeIconContainer: {
-    backgroundColor: theme.colors.text + "20",
-    transform: [{ scale: 1.1 }],
+  backArrowButton: {
+    padding: 8,
+    marginRight: 8,
+    borderRadius: 8,
   },
   logoutButton: {
     marginRight: 0,
     padding: 6,
     paddingHorizontal: 10,
     borderRadius: 8,
-    elevation: 1,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.15,
-    shadowRadius: 2,
-    zIndex: 1,
+    borderWidth: 2,
+    borderColor: theme.colors.background,
   },
   logoutContent: {
     flexDirection: "row",
@@ -522,33 +322,61 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   iconContainer: {
-    padding: 4,
-    borderRadius: 12,
-    backgroundColor: "transparent",
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 20,
   },
-  headerContainer: {
-    backgroundColor: theme.colors.primary,
-    paddingTop: 40,
-    paddingHorizontal: 16,
-    paddingBottom: 8,
+  activeIconContainer: {
+    backgroundColor: `${theme.colors.primary}20`,
   },
-  headerTopRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 4,
-    paddingRight: 0,
+  icon: {
+    width: 24,
+    height: 24,
   },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    flex: 1,
-  },
-  backArrowButton: {
-    padding: 8,
-    marginRight: 8,
-    borderRadius: 8,
+  middleButton: {
+    position: "absolute",
+    bottom: 40,
+    left: (width - MIDDLE_BUTTON_SIZE) / 2,
+    width: MIDDLE_BUTTON_SIZE,
+    height: MIDDLE_BUTTON_SIZE,
+    borderTopLeftRadius: MIDDLE_BUTTON_SIZE / 2,
+    borderTopRightRadius: MIDDLE_BUTTON_SIZE / 2,
     justifyContent: "center",
     alignItems: "center",
+    zIndex: 1000,
+    elevation: 8,
+  },
+  middleButtonTop: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: MIDDLE_BUTTON_SIZE / 2,
+    borderTopLeftRadius: MIDDLE_BUTTON_SIZE / 2,
+    borderTopRightRadius: MIDDLE_BUTTON_SIZE / 2,
+    borderWidth: 2,
+    borderBottomWidth: 0,
+  },
+  middleButtonContent: {
+    marginTop: 10,
+    alignItems: "center",
+  },
+  middleButtonLogo: {
+    width: 40,
+    height: 40,
+  },
+  middleButtonText: {
+    fontSize: 9,
+    fontWeight: "bold",
+    letterSpacing: 0.5,
+    marginTop: 10,
+  },
+  tabBarLabel: {
+    fontSize: 9,
+    fontWeight: "600",
+    color: theme.colors.background,
+    marginTop: 4,
   },
 });
