@@ -20,7 +20,9 @@ export interface LoginCredentials {
 const authService = {
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
     try {
-      console.log(API_URL);
+      console.log('Environment:', __DEV__ ? 'Development' : 'Production');
+      console.log('Login attempt to:', `${API_URL}/token/`);
+      
       const response = await fetch(`${API_URL}/token/`, {
         method: 'POST',
         headers: {
@@ -29,6 +31,7 @@ const authService = {
         body: JSON.stringify(credentials),
       });
 
+      console.log('Response status:', response.status);
       const data = await response.json();
       console.log("Datos de autenticación:", data);
 

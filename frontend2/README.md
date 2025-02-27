@@ -49,7 +49,16 @@ Join our community of developers creating universal apps.
 - [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
 - [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
 
+cd android
+./gradlew clean
+./gradlew assembleRelease
 
 # Apk building 
 # npx expo prebuild --platform android
 # 
+
+# Desinstala la versión anterior si existe
+adb uninstall com.anonymous.frontend2
+
+# Instala la nueva versión
+adb install android/app/build/outputs/apk/release/app-release.apk

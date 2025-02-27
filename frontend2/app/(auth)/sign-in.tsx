@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { View, TextInput, Pressable, Text, StyleSheet } from "react-native";
+import { View, TextInput, Pressable, Text, StyleSheet, ActivityIndicator, Alert } from "react-native";
+import Constants from 'expo-constants';
 
 import { router } from "expo-router";
 import { theme } from "@/src/theme";
@@ -8,16 +9,38 @@ import { useAuth } from "../contexts/auth";
 export default function SignIn() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
   const { signIn } = useAuth();
 
   const handleLogin = async () => {
+    if (!username || !password) {
+      setError("Por favor ingresa usuario y contraseña");
+      return;
+    }
+
     try {
+      setIsLoading(true);
+      setError("");
+      console.log('Intentando login con:', username);
+      
       const success = await signIn(username, password);
+      
       if (success) {
+        console.log('Login exitoso, redirigiendo...');
         router.replace("/(tabs)/action/");
+      } else {
+        setError("Credenciales incorrectas");
       }
     } catch (error) {
-      console.error(error);
+      console.error('Error en login:', error);
+      setError("Error al iniciar sesión. Intenta nuevamente.");
+      Alert.alert(
+        "Error",
+        "No se pudo conectar al servidor. Verifica tu conexión."
+      );
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -31,7 +54,14 @@ export default function SignIn() {
 
   return (
     <View style={styles.container}>
+      <Text style={styles.versionText}>
+        Versión: {Constants.expoConfig?.version || '1.0.0'}
+        {__DEV__ ? ' (Debug)' : ' (Release)'}
+      </Text>
+
       <Text style={styles.title}>Iniciar Sesión</Text>
+
+      {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
       <TextInput
         placeholder="Usuario"
@@ -40,6 +70,7 @@ export default function SignIn() {
         style={styles.input}
         placeholderTextColor={theme.colors.text + "80"}
         autoCapitalize="none"
+        editable={!isLoading}
       />
 
       <TextInput
@@ -50,17 +81,28 @@ export default function SignIn() {
         style={styles.input}
         placeholderTextColor={theme.colors.text + "80"}
         autoCapitalize="none"
+        editable={!isLoading}
       />
 
       <Pressable
         style={({ pressed }) => [
           styles.button,
           pressed && styles.buttonPressed,
+          isLoading && styles.buttonDisabled
         ]}
         onPress={handleLogin}
+        disabled={isLoading}
       >
-        <Text style={styles.buttonText}>Iniciar Sesión</Text>
+        {isLoading ? (
+          <ActivityIndicator color={theme.colors.text} />
+        ) : (
+          <Text style={styles.buttonText}>Iniciar Sesión</Text>
+        )}
       </Pressable>
+
+      <Text style={styles.serverStatus}>
+        Servidor: {isLoading ? 'Conectando...' : 'Listo'}
+      </Text>
     </View>
   );
 }
@@ -107,5 +149,27 @@ const styles = StyleSheet.create({
     color: theme.colors.text,
     fontSize: theme.typography.sizes.body1,
     fontFamily: theme.typography.fonts.primary.bold,
+  },
+  errorText: {
+    color: 'red',
+    marginBottom: theme.spacing.md,
+    textAlign: 'center',
+    fontFamily: theme.typography.fonts.primary.regular,
+  },
+  buttonDisabled: {
+    opacity: 0.5,
+  },
+  serverStatus: {
+    marginTop: theme.spacing.xl,
+    textAlign: 'center',
+    color: theme.colors.text + '80',
+    fontSize: theme.typography.sizes.caption,
+  },
+  versionText: {
+    position: 'absolute',
+    top: 40,
+    right: 20,
+    fontSize: 12,
+    color: theme.colors.text + '80',
   },
 });
