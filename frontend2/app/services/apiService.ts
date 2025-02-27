@@ -93,6 +93,7 @@ export class ApiClient {
   public async getHeaders(includeAuth: boolean = true): Promise<HeadersInit> {
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
+      credentials: 'include',
     };
 
     if (includeAuth) {
@@ -135,7 +136,8 @@ export class ApiClient {
               ...response,
               headers: {
                 ...response.headers,
-                'Authorization': `Bearer ${newToken}`
+                'Authorization': `Bearer ${newToken}`,
+                credentials: 'include',
               }
             });
             return this.handleResponse(newResponse);
