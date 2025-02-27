@@ -114,24 +114,27 @@ def uploadProfileImage(request):
 @permission_classes([IsAuthenticated])
 def getProfile(request):
     try:
+        logger.info("="*50)
+        logger.info("Iniciando getProfile")
+        logger.info(f"Usuario: {request.user}")
+        
         user = request.user
         profile = user.profile
         
-        # Verificar si la imagen existe físicamente
-        if profile.profile_image and profile.profile_image.storage.exists(profile.profile_image.name):
-            # Construir la URL correcta
-            image_url = request.build_absolute_uri(settings.MEDIA_URL + profile.profile_image)
-            logger.info(f"URL de imagen construida: {image_url}")
+        # Construir la URL de la imagen correctamente
+        if profile.profile_image:
+            # Convertir ImageFieldFile a string usando su URL
+            image_url = request.build_absolute_uri(profile.profile_image.url)
+            logger.info(f"URL de imagen de perfil: {image_url}")
         else:
-            logger.warning(f"La imagen no existe en el sistema de archivos: {profile.profile_image if profile.profile_image else 'No hay imagen'}")
             image_url = None
-            
-        # Actualizar el perfil con la URL correcta
-        profile.profile_image = image_url
+            logger.info("No hay imagen de perfil")
         
+        # Serializar el perfil
         serializer = UserSerializer(user, context={'request': request})
+        logger.info("Perfil serializado exitosamente")
         return Response(serializer.data)
-        
+            
     except Exception as e:
         logger.error(f"Error en getProfile: {str(e)}")
         return Response(

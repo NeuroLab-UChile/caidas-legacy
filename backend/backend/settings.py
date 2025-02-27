@@ -245,23 +245,14 @@ LOGGING = {
         'file': {
             'level': 'DEBUG',
             'class': 'logging.FileHandler',
-            'filename': os.path.join(BASE_DIR, 'django.log'),
-            'formatter': 'verbose',
-        },
-        'console': {
-            'level': 'DEBUG',
-            'class': 'logging.StreamHandler',
+            'filename': '/var/log/django/django.log',  # Ruta absoluta
             'formatter': 'verbose',
         },
     },
     'loggers': {
-        '': {  # Root logger
-            'handlers': ['console', 'file'],
-            'level': 'DEBUG',
-        },
-        'prevcad': {  # App logger
-            'handlers': ['console', 'file'],
-            'level': 'DEBUG',
+        'django': {
+            'handlers': ['file'],
+            'level': 'INFO',
             'propagate': True,
         },
     },
