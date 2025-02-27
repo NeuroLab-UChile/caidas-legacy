@@ -32,7 +32,9 @@
         "android.permission.READ_EXTERNAL_STORAGE",
         "android.permission.WRITE_EXTERNAL_STORAGE",
         "android.permission.MEDIA_LIBRARY",
-        "android.permission.RECORD_AUDIO"
+        "android.permission.RECORD_AUDIO",
+                "android.permission.INTERNET"
+
       ],
       "package": "com.anonymous.frontend2"
     },
@@ -63,6 +65,7 @@
       "eas": {
         "projectId": "ef29226d-8b91-41b0-a6e9-fdc541659041"
       }
-    }
+    },
+    "platforms": ["android"]
   }
 }
