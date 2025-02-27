@@ -11,6 +11,7 @@ import os
 import logging
 from ..decorators import log_action
 from django.conf import settings
+import uuid
 
 # Obtener el modelo User correcto
 User = get_user_model()
@@ -35,84 +36,80 @@ def get_media_url(path):
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
-@parser_classes([MultiPartParser, FormParser])
-@log_action('PROFILE_UPDATE', 'Actualización de imagen de perfil')
 def uploadProfileImage(request):
-    logger.info("="*50)
-    logger.info("Iniciando uploadProfileImage")
-    logger.info(f"Usuario: {request.user}")
-    logger.info(f"FILES: {request.FILES}")
-    logger.info(f"Headers: {request.headers}")
-
     try:
-        # Verificar si hay archivo
-        if 'profile_image' not in request.FILES:
-            logger.error("No se encontró 'profile_image' en request.FILES")
+        logger.info("="*50)
+        logger.info("Iniciando uploadProfileImage")
+        logger.info(f"Usuario: {request.user}")
+        logger.info(f"FILES: {request.FILES}")
+        
+        if 'image' not in request.FILES:
+            logger.error("No se encontró imagen en la solicitud")
             return Response(
-                {'error': 'No se proporcionó ninguna imagen'}, 
+                {'error': 'No se proporcionó ninguna imagen'},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        image = request.FILES['profile_image']
-        logger.info(f"Imagen recibida: {image.name}, tamaño: {image.size}")
+        image = request.FILES['image']
+        profile = request.user.profile
 
-        # Usar directamente request.user en lugar de buscar el usuario
-        user = request.user
-        logger.info(f"Usuario: {user.username}")
+        # Crear el directorio si no existe
+        upload_path = f'profile_images/{request.user.id}'
+        full_media_path = os.path.join(settings.MEDIA_ROOT, upload_path)
+        os.makedirs(full_media_path, exist_ok=True)
+
+        # Log para debug
+        logger.info(f"Directorio creado: {full_media_path}")
+        logger.info(f"Permisos del directorio: {oct(os.stat(full_media_path).st_mode)[-3:]}")
+
+        # Guardar la imagen con un nombre único y extensión original
+        filename = f"{uuid.uuid4()}{os.path.splitext(image.name)[1].lower()}"
+        full_path = os.path.join(upload_path, filename)
+        absolute_path = os.path.join(settings.MEDIA_ROOT, full_path)
+
+        # Guardar la imagen anterior
+        old_image = profile.profile_image
         
-        # Obtener o crear perfil
-        try:
-            profile = UserProfile.objects.get_or_create(user=user)[0]
-            logger.info(f"Perfil obtenido/creado para: {user.username}")
-        except Exception as e:
-            logger.error(f"Error al obtener/crear perfil: {str(e)}", exc_info=True)
-            raise
+        # Guardar físicamente la nueva imagen primero
+        with open(absolute_path, 'wb+') as destination:
+            for chunk in image.chunks():
+                destination.write(chunk)
 
-        # Crear directorio
-        try:
-            upload_path = f'profile_images/{request.user.id}'
-            full_path = os.path.join(settings.MEDIA_ROOT, upload_path)
-            os.makedirs(full_path, exist_ok=True)
-            logger.info(f"Directorio creado: {full_path}")
-        except Exception as e:
-            logger.error(f"Error al crear directorio: {str(e)}", exc_info=True)
-            raise
+        # Verificar que el archivo se guardó correctamente
+        if not os.path.exists(absolute_path):
+            raise Exception("La imagen no se guardó correctamente")
 
-        # Eliminar imagen anterior
-        if profile.profile_image:
+        logger.info(f"Imagen guardada en: {absolute_path}")
+        logger.info(f"Permisos del archivo: {oct(os.stat(absolute_path).st_mode)[-3:]}")
+
+        # Actualizar el perfil con la nueva imagen
+        profile.profile_image = full_path
+        profile.save()
+
+        # Eliminar la imagen anterior si existe
+        if old_image:
             try:
-                old_path = profile.profile_image.path
-                profile.profile_image.delete(save=False)
-                logger.info(f"Imagen anterior eliminada: {old_path}")
+                old_image_path = os.path.join(settings.MEDIA_ROOT, str(old_image))
+                if os.path.exists(old_image_path):
+                    os.remove(old_image_path)
+                    logger.info(f"Imagen anterior eliminada: {old_image_path}")
             except Exception as e:
-                logger.warning(f"Error al eliminar imagen anterior: {str(e)}")
+                logger.error(f"Error al eliminar imagen anterior: {str(e)}")
 
-        # Guardar nueva imagen
-        try:
-            filename = f'{upload_path}/{image.name}'
-            profile.profile_image = default_storage.save(filename, image)
-            profile.save()
-            logger.info(f"Nueva imagen guardada: {filename}")
-        except Exception as e:
-            logger.error(f"Error al guardar nueva imagen: {str(e)}", exc_info=True)
-            raise
+        # Construir la URL completa
+        image_url = request.build_absolute_uri(settings.MEDIA_URL + full_path)
+        logger.info(f"URL de imagen construida: {image_url}")
 
-        # Serializar respuesta
-        try:
-            serializer = UserSerializer(request.user, context={'request': request})
-            logger.info("Perfil serializado exitosamente")
-            return Response(serializer.data)
-        except Exception as e:
-            logger.error(f"Error al serializar respuesta: {str(e)}", exc_info=True)
-            raise
+        serializer = UserSerializer(request.user, context={'request': request})
+        return Response(serializer.data)
 
     except Exception as e:
-        logger.error(f"Error general en uploadProfileImage: {str(e)}", exc_info=True)
+        logger.error(f"Error en uploadProfileImage: {str(e)}")
         return Response(
             {'error': str(e)},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
-
+    
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def getProfile(request):
@@ -123,10 +120,10 @@ def getProfile(request):
         # Verificar si la imagen existe físicamente
         if profile.profile_image and profile.profile_image.storage.exists(profile.profile_image.name):
             # Construir la URL correcta
-            image_url = request.build_absolute_uri(settings.MEDIA_URL + profile.profile_image.name)
+            image_url = request.build_absolute_uri(settings.MEDIA_URL + profile.profile_image)
             logger.info(f"URL de imagen construida: {image_url}")
         else:
-            logger.warning(f"La imagen no existe en el sistema de archivos: {profile.profile_image.name if profile.profile_image else 'No hay imagen'}")
+            logger.warning(f"La imagen no existe en el sistema de archivos: {profile.profile_image if profile.profile_image else 'No hay imagen'}")
             image_url = None
             
         # Actualizar el perfil con la URL correcta
