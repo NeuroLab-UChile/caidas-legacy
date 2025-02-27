@@ -117,38 +117,28 @@ def uploadProfileImage(request):
 @permission_classes([IsAuthenticated])
 def getProfile(request):
     try:
-        logger.info("="*50)
-        logger.info("Iniciando getProfile")
-        logger.info(f"Usuario: {request.user}")
+        user = request.user
+        profile = user.profile
         
-        if not request.user.is_authenticated:
-            return Response(
-                {'error': 'No autenticado'},
-                status=status.HTTP_401_UNAUTHORIZED
-            )
+        # Verificar si la imagen existe físicamente
+        if profile.profile_image and profile.profile_image.storage.exists(profile.profile_image.name):
+            # Construir la URL correcta
+            image_url = request.build_absolute_uri(settings.MEDIA_URL + profile.profile_image.name)
+            logger.info(f"URL de imagen construida: {image_url}")
+        else:
+            logger.warning(f"La imagen no existe en el sistema de archivos: {profile.profile_image.name if profile.profile_image else 'No hay imagen'}")
+            image_url = None
+            
+        # Actualizar el perfil con la URL correcta
+        profile.profile_image = image_url
         
-        try:
-            profile = request.user.profile
-            # Asegurarse de que la URL de la imagen sea absoluta
-            if profile.profile_image:
-                profile_image_url = get_absolute_url(request, profile.profile_image.url)
-                logger.info(f"URL de imagen de perfil: {profile_image_url}")
-            
-            serializer = UserSerializer(request.user, context={'request': request})
-            logger.info("Perfil serializado exitosamente")
-            return Response(serializer.data)
-            
-        except Exception as e:
-            logger.error(f"Error procesando perfil: {str(e)}")
-            return Response(
-                {'error': str(e)},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
-            
+        serializer = UserSerializer(user, context={'request': request})
+        return Response(serializer.data)
+        
     except Exception as e:
-        logger.error(f"Error general en getProfile: {str(e)}")
+        logger.error(f"Error en getProfile: {str(e)}")
         return Response(
-            {'error': 'Error interno del servidor'},
+            {'error': str(e)},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 

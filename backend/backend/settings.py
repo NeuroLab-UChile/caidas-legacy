@@ -19,7 +19,7 @@ logging.basicConfig(level=logging.DEBUG)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 MEDIA_URL = '/media/'
-DOMAIN = 'http://caidas.uchile.cl'
+DOMAIN = 'https://caidas.uchile.cl'
 # Tamaño máximo de archivo permitido (ejemplo: 100MB)
 DATA_UPLOAD_MAX_MEMORY_SIZE = 104857600  # 100MB
 FILE_UPLOAD_MAX_MEMORY_SIZE = 104857600  # 100MB
