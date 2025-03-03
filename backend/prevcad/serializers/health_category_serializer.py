@@ -2,7 +2,6 @@ from rest_framework import serializers
 from prevcad.models import HealthCategory, CategoryTemplate
 from django.conf import settings
 from prevcad.utils import build_media_url
-from prevcad.serializers.activity_node_serializer import ActivityNodeSerializer
 
 class HealthCategorySerializer(serializers.ModelSerializer):
     # Campos básicos
@@ -21,7 +20,6 @@ class HealthCategorySerializer(serializers.ModelSerializer):
     
     # Campos adicionales
     training_form = serializers.SerializerMethodField()
-    training_nodes = serializers.SerializerMethodField()
 
 
     STATUS_COLORS = {
@@ -44,7 +42,6 @@ class HealthCategorySerializer(serializers.ModelSerializer):
             'status',
             'recommendations',
             'training_form',
-            'training_nodes'
           
        
         
@@ -237,11 +234,7 @@ class HealthCategorySerializer(serializers.ModelSerializer):
             print(f"Error getting recommendations: {str(e)}")
             return None
     def get_training_form(self, obj):
-        training_form = self.get_template_attribute(obj, 'training_form')
-        if training_form:
-            # Usar ActivityNodeSerializer para serializar el nodo
-            return ActivityNodeSerializer(training_form)
-        return None
+        return self.get_template_attribute(obj, 'training_form')
     
 
     def get_default_status(self):
