@@ -1,6 +1,7 @@
 from prevcad.models import CategoryTemplate
 from rest_framework import serializers
 from .activity_node_serializer import ActivityNodeSerializer
+from prevcad.utils import build_media_url
 
 class CategoryTemplateSerializer(serializers.ModelSerializer):
     training_form = serializers.SerializerMethodField()
@@ -35,11 +36,16 @@ class CategoryTemplateSerializer(serializers.ModelSerializer):
             if not training_nodes:
                 return None
 
-            # Usar ActivityNodeSerializer para cada nodo
+            # Serializar nodos con sus media_files
             serialized_nodes = []
             for node in training_nodes:
-                serialized_node = ActivityNodeSerializer(node).data
-                serialized_nodes.append(serialized_node)
+                node_data = ActivityNodeSerializer(node).data
+                
+                # Asegurarse de que media_file se procese correctamente
+                if hasattr(node, 'media_file') and node.media_file:
+                    node_data['media_url'] = build_media_url(node.media_file)
+                
+                serialized_nodes.append(node_data)
 
             return {
                 'training_nodes': serialized_nodes
