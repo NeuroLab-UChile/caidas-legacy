@@ -21,28 +21,40 @@ import os
 from prevcad.utils import build_media_url
 
 # Serializador base para ActivityNode
-class ActivityNodeSerializer(serializers.Serializer):
+class ActivityNodeSerializer(serializers.ModelSerializer):
+    class Meta:
+        fields = ['id', 'title', 'description', 'type', 'next_node_id', 'media_url']
+
     def to_representation(self, instance):
-        # Determinar el tipo de nodo y su representación
-        if isinstance(instance, VideoNode):
-            data = VideoNodeSerializer(instance).data
-            if data.get('media_url'):
-                data['media_url'] = f"https://caidas.uchile.cl/media/training_videos/{data['media_url'].split('/')[-1]}"
-                
-        elif isinstance(instance, ImageNode):
-            data = ImageNodeSerializer(instance).data
-            if data.get('media_url'):
-                data['media_url'] = f"https://caidas.uchile.cl/media/training/{data['media_url'].split('/')[-1]}"
-                
-        elif isinstance(instance, ActivityNodeDescription):
-            data = ActivityNodeDescriptionSerializer(instance).data
-            if data.get('media_url'):
-                data['media_url'] = f"https://caidas.uchile.cl/media/training/{data['media_url'].split('/')[-1]}"
+        print("=== DEBUG SERIALIZACIÓN ===")
+        print(f"Tipo de nodo: {instance.__class__.__name__}")
+        print(f"ID: {instance.id}")
+        
+        # Datos básicos
+        data = {
+            'id': instance.id,
+            'title': getattr(instance, 'title', None),
+            'description': getattr(instance, 'description', None),
+            'type': instance.__class__.__name__.upper(),
+            'next_node_id': getattr(instance, 'next_node_id', None),
+        }
+        
+        # Debug media_file
+        if hasattr(instance, 'media_file'):
+            print(f"media_file: {instance.media_file}")
+            print(f"media_file name: {instance.media_file.name if instance.media_file else 'None'}")
+            print(f"media_file url: {instance.media_file.url if instance.media_file else 'None'}")
             
-        else:
-            data = super().to_representation(instance)
-            
-        print(f"URL serializada: {data.get('media_url')}")  # Debug
+            # Construir URL
+            if instance.media_file:
+                if isinstance(instance, VideoNode):
+                    data['media_url'] = f"https://caidas.uchile.cl/media/training_videos/{instance.media_file.name}"
+                else:
+                    data['media_url'] = f"https://caidas.uchile.cl/media/training/{instance.media_file.name}"
+                print(f"URL final: {data['media_url']}")
+
+        print(f"Datos serializados: {data}")
+        print("========================")
         return data
 
 

@@ -41,9 +41,7 @@ class CategoryTemplateSerializer(serializers.ModelSerializer):
             for node in training_nodes:
                 node_data = ActivityNodeSerializer(node).data
                 
-                # Asegurarse de que media_file se procese correctamente
-                if hasattr(node, 'media_file') and node.media_file:
-                    node_data['media_url'] = build_media_url(node.media_file)
+               
                 
                 serialized_nodes.append(node_data)
 
