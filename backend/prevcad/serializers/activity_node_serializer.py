@@ -27,20 +27,22 @@ class ActivityNodeSerializer(serializers.Serializer):
         if isinstance(instance, VideoNode):
             data = VideoNodeSerializer(instance).data
             if data.get('media_url'):
-                data['media_url'] = f"https://caidas.uchile.cl/media/{data['media_url'].lstrip('/')}"
+                data['media_url'] = f"https://caidas.uchile.cl/media/training_videos/{data['media_url'].split('/')[-1]}"
                 
         elif isinstance(instance, ImageNode):
             data = ImageNodeSerializer(instance).data
             if data.get('media_url'):
-                data['media_url'] = f"https://caidas.uchile.cl/media/{data['media_url'].lstrip('/')}"
+                data['media_url'] = f"https://caidas.uchile.cl/media/training/{data['media_url'].split('/')[-1]}"
                 
         elif isinstance(instance, ActivityNodeDescription):
             data = ActivityNodeDescriptionSerializer(instance).data
+            if data.get('media_url'):
+                data['media_url'] = f"https://caidas.uchile.cl/media/training/{data['media_url'].split('/')[-1]}"
             
         else:
             data = super().to_representation(instance)
             
-        print(f"Serializado {instance.__class__.__name__}: {data}")  # Debug
+        print(f"URL serializada: {data.get('media_url')}")  # Debug
         return data
 
 
