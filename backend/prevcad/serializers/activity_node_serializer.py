@@ -19,6 +19,9 @@ from django.contrib.contenttypes.fields import GenericForeignKey
 from django.conf import settings
 import os
 from prevcad.utils import build_media_url
+import logging
+
+logger = logging.getLogger(__name__)
 
 # Serializador base para ActivityNode
 class ActivityNodeSerializer(serializers.ModelSerializer):
@@ -26,9 +29,9 @@ class ActivityNodeSerializer(serializers.ModelSerializer):
         fields = ['id', 'title', 'description', 'type', 'next_node_id', 'media_url']
 
     def to_representation(self, instance):
-        print("=== DEBUG SERIALIZACIÓN ===")
-        print(f"Tipo de nodo: {instance.__class__.__name__}")
-        print(f"ID: {instance.id}")
+        logger.debug("=== DEBUG SERIALIZACIÓN ===")
+        logger.debug(f"Tipo de nodo: {instance.__class__.__name__}")
+        logger.debug(f"ID: {instance.id}")
         
         # Datos básicos
         data = {
@@ -41,20 +44,18 @@ class ActivityNodeSerializer(serializers.ModelSerializer):
         
         # Debug media_file
         if hasattr(instance, 'media_file'):
-            print(f"media_file: {instance.media_file}")
-            print(f"media_file name: {instance.media_file.name if instance.media_file else 'None'}")
-            print(f"media_file url: {instance.media_file.url if instance.media_file else 'None'}")
+            logger.debug(f"media_file: {instance.media_file}")
+            logger.debug(f"media_file name: {instance.media_file.name if instance.media_file else 'None'}")
             
-            # Construir URL
             if instance.media_file:
                 if isinstance(instance, VideoNode):
                     data['media_url'] = f"https://caidas.uchile.cl/media/training_videos/{instance.media_file.name}"
                 else:
                     data['media_url'] = f"https://caidas.uchile.cl/media/training/{instance.media_file.name}"
-                print(f"URL final: {data['media_url']}")
+                logger.debug(f"URL final: {data['media_url']}")
 
-        print(f"Datos serializados: {data}")
-        print("========================")
+        logger.debug(f"Datos serializados: {data}")
+        logger.debug("========================")
         return data
 
 
