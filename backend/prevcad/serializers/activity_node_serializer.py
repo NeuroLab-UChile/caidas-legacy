@@ -144,10 +144,9 @@ class VideoNodeSerializer(serializers.ModelSerializer):
 
 
     def get_media_url(self, obj):
-        if hasattr(obj, 'media_file'):
-            return build_media_url(obj.media_file)
+        if hasattr(obj, 'media_file') and obj.media_file: 
+            return f"https://caidas.uchile.cl/media/{obj.media_file.name.lstrip('/')}"
         return None
-
 
     
     
@@ -164,11 +163,11 @@ class ImageNodeSerializer(serializers.ModelSerializer):
     class Meta:
         model = ImageNode
         fields = '__all__'
-        extra_fields = ['media_url']
         
     def get_media_url(self, obj):
-        if hasattr(obj, 'media_file'):
-            return build_media_url(obj.media_file)
+        if hasattr(obj, 'media_file') and obj.media_file:
+            # Construir URL absoluta
+            return f"https://caidas.uchile.cl/media/{obj.media_file.name.lstrip('/')}"
         return None
 
 
