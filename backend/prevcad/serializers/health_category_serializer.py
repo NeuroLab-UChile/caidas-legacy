@@ -21,6 +21,7 @@ class HealthCategorySerializer(serializers.ModelSerializer):
     
     # Campos adicionales
     training_form = serializers.SerializerMethodField()
+    training_nodes = serializers.SerializerMethodField()
 
 
     STATUS_COLORS = {
@@ -43,6 +44,7 @@ class HealthCategorySerializer(serializers.ModelSerializer):
             'status',
             'recommendations',
             'training_form',
+            'training_nodes'
           
        
         
