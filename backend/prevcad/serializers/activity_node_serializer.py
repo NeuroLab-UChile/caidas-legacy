@@ -23,30 +23,25 @@ from prevcad.utils import build_media_url
 # Serializador base para ActivityNode
 class ActivityNodeSerializer(serializers.Serializer):
     def to_representation(self, instance):
-        # Determinar el tipo de nodo
-        if isinstance(instance, ActivityNodeDescription):
-            return ActivityNodeDescriptionSerializer(instance).data
-        elif isinstance(instance, TextQuestion):
-            return TextQuestionSerializer(instance).data
-        elif isinstance(instance, SingleChoiceQuestion):
-            return SingleChoiceQuestionSerializer(instance).data
-        elif isinstance(instance, MultipleChoiceQuestion):
-            return MultipleChoiceQuestionSerializer(instance).data
-        elif isinstance(instance, ScaleQuestion):
-            return ScaleQuestionSerializer(instance).data
-        elif isinstance(instance, ImageQuestion):
-            return ImageQuestionSerializer(instance).data
-        elif isinstance(instance, ResultNode):
-            return ResultNodeSerializer(instance).data
-        elif isinstance(instance, WeeklyRecipeNode):
-            return WeeklyRecipeNodeSerializer(instance).data
-        elif isinstance(instance, VideoNode):
-            return VideoNodeSerializer(instance).data
+        # Determinar el tipo de nodo y su representación
+        if isinstance(instance, VideoNode):
+            data = VideoNodeSerializer(instance).data
+            if data.get('media_url'):
+                data['media_url'] = f"https://caidas.uchile.cl/media/{data['media_url'].lstrip('/')}"
+                
         elif isinstance(instance, ImageNode):
-            return ImageNodeSerializer(instance).data
-        elif isinstance(instance, TextNode):
-            return TextNodeSerializer(instance).data
-        return super().to_representation(instance)
+            data = ImageNodeSerializer(instance).data
+            if data.get('media_url'):
+                data['media_url'] = f"https://caidas.uchile.cl/media/{data['media_url'].lstrip('/')}"
+                
+        elif isinstance(instance, ActivityNodeDescription):
+            data = ActivityNodeDescriptionSerializer(instance).data
+            
+        else:
+            data = super().to_representation(instance)
+            
+        print(f"Serializado {instance.__class__.__name__}: {data}")  # Debug
+        return data
 
 
 # Serializadores específicos para cada tipo de nodo
