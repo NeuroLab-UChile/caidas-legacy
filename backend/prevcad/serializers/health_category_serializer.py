@@ -237,20 +237,42 @@ class HealthCategorySerializer(serializers.ModelSerializer):
             return None
     def get_training_form(self, obj):
         try:
-            template = self.get_template_attribute(obj, 'training_form')
-            if template:
-                # Usar ActivityNodeSerializer para serializar los nodos
-                nodes = template.get_nodes()
-                if nodes:
-                    return {
-                        'training_nodes': [
-                            ActivityNodeSerializer(node).data 
-                            for node in nodes
-                        ]
-                    }
-            return None
+            # Obtener el template
+            template = obj.template
+            if not template:
+                print("No hay template")  # Debug
+                return None
+
+            # Obtener el training_form del template
+            training_form = template.training_form
+            if not training_form:
+                print("No hay training_form")  # Debug
+                return None
+
+            # Obtener los nodos
+            nodes = training_form.get_nodes()
+            if not nodes:
+                print("No hay nodos")  # Debug
+                return None
+
+            print(f"Encontrados {len(nodes)} nodos")  # Debug
+            
+            # Serializar los nodos
+            serialized_nodes = []
+            for node in nodes:
+                try:
+                    serialized = ActivityNodeSerializer(node).data
+                    print(f"Nodo serializado: {serialized}")  # Debug
+                    serialized_nodes.append(serialized)
+                except Exception as e:
+                    print(f"Error serializando nodo: {str(e)}")
+
+            return {
+                'training_nodes': serialized_nodes
+            }
+            
         except Exception as e:
-            print(f"Error getting training_form: {str(e)}")
+            print(f"Error en get_training_form: {str(e)}")
             return None
     
 
