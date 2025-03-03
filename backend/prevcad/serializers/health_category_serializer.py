@@ -20,7 +20,7 @@ class HealthCategorySerializer(serializers.ModelSerializer):
     recommendations = serializers.SerializerMethodField()
     
     # Campos adicionales
-    training_form = serializers.SerializerMethodField()
+    training_form = ActivityNodeSerializer(read_only=True)
 
 
     STATUS_COLORS = {
@@ -234,13 +234,6 @@ class HealthCategorySerializer(serializers.ModelSerializer):
         except Exception as e:
             print(f"Error getting recommendations: {str(e)}")
             return None
-    def get_training_form(self, obj):
-        training_form = self.get_template_attribute(obj, 'training_form')
-        if training_form:
-            # Usar ActivityNodeSerializer para serializar el nodo
-            return ActivityNodeSerializer(training_form).data
-        return None
-    
 
     def get_default_status(self):
         """Helper para obtener estado por defecto"""
