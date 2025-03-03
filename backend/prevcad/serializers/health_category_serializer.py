@@ -257,13 +257,15 @@ class HealthCategorySerializer(serializers.ModelSerializer):
         elif hasattr(self, 'image'):
             media_field = build_media_url(self.image)
         elif hasattr(self, 'content') and isinstance(self.content, (models.ImageField, models.FileField)):
-            media_field = build_media_url(self.content)
+            media_field = self.content
             
         if media_field and media_field:
             try:
-                return media_field
-       
-            
+                if request:
+                    return request.build_absolute_uri(media_field.url)
+                # Si no hay request, usar el dominio de settings
+                domain = settings.DOMAIN if hasattr(settings, 'DOMAIN') else ''
+                return f"{domain}{media_field.url}"
             except Exception as e:
                 print(f"Error getting media URL: {e}")
                 return None
