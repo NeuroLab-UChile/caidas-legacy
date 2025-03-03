@@ -20,7 +20,6 @@ class HealthCategorySerializer(serializers.ModelSerializer):
     # Campos adicionales
     training_form = serializers.SerializerMethodField()
 
-
     STATUS_COLORS = {
         'verde': {'color': '#008000', 'text': 'No Riesgoso'},
         'amarillo': {'color': '#FFFF00', 'text': 'Poco Riesgoso'},
@@ -193,35 +192,39 @@ class HealthCategorySerializer(serializers.ModelSerializer):
 
     def get_recommendations(self, obj):
         """Obtener recomendaciones"""
+        from django.conf import settings
         if not obj.template:
             return None
 
         try:
             status = self.get_status(obj)
             recommendation = obj.get_or_create_recommendation()
-
-            if not recommendation:
-                return None
-
-            # Construir URL del video usando build_media_url
-            video_url = None
-            if recommendation.video:
-                video_url = build_media_url(recommendation.video)
-                print(f"Video URL generada: {video_url}")  # Debug
+            request = self.context.get('request')
+            
 
             # Obtener información del profesional
-            professional_info = recommendation.professional_name if hasattr(recommendation, 'professional_name') else recommendation.updated_by
-            professional_role = recommendation.professional_role if hasattr(recommendation, 'professional_role') else None
-
+            professional_info = None
+            professional_role = None
+           
+            
+            if recommendation:
+                if hasattr(recommendation, 'professional_name') and recommendation.professional_name:
+                    professional_info = recommendation.professional_name
+                elif hasattr(recommendation, 'updated_by') and recommendation.updated_by:
+                    professional_info = recommendation.updated_by
+                    
+                if hasattr(recommendation, 'professional_role') and recommendation.professional_role:
+                    professional_role = recommendation.professional_role
+            domain = settings.DOMAIN if hasattr(settings, 'DOMAIN') else ''
             base_recommendation = {
                 'status': {
                     'color': status['color'],
                     'text': status['text']
                 },
-                'text': recommendation.text,
-                'video_url': video_url,  # Usar la URL procesada
-                'updated_at': recommendation.updated_at,
-                'is_draft': recommendation.is_draft,
+                'text': recommendation.text if recommendation else None,
+                'video_url': recommendation.video.url if recommendation.video and recommendation.video.url else None,
+                'updated_at': recommendation.updated_at if recommendation else None,
+                'is_draft': recommendation.is_draft if recommendation else True,
                 'professional': {
                     'name': professional_info,
                     'role': professional_role
@@ -232,6 +235,7 @@ class HealthCategorySerializer(serializers.ModelSerializer):
         except Exception as e:
             print(f"Error getting recommendations: {str(e)}")
             return None
+
     def get_training_form(self, obj):
         return self.get_template_attribute(obj, 'training_form')
     
@@ -252,9 +256,9 @@ class HealthCategorySerializer(serializers.ModelSerializer):
         media_field = None
         
         if hasattr(self, 'video'):
-            media_field = build_media_ur(self.video)
+            media_field = self.video
         elif hasattr(self, 'image'):
-            media_field = build_media_url(self.image)
+            media_field = self.image
         elif hasattr(self, 'content') and isinstance(self.content, (models.ImageField, models.FileField)):
             media_field = self.content
             

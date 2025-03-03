@@ -1,8 +1,8 @@
-from prevcad.models import CategoryTemplate, VideoNode, ImageNode
+from prevcad.models import CategoryTemplate
 from rest_framework import serializers
+import base64
 
 class CategoryTemplateSerializer(serializers.ModelSerializer):
-    training_form = serializers.SerializerMethodField()
 
     class Meta:
         model = CategoryTemplate
@@ -13,43 +13,49 @@ class CategoryTemplateSerializer(serializers.ModelSerializer):
             return obj.get_icon_base64()
         return None
     
-    def get_training_form(self, obj):
+    def serialize_node(self, node):
+        """Helper method para serializar nodos individuales"""
+        from prevcad.serializers.activity_node_serializer import ActivityNodeSerializer
+        
         try:
-            if not obj.training_form:
-                print("No training form found")  # Debug
-                return None
-
-            training_nodes = obj.training_form.get_nodes()
-            if not training_nodes:
-                print("No nodes found")  # Debug
-                return None
-
-            serialized_nodes = []
-            for node in training_nodes:
-                # Forzar URLs completas según el tipo de nodo
-                node_data = {
-                    'id': node.id,
-                    'title': getattr(node, 'title', ''),
-                    'description': getattr(node, 'description', ''),
-                    'type': node.__class__.__name__.upper(),
-                    'next_node_id': getattr(node, 'next_node_id', None),
-                }
-
-                if isinstance(node, VideoNode):
-                    node_data['media_url'] = "https://caidas.uchile.cl/media/training_videos/warmup.mp4"
-                elif isinstance(node, ImageNode):
-                    node_data['media_url'] = "https://caidas.uchile.cl/media/training/balance-exercises.jpg"
-
-                print(f"Node serialized: {node_data}")  # Debug
-                serialized_nodes.append(node_data)
-
-            return {
-                'training_nodes': serialized_nodes
-            }
-
+            serializer = ActivityNodeSerializer(node)
+            return serializer.data
         except Exception as e:
-            print(f"Error in get_training_form: {str(e)}")
+            print(f"Error serializing node {node.id}: {str(e)}")
+            return {}
+
+
+    def get_training_form(self, obj):
+        if not obj.template:
             return None
+        
+        if not obj.template.training_form:
+            return None 
+        
+        training_form = obj.training_form
+        if not training_form:
+            return None
+        
+        training_nodes = training_form.get('training_nodes')
+        if not training_nodes:
+            return None
+        serialized_training_nodes = []
+        for node, index in enumerate(training_nodes):
+          
+            node_data = self.serialize_node(node)
+            print('node_data',node_data)
+     
+            serialized_training_nodes.append(node_data)
+
+
+        print('serialized_training_nodes',serialized_training_nodes)
+        training_form['training_nodes'] = serialized_training_nodes
+      
+            
+                
+            
+        
+        return training_form
     
 
     

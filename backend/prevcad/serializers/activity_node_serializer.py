@@ -19,31 +19,34 @@ from django.contrib.contenttypes.fields import GenericForeignKey
 from django.conf import settings
 import os
 from prevcad.utils import build_media_url
-import logging
-
-logger = logging.getLogger(__name__)
 
 # Serializador base para ActivityNode
-class ActivityNodeSerializer(serializers.ModelSerializer):
-    class Meta:
-        fields = ['id', 'title', 'description', 'type', 'next_node_id', 'media_url']
-
+class ActivityNodeSerializer(serializers.Serializer):
     def to_representation(self, instance):
-        data = {
-            'id': instance.id,
-            'title': getattr(instance, 'title', None),
-            'description': getattr(instance, 'description', None),
-            'type': instance.__class__.__name__.upper(),
-            'next_node_id': getattr(instance, 'next_node_id', None),
-        }
-        
-        # Forzar URL completa para videos y otros archivos
-        if isinstance(instance, VideoNode):
-            data['media_url'] = "https://caidas.uchile.cl/media/training_videos/warmup.mp4"
+        # Determinar el tipo de nodo
+        if isinstance(instance, ActivityNodeDescription):
+            return ActivityNodeDescriptionSerializer(instance).data
+        elif isinstance(instance, TextQuestion):
+            return TextQuestionSerializer(instance).data
+        elif isinstance(instance, SingleChoiceQuestion):
+            return SingleChoiceQuestionSerializer(instance).data
+        elif isinstance(instance, MultipleChoiceQuestion):
+            return MultipleChoiceQuestionSerializer(instance).data
+        elif isinstance(instance, ScaleQuestion):
+            return ScaleQuestionSerializer(instance).data
+        elif isinstance(instance, ImageQuestion):
+            return ImageQuestionSerializer(instance).data
+        elif isinstance(instance, ResultNode):
+            return ResultNodeSerializer(instance).data
+        elif isinstance(instance, WeeklyRecipeNode):
+            return WeeklyRecipeNodeSerializer(instance).data
+        elif isinstance(instance, VideoNode):
+            return VideoNodeSerializer(instance).data
         elif isinstance(instance, ImageNode):
-            data['media_url'] = "https://caidas.uchile.cl/media/training/balance-exercises.jpg"
-            
-        return data
+            return ImageNodeSerializer(instance).data
+        elif isinstance(instance, TextNode):
+            return TextNodeSerializer(instance).data
+        return super().to_representation(instance)
 
 
 # Serializadores específicos para cada tipo de nodo
@@ -141,9 +144,9 @@ class VideoNodeSerializer(serializers.ModelSerializer):
 
 
     def get_media_url(self, obj):
-        if hasattr(obj, 'media_file') and obj.media_file: 
-            return f"https://caidas.uchile.cl/media/{obj.media_file.name.lstrip('/')}"
-        return None
+        request = self.context.get('request')
+        return build_media_url(obj.media_file, request, is_backend=False)
+
 
     
     
@@ -160,12 +163,11 @@ class ImageNodeSerializer(serializers.ModelSerializer):
     class Meta:
         model = ImageNode
         fields = '__all__'
+        extra_fields = ['media_url']
         
     def get_media_url(self, obj):
-        if hasattr(obj, 'media_file') and obj.media_file:
-            # Construir URL absoluta
-            return f"https://caidas.uchile.cl/media/{obj.media_file.name.lstrip('/')}"
-        return None
+        request = self.context.get('request')
+        return build_media_url(obj.media_file, request, is_backend=False)
 
 
 

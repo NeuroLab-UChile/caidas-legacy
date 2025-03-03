@@ -42,7 +42,8 @@ export const VideoNodeView: React.FC<VideoNodeViewProps> = ({
 
   const getVideoUrl = () => {
     if (!data.media_url) return null;
-    return data.media_url;
+    // Asegurarnos de que la URL sea absoluta
+    return `https://caidas.uchile.cl/media/${data.media_url.replace(/^\//, '')}`;
   };
 
   const downloadVideo = async (url: string) => {
