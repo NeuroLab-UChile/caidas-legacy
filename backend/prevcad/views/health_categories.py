@@ -41,6 +41,9 @@ class HealthCategoryListView(APIView):
             if template:
                 # Usar el serializer en lugar de construir el diccionario manualmente
                 serializer = HealthCategorySerializer(category)
+                print(f"serializer.data: {serializer.data}")
+           
+
                 serialized_categories.append(serializer.data)
         
         return Response(serialized_categories)

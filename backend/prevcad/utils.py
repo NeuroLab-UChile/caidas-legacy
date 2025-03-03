@@ -1,35 +1,39 @@
 from django.conf import settings
 import os
 
-def build_media_url(file_field, request=None):
+def build_media_url(file_path, request=None, is_backend=True):
     """
-    Builds an absolute media URL for a file field.
+    Builds a media URL or file path for a file field.
+    
+    Args:
+        file_path: File path
+        request: HttpRequest object (optional)
+        is_backend: Boolean indicating if the request is for backend file operations
+    
+    Returns:
+        str: Media URL or file path depending on is_backend
     """
-    if not file_field:
+    if not file_path:
         return None
         
     try:
-        # Obtener la ruta del archivo
-        if hasattr(file_field, 'url'):
-            file_path = file_field.name
+        if is_backend:
+            # Para operaciones de archivo locales (como get_icon_base64)
+            print(f"file_path: {file_path}")
+            if type(file_path) == str:
+                return os.path.join(settings.MEDIA_ROOT, file_path)
+            else:
+                return os.path.join(settings.MEDIA_ROOT, file_path.name)
+            
+        elif request:
+            # Para URLs absolutas en respuestas API
+            return f"{settings.DOMAIN}/{settings.MEDIA_URL}{file_path}"
         else:
-            file_path = str(file_field)
-
-        # Limpiar la ruta del archivo y quitar cualquier /media/ o /training/ inicial
-        file_path = file_path.replace('\\', '/')
-        file_path = file_path.lstrip('/')
-        file_path = file_path.replace('media/', '')
-        file_path = file_path.replace('training/', '')
-        
-        # Construir URL absoluta
-        domain = getattr(settings, 'DOMAIN', 'https://caidas.uchile.cl')
-        media_url = f"{domain.rstrip('/')}/media/{file_path}"
-        
-        print(f"Input file_path: {file_field}")  # Debug
-        print(f"Processed file_path: {file_path}")  # Debug
-        print(f"Generated media URL: {media_url}")  # Debug
-        
-        return media_url
+            # Para URLs relativas
+            if type(file_path) == str:
+                return f"{settings.DOMAIN}/{settings.MEDIA_URL}{file_path}"
+            else:
+                return f"{settings.DOMAIN}/{settings.MEDIA_URL}{file_path}"
             
     except Exception as e:
         print(f"Error building media URL: {str(e)}")
