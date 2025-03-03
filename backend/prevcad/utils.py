@@ -27,7 +27,7 @@ def build_media_url(file_path, request=None, is_backend=True):
             
         elif request:
             # Para URLs absolutas en respuestas API
-            return request.build_absolute_uri(f"{settings.MEDIA_URL}{file_path}")
+            return f"{settings.DOMAIN}/{settings.MEDIA_URL}{file_path}"
         else:
             # Para URLs relativas
             if type(file_path) == str:
