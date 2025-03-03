@@ -1,8 +1,9 @@
 from prevcad.models import CategoryTemplate
 from rest_framework import serializers
-import base64
+from .activity_node_serializer import ActivityNodeSerializer
 
 class CategoryTemplateSerializer(serializers.ModelSerializer):
+    training_form = serializers.SerializerMethodField()
 
     class Meta:
         model = CategoryTemplate
@@ -24,38 +25,35 @@ class CategoryTemplateSerializer(serializers.ModelSerializer):
             print(f"Error serializing node {node.id}: {str(e)}")
             return {}
 
-
     def get_training_form(self, obj):
-        if not obj.template:
-            return None
-        
-        if not obj.template.training_form:
-            return None 
-        
-        training_form = obj.training_form
-        if not training_form:
-            return None
-        
-        training_nodes = training_form.get('training_nodes')
-        if not training_nodes:
-            return None
-        serialized_training_nodes = []
-        for node, index in enumerate(training_nodes):
-          
-            node_data = self.serialize_node(node)
-            print('node_data',node_data)
-     
-            serialized_training_nodes.append(node_data)
+        try:
+            if not obj.training_form:
+                return None
 
+            # Obtener los nodos de entrenamiento
+            training_nodes = obj.training_form.get_nodes()
+            if not training_nodes:
+                return None
 
-        print('serialized_training_nodes',serialized_training_nodes)
-        training_form['training_nodes'] = serialized_training_nodes
-      
-            
-                
-            
-        
-        return training_form
+            # Serializar cada nodo usando ActivityNodeSerializer
+            serialized_nodes = []
+            for node in training_nodes:
+                try:
+                    serialized_node = ActivityNodeSerializer(node).data
+                    print(f"Nodo serializado: {serialized_node}")  # Debug
+                    serialized_nodes.append(serialized_node)
+                except Exception as e:
+                    print(f"Error serializando nodo: {str(e)}")
+                    continue
+
+            print(f"Total nodos serializados: {len(serialized_nodes)}")  # Debug
+            return {
+                'training_nodes': serialized_nodes
+            }
+
+        except Exception as e:
+            print(f"Error en get_training_form: {str(e)}")
+            return None
     
 
     
