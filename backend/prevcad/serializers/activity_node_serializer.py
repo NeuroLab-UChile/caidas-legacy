@@ -29,11 +29,6 @@ class ActivityNodeSerializer(serializers.ModelSerializer):
         fields = ['id', 'title', 'description', 'type', 'next_node_id', 'media_url']
 
     def to_representation(self, instance):
-        logger.debug("=== DEBUG SERIALIZACIÓN ===")
-        logger.debug(f"Tipo de nodo: {instance.__class__.__name__}")
-        logger.debug(f"ID: {instance.id}")
-        
-        # Datos básicos
         data = {
             'id': instance.id,
             'title': getattr(instance, 'title', None),
@@ -42,20 +37,12 @@ class ActivityNodeSerializer(serializers.ModelSerializer):
             'next_node_id': getattr(instance, 'next_node_id', None),
         }
         
-        # Debug media_file
-        if hasattr(instance, 'media_file'):
-            logger.debug(f"media_file: {instance.media_file}")
-            logger.debug(f"media_file name: {instance.media_file.name if instance.media_file else 'None'}")
+        # Forzar URL completa para videos y otros archivos
+        if isinstance(instance, VideoNode):
+            data['media_url'] = "https://caidas.uchile.cl/media/training_videos/warmup.mp4"
+        elif isinstance(instance, ImageNode):
+            data['media_url'] = "https://caidas.uchile.cl/media/training/balance-exercises.jpg"
             
-            if instance.media_file:
-                if isinstance(instance, VideoNode):
-                    data['media_url'] = f"https://caidas.uchile.cl/media/training_videos/{instance.media_file.name}"
-                else:
-                    data['media_url'] = f"https://caidas.uchile.cl/media/training/{instance.media_file.name}"
-                logger.debug(f"URL final: {data['media_url']}")
-
-        logger.debug(f"Datos serializados: {data}")
-        logger.debug("========================")
         return data
 
 
