@@ -144,8 +144,9 @@ class VideoNodeSerializer(serializers.ModelSerializer):
 
 
     def get_media_url(self, obj):
-        request = self.context.get('request')
-        return build_media_url(obj.media_file, request, is_backend=False)
+        if hasattr(obj, 'media_file'):
+            return build_media_url(obj.media_file)
+        return None
 
 
     
@@ -166,8 +167,9 @@ class ImageNodeSerializer(serializers.ModelSerializer):
         extra_fields = ['media_url']
         
     def get_media_url(self, obj):
-        request = self.context.get('request')
-        return build_media_url(obj.media_file, request, is_backend=False)
+        if hasattr(obj, 'media_file'):
+            return build_media_url(obj.media_file)
+        return None
 
 
 
