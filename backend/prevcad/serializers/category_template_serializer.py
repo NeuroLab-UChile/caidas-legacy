@@ -35,22 +35,15 @@ class CategoryTemplateSerializer(serializers.ModelSerializer):
             if not training_nodes:
                 return None
 
-            # Serializar cada nodo usando ActivityNodeSerializer
+            # Usar ActivityNodeSerializer para cada nodo
             serialized_nodes = []
             for node in training_nodes:
-                try:
-                    serialized_node = ActivityNodeSerializer(node).data
-                    print(f"Nodo serializado: {serialized_node}")  # Debug
-                    serialized_nodes.append(serialized_node)
-                except Exception as e:
-                    print(f"Error serializando nodo: {str(e)}")
-                    continue
+                serialized_node = ActivityNodeSerializer(node).data
+                serialized_nodes.append(serialized_node)
 
-            print(f"Total nodos serializados: {len(serialized_nodes)}")  # Debug
             return {
                 'training_nodes': serialized_nodes
             }
-
         except Exception as e:
             print(f"Error en get_training_form: {str(e)}")
             return None
