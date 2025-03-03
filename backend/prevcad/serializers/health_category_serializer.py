@@ -1,9 +1,6 @@
 from rest_framework import serializers
 from prevcad.models import HealthCategory, CategoryTemplate
 from django.conf import settings
-from prevcad.utils import build_media_url
-from .category_template_serializer import CategoryTemplateSerializer
-from .activity_node_serializer import ActivityNodeSerializer
 
 class HealthCategorySerializer(serializers.ModelSerializer):
     # Campos básicos
@@ -236,15 +233,7 @@ class HealthCategorySerializer(serializers.ModelSerializer):
             print(f"Error getting recommendations: {str(e)}")
             return None
     def get_training_form(self, obj):
-        try:
-            if obj.template and obj.template.training_form:
-                return {
-                    'training_nodes': obj.template.training_form.get_nodes()
-                }
-            return None
-        except Exception as e:
-            print(f"Error en get_training_form: {str(e)}")
-            return None
+        return self.get_template_attribute(obj, 'training_form')
     
 
     def get_default_status(self):
@@ -263,7 +252,7 @@ class HealthCategorySerializer(serializers.ModelSerializer):
         media_field = None
         
         if hasattr(self, 'video'):
-            media_field = build_media_url(self.video)
+            media_field = build_media_ur(self.video)
         elif hasattr(self, 'image'):
             media_field = build_media_url(self.image)
         elif hasattr(self, 'content') and isinstance(self.content, (models.ImageField, models.FileField)):
