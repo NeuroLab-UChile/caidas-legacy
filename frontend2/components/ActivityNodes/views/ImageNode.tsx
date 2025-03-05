@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { theme } from "@/src/theme";
+import { getMediaUrl } from '@/utils/mediaUrl';
 
 interface ImageNodeViewProps {
   data: {
@@ -27,18 +28,29 @@ export const ImageNodeView: React.FC<ImageNodeViewProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  console.log('ImageNodeView data:', data);
+  const imageUrl = getMediaUrl(data?.media_url || '');
+  console.log('ImageNodeView imageUrl:', imageUrl);
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>{data.description}</Text>
 
       <View style={styles.imageContainer}>
-        {data.media_url && !error && (
+        {imageUrl && !error && (
           <Image
-            source={{ uri: data.media_url }}
+            source={{ uri: imageUrl }}
             style={styles.image}
-            onLoadStart={() => setIsLoading(true)}
-            onLoad={() => setIsLoading(false)}
-            onError={() => {
+            onLoadStart={() => {
+              console.log('Image loading started:', imageUrl);
+              setIsLoading(true);
+            }}
+            onLoad={() => {
+              console.log('Image loaded successfully:', imageUrl);
+              setIsLoading(false);
+            }}
+            onError={(error) => {
+              console.error('Image load error:', error);
               setError("Error al cargar la imagen");
               setIsLoading(false);
             }}
@@ -51,7 +63,7 @@ export const ImageNodeView: React.FC<ImageNodeViewProps> = ({
             <Text style={styles.errorText}>Error: {error}</Text>
             {__DEV__ && (
               <Text style={styles.debugText}>
-                URL de la imagen: {data.media_url || "No URL"}
+                URL de la imagen: {imageUrl || "No URL"}
               </Text>
             )}
           </View>

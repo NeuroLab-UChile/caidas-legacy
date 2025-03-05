@@ -4,6 +4,7 @@ import { ScrollView } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
 import { theme } from "@/src/theme";
+import { getMediaUrl } from '@/utils/mediaUrl';
 
 interface ImageQuestionProps {
   data: {
@@ -81,6 +82,8 @@ export function ImageQuestionView({ data, setResponse }: ImageQuestionProps) {
     setResponse({ answer: [] });
   }, []);
 
+  const imageUrl = data.image ? getMediaUrl(data.image) : null;
+
   if (!data) {
     console.error("Missing required data in ImageQuestionView");
     return null;
@@ -89,6 +92,14 @@ export function ImageQuestionView({ data, setResponse }: ImageQuestionProps) {
   return (
     <View style={theme.components.node.container}>
       <Text style={theme.components.node.question}>{data.question}</Text>
+
+      {imageUrl && (
+        <Image
+          source={{ uri: imageUrl }}
+          style={styles.questionImage}
+          resizeMode="contain"
+        />
+      )}
 
       <ScrollView horizontal style={styles.imagesScrollView}>
         {selectedImages.map((image, index) => (
@@ -194,5 +205,11 @@ const styles = StyleSheet.create({
     right: -10,
     backgroundColor: theme.colors.background,
     borderRadius: 12,
+  },
+  questionImage: {
+    width: '100%',
+    height: 200,
+    marginVertical: 12,
+    borderRadius: 8,
   },
 });
