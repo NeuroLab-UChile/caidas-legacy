@@ -12,10 +12,11 @@ https://docs.djangoproject.com/en/2.2/ref/settings/
 
 import os
 import logging
-from pathlib import Path
+logging.basicConfig(level=logging.DEBUG)
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Build paths inside the project like this: os.path.join(BASE_DIR, ...)
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 MEDIA_URL = '/media/'
 DOMAIN = 'https://caidas.uchile.cl'
@@ -23,16 +24,24 @@ DOMAIN = 'https://caidas.uchile.cl'
 DATA_UPLOAD_MAX_MEMORY_SIZE = 104857600  # 100MB
 FILE_UPLOAD_MAX_MEMORY_SIZE = 104857600  # 100MB
 
-# Detectar si estamos en Apache
-def is_running_in_apache():
-    return 'mod_wsgi' in str(os.environ.get('SERVER_SOFTWARE', ''))
+
+
+
+# Quick-start development settings - unsuitable for production
+# See https://docs.djangoproject.com/en/2.2/howto/deployment/checklist/
+
+# SECURITY WARNING: keep the secret key used in production secret!
+SECRET_KEY = '@f7g(%shzq5li)m=vs_##1-jm(hh&-s!k$f*70f%96q4r_*s@7'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = not is_running_in_apache()
+DEBUG = False
 
 ALLOWED_HOSTS = [
     '*'
+
 ]
+
+
 
 CORS_ALLOW_ALL_ORIGINS = True
 
@@ -47,6 +56,7 @@ CORS_ALLOW_METHODS = [
     "POST",
     "PUT",
 ]
+
 
 CORS_ORIGIN_ALLOW_ALL = True
 
@@ -82,6 +92,7 @@ INSTALLED_APPS = [
     'prevcad',
     'rest_framework_simplejwt',
     'django_admin_tailwind',
+
 ]
 
 MIDDLEWARE = [
@@ -109,6 +120,7 @@ REST_FRAMEWORK = {
 }
 
 ROOT_URLCONF = 'backend.urls'
+
 
 from datetime import timedelta
 
@@ -141,6 +153,7 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'backend.wsgi.application'
 
+
 # Database
 # https://docs.djangoproject.com/en/2.2/ref/settings/#databases
 
@@ -150,6 +163,7 @@ DATABASES = {
         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
     }
 }
+
 
 # Password validation
 # https://docs.djangoproject.com/en/2.2/ref/settings/#auth-password-validators
@@ -168,6 +182,7 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
+
 
 # Internationalization
 # https://docs.djangoproject.com/en/2.2/topics/i18n/
@@ -191,6 +206,7 @@ LOCALE_PATHS = [
     os.path.join(BASE_DIR, 'locale'),
 ]
 
+
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/2.2/howto/static-files/
 
@@ -210,110 +226,40 @@ INTERNAL_IPS = [
     "127.0.0.1",
     "192.168.1.5",
     "192.168.100.29",
+    
 ]
 
 # Configuración de django-admin-tailwind
 
-# Configuración de logging según el entorno
-if DEBUG:
-    # Configuración para desarrollo
-    LOGGING = {
-        'version': 1,
-        'disable_existing_loggers': False,
-        'handlers': {
-            'console': {
-                'class': 'logging.StreamHandler',
-            },
+# Configuración de logs
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'style': '{',
         },
-        'root': {
-            'handlers': ['console'],
+    },
+    'handlers': {
+        'file': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': '/var/log/django/django.log',  # Ruta absoluta
+            'formatter': 'verbose',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['file'],
             'level': 'INFO',
+            'propagate': True,
         },
-        'loggers': {
-            'django': {
-                'handlers': ['console'],
-                'level': os.getenv('DJANGO_LOG_LEVEL', 'INFO'),
-                'propagate': False,
-            },
-        },
-    }
-else:
-    # Configuración para producción
-    LOG_DIR = '/var/log/weflow'
-    
-    # Crear directorio de logs si no existe
-    if not os.path.exists(LOG_DIR):
-        try:
-            os.makedirs(LOG_DIR)
-        except Exception as e:
-            print(f"No se pudo crear el directorio de logs: {e}")
-            LOG_DIR = '/tmp'  # Fallback a /tmp si no se puede crear el directorio
+    },
+}
 
-    LOGGING = {
-        'version': 1,
-        'disable_existing_loggers': False,
-        'formatters': {
-            'verbose': {
-                'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
-                'style': '{',
-            },
-        },
-        'handlers': {
-            'file': {
-                'class': 'logging.FileHandler',
-                'filename': os.path.join(LOG_DIR, 'django.log'),
-                'formatter': 'verbose',
-                'mode': 'a',  # append mode
-            },
-            'error_file': {
-                'class': 'logging.FileHandler',
-                'filename': os.path.join(LOG_DIR, 'error.log'),
-                'formatter': 'verbose',
-                'mode': 'a',
-                'level': 'ERROR',
-            },
-        },
-        'root': {
-            'handlers': ['file', 'error_file'],
-            'level': 'INFO',
-        },
-        'loggers': {
-            'django': {
-                'handlers': ['file', 'error_file'],
-                'level': 'INFO',
-                'propagate': False,
-            },
-            'django.request': {
-                'handlers': ['error_file'],
-                'level': 'ERROR',
-                'propagate': False,
-            },
-        },
-    }
-
-    # Asegurar que los archivos de log son escribibles
-    try:
-        for handler in ['file', 'error_file']:
-            log_file = LOGGING['handlers'][handler]['filename']
-            # Crear archivo si no existe
-            if not os.path.exists(log_file):
-                open(log_file, 'a').close()
-            # Establecer permisos
-            os.chmod(log_file, 0o666)
-    except Exception as e:
-        print(f"Error configurando permisos de logs: {e}")
-        # Fallback a logging simple si hay errores
-        LOGGING = {
-            'version': 1,
-            'disable_existing_loggers': False,
-            'handlers': {
-                'console': {
-                    'class': 'logging.StreamHandler',
-                },
-            },
-            'root': {
-                'handlers': ['console'],
-                'level': 'INFO',
-            },
-        }
+# Asegurarse de que el archivo de log existe y tiene los permisos correctos
+LOG_FILE = os.path.join(BASE_DIR, 'django.log')
+if not os.path.exists(LOG_FILE):
+    open(LOG_FILE, 'a').close()
 
