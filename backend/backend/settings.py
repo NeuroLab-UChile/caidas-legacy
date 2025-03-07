@@ -12,7 +12,7 @@ https://docs.djangoproject.com/en/2.2/ref/settings/
 
 import os
 import logging
-
+logging.basicConfig(level=logging.DEBUG)
 
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
@@ -262,4 +262,3 @@ LOGGING = {
 LOG_FILE = os.path.join(BASE_DIR, 'django.log')
 if not os.path.exists(LOG_FILE):
     open(LOG_FILE, 'a').close()
-
