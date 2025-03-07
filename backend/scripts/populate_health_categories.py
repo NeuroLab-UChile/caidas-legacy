@@ -23,25 +23,61 @@ def process_training_nodes(training_form):
     for i in range(len(nodes)):
         nodes[i]['next_node_id'] = nodes[i + 1]['id'] if i < len(nodes) - 1 else None
 
+        # Procesar media_url si existe
         if 'media_url' in nodes[i] and nodes[i]['media_url']:
-            if nodes[i]['media_url'].startswith('/training/'):
-                # Construir rutas
-                source_video = os.path.join(settings.BASE_DIR, 'assets', nodes[i]['media_url'].lstrip('/'))
+            media_url = nodes[i]['media_url']
+            print(f"Procesando media_url: {media_url}")
+
+            # Construir rutas absolutas
+            if media_url.startswith('training/'):
+                source_video = os.path.join(settings.BASE_DIR, 'assets', media_url.lstrip('/'))
+                video_filename = os.path.basename(media_url)
                 dest_folder = os.path.join(settings.MEDIA_ROOT, 'training_videos')
-                video_filename = os.path.basename(nodes[i]['media_url'])
                 dest_video = os.path.join(dest_folder, video_filename)
+
+                print(f"Origen: {source_video}")
+                print(f"Destino: {dest_video}")
 
                 os.makedirs(dest_folder, exist_ok=True)
 
                 try:
                     if os.path.exists(source_video):
                         shutil.copy2(source_video, dest_video)
-                        nodes[i]['media_url'] = f'training_videos/{video_filename}'
-                        print(f"Video copiado exitosamente: {video_filename}")
+                        # Actualizar la URL para que sea relativa a MEDIA_ROOT
+                        nodes[i]['media_url'] = f'/media/training_videos/{video_filename}'
+                        print(f"✅ Video copiado exitosamente: {video_filename}")
+                        print(f"Nueva media_url: {nodes[i]['media_url']}")
                     else:
-                        print(f"Video no encontrado: {source_video}")
+                        print(f"❌ Video no encontrado en: {source_video}")
                 except Exception as e:
-                    print(f"Error copiando video {video_filename}: {e}")
+                    print(f"❌ Error copiando video {video_filename}: {e}")
+            else:
+                print(f"⚠️ URL no procesada (no comienza con /training/): {media_url}")
+
+        # Procesar media si existe
+        if 'media' in nodes[i] and nodes[i]['media']:
+            for media_item in nodes[i]['media']:
+                if 'file' in media_item and (media_item['file'].get('uri') or media_item['file'].get('url')):
+                    original_url = media_item['file'].get('uri') or media_item['file'].get('url')
+                    if original_url and original_url.startswith('/training/'):
+                        source_video = os.path.join(settings.BASE_DIR, 'assets', original_url.lstrip('/'))
+                        video_filename = os.path.basename(original_url)
+                        dest_folder = os.path.join(settings.MEDIA_ROOT, 'training_videos')
+                        dest_video = os.path.join(dest_folder, video_filename)
+
+                        os.makedirs(dest_folder, exist_ok=True)
+
+                        try:
+                            if os.path.exists(source_video):
+                                shutil.copy2(source_video, dest_video)
+                                # Actualizar tanto uri como url
+                                media_item['file']['uri'] = f'/media/training_videos/{video_filename}'
+                                media_item['file']['url'] = f'/media/training_videos/{video_filename}'
+                                print(f"✅ Video en media copiado exitosamente: {video_filename}")
+                            else:
+                                print(f"❌ Video en media no encontrado: {source_video}")
+                        except Exception as e:
+                            print(f"❌ Error copiando video en media {video_filename}: {e}")
 
     return training_form
 

@@ -110,14 +110,14 @@
           "type": "DESCRIPTION_NODE",
           "title": "Introducción al Riesgo Domiciliario",
           "description": "Aprenda a identificar y reducir los riesgos más comunes en su hogar, desde evitar tropiezos hasta mejorar la iluminación en pasillos y escaleras.",
-          "media_url": "/training/home-safety.jpg"
+          "media_url": "training/home-safety.jpg"
         },
         {
           "id": 2,
           "type": "VIDEO_NODE",
           "title": "Prevención de Caídas",
           "description": "Este video le enseñará técnicas prácticas para minimizar riesgos de caídas, como el uso de barandillas y alfombras antideslizantes.",
-          "media_url": "/training/fall-prevention.mp4"
+          "media_url": "training/fall-prevention.mp4"
         }
       ]
     }
@@ -142,21 +142,21 @@
           "type": "VIDEO_NODE",
           "title": "Calentamiento Básico",
           "description": "Aprende la rutina de calentamiento esencial antes de cualquier actividad física",
-          "media_url": "/training/warmup.mp4"
+          "media_url": "training/warmup.mp4"
         },
         {
           "id": 2,
           "type": "IMAGE_NODE",
           "title": "Ejercicios de Equilibrio",
           "description": "Serie de ejercicios ilustrados para mejorar tu equilibrio y estabilidad",
-          "media_url": "/training/balance-exercises.jpg"
+          "media_url": "training/balance-exercises.jpg"
         },
         {
           "id": 3,
           "type": "DESCRIPTION_NODE",
           "title": "Guía de Progresión",
           "description": "Aprende cómo aumentar gradualmente la intensidad de tus ejercicios de manera segura",
-          "media_url": "/training/progression-guide.jpg"
+          "media_url": "training/progression-guide.jpg"
         },
         {
           "id": 4,
@@ -217,7 +217,7 @@
           "type": "VIDEO_NODE",
           "title": "Preparación de Comidas Saludables",
           "description": "Aprende a preparar platos nutritivos y balanceados",
-          "media_url": "/training/healthy-cooking.mp4"
+          "media_url": "training/healthy-cooking.mp4"
         },
         {
           "id": 2,
@@ -351,7 +351,7 @@
           "type": "IMAGE_NODE",
           "title": "Guía de Porciones",
           "description": "Aprende a medir las porciones adecuadas de cada grupo alimenticio",
-          "media_url": "/training/portion-guide.jpg"
+          "media_url": "training/portion-guide.jpg"
         }
       ]
     }
@@ -377,7 +377,7 @@
           "type": "VIDEO_NODE",
           "title": "Consejos para Mejorar la Visión y Audición",
           "description": "Aprenda ejercicios y hábitos para mantener la salud de sus sentidos.",
-          "media_url": "/training/sensory-health.mp4"
+          "media_url": "training/sensory-health.mp4"
         }
       ]
     }
@@ -403,7 +403,7 @@
           "type": "DESCRIPTION_NODE",
           "title": "Guía para un Uso Seguro de Medicamentos",
           "description": "Descubra cómo evitar interacciones adversas y efectos secundarios con un uso adecuado de medicamentos.",
-          "media_url": "/training/medication-safety.jpg"
+          "media_url": "training/medication-safety.jpg"
         }
       ]
     }
@@ -429,7 +429,7 @@
           "type": "VIDEO_NODE",
           "title": "Técnicas para Mejorar la Atención",
           "description": "Aprenda estrategias prácticas para mantener la concentración y un estado de ánimo positivo.",
-          "media_url": "/training/mind-techniques.mp4"
+          "media_url": "training/mind-techniques.mp4"
         }
       ]
     }
@@ -454,7 +454,7 @@
           "type": "DESCRIPTION_NODE",
           "title": "Cómo Evitar Caídas Futuras",
           "description": "Guía práctica con recomendaciones personalizadas para reducir incidentes relacionados con caídas.",
-          "media_url": "/training/prevent-falls.jpg"
+          "media_url": "training/prevent-falls.jpg"
         }
       ]
     }
@@ -480,7 +480,7 @@
           "type": "VIDEO_NODE",
           "title": "Ejercicios para Fortalecer Huesos y Músculos",
           "description": "Videos enfocados en ejercicios para mejorar la densidad ósea y la fuerza muscular.",
-          "media_url": "/training/bone-muscle-health.mp4"
+          "media_url": "training/bone-muscle-health.mp4"
         }
       ]
     }

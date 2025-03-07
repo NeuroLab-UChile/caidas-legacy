@@ -4,7 +4,7 @@ import { ScrollView } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
 import { theme } from "@/src/theme";
-import { getMediaUrl } from '@/utils/mediaUrl';
+
 
 interface ImageQuestionProps {
   data: {
@@ -82,7 +82,7 @@ export function ImageQuestionView({ data, setResponse }: ImageQuestionProps) {
     setResponse({ answer: [] });
   }, []);
 
-  const imageUrl = data.image ? getMediaUrl(data.image) : null;
+  const imageUrl = data.image 
 
   if (!data) {
     console.error("Missing required data in ImageQuestionView");

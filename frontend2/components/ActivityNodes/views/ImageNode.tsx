@@ -9,7 +9,7 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { theme } from "@/src/theme";
-import { getMediaUrl } from '@/utils/mediaUrl';
+
 
 interface ImageNodeViewProps {
   data: {
@@ -29,7 +29,7 @@ export const ImageNodeView: React.FC<ImageNodeViewProps> = ({
   const [error, setError] = useState<string | null>(null);
 
   console.log('ImageNodeView data:', data);
-  const imageUrl = getMediaUrl(data?.media_url || '');
+  const imageUrl = data?.media_url || ''
   console.log('ImageNodeView imageUrl:', imageUrl);
 
   return (

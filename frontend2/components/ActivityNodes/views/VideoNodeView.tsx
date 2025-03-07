@@ -10,7 +10,7 @@ import {
 import { Video } from "expo-av";
 import * as FileSystem from "expo-file-system";
 import { theme } from "@/src/theme";
-import { getMediaUrl } from '@/utils/mediaUrl';
+
 
 interface VideoNodeViewProps {
   data: {
@@ -42,7 +42,7 @@ export const VideoNodeView: React.FC<VideoNodeViewProps> = ({
   const [isVideoComplete, setIsVideoComplete] = useState(false);
 
   const getVideoUrl = () => {
-    return getMediaUrl(data?.media_url || '');
+    return data?.media_url ;
   };
 
   const downloadVideo = async (url: string) => {

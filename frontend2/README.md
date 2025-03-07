@@ -62,3 +62,6 @@ adb uninstall com.anonymous.frontend2
 
 # Instala la nueva versión
 adb install android/app/build/outputs/apk/release/app-release.apk
+
+# Ver logs android
+adb logcat | grep -i "ReactNative"
