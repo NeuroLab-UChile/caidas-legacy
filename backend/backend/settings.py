@@ -12,11 +12,10 @@ https://docs.djangoproject.com/en/2.2/ref/settings/
 
 import os
 import logging
-logging.basicConfig(level=logging.DEBUG)
+from pathlib import Path
 
-
-# Build paths inside the project like this: os.path.join(BASE_DIR, ...)
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# Build paths inside the project like this: BASE_DIR / 'subdir'.
+BASE_DIR = Path(__file__).resolve().parent.parent
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 MEDIA_URL = '/media/'
 DOMAIN = 'https://caidas.uchile.cl'
@@ -24,24 +23,15 @@ DOMAIN = 'https://caidas.uchile.cl'
 DATA_UPLOAD_MAX_MEMORY_SIZE = 104857600  # 100MB
 FILE_UPLOAD_MAX_MEMORY_SIZE = 104857600  # 100MB
 
-
-
-
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/2.2/howto/deployment/checklist/
-
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = '@f7g(%shzq5li)m=vs_##1-jm(hh&-s!k$f*70f%96q4r_*s@7'
+SECRET_KEY = 'q&+7^y)e=2(mxuoakzn1ye0wxzwr==15)-0lr_hqy4t$1)sc3o'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = [
     '*'
-
 ]
-
-
 
 CORS_ALLOW_ALL_ORIGINS = True
 
@@ -56,7 +46,6 @@ CORS_ALLOW_METHODS = [
     "POST",
     "PUT",
 ]
-
 
 CORS_ORIGIN_ALLOW_ALL = True
 
@@ -92,7 +81,6 @@ INSTALLED_APPS = [
     'prevcad',
     'rest_framework_simplejwt',
     'django_admin_tailwind',
-
 ]
 
 MIDDLEWARE = [
@@ -120,7 +108,6 @@ REST_FRAMEWORK = {
 }
 
 ROOT_URLCONF = 'backend.urls'
-
 
 from datetime import timedelta
 
@@ -153,7 +140,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'backend.wsgi.application'
 
-
 # Database
 # https://docs.djangoproject.com/en/2.2/ref/settings/#databases
 
@@ -163,7 +149,6 @@ DATABASES = {
         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/2.2/ref/settings/#auth-password-validators
@@ -182,7 +167,6 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
-
 
 # Internationalization
 # https://docs.djangoproject.com/en/2.2/topics/i18n/
@@ -206,7 +190,6 @@ LOCALE_PATHS = [
     os.path.join(BASE_DIR, 'locale'),
 ]
 
-
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/2.2/howto/static-files/
 
@@ -226,7 +209,6 @@ INTERNAL_IPS = [
     "127.0.0.1",
     "192.168.1.5",
     "192.168.100.29",
-    
 ]
 
 # Configuración de django-admin-tailwind
@@ -245,7 +227,7 @@ LOGGING = {
         'file': {
             'level': 'DEBUG',
             'class': 'logging.FileHandler',
-            'filename': '/var/log/django/django.log',  # Ruta absoluta
+            'filename': '/var/log/weflow/django.log',  # Cambiado a weflow
             'formatter': 'verbose',
         },
     },
