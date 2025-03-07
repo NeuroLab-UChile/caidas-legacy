@@ -1,7 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from prevcad.models import UserProfile
-from django.conf import settings
 
 class UserProfileSerializer(serializers.ModelSerializer):
     profile_image = serializers.SerializerMethodField()
@@ -15,19 +14,10 @@ class UserProfileSerializer(serializers.ModelSerializer):
         fields = ['profile_image', 'phone', 'birth_date', 'role', 'first_name', 'last_name', 'email', 'username']
 
     def get_profile_image(self, obj):
-        """
-        Retorna la URL completa de la imagen de perfil o None si no existe
-        """
-        if obj and obj.profile_image:
+        if obj.profile_image:
             request = self.context.get('request')
             if request:
-                try:
-                    return request.build_absolute_uri(obj.profile_image.url)
-                except Exception as e:
-                    print(f"Error getting profile image URL: {e}")
-                    return None
-            # Si no hay request, usar la URL relativa
-            return obj.profile_image.url if obj.profile_image else None
+                return request.build_absolute_uri(obj.profile_image.url)
         return None
 
 class UserSerializer(serializers.ModelSerializer):
@@ -52,7 +42,7 @@ class UserSerializer(serializers.ModelSerializer):
         # Serializar el perfil con el contexto correcto
         profile_serializer = UserProfileSerializer(
             instance.profile,
-            context={'request': self.context.get('request')}
+            context=self.context
         )
         ret['profile'] = profile_serializer.data
         
