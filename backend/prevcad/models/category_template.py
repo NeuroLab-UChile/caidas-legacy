@@ -5,7 +5,7 @@ import os
 from django.conf import settings
 from django.db.models.signals import post_save, m2m_changed
 from django.dispatch import receiver
-from .user_types import UserTypes
+from .user_types import UserTypes, ResourceType
 from django.core.exceptions import ValidationError
 from prevcad.utils import build_media_url
 
@@ -113,18 +113,26 @@ class CategoryTemplate(models.Model):
                     'allowed_editor_roles': f'Roles inválidos: {", ".join(invalid_roles)}'
                 })
 
-  def can_user_edit(self, user_profile):
-        """
-        Verifica si un usuario puede editar instancias basadas en este template
-        """
+  def can_user_edit(self, user_profile) -> bool:
+        """Verifica si un usuario puede editar este template."""
         if not user_profile or self.is_readonly:
             return False
             
-        # Admins siempre pueden editar
-        if user_profile.is_staff_member():
-            return True
+        # Verificar permisos específicos
+        return user_profile.has_permission(
+            ResourceType.TEMPLATES.value, 
+            'change'
+        )
+
+  def can_user_view(self, user_profile) -> bool:
+        """Verifica si un usuario puede ver este template."""
+        if not user_profile:
+            return False
             
-        return user_profile.role in self.allowed_editor_roles
+        return user_profile.has_permission(
+            ResourceType.TEMPLATES.value, 
+            'view'
+        )
 
   def update_instance_editors(self):
         """

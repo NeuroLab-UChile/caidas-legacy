@@ -55,30 +55,53 @@ export default function ActionScreen() {
     );
   }
 
-  const renderIcon = (iconUrl: string) => {
+  const renderIcon = (iconUrl: string | null) => {
     try {
-      if (!iconUrl) return null;
-      
-      // Si es base64 (para compatibilidad con versiones anteriores)
-      if (iconUrl.startsWith('data:')) {
+      // Si no hay URL, mostrar icono por defecto
+      if (!iconUrl) {
+        return <IconSymbol name="folder" size={24} color={theme.colors.text} />;
+      }
+
+      // Validar que la URL sea string y tenga formato correcto
+      if (typeof iconUrl !== 'string') {
+        console.warn('Invalid icon URL type:', typeof iconUrl);
+        return <IconSymbol name="folder" size={24} color={theme.colors.text} />;
+      }
+
+      // Manejar URLs absolutas
+      if (iconUrl.startsWith('http')) {
         return (
           <Image
             source={{ uri: iconUrl }}
             style={styles.iconImage}
             resizeMode="contain"
+            defaultSource={require('@/assets/images/default-icon.png')}
+            onError={(error) => {
+              console.warn('Error loading image:', error.nativeEvent.error);
+            }}
           />
         );
       }
-      
-      // Si es URL
-      return (
-        <Image
-          source={{ uri: iconUrl }}
-          style={styles.iconImage}
-          resizeMode="contain"
-          defaultSource={require('@/assets/images/default-icon.png')} // Agrega un icono por defecto
-        />
-      );
+
+      // Para URLs relativas o base64, asegurarse de que sean válidas
+      if (iconUrl.startsWith('data:image/') || iconUrl.startsWith('/media/')) {
+        return (
+          <Image
+            source={{ uri: iconUrl }}
+            style={styles.iconImage}
+            resizeMode="contain"
+            defaultSource={require('@/assets/images/default-icon.png')}
+            onError={(error) => {
+              console.warn('Error loading image:', error.nativeEvent.error);
+            }}
+          />
+        );
+      }
+
+      // Si no coincide con ningún formato válido, mostrar icono por defecto
+      console.warn('Unsupported icon URL format:', iconUrl);
+      return <IconSymbol name="folder" size={24} color={theme.colors.text} />;
+
     } catch (error) {
       console.error('Error rendering icon:', error);
       return <IconSymbol name="folder" size={24} color={theme.colors.text} />;
@@ -275,6 +298,7 @@ const styles = StyleSheet.create({
   iconImage: {
     width: "90%",
     height: "90%",
+    backgroundColor: 'transparent', // Evitar fondo blanco
   },
   categoryCardTitle: {
     fontSize: 14,

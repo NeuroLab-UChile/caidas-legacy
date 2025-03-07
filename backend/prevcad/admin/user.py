@@ -2,9 +2,14 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.models import User
 from django.utils.html import format_html
-from ..models import UserProfile, Appointment
+from ..models import UserProfile, Appointment, UserTypes
 from django.utils import timezone
 from threading import current_thread
+from django.core.exceptions import PermissionDenied
+from django.contrib.auth.models import Group
+from django.conf import settings
+import os
+import uuid
 
 class AppointmentInline(admin.TabularInline):
     model = Appointment
@@ -49,6 +54,56 @@ class UserProfileInline(admin.StackedInline):
         )
     preview_image.short_description = "Vista previa"
 
+    def save_model(self, request, obj, form, change):
+        """
+        Maneja el guardado de la imagen de perfil de manera consistente con el frontend
+        """
+        try:
+            if 'profile_image' in form.changed_data and form.cleaned_data['profile_image']:
+                image = form.cleaned_data['profile_image']
+                
+                # Crear el directorio si no existe
+                upload_path = f'profile_images/{obj.user.id}'
+                full_media_path = os.path.join(settings.MEDIA_ROOT, upload_path)
+                os.makedirs(full_media_path, exist_ok=True)
+
+                # Guardar la imagen anterior para posible eliminación
+                old_image = obj.profile_image
+                
+                # Generar nombre único para la imagen
+                filename = f"{uuid.uuid4()}{os.path.splitext(image.name)[1].lower()}"
+                full_path = os.path.join(upload_path, filename)
+                absolute_path = os.path.join(settings.MEDIA_ROOT, full_path)
+
+                # Guardar físicamente la nueva imagen
+                with open(absolute_path, 'wb+') as destination:
+                    for chunk in image.chunks():
+                        destination.write(chunk)
+
+                # Actualizar el campo profile_image
+                obj.profile_image = full_path
+
+                # Eliminar la imagen anterior si existe
+                if old_image:
+                    try:
+                        old_image_path = os.path.join(settings.MEDIA_ROOT, str(old_image))
+                        if os.path.exists(old_image_path):
+                            os.remove(old_image_path)
+                    except Exception as e:
+                        print(f"Error al eliminar imagen anterior: {str(e)}")
+
+        except Exception as e:
+            print(f"Error guardando imagen de perfil: {str(e)}")
+            raise
+
+        super().save_model(request, obj, form, change)
+
+    def get_readonly_fields(self, request, obj=None):
+        readonly_fields = list(self.readonly_fields)
+        if obj and obj.groups.filter(name=UserTypes.PATIENT.value).exists():
+            readonly_fields.append('profile_image')
+        return readonly_fields
+
 # Primero desregistramos el admin por defecto
 admin.site.unregister(User)
 
@@ -71,11 +126,13 @@ class CustomUserAdmin(BaseUserAdmin):
     list_display = (
         'get_avatar',
         'username', 
+        'get_roles_display',
         'get_full_name',
-        'get_role_badge',
         'email', 
         'is_active', 
-        'get_appointment_count'
+        'get_appointment_count',
+        'get_groups',
+        'get_permissions_display',
     )
     list_display_links = ('get_avatar', 'username')
     inlines = [UserProfileInline, AppointmentInline]
@@ -123,29 +180,25 @@ class CustomUserAdmin(BaseUserAdmin):
         return fieldsets
 
     def get_readonly_fields(self, request, obj=None):
-        if obj is None:  # Si es creación, no hay campos de solo lectura
-            return []
-            
-        if not hasattr(request.user, 'profile') or request.user.profile.role != 'ADMIN':
-            return [
-                'is_active',
-                'is_staff',
-                'is_superuser',
-                'groups',
-                'user_permissions',
-            ]
-        return []
+        """
+        Define campos de solo lectura basados en el rol del usuario
+        """
+        readonly_fields = super().get_readonly_fields(request, obj)
+        
+        if obj and obj.groups.filter(name=UserTypes.PATIENT.value).exists():
+            # Si es paciente, agregar profile_image a campos de solo lectura
+            if hasattr(obj, 'profile'):
+                readonly_fields = list(readonly_fields) + ['profile_image']
+        
+        return readonly_fields
 
     def save_model(self, request, obj, form, change):
-        if not change:  # Si es un nuevo usuario
-            obj.is_staff = True  # Hacer staff por defecto
-            # Asegurarse de que se guarde la contraseña correctamente
-            if hasattr(form, 'cleaned_data'):
-                password = form.cleaned_data.get('password1')
-                if password:
-                    obj.set_password(password)
-        
+        """Maneja el guardado del usuario y su perfil"""
         super().save_model(request, obj, form, change)
+        
+        # Asegurar que existe el perfil
+        if not hasattr(obj, 'profile'):
+            UserProfile.objects.create(user=obj)
 
     add_fieldsets = (
         (None, {
@@ -161,7 +214,15 @@ class CustomUserAdmin(BaseUserAdmin):
     )
 
     def has_change_permission(self, request, obj=None):
-        return request.user.is_staff
+        # Verificar si puede editar usuarios
+        if obj is None:
+            return True  # Puede ver la lista
+            
+        # Si intenta editar un superusuario
+        if obj.is_superuser and not request.user.is_superuser:
+            return False
+            
+        return super().has_change_permission(request, obj)
 
     def has_delete_permission(self, request, obj=None):
         # Solo los admin pueden eliminar usuarios
@@ -190,90 +251,150 @@ class CustomUserAdmin(BaseUserAdmin):
         )
     get_avatar.short_description = 'Foto'
 
-    def get_role_badge(self, obj):
-        """Muestra el rol del usuario y si es el usuario actual"""
-        try:
-            # Debug para ver los valores
-            request = getattr(current_thread(), '_current_request', None)
-            print(f"""
-            Debug get_role_badge:
-            - Request exists: {bool(request)}
-            - Request user: {request.user.id if request and hasattr(request, 'user') else None}
-            - Object user: {obj.id}
-            - Is same user: {request and request.user.id == obj.id}
-            """)
-
-            # Verificación más segura del usuario actual
-            is_current_user = (
-                request and 
-                hasattr(request, 'user') and 
-                request.user.is_authenticated and 
-                request.user.id == obj.id
-            )
-            
-            role = obj.profile.role
-            role_label = obj.profile.role_label
-            
-            colors = {
-                'ADMIN': 'bg-red-500',
-                'DOCTOR': 'bg-green-500',
-                'NURSE': 'bg-blue-400',
-                'PATIENT': 'bg-gray-500',
-                'MANAGER': 'bg-orange-500',
-                'COORDINATOR': 'bg-purple-500'
-            }
-            color_class = colors.get(role, 'bg-gray-500')
-            
-            # Contenedor principal con flexbox
-            html = '<div class="flex items-center gap-2">'
-            
-            # Badge del rol con label
-            html += format_html(
-                '<span class="{} text-white text-xs px-2.5 py-0.5 rounded-full font-medium">'
-                '{}</span>',
-                color_class, role_label
-            )
-            
-            # Indicador de usuario actual
-            if is_current_user:
-                html += format_html(
-                    '<span class="bg-blue-100 text-blue-800 text-xs px-2 py-0.5 '
-                    'rounded-full font-medium flex items-center gap-1">'
-                    '<span class="text-xs">👤</span> Tú'
-                    '</span>'
-                )
-            
-            html += '</div>'
-            return format_html(html)
-            
-        except Exception as e:
-            import traceback
-            print(f"Error en get_role_badge: {str(e)}")
-            print(traceback.format_exc())
-            return format_html(
-                '<span class="text-red-500 text-xs">{}</span>',
-                role_label if 'role_label' in locals() else 'Error'
-            )
-    get_role_badge.short_description = "Rol"
+  
+    def get_full_name(self, obj):
+        """Muestra el nombre completo del usuario de manera segura"""
+        full_name = obj.get_full_name()
+        return full_name if full_name.strip() else obj.username
+    get_full_name.short_description = "Nombre completo"
 
     def get_appointment_count(self, obj):
-        count = obj.appointments.count()
-        upcoming = obj.appointments.filter(date__gte=timezone.now()).count()
-        
-        return format_html(
-            '<div class="flex items-center space-x-2">'
-            '<span class="bg-gray-100 text-gray-800 text-xs px-3 py-1 rounded-full">'
-            '{} total</span>'
-            '{}'
-            '</div>',
-            count,
-            format_html(
-                '<span class="bg-blue-100 text-blue-800 text-xs px-3 py-1 rounded-full">'
-                '{} próximas</span>',
-                upcoming
-            ) if upcoming else ''
-        )
+        """Muestra el contador de citas de manera segura"""
+        try:
+            count = obj.appointments.count()
+            return format_html(
+                '<span class="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-sm">'
+                '{} total</span>',
+                count
+            )
+        except Exception:
+            return format_html(
+                '<span class="bg-gray-100 text-gray-800 px-2 py-1 rounded-full text-sm">'
+                '0 total</span>'
+            )
     get_appointment_count.short_description = "Citas"
+
+    def get_form(self, request, obj=None, **kwargs):
+        form = super().get_form(request, obj, **kwargs)
+        
+        # Limitar opciones de grupos según permisos
+        if not request.user.is_superuser:
+            form.base_fields['groups'].queryset = Group.objects.filter(
+                name__in=UserTypes.get_assignable_roles(request.user)
+            )
+            
+            # Deshabilitar campos administrativos
+            if 'is_staff' in form.base_fields:
+                form.base_fields['is_staff'].disabled = True
+            if 'is_superuser' in form.base_fields:
+                form.base_fields['is_superuser'].disabled = True
+                
+        return form
+
+    def get_queryset(self, request):
+        """Optimizar consultas para incluir perfiles y grupos"""
+        return super().get_queryset(request).prefetch_related(
+            'groups',
+            'profile'
+        )
+
+    def get_groups(self, obj):
+        """Muestra todos los grupos del usuario"""
+        groups = obj.groups.all()
+        if not groups:
+            return format_html(
+                '<span class="text-red-600">Sin grupos</span>'
+            )
+        return format_html(
+            ', '.join([g.name for g in groups])
+        )
+    get_groups.short_description = "Grupos"
+
+    def get_roles_display(self, obj):
+        """
+        Muestra todos los roles del usuario con badges
+        """
+        try:
+            groups = obj.groups.all()
+            if not groups:
+                return format_html(
+                    '<span class="badge badge-warning">Sin rol</span>'
+                )
+
+            badges = []
+            for group in groups:
+                try:
+                    role = UserTypes(group.name)
+                    badges.append(
+                        format_html(
+                            '<span class="badge badge-{}">{} {}</span>',
+                            role.value.lower(),
+                            self._get_role_icon(role.value),
+                            role.label
+                        )
+                    )
+                except ValueError:
+                    badges.append(
+                        format_html(
+                            '<span class="badge badge-default">{}</span>',
+                            group.name
+                        )
+                    )
+
+            return format_html(
+                '<div class="role-badges">{}</div>',
+                format_html(' '.join(badges))
+            )
+        except Exception as e:
+            print(f"Error mostrando roles para {obj.username}: {str(e)}")
+            return format_html(
+                '<span class="badge badge-error">Error</span>'
+            )
+
+    get_roles_display.short_description = "Roles"
+
+    def _get_role_icon(self, role):
+        """Retorna el icono correspondiente al rol"""
+        icons = {
+            'ADMIN': '👑',
+            'DOCTOR': '👨‍⚕️',
+            'PATIENT': '🏥',
+            'CARDIOLOGIST': '❤️',
+            'DENTIST': '🦷',
+            'NURSE': '💉',
+            'PSYCHOLOGIST': '🧠',
+            'PHYSIOTHERAPIST': '💪',
+            'NUTRITIONIST': '🥗',
+            'COORDINATOR': '📋',
+            'MANAGER': '📊',
+            'RECEPTIONIST': '📝',
+        }
+        return icons.get(role, '👤')
+
+    def get_permissions_display(self, obj):
+        """Muestra los permisos del usuario"""
+        permissions = []
+        
+        if obj.is_superuser:
+            permissions.append(
+                '<span class="badge badge-superuser">Superusuario</span>'
+            )
+        if obj.is_staff:
+            permissions.append(
+                '<span class="badge badge-staff">Staff</span>'
+            )
+            
+        if not permissions:
+            return format_html(
+                '<span class="badge badge-basic">Usuario básico</span>'
+            )
+            
+        return format_html(
+            '<div class="permission-badges">{}</div>',
+            format_html(' '.join(permissions))
+        )
+    
+    get_permissions_display.short_description = "Permisos"
 
     class Media:
         css = {
@@ -281,6 +402,7 @@ class CustomUserAdmin(BaseUserAdmin):
                 'https://cdn.tailwindcss.com',
                 'admin/css/forms.css',
                 'admin/css/widgets.css',
+                'admin/css/custom_admin.css',
             )
         }
         js = (
@@ -288,3 +410,23 @@ class CustomUserAdmin(BaseUserAdmin):
             'admin/js/vendor/jquery/jquery.js',
             'admin/js/jquery.init.js',
         )
+
+    def get_readonly_fields(self, request, obj=None):
+        """
+        Hace el campo profile_image de solo lectura para pacientes
+        """
+        readonly_fields = super().get_readonly_fields(request, obj)
+        
+        if obj and obj.groups.filter(name=UserTypes.PATIENT.value).exists():
+            readonly_fields = list(readonly_fields) + ['profile_image']
+            
+        return readonly_fields
+    
+    def has_change_permission(self, request, obj=None):
+        """
+        Verifica permisos de edición para el perfil
+        """
+        if obj and obj.groups.filter(name=UserTypes.PATIENT.value).exists():
+            # Si es paciente, no permitir edición de la foto
+            return False
+        return super().has_change_permission(request, obj)

@@ -10,6 +10,7 @@ from .evaluation import EvaluationForm
 from .recommendation import Recommendation
 from .action_log import ActionLog
 from .user import User
+from .user_types import UserTypes, AccessLevel, ResourceType
 
 __all__ = [
   'CategoryTemplate',
@@ -34,4 +35,7 @@ __all__ = [
   'WeeklyRecipeNode',
   'UserProfile',
   'User',
+  'UserTypes',
+  'AccessLevel',
+  'ResourceType',
 ]

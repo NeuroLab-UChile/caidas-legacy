@@ -1,0 +1,71 @@
+<div class="bg-white rounded-lg p-4 shadow border">
+  <div class="flex justify-between mb-2">
+    <span class="text-sm font-medium text-gray-800">Respuestas</span>
+    <button type="button"
+            onclick="copyJson(event, this)"
+            class="text-xs px-2 py-1 bg-blue-50 text-blue-600 rounded hover:bg-blue-100 transition"
+            data-json='{{ responses_json|safe }}'>
+      Copiar
+    </button>
+  </div>
+
+  <div class="space-y-3">
+    {% for item in responses %}
+    <div class="border-b border-gray-100 pb-2 last:border-b-0">
+      <div class="text-xs text-gray-500 mb-1">ID: {{ item.node_id }}</div>
+      
+      {% if item.question %}
+        <div class="text-sm text-gray-600 mb-1">{{ item.question }}</div>
+      {% elif item.description %}
+        <div class="text-sm text-gray-600 mb-1">{{ item.description }}</div>
+      {% endif %}
+      
+      {% if item.response.text %}
+        <div class="font-medium text-gray-700">
+          {{ item.response.text }}
+        </div>
+      {% elif item.response.texts %}
+        <div class="font-medium text-gray-700">
+          {% for text in item.response.texts %}
+            • {{ text }}<br>
+          {% endfor %}
+        </div>
+      {% elif 'answer' in item.response %}
+        <div class="font-medium text-gray-700">
+          {{ item.response.answer }}
+        </div>
+      {% else %}
+        <div class="font-medium text-gray-700">
+          {{ item.response|pprint }}
+        </div>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<script>
+function copyJson(event, button) {
+  event.preventDefault();
+  event.stopPropagation();
+  
+  try {
+    const jsonStr = button.getAttribute('data-json');
+    navigator.clipboard.writeText(jsonStr).then(() => {
+      const originalText = button.textContent;
+      button.textContent = 'Copiado!';
+      setTimeout(() => {
+        button.textContent = originalText;
+      }, 2000);
+    });
+  } catch (err) {
+    console.error('Error:', err);
+    button.textContent = 'Error';
+    setTimeout(() => {
+      button.textContent = 'Copiar';
+    }, 2000);
+  }
+  
+  return false;
+}
+</script>

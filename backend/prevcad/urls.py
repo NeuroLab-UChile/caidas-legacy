@@ -1,12 +1,13 @@
 from rest_framework import routers
 from django.urls import path, include
+from django.contrib import admin
+from django.conf import settings
+from django.conf.urls.static import static
 
 
 from prevcad.views.profiles import getProfile, uploadProfileImage, deleteProfileImage
 from prevcad.views.text_recomendations import TextRecomendationsView
 from prevcad.views.health_categories import HealthCategoryListView, save_evaluation_responses, create_health_category, update_health_category, update_recommendation, save_professional_evaluation
-from django.conf import settings
-from django.conf.urls.static import static
 from .views import admin_views
 from .views.appointment_view import AppointmentViewSet
 from .views.admin_views import update_training_form
@@ -47,4 +48,8 @@ urlpatterns = [
   path('admin/categorytemplate/<int:template_id>/update_training_form/', 
        update_training_form, 
        name='update_training_form'),
-] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+]
+
+# Agregar esto para servir archivos media en desarrollo
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -3,8 +3,7 @@ from django.contrib import admin
 from django.utils.html import format_html
 from django.utils.text import Truncator
 from django.utils.safestring import mark_safe
-from ..models import CategoryTemplate
-from ..models.user_types import UserTypes
+from ..models import CategoryTemplate, UserTypes, AccessLevel
 
 class RoleSelectWidget(forms.SelectMultiple):
     template_name = 'admin/widgets/role_select.html'
@@ -12,15 +11,11 @@ class RoleSelectWidget(forms.SelectMultiple):
     def get_context(self, name, value, attrs):
         context = super().get_context(name, value, attrs)
         
-        # Agrupar roles por tipo
+        # Agrupar roles por tipo usando las tuplas directamente
         grouped_choices = {
-            'Roles Principales': [
-                (role.value, role.label) 
-                for role in UserTypes.get_professional_types()
-            ],
+            'Roles Principales': UserTypes.get_professional_types(),
             'Personal Administrativo': [
-                (role.value, role.label) 
-                for role in UserTypes.get_staff_types()
+                ('ADMIN', 'Administrador')
             ],
         }
         
@@ -40,7 +35,6 @@ class CategoryTemplateForm(forms.ModelForm):
         model = CategoryTemplate
         fields = '__all__'
 
-@admin.register(CategoryTemplate)
 class CategoryTemplateAdmin(admin.ModelAdmin):
     form = CategoryTemplateForm
     list_filter = ('is_active', 'evaluation_type')
@@ -52,7 +46,8 @@ class CategoryTemplateAdmin(admin.ModelAdmin):
         'preview_icon', 
         'description_preview', 
         'evaluation_type',
-        'is_readonly'
+        'is_readonly',
+        'get_professional_roles',
     )
     
 
@@ -162,6 +157,7 @@ class CategoryTemplateAdmin(admin.ModelAdmin):
     description_preview.short_description = 'Descripción'
 
     def get_editor_roles(self, obj):
+        """Muestra los roles con permiso"""
         if not obj.allowed_editor_roles:
             return "Sin roles asignados"
             
@@ -188,4 +184,46 @@ class CategoryTemplateAdmin(admin.ModelAdmin):
         return format_html(''.join(str(badge) for badge in role_badges))
         
     get_editor_roles.short_description = "Roles con permiso"
+
+    def get_professional_roles(self, obj):
+        """Muestra los roles profesionales asignados"""
+        roles = UserTypes.get_professional_types()
+        role_badges = []
+        
+        for role_value, role_label in roles:
+            if hasattr(obj, f'is_{role_value.lower()}_template') and \
+               getattr(obj, f'is_{role_value.lower()}_template'):
+                role_badges.append(
+                    f'<span class="role-badge role-{role_value.lower()}">{role_label}</span>'
+                )
+        
+        return format_html('&nbsp;'.join(role_badges)) if role_badges else '-'
+    
+    get_professional_roles.short_description = 'Roles Profesionales'
+
+    def get_form(self, request, obj=None, **kwargs):
+        form = super().get_form(request, obj, **kwargs)
+        
+        # Obtener roles profesionales
+        professional_roles = UserTypes.get_professional_types()
+        
+        # Agregar ayuda contextual
+        form.base_fields['name'].help_text = 'Nombre de la plantilla de categoría'
+        
+        # Mostrar roles disponibles
+        role_help = "Roles profesionales disponibles:<br>"
+        for role_value, role_label in professional_roles:
+            role_help += f"• {role_label}<br>"
+        
+        if 'is_active' in form.base_fields:
+            form.base_fields['is_active'].help_text = role_help
+        
+        return form
+
+    class Media:
+        css = {
+            'all': ('admin/css/category_template.css',)
+        }
+
+admin.site.register(CategoryTemplate, CategoryTemplateAdmin)
 

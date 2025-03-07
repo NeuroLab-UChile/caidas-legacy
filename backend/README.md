@@ -110,3 +110,14 @@ Features:
 ## Licencia
 
 Este proyecto está licenciado bajo MIT License.
+
+
+Correr tests
+sudo /var/www/we-flow/backend/.venv/bin/python manage.py test prevcad.tests.tests -v 2
+cd /Users/Elisa/Desktop/work/other-projects/we-flow/project/backend
+
+# Inicializa npm si no existe package.json
+npm init -y
+
+# Instala Jest y otras dependencias necesarias
+npm install --save-dev jest @babel/core @babel/preset-env babel-jest jest-environment-jsdom

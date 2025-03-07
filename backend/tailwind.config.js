@@ -2,14 +2,14 @@ module.exports = {
   content: [
     "./templates/**/*.html",
     "./**/templates/**/*.html",
-    "./static/admin/**/*.{js,css}",
+    "./templates/admin/**/*.{js,css}",
     "./prevcad/**/templates/**/*.html",
-    "./static/**/*.{js,css}",
-    "./prevcad/**/static/**/*.{js,css}",
+    "./templates/**/*.{js,css}",
+    "./prevcad/**/templates/**/*.{js,css}",
     "./prevcad/**/templates/**/*.html",
-    "./prevcad/**/static/**/*.{js,css}",
+    "./prevcad/**/templates/**/*.{js,css}",
     "./prevcad/**/templates/**/*.html",
-    "./prevcad/**/static/**/*.{js,css}",
+    "./prevcad/**/templates/**/*.{js,css}",
   ],
   theme: {
     extend: {

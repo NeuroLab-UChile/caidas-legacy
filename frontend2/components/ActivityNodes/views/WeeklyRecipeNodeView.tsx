@@ -113,14 +113,16 @@ export const WeeklyRecipeNodeView: React.FC<RecipeNodeViewProps> = ({
       <Text style={styles.title}>{data.title}</Text>
       <Text style={styles.description}>{data.description}</Text>
 
-      {Object.entries(data.weekly_plan).map(([day, schedule]) => (
-        <View key={day} style={styles.dayContainer}>
+      {Object.entries(data.weekly_plan).map(([day, schedule], index) => (
+        <View key={`day-${index}-${day}`} style={styles.dayContainer}>
           <Text style={styles.dayTitle}>
             {DAY_NAMES[day as keyof typeof DAY_NAMES]}
           </Text>
-          {Object.entries(schedule).map(([scheduleType, scheduleInfo]) =>
-            renderScheduleItem(scheduleInfo, scheduleType)
-          )}
+          {Object.entries(schedule).map(([scheduleType, scheduleInfo]) => (
+            <View key={`${day}-${scheduleType}`}>
+              {renderScheduleItem(scheduleInfo, scheduleType)}
+            </View>
+          ))}
         </View>
       ))}
     </ScrollView>

@@ -1,169 +1,115 @@
-import React, { useState, useRef, useEffect } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  ActivityIndicator,
-  Dimensions,
-  TouchableOpacity,
-} from "react-native";
-import { Video } from "expo-av";
-import * as FileSystem from "expo-file-system";
+import React, { useState, useEffect } from "react";
+import { View, Text, StyleSheet, TouchableOpacity, Image, ActivityIndicator } from "react-native";
+import { VideoView, useVideoPlayer, type StatusChangeEventPayload } from "expo-video";
+import { useEventListener } from "expo";
 import { theme } from "@/src/theme";
-
 
 interface VideoNodeViewProps {
   data: {
-    id: number;
     description: string;
-    type: string;
-    media?: {
-      id: number;
-      name: string;
-      type: string;
-      file: {
-        uri?: string;
-        url?: string;
-      };
-    }[];
-    media_url?: string;
+    media_url: string;
   };
   onNext?: () => void;
 }
 
-export const VideoNodeView: React.FC<VideoNodeViewProps> = ({
-  data,
-  onNext,
-}) => {
-  const videoRef = useRef<Video>(null);
+export const VideoNodeView: React.FC<VideoNodeViewProps> = ({ data, onNext }) => {
+  const [showVideo, setShowVideo] = useState(false);
+  const [isComplete, setIsComplete] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [localVideoUri, setLocalVideoUri] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [isVideoComplete, setIsVideoComplete] = useState(false);
 
-  const getVideoUrl = () => {
-    return data?.media_url ;
-  };
+  // **Optimización del buffer y calidad**
+  const player = useVideoPlayer(data.media_url, (player) => {
+    player.loop = false;
+    player.volume = 1.0;
+    player.muted = true; // 🔥 Activar mute puede mejorar la reproducción automática en iOS
+    player.timeUpdateEventInterval = 0.5; // 🔥 Reduce el tiempo de actualización para mejor respuesta
+    player.bufferOptions = {
+      minBufferForPlayback: 1, // 🔥 Se inicia con menos buffer
+      preferredForwardBufferDuration: 10, // 🔥 Reduce la espera por buffer
+    };
+  });
 
-  const downloadVideo = async (url: string) => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      console.log("Downloading video from:", url);
-      console.log("Downloading video from:", data);
-
-      const fileName = url.split("/").pop() || "video.mp4";
-      const fileUri = `${FileSystem.cacheDirectory}${fileName}`;
-
-      const fileInfo = await FileSystem.getInfoAsync(fileUri);
-      if (fileInfo.exists) {
-        console.log("Video found in cache");
-
-        setLocalVideoUri(fileUri);
-        setIsLoading(false);
-        return;
+  // **📌 Detectar cuando el video está listo**
+  useEventListener(player, "statusChange", async ({ status }: StatusChangeEventPayload) => {
+    if (status === "readyToPlay") {
+      console.log("✅ Video listo para reproducir");
+      setIsLoading(false);
+      try {
+        await player.play();
+      } catch (err) {
+        console.warn("🚨 No se pudo iniciar automáticamente. Esperando interacción.");
       }
+    }
+  });
 
-      const downloadResult = await FileSystem.downloadAsync(url, fileUri);
-      console.log("Download completed:", downloadResult);
-
-      if (downloadResult.status === 200) {
-        setLocalVideoUri(downloadResult.uri);
-      } else {
-        throw new Error(`Download failed with status ${downloadResult.status}`);
-      }
-    } catch (err) {
-      console.error("Error downloading video:", err);
-      setError(err instanceof Error ? err.message : "Error downloading video");
-    } finally {
+  // **📌 Detectar cuando el video comienza a reproducirse**
+  useEventListener(player, "playingChange", ({ isPlaying }) => {
+    if (isPlaying) {
+      console.log("▶️ Video en reproducción");
       setIsLoading(false);
     }
-  };
+  });
 
-  useEffect(() => {
-    const videoUrl = getVideoUrl();
-    if (videoUrl) {
-      downloadVideo(videoUrl);
+  const handleVideoPress = async () => {
+    try {
+      setShowVideo(true);
+      setIsLoading(true);
+      setError(null);
+      await player.play();
+    } catch (err) {
+      console.error("❌ Error al iniciar el video:", err);
+      setError("No se pudo cargar el video.");
+      setShowVideo(false);
     }
-
-    // Limpiar caché al desmontar
-    return () => {
-      if (localVideoUri) {
-        FileSystem.deleteAsync(localVideoUri, { idempotent: true }).catch(
-          console.error
-        );
-      }
-    };
-  }, [data]);
-
-  const finalVideoUri = localVideoUri || getVideoUrl();
+  };
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>{data.description}</Text>
 
       <View style={styles.videoContainer}>
-        {finalVideoUri && !error && (
-          <Video
-            ref={videoRef}
-            style={styles.video}
-            source={{ uri: finalVideoUri }}
-            useNativeControls
-            shouldPlay={false}
-            isMuted={true}
-            resizeMode={undefined}
-            isLooping={false}
-            onPlaybackStatusUpdate={(status) => {
-              if (status.isLoaded && status.didJustFinish) {
-                setIsVideoComplete(true);
-              }
-            }}
-            onLoadStart={() => {
-              console.log("Video load started with URI:", finalVideoUri);
-              setIsLoading(true);
-            }}
-            onLoad={() => {
-              console.log("Video loaded successfully");
-              setIsLoading(false);
-            }}
-            onError={(error) => {
-              console.error("Video playback error:", error);
-              setError("Error playing video");
-              setIsLoading(false);
-            }}
-          />
-        )}
-
-        {isLoading && (
-          <View style={styles.loadingOverlay}>
-            <ActivityIndicator size="large" color={theme.colors.primary} />
-            <Text style={styles.loadingText}>Cargando video...</Text>
-          </View>
-        )}
-
-        {error && (
-          <View style={styles.errorContainer}>
-            <Text style={styles.errorText}>Error: {error}</Text>
-            {__DEV__ && (
-              <Text style={styles.debugText}>
-                Original URL: {getVideoUrl() || "No URL"}
-                {"\n"}
-                Local URI: {localVideoUri || "No local file"}
-              </Text>
+        {!showVideo ? (
+          <TouchableOpacity style={styles.thumbnailContainer} onPress={handleVideoPress}>
+            <Image source={{ uri: `${data.media_url}?thumb=1` }} style={styles.video} resizeMode="contain" />
+            <View style={styles.playButtonOverlay}>
+              {error ? (
+                <View style={styles.errorContainer}>
+                  <Text style={styles.errorText}>{error}</Text>
+                  <Text style={styles.retryText}>Toca para reintentar</Text>
+                </View>
+              ) : (
+                <Text style={styles.playButtonText}>▶️</Text>
+              )}
+            </View>
+          </TouchableOpacity>
+        ) : (
+          <View style={styles.videoWrapper}>
+            <VideoView
+              style={styles.video}
+              player={player}
+              contentFit="contain"
+              nativeControls
+              onFullscreenEnter={() => console.log("Entró a pantalla completa")}
+              onFullscreenExit={() => console.log("Salió de pantalla completa")}
+            />
+            {isLoading && (
+              <View style={styles.loadingOverlay}>
+                <ActivityIndicator size="large" color={theme.colors.primary} />
+                <Text style={styles.loadingText}>Cargando video...</Text>
+              </View>
             )}
           </View>
         )}
       </View>
 
-      {(isVideoComplete || __DEV__) && onNext && (
-        <TouchableOpacity
-          style={styles.nextButton}
-          onPress={() => {
-            console.log("Navegando al siguiente desde VideoNodeView");
-            onNext();
-          }}
-        >
-          <Text style={styles.nextButtonText}>Continuar</Text>
+      <View style={styles.debugContainer}>
+        <Text style={styles.debugText}>Estado: {player.status}</Text>
+      </View>
+
+      {(isComplete || __DEV__) && onNext && (
+        <TouchableOpacity style={[styles.nextButton, isComplete && styles.nextButtonComplete]} onPress={onNext}>
+          <Text style={styles.nextButtonText}>{isComplete ? "Continuar ✓" : "Continuar"}</Text>
         </TouchableOpacity>
       )}
     </View>
@@ -182,42 +128,30 @@ const styles = StyleSheet.create({
     color: theme.colors.text,
   },
   videoContainer: {
-    width: Dimensions.get("window").width - 32,
+    width: "100%",
     aspectRatio: 16 / 9,
     backgroundColor: "#000",
     borderRadius: 8,
     overflow: "hidden",
-    position: "relative",
   },
   video: {
     width: "100%",
     height: "100%",
   },
-  loadingOverlay: {
+  thumbnailContainer: {
+    width: "100%",
+    height: "100%",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  playButtonOverlay: {
     ...StyleSheet.absoluteFillObject,
+    justifyContent: "center",
+    alignItems: "center",
     backgroundColor: "rgba(0,0,0,0.3)",
-    justifyContent: "center",
-    alignItems: "center",
   },
-  loadingText: {
-    color: "#fff",
-    marginTop: 8,
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 16,
-  },
-  errorText: {
-    color: theme.colors.error,
-    textAlign: "center",
-    marginBottom: 8,
-  },
-  debugText: {
-    color: theme.colors.text,
-    fontSize: 12,
-    textAlign: "center",
+  playButtonText: {
+    fontSize: 40,
   },
   nextButton: {
     backgroundColor: theme.colors.primary,
@@ -225,11 +159,46 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: "center",
     marginTop: 20,
-    marginHorizontal: 16,
+  },
+  nextButtonComplete: {
+    backgroundColor: theme.colors.success,
   },
   nextButtonText: {
     color: "white",
     fontSize: 16,
     fontWeight: "600",
+  },
+  errorContainer: {
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  errorText: {
+    color: theme.colors.error,
+    marginBottom: 8,
+  },
+  retryText: {
+    color: theme.colors.text,
+  },
+  videoWrapper: {
+    position: "relative",
+  },
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.5)",
+  },
+  loadingText: {
+    color: "white",
+    marginTop: 8,
+  },
+  debugContainer: {
+    padding: 10,
+    backgroundColor: "#f0f0f0",
+    marginTop: 10,
+  },
+  debugText: {
+    fontSize: 12,
+    color: "#666",
   },
 });
