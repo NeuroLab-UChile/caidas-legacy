@@ -11,58 +11,63 @@ django.setup()
 from prevcad.models import CategoryTemplate
 
 def process_training_nodes(training_form):
-    """Procesa los nodos de entrenamiento y copia los videos"""
+    """Procesa los nodos de entrenamiento usando la misma lógica que los iconos"""
     if not training_form or 'training_nodes' not in training_form:
         return training_form
 
-    # Ordenar los nodos por el campo 'order'
     nodes = training_form['training_nodes']
     nodes.sort(key=lambda x: x.get('order', float('inf')))
     
     for i in range(len(nodes)):
         nodes[i]['next_node_id'] = nodes[i + 1]['id'] if i < len(nodes) - 1 else None
 
-        # Procesar media_url si existe
+        # Procesar media_url usando la misma lógica que los iconos
         if 'media_url' in nodes[i] and nodes[i]['media_url']:
             media_url = nodes[i]['media_url']
             print(f"Procesando media_url: {media_url}")
 
-            if media_url.startswith('training/'):
+            if media_url.startswith('/training/') or media_url.startswith('training/'):
                 source_video = os.path.join(settings.BASE_DIR, 'assets', media_url.lstrip('/'))
                 video_filename = os.path.basename(media_url)
                 dest_folder = os.path.join(settings.MEDIA_ROOT, 'training_videos')
                 dest_video = os.path.join(dest_folder, video_filename)
 
+                print(f"Ruta origen: {source_video}")
+                print(f"Ruta destino: {dest_video}")
+
+                os.makedirs(dest_folder, exist_ok=True)
+
                 try:
                     if os.path.exists(source_video):
                         shutil.copy2(source_video, dest_video)
-                        # Usar ruta absoluta como en los iconos
-                        nodes[i]['media_url'] = f'{settings.MEDIA_URL}training_videos/{video_filename}'
+                        # Usar la misma lógica que los iconos
+                        nodes[i]['media_url'] = f'training_videos/{video_filename}'
                         print(f"✅ Video copiado exitosamente: {video_filename}")
-                        print(f"Nueva media_url: {nodes[i]['media_url']}")
                     else:
                         print(f"❌ Video no encontrado en: {source_video}")
                 except Exception as e:
                     print(f"❌ Error copiando video {video_filename}: {e}")
 
-        # Procesar media array si existe
+        # Procesar media array con la misma lógica
         if 'media' in nodes[i] and nodes[i]['media']:
             for media_item in nodes[i]['media']:
                 if 'file' in media_item and (media_item['file'].get('uri') or media_item['file'].get('url')):
                     original_url = media_item['file'].get('uri') or media_item['file'].get('url')
-                    if original_url and original_url.startswith('/training/'):
+                    if original_url and (original_url.startswith('/training/') or original_url.startswith('training/')):
                         source_video = os.path.join(settings.BASE_DIR, 'assets', original_url.lstrip('/'))
                         video_filename = os.path.basename(original_url)
                         dest_folder = os.path.join(settings.MEDIA_ROOT, 'training_videos')
                         dest_video = os.path.join(dest_folder, video_filename)
 
+                        os.makedirs(dest_folder, exist_ok=True)
+
                         try:
                             if os.path.exists(source_video):
                                 shutil.copy2(source_video, dest_video)
-                                # Usar ruta absoluta como en los iconos
-                                absolute_url = f'{settings.MEDIA_URL}training_videos/{video_filename}'
-                                media_item['file']['uri'] = absolute_url
-                                media_item['file']['url'] = absolute_url
+                                # Usar la misma lógica que los iconos
+                                relative_path = f'training_videos/{video_filename}'
+                                media_item['file']['uri'] = relative_path
+                                media_item['file']['url'] = relative_path
                                 print(f"✅ Video en media copiado exitosamente: {video_filename}")
                             else:
                                 print(f"❌ Video en media no encontrado: {source_video}")
