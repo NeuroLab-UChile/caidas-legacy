@@ -26,8 +26,6 @@ FILE_UPLOAD_MAX_MEMORY_SIZE = 104857600  # 100MB
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'q&+7^y)e=2(mxuoakzn1ye0wxzwr==15)-0lr_hqy4t$1)sc3o'
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
 
 ALLOWED_HOSTS = [
     '*'
