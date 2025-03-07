@@ -231,7 +231,7 @@ INTERNAL_IPS = [
 
 # Configuración de django-admin-tailwind
 
-# Configuración de logs
+# Configuración de logging
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -245,19 +245,23 @@ LOGGING = {
         'file': {
             'level': 'DEBUG',
             'class': 'logging.FileHandler',
-            'filename': '/var/log/django/django.log',  # Ruta absoluta
+            'filename': str(BASE_DIR / 'logs' / 'django.log'),  # Usa la ruta correcta
+            'formatter': 'verbose',
+        },
+        'console': {
+            'level': 'INFO',
+            'class': 'logging.StreamHandler',
             'formatter': 'verbose',
         },
     },
     'loggers': {
         'django': {
-            'handlers': ['file'],
+            'handlers': ['file', 'console'],
             'level': 'INFO',
             'propagate': True,
         },
     },
 }
-
 # Asegurarse de que el archivo de log existe y tiene los permisos correctos
 LOG_FILE = os.path.join(BASE_DIR, 'django.log')
 if not os.path.exists(LOG_FILE):
