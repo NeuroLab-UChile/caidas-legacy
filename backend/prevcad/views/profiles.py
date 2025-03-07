@@ -114,31 +114,38 @@ def uploadProfileImage(request):
 @permission_classes([IsAuthenticated])
 def getProfile(request):
     try:
-        logger.info("="*50)
-        logger.info("Iniciando getProfile")
-        logger.info(f"Usuario: {request.user}")
-        
         user = request.user
         profile = user.profile
         
-        # Construir la URL de la imagen correctamente
+        # Convertir la imagen a URL si existe
+        profile_image_url = None
         if profile.profile_image:
-            # Convertir ImageFieldFile a string usando su URL
-            image_url = request.build_absolute_uri(profile.profile_image.url)
-            logger.info(f"URL de imagen de perfil: {image_url}")
-        else:
-            image_url = None
-            logger.info("No hay imagen de perfil")
+            profile_image_url = request.build_absolute_uri(profile.profile_image.url)
         
-        # Serializar el perfil
-        serializer = UserSerializer(user, context={'request': request})
-        logger.info("Perfil serializado exitosamente")
-        return Response(serializer.data)
-            
+        # Crear el diccionario de respuesta
+        response_data = {
+            'id': user.id,
+            'username': user.username,
+            'email': user.email,
+            'first_name': user.first_name,
+            'last_name': user.last_name,
+            'profile': {
+                'profile_image': profile_image_url,  # Usar la URL en lugar del objeto ImageField
+                'phone': profile.phone,
+                'birth_date': profile.birth_date,
+                'role': profile.role,
+                'first_name': profile.first_name,
+                'last_name': profile.last_name,
+                'email': profile.email,
+                'username': profile.username
+            }
+        }
+        
+        return Response(response_data)
     except Exception as e:
         logger.error(f"Error en getProfile: {str(e)}")
         return Response(
-            {'error': str(e)},
+            {'error': 'Error al obtener el perfil'},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
