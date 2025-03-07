@@ -10,8 +10,40 @@ django.setup()
 
 from prevcad.models import CategoryTemplate
 
+def process_media_file(media_url, media_type='training_videos'):
+    """Procesa cualquier archivo de media y retorna la ruta relativa"""
+    if not media_url:
+        return None
+
+    if media_url.startswith('/training/') or media_url.startswith('training/'):
+        source_file = os.path.join(settings.BASE_DIR, 'assets', media_url.lstrip('/'))
+        filename = os.path.basename(media_url)
+        dest_folder = os.path.join(settings.MEDIA_ROOT, media_type)
+        dest_file = os.path.join(dest_folder, filename)
+
+        print(f"Procesando archivo: {filename}")
+        print(f"Ruta origen: {source_file}")
+        print(f"Ruta destino: {dest_file}")
+
+        os.makedirs(dest_folder, exist_ok=True)
+
+        try:
+            if os.path.exists(source_file):
+                shutil.copy2(source_file, dest_file)
+                relative_path = f'{media_type}/{filename}'
+                print(f"✅ Archivo copiado exitosamente: {relative_path}")
+                return relative_path
+            else:
+                print(f"❌ Archivo no encontrado en: {source_file}")
+                return None
+        except Exception as e:
+            print(f"❌ Error copiando archivo {filename}: {e}")
+            return None
+
+    return media_url
+
 def process_training_nodes(training_form):
-    """Procesa los nodos de entrenamiento usando la misma lógica que los iconos"""
+    """Procesa los nodos de entrenamiento"""
     if not training_form or 'training_nodes' not in training_form:
         return training_form
 
@@ -21,58 +53,23 @@ def process_training_nodes(training_form):
     for i in range(len(nodes)):
         nodes[i]['next_node_id'] = nodes[i + 1]['id'] if i < len(nodes) - 1 else None
 
-        # Procesar media_url usando la misma lógica que los iconos
+        # Procesar media_url
         if 'media_url' in nodes[i] and nodes[i]['media_url']:
-            media_url = nodes[i]['media_url']
-            print(f"Procesando media_url: {media_url}")
+            # Determinar el tipo de media basado en el tipo de nodo
+            media_type = 'training_videos' if nodes[i]['type'] == 'VIDEO_NODE' else 'training_images'
+            nodes[i]['media_url'] = process_media_file(nodes[i]['media_url'], media_type)
 
-            if media_url.startswith('/training/') or media_url.startswith('training/'):
-                source_video = os.path.join(settings.BASE_DIR, 'assets', media_url.lstrip('/'))
-                video_filename = os.path.basename(media_url)
-                dest_folder = os.path.join(settings.MEDIA_ROOT, 'training_videos')
-                dest_video = os.path.join(dest_folder, video_filename)
-
-                print(f"Ruta origen: {source_video}")
-                print(f"Ruta destino: {dest_video}")
-
-                os.makedirs(dest_folder, exist_ok=True)
-
-                try:
-                    if os.path.exists(source_video):
-                        shutil.copy2(source_video, dest_video)
-                        # Usar la misma lógica que los iconos
-                        nodes[i]['media_url'] = f'training_videos/{video_filename}'
-                        print(f"✅ Video copiado exitosamente: {video_filename}")
-                    else:
-                        print(f"❌ Video no encontrado en: {source_video}")
-                except Exception as e:
-                    print(f"❌ Error copiando video {video_filename}: {e}")
-
-        # Procesar media array con la misma lógica
+        # Procesar media array
         if 'media' in nodes[i] and nodes[i]['media']:
             for media_item in nodes[i]['media']:
-                if 'file' in media_item and (media_item['file'].get('uri') or media_item['file'].get('url')):
+                if 'file' in media_item:
                     original_url = media_item['file'].get('uri') or media_item['file'].get('url')
-                    if original_url and (original_url.startswith('/training/') or original_url.startswith('training/')):
-                        source_video = os.path.join(settings.BASE_DIR, 'assets', original_url.lstrip('/'))
-                        video_filename = os.path.basename(original_url)
-                        dest_folder = os.path.join(settings.MEDIA_ROOT, 'training_videos')
-                        dest_video = os.path.join(dest_folder, video_filename)
-
-                        os.makedirs(dest_folder, exist_ok=True)
-
-                        try:
-                            if os.path.exists(source_video):
-                                shutil.copy2(source_video, dest_video)
-                                # Usar la misma lógica que los iconos
-                                relative_path = f'training_videos/{video_filename}'
-                                media_item['file']['uri'] = relative_path
-                                media_item['file']['url'] = relative_path
-                                print(f"✅ Video en media copiado exitosamente: {video_filename}")
-                            else:
-                                print(f"❌ Video en media no encontrado: {source_video}")
-                        except Exception as e:
-                            print(f"❌ Error copiando video en media {video_filename}: {e}")
+                    if original_url:
+                        media_type = 'training_videos' if nodes[i]['type'] == 'VIDEO_NODE' else 'training_images'
+                        relative_path = process_media_file(original_url, media_type)
+                        if relative_path:
+                            media_item['file']['uri'] = relative_path
+                            media_item['file']['url'] = relative_path
 
     return training_form
 

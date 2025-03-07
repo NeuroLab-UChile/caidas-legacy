@@ -55,21 +55,33 @@ export default function ActionScreen() {
     );
   }
 
-  const renderIcon = (base64Icon: string) => {
+  const renderIcon = (iconUrl: string) => {
     try {
-      if (!base64Icon) return null;
-      const imageUri = base64Icon.startsWith("data:")
-        ? base64Icon
-        : `data:image/png;base64,${base64Icon}`;
+      if (!iconUrl) return null;
+      
+      // Si es base64 (para compatibilidad con versiones anteriores)
+      if (iconUrl.startsWith('data:')) {
+        return (
+          <Image
+            source={{ uri: iconUrl }}
+            style={styles.iconImage}
+            resizeMode="contain"
+          />
+        );
+      }
+      
+      // Si es URL
       return (
         <Image
-          source={{ uri: imageUri }}
+          source={{ uri: iconUrl }}
           style={styles.iconImage}
           resizeMode="contain"
+          defaultSource={require('@/assets/images/default-icon.png')} // Agrega un icono por defecto
         />
       );
     } catch (error) {
-      return null;
+      console.error('Error rendering icon:', error);
+      return <IconSymbol name="folder" size={24} color={theme.colors.text} />;
     }
   };
 

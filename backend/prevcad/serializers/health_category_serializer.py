@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from prevcad.models import HealthCategory, CategoryTemplate
 from django.conf import settings
+from urllib.parse import urljoin
 
 class HealthCategorySerializer(serializers.ModelSerializer):
     # Campos básicos
@@ -72,9 +73,17 @@ class HealthCategorySerializer(serializers.ModelSerializer):
         return self.get_template_attribute(obj, 'name')
 
     def get_icon(self, obj):
-        if obj.template and obj.template.icon:
-            return obj.template.get_icon_base64()
-        return None
+        """Retorna la URL absoluta del icono del template"""
+        if not obj.template or not obj.template.icon:
+            return None
+            
+        request = self.context.get('request')
+        if request:
+            return request.build_absolute_uri(obj.template.icon.url)
+            
+        # Si no hay request, usar el dominio de settings
+        domain = getattr(settings, 'BASE_URL', 'https://caidas.uchile.cl')
+        return urljoin(domain, f'/media/{obj.template.icon.name}')
 
     def get_description(self, obj):
         return (self.get_template_attribute(obj, 'root_node.description') or 
@@ -237,7 +246,31 @@ class HealthCategorySerializer(serializers.ModelSerializer):
             return None
 
     def get_training_form(self, obj):
-        return self.get_template_attribute(obj, 'training_form')
+        training_form = self.get_template_attribute(obj, 'training_form')
+        if not training_form:
+            return None
+            
+        # Hacer una copia para no modificar el original
+        training_form = training_form.copy()
+        training_nodes = training_form.get('training_nodes', [])
+        
+        # Convertir URLs relativas a absolutas
+        for node in training_nodes:
+            if node.get('media_url'):
+                request = self.context.get('request')
+                if request:
+                    node['media_url'] = request.build_absolute_uri(f'/media/{node["media_url"]}')
+                else:
+                    # Si no hay request, usar el dominio de settings
+                    domain = getattr(settings, 'BASE_URL', 'https://caidas.uchile.cl')
+                    node['media_url'] = urljoin(domain, f'/media/{node["media_url"]}')
+                    
+                # Asegurarse de que la URL sea HTTPS
+                if not node['media_url'].startswith('https://'):
+                    node['media_url'] = node['media_url'].replace('http://', 'https://')
+        
+        training_form['training_nodes'] = training_nodes
+        return training_form
     
 
     def get_default_status(self):

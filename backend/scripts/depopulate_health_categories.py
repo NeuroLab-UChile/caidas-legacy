@@ -9,7 +9,7 @@ import subprocess
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'backend.settings')
 django.setup()
 
-from prevcad.models import CategoryTemplate, VideoNode, ImageNode
+from prevcad.models import CategoryTemplate, VideoNode, ImageNode, HealthCategory
 
 def force_delete_directory(path):
     """Fuerza la eliminación de un directorio usando comandos del sistema"""
@@ -70,29 +70,71 @@ def clean_database():
         VideoNode.objects.all().delete()
         ImageNode.objects.all().delete()
         CategoryTemplate.objects.all().delete()
+        HealthCategory.objects.all().delete()
         print("✅ Base de datos limpiada")
     except Exception as e:
         print(f"Error limpiando base de datos: {e}")
 
+def clean_media_directory(media_type):
+    """Limpia un directorio específico de media"""
+    dir_path = os.path.join(settings.MEDIA_ROOT, media_type)
+    if os.path.exists(dir_path):
+        try:
+            shutil.rmtree(dir_path)
+            print(f"✅ Limpiado directorio: {media_type}")
+            # Recrear el directorio vacío
+            os.makedirs(dir_path, exist_ok=True)
+            return True
+        except Exception as e:
+            print(f"❌ Error limpiando {media_type}: {e}")
+            return False
+    return True
+
+def depopulate_category_templates():
+    """
+    Elimina todas las categorías y limpia los archivos de media asociados.
+    Sigue la misma estructura que populate_category_templates_from_file.
+    """
+    try:
+        print("\n=== Iniciando despoblación de categorías ===")
+
+        # 1. Eliminar todas las categorías de salud
+        health_count = HealthCategory.objects.count()
+        HealthCategory.objects.all().delete()
+        print(f"✅ Eliminadas {health_count} categorías de salud")
+
+        # 2. Eliminar todos los templates
+        template_count = CategoryTemplate.objects.count()
+        CategoryTemplate.objects.all().delete()
+        print(f"✅ Eliminados {template_count} templates de categoría")
+
+        # 3. Limpiar directorios de media (siguiendo la estructura de populate)
+        media_types = [
+            'training_videos',    # Para VIDEO_NODE
+            'training_images',    # Para IMAGE_NODE y DESCRIPTION_NODE
+            'category_icons',     # Para iconos de categoría
+            'evaluation_images'   # Para imágenes de evaluación
+        ]
+
+        print("\n=== Limpiando directorios de media ===")
+        for media_type in media_types:
+            clean_media_directory(media_type)
+
+        print("\n✅ Despoblación completada exitosamente")
+        return True
+
+    except Exception as e:
+        print(f"\n❌ Error durante la despoblación: {e}")
+        return False
+
 if __name__ == '__main__':
-    print("=== LIMPIEZA AGRESIVA DEL SISTEMA ===")
-    confirmation = input("⚠️  Esto eliminará TODOS los archivos. Escribe 'FORCE DELETE' para confirmar: ")
+    print("🧹 Iniciando limpieza de la base de datos...")
+    success = depopulate_category_templates()
     
-    if confirmation == 'FORCE DELETE':
-        print("\nEjecutando limpieza agresiva...")
-        clean_database()
-        clean_media_aggressive()
-        
-        # Verificación final
-        print("\nVerificando archivos residuales...")
-        remaining_files = glob.glob(os.path.join(settings.MEDIA_ROOT, '**/*'), recursive=True)
-        if remaining_files:
-            print("Archivos restantes encontrados:")
-            for file in remaining_files:
-                print(f"- {file}")
-        else:
-            print("✅ No se encontraron archivos residuales")
-            
-        print("\n✅ Proceso de limpieza completado")
+    if success:
+        print("\n=== Resumen de la limpieza ===")
+        print("✓ Categorías de salud eliminadas")
+        print("✓ Templates eliminados")
+        print("✓ Directorios de media limpiados")
     else:
-        print("\n❌ Operación cancelada") 
+        print("\n❌ La limpieza no se completó correctamente") 
