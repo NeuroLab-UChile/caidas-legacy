@@ -11,12 +11,13 @@ https://docs.djangoproject.com/en/2.2/ref/settings/
 """
 
 import os
+from pathlib import Path
 import logging
 logging.basicConfig(level=logging.DEBUG)
 
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BASE_DIR = Path(__file__).resolve().parent.parent  # Asegúrate de que esto esté al principio
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 MEDIA_URL = '/media/'
 DOMAIN = 'https://caidas.uchile.cl'
@@ -245,7 +246,7 @@ LOGGING = {
         'file': {
             'level': 'DEBUG',
             'class': 'logging.FileHandler',
-            'filename': str(BASE_DIR / 'logs' / 'django.log'),  # Usa la ruta correcta
+            'filename': os.path.join(BASE_DIR, 'logs', 'django.log'),  # Usar os.path.join en su lugar
             'formatter': 'verbose',
         },
         'console': {
