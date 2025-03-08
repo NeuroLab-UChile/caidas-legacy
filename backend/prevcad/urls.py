@@ -47,4 +47,9 @@ urlpatterns = [
   path('admin/categorytemplate/<int:template_id>/update_training_form/', 
        update_training_form, 
        name='update_training_form'),
+  path(
+    'admin/prevcad/categorytemplate/<int:template_id>/delete_training_node/<int:node_id>/',
+    admin_views.delete_training_node,
+    name='delete_training_node'
+  ),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

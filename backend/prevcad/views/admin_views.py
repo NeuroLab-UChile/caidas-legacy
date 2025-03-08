@@ -139,7 +139,8 @@ def delete_old_media(old_media_url):
             else:
                 logger.warning(f"Archivo antiguo no encontrado: {full_path}")
     except Exception as e:
-        logger.error(f"Error al eliminar archivo antiguo: {str(e)}")
+        logger.warning(f"Error al eliminar archivo antiguo: {str(e)}")
+        # No relanzar la excepción para permitir que el proceso continúe
 
 @require_POST
 @csrf_exempt
@@ -272,6 +273,33 @@ def handle_uploaded_file(file, file_type):
     except Exception as e:
         logger.error(f"Error en handle_uploaded_file: {str(e)}", exc_info=True)
         raise
+
+@require_POST
+@csrf_exempt
+@user_passes_test(lambda u: u.is_staff)
+def delete_training_node(request, template_id, node_id):
+    try:
+        obj = get_object_or_404(CategoryTemplate, id=template_id)
+        training_form = obj.training_form or {'training_nodes': []}
+        
+        nodes = training_form.get('training_nodes', [])
+        updated_nodes = [node for node in nodes if str(node.get('id')) != str(node_id)]
+        
+        training_form['training_nodes'] = updated_nodes
+        obj.training_form = training_form
+        obj.save()
+        
+        return JsonResponse({
+            'status': 'success',
+            'message': 'Nodo eliminado correctamente'
+        })
+
+    except Exception as e:
+        logger.error(f"Error eliminando nodo: {str(e)}", exc_info=True)
+        return JsonResponse({
+            'status': 'error',
+            'message': str(e)
+        }, status=500)
 
 
 
@@ -422,3 +450,5 @@ def handle_uploaded_file(file, file_type):
 #             'error': str(e)
 #         }, status=500) 
     
+
+__all__ = ['update_training_form', 'delete_training_node']
