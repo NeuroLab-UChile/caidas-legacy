@@ -1,4 +1,4 @@
-import React from "react";
+
 import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { theme } from "@/src/theme";
 
