@@ -16,6 +16,9 @@ from pathlib import Path
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# SECURITY WARNING: don't run with debug turned on in production!
+DEBUG = False
+
 # Configurar el directorio de logs
 LOG_DIR = BASE_DIR / 'logs'
 if not LOG_DIR.exists():
@@ -77,7 +80,7 @@ LOGGING = {
         },
         'prevcad': {  # Tu aplicación
             'handlers': ['console', 'file', 'error_file'],
-            'level': 'DEBUG' if DEBUG else 'INFO',
+            'level': 'INFO',
             'propagate': False,
         },
     },
@@ -98,9 +101,6 @@ FILE_UPLOAD_MAX_MEMORY_SIZE = 104857600  # 100MB
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = '@f7g(%shzq5li)m=vs_##1-jm(hh&-s!k$f*70f%96q4r_*s@7'
-
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
 
 ALLOWED_HOSTS = [
     '*'
@@ -353,7 +353,7 @@ LOGGING = {
         },
         'prevcad': {  # Tu aplicación
             'handlers': ['console', 'file', 'error_file'],
-            'level': 'DEBUG' if DEBUG else 'INFO',
+            'level': 'INFO',
             'propagate': False,
         },
     },
