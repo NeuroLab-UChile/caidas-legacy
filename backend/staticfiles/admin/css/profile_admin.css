@@ -1,0 +1,15 @@
+/* Deshabilitar visualmente campos de solo lectura para pacientes */
+.patient-profile .readonly {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+/* Mensaje informativo */
+.patient-profile-message {
+    background-color: #fff3cd;
+    border: 1px solid #ffeeba;
+    color: #856404;
+    padding: 0.75rem 1.25rem;
+    margin-bottom: 1rem;
+    border-radius: 0.25rem;
+} 

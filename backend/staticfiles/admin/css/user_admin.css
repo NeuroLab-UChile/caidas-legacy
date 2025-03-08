@@ -1,0 +1,37 @@
+/* Estilos para la vista de perfil */
+.profile-image-preview {
+    max-width: 300px;
+    margin: 10px 0;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.field-profile_image_preview {
+    margin-top: 10px;
+}
+
+/* Mensaje para pacientes */
+.patient-profile-message {
+    background-color: #e3f2fd;
+    border: 1px solid #90caf9;
+    color: #1976d2;
+    padding: 12px 16px;
+    margin: 10px 0;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+/* Campos de solo lectura */
+.readonly {
+    opacity: 0.7;
+    background-color: #f5f5f5;
+}
+
+/* Estilos para la lista de usuarios */
+.field-get_profile_image img {
+    transition: transform 0.2s;
+}
+
+.field-get_profile_image img:hover {
+    transform: scale(1.1);
+} 
