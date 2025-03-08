@@ -12,12 +12,77 @@ https://docs.djangoproject.com/en/2.2/ref/settings/
 
 import os
 from pathlib import Path
-import logging
-logging.basicConfig(level=logging.DEBUG)
-
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
-BASE_DIR = Path(__file__).resolve().parent.parent  # Asegúrate de que esto esté al principio
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Configurar el directorio de logs
+LOG_DIR = BASE_DIR / 'logs'
+if not LOG_DIR.exists():
+    LOG_DIR.mkdir(parents=True, exist_ok=True)
+
+# Configuración de logging
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '[{asctime}] {levelname} {name} {message}',
+            'style': '{',
+            'datefmt': '%Y-%m-%d %H:%M:%S'
+        },
+        'simple': {
+            'format': '[{asctime}] {levelname} {message}',
+            'style': '{',
+            'datefmt': '%Y-%m-%d %H:%M:%S'
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple',
+        },
+        'file': {
+            'class': 'logging.handlers.RotatingFileHandler',  # Usar RotatingFileHandler en lugar de FileHandler
+            'filename': str(LOG_DIR / 'django.log'),
+            'formatter': 'verbose',
+            'maxBytes': 1024 * 1024 * 5,  # 5 MB
+            'backupCount': 5,
+            'encoding': 'utf-8',
+        },
+        'error_file': {
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': str(LOG_DIR / 'error.log'),
+            'formatter': 'verbose',
+            'maxBytes': 1024 * 1024 * 5,  # 5 MB
+            'backupCount': 5,
+            'encoding': 'utf-8',
+            'level': 'ERROR',
+        },
+    },
+    'loggers': {
+        '': {  # Root logger
+            'handlers': ['console', 'file'],
+            'level': 'INFO',
+        },
+        'django': {
+            'handlers': ['console', 'file', 'error_file'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'django.server': {
+            'handlers': ['console', 'file'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'prevcad': {  # Tu aplicación
+            'handlers': ['console', 'file', 'error_file'],
+            'level': 'DEBUG' if DEBUG else 'INFO',
+            'propagate': False,
+        },
+    },
+}
+
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 MEDIA_URL = '/media/'
 DOMAIN = 'https://caidas.uchile.cl'
@@ -238,32 +303,58 @@ LOGGING = {
     'disable_existing_loggers': False,
     'formatters': {
         'verbose': {
-            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'format': '[{asctime}] {levelname} {name} {message}',
             'style': '{',
+            'datefmt': '%Y-%m-%d %H:%M:%S'
+        },
+        'simple': {
+            'format': '[{asctime}] {levelname} {message}',
+            'style': '{',
+            'datefmt': '%Y-%m-%d %H:%M:%S'
         },
     },
     'handlers': {
-        'file': {
-            'level': 'DEBUG',
-            'class': 'logging.FileHandler',
-            'filename': os.path.join(BASE_DIR, 'logs', 'django.log'),  # Usar os.path.join en su lugar
-            'formatter': 'verbose',
-        },
         'console': {
-            'level': 'INFO',
             'class': 'logging.StreamHandler',
+            'formatter': 'simple',
+        },
+        'file': {
+            'class': 'logging.handlers.RotatingFileHandler',  # Usar RotatingFileHandler en lugar de FileHandler
+            'filename': str(LOG_DIR / 'django.log'),
             'formatter': 'verbose',
+            'maxBytes': 1024 * 1024 * 5,  # 5 MB
+            'backupCount': 5,
+            'encoding': 'utf-8',
+        },
+        'error_file': {
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': str(LOG_DIR / 'error.log'),
+            'formatter': 'verbose',
+            'maxBytes': 1024 * 1024 * 5,  # 5 MB
+            'backupCount': 5,
+            'encoding': 'utf-8',
+            'level': 'ERROR',
         },
     },
     'loggers': {
-        'django': {
-            'handlers': ['file', 'console'],
+        '': {  # Root logger
+            'handlers': ['console', 'file'],
             'level': 'INFO',
-            'propagate': True,
+        },
+        'django': {
+            'handlers': ['console', 'file', 'error_file'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'django.server': {
+            'handlers': ['console', 'file'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'prevcad': {  # Tu aplicación
+            'handlers': ['console', 'file', 'error_file'],
+            'level': 'DEBUG' if DEBUG else 'INFO',
+            'propagate': False,
         },
     },
 }
-# Asegurarse de que el archivo de log existe y tiene los permisos correctos
-LOG_FILE = os.path.join(BASE_DIR, 'django.log')
-if not os.path.exists(LOG_FILE):
-    open(LOG_FILE, 'a').close()
