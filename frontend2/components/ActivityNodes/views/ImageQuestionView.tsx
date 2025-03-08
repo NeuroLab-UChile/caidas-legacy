@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, Image } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, Image, Platform } from "react-native";
 import { ScrollView } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
@@ -23,8 +23,7 @@ export function ImageQuestionView({ data, setResponse }: ImageQuestionProps) {
 
   const handleSelectImage = async () => {
     try {
-      const { status } =
-        await ImagePicker.requestMediaLibraryPermissionsAsync();
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== "granted") {
         alert("Se necesitan permisos para acceder a la galería");
         return;
@@ -35,12 +34,11 @@ export function ImageQuestionView({ data, setResponse }: ImageQuestionProps) {
         allowsEditing: true,
         aspect: [1, 1],
         quality: 0.7,
-        base64: true,
       });
 
       if (!result.canceled && result.assets && result.assets[0]) {
-        const base64Image = `data:image/jpeg;base64,${result.assets[0].base64}`;
-        const newImages = [...selectedImages, base64Image];
+        const imageUri = result.assets[0].uri;
+        const newImages = [...selectedImages, imageUri];
         setSelectedImages(newImages);
         setResponse({ answer: newImages });
       }
@@ -62,12 +60,11 @@ export function ImageQuestionView({ data, setResponse }: ImageQuestionProps) {
         allowsEditing: true,
         aspect: [1, 1],
         quality: 0.7,
-        base64: true,
       });
 
       if (!result.canceled && result.assets && result.assets[0]) {
-        const base64Image = `data:image/jpeg;base64,${result.assets[0].base64}`;
-        const newImages = [...selectedImages, base64Image];
+        const imageUri = result.assets[0].uri;
+        const newImages = [...selectedImages, imageUri];
         setSelectedImages(newImages);
         setResponse({ answer: newImages });
       }
