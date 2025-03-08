@@ -89,6 +89,7 @@ LOGGING = {
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 MEDIA_URL = '/media/'
 DOMAIN = 'https://caidas.uchile.cl'
+Path(MEDIA_ROOT).mkdir(parents=True, exist_ok=True)
 # Tamaño máximo de archivo permitido (ejemplo: 100MB)
 DATA_UPLOAD_MAX_MEMORY_SIZE = 104857600  # 100MB
 FILE_UPLOAD_MAX_MEMORY_SIZE = 104857600  # 100MB

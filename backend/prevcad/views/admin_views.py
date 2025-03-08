@@ -27,6 +27,7 @@ from ..models import VideoNode
 from rest_framework import serializers
 from rest_framework.reverse import reverse
 from prevcad.utils import build_media_url
+from pathlib import Path
 
 
 
@@ -120,91 +121,137 @@ def update_evaluation_form(request, template_id):
 @csrf_exempt
 @user_passes_test(lambda u: u.is_staff)
 def update_training_form(request, template_id):
-    """
-    Actualiza el formulario de entrenamiento de una plantilla de categoría.
-    """
     try:
-        obj = get_object_or_404(CategoryTemplate, id=template_id)
-
-        # Manejar archivos de media si existen
-        media_files = request.FILES.getlist('media_file')  # Cambiado para manejar múltiples archivos
-
-        if not media_files:
+        logger.info("=== Inicio de update_training_form ===")
+        logger.info(f"FILES recibidos: {request.FILES}")
+        
+        # Verificar qué tipo de archivo se recibió
+        video_file = request.FILES.get('video')
+        image_file = request.FILES.get('image')
+        
+        if not video_file and not image_file:
             return JsonResponse({
                 'status': 'error',
-                'message': 'No se recibieron archivos multimedia.'
+                'message': 'No se recibió ningún archivo'
             }, status=400)
 
-        # Crear directorio si no existe
-        upload_dir = os.path.join(settings.MEDIA_ROOT, 'uploads')
-        os.makedirs(upload_dir, exist_ok=True)
+        # Determinar tipo y procesar archivo
+        if video_file:
+            media_file = video_file
+            file_type = 'video'
+            node_type = 'VIDEO_NODE'
+        else:
+            media_file = image_file
+            file_type = 'image'
+            node_type = 'IMAGE_NODE'
 
-        # Obtener y actualizar el nodo actual
-        training_form_data = json.loads(request.POST.get('training_form', '{}'))
-        nodes = training_form_data.get('training_nodes', [])
-        print("-----> nodes", nodes)
-
-        # Procesar cada archivo multimedia
-        for media_file in media_files:
-            if media_file:
-                print("-----> media_file", media_file)
-                
-                # Guardar archivo
-                saved_path = handle_uploaded_file(media_file, request)
-
-                # Asignar la URL del archivo guardado a un nodo correspondiente
-                for node in nodes:
-                    if node.get('media_pending'):
-                        node['media_url'] = saved_path
-                        node['media_pending'] = False
-                        print(f"Actualizando nodo {node['id']} con media_url: {saved_path}")
-                        break  # Salir del bucle después de asignar el archivo
-
-        # Actualizar el formulario
-        obj.training_form = {'training_nodes': nodes}
-        obj.save(update_fields=['training_form'])
-
-        print("-----> nodes actualizados", nodes)
-        return JsonResponse({
-            'status': 'success',
-            'message': 'Formulario de entrenamiento actualizado correctamente',
-            'data': {
-                'nodes': nodes,
-                'template_id': template_id,
-                'nodes_count': len(nodes)
-            }
-        }, json_dumps_params={'indent': 2, 'ensure_ascii': False})
+        try:
+            media_url = handle_uploaded_file(media_file, file_type)
+            logger.info(f"Archivo guardado en: {media_url}")
+            
+            # Obtener y actualizar el formulario
+            obj = get_object_or_404(CategoryTemplate, id=template_id)
+            training_form_data = obj.training_form or {'training_nodes': []}
+            nodes = training_form_data.get('training_nodes', [])
+            
+            # Actualizar el nodo correspondiente
+            node_updated = False
+            for node in nodes:
+                if node.get('media_pending'):
+                    node['media_url'] = media_url
+                    node['media_pending'] = False
+                    node['type'] = node_type
+                    node_updated = True
+                    break
+            
+            if not node_updated:
+                # Si no hay nodo pendiente, crear uno nuevo
+                new_node = {
+                    'id': str(uuid.uuid4()),
+                    'type': node_type,
+                    'media_url': media_url,
+                    'order': len(nodes)
+                }
+                nodes.append(new_node)
+            
+            # Guardar los cambios
+            obj.training_form = training_form_data
+            obj.save()
+            
+            return JsonResponse({
+                'status': 'success',
+                'message': f'{file_type.capitalize()} guardado correctamente',
+                'data': {
+                    'media_url': media_url,
+                    'type': node_type,
+                    'nodes': nodes
+                }
+            })
+            
+        except Exception as e:
+            logger.error(f"Error guardando archivo: {str(e)}", exc_info=True)
+            raise
 
     except Exception as e:
-        logger.error(f"Error updating training form: {str(e)}", exc_info=True)
+        logger.error(f"Error en update_training_form: {str(e)}", exc_info=True)
         return JsonResponse({
             'status': 'error',
             'message': str(e)
         }, status=500)
 
-def handle_uploaded_file(file, request):
+def handle_uploaded_file(file, file_type):
     """
     Maneja la subida de archivos y retorna la URL relativa.
+    Args:
+        file: El archivo subido
+        file_type: 'video' o 'image'
     """
     import os
-    import uuid
     from django.conf import settings
+    from pathlib import Path
 
-    # Crear directorio si no existe
-    upload_dir = os.path.join(settings.MEDIA_ROOT, 'uploads')
-    os.makedirs(upload_dir, exist_ok=True)
-    
-    # Generar nombre único para el archivo
-    file_name = f"{uuid.uuid4()}_{file.name}"
-    file_path = build_media_url(file_name, request, is_backend=True)
-    
-    # Guardar el archivo
-    with open(file_path, 'wb+') as destination:
-        for chunk in file.chunks():
-            destination.write(chunk)
-    
-    # Retornar la ruta relativa con el formato correcto
-    return build_media_url(file_name, request, is_backend=False)
+    try:
+        # Asegurarnos de que MEDIA_ROOT está definido correctamente
+        media_root = Path(settings.MEDIA_ROOT)
+        logger.info(f"MEDIA_ROOT: {media_root}")
+
+        # Definir el subdirectorio basado en el tipo de archivo
+        subdir = 'training_videos' if file_type == 'video' else 'training_images'
+        upload_dir = media_root / subdir
+        
+        # Crear el directorio si no existe
+        upload_dir.mkdir(parents=True, exist_ok=True)
+        logger.info(f"Directorio de carga: {upload_dir}")
+
+        # Generar nombre único para el archivo
+        file_extension = os.path.splitext(file.name)[1].lower()
+        unique_filename = f"{uuid.uuid4()}{file_extension}"
+        
+        # Ruta completa del archivo
+        file_path = upload_dir / unique_filename
+        logger.info(f"Ruta completa del archivo: {file_path}")
+
+        # Guardar el archivo físicamente
+        with open(file_path, 'wb+') as destination:
+            for chunk in file.chunks():
+                destination.write(chunk)
+
+        # Verificar que el archivo se guardó correctamente
+        if not file_path.exists():
+            raise Exception(f"El archivo no se guardó correctamente en {file_path}")
+
+        # Establecer permisos correctos
+        os.chmod(file_path, 0o644)
+        
+        # Retornar la URL relativa
+        relative_path = f'{subdir}/{unique_filename}'
+        logger.info(f"URL relativa generada: {relative_path}")
+        
+        return relative_path
+
+    except Exception as e:
+        logger.error(f"Error en handle_uploaded_file: {str(e)}", exc_info=True)
+        raise
 
 
 

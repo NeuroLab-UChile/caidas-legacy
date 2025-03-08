@@ -222,6 +222,20 @@
       padding: 0.5rem;
       border-radius: 0.375rem;
     }
+
+    .media-preview {
+        max-width: 320px;
+        max-height: 240px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        object-fit: contain;
+    }
+
+    .media-name {
+        margin-top: 8px;
+        font-size: 0.9em;
+        color: #666;
+    }
   </style>
 {% endblock %}
 
@@ -263,22 +277,10 @@
           </select>
         </div>
 
-        <!-- Tipos para Evaluación -->
-        <div id="evaluationTypes" class="form-group hidden">
-          <label for="questionType">Tipo de Pregunta</label>
-          <select id="questionType" class="form-select">
-            <option value="MULTIPLE_CHOICE_QUESTION">Selección Múltiple</option>
-            <option value="SINGLE_CHOICE_QUESTION">Selección Única</option>
-            <option value="SCALE_QUESTION">Escala</option>
-            <option value="TEXT_QUESTION">Texto</option>
-            <option value="IMAGE_QUESTION">Imagen</option>
-          </select>
-        </div>
-
         <!-- Tipos para Entrenamiento -->
         <div id="trainingTypes" class="form-group hidden">
           <label for="trainingType">Tipo de Entrenamiento</label>
-          <select id="trainingType" class="form-select">
+          <select id="trainingType" class="form-select" onchange="toggleMediaType()">
             <option value="VIDEO">Video</option>
             <option value="TEXT">Texto</option>
             <option value="IMAGE">Imagen</option>
@@ -301,15 +303,37 @@
         </div>
 
         <div id="mediaContainer" class="form-group hidden">
-          <label for="mediaFile">Archivo Multimedia</label>
-          <input type="file" 
-                 id="mediaFile" 
-                 class="form-input" 
-                 accept="video/*,image/*"
-                 onchange="handleFilePreview(event)">
-          <div id="mediaPreview" class="mt-4 hidden">
+            <!-- Container para Video -->
+            <div id="videoInputContainer" class="hidden">
+                <label for="video">Video</label>
+                <input type="file" 
+                       id="video" 
+                       name="video" 
+                       class="form-input" 
+                       accept="video/*"
+                       onchange="handleFilePreview(event, 'video')">
+            </div>
+
+            <!-- Container para Imagen -->
+            <div id="imageInputContainer" class="hidden">
+                <label for="image">Imagen</label>
+                <input type="file" 
+                       id="image" 
+                       name="image" 
+                       class="form-input" 
+                       accept="image/*"
+                       onchange="handleFilePreview(event, 'image')">
+            </div>
+
             <!-- Vista previa del contenido multimedia -->
-          </div>
+            <div id="mediaPreview" class="mt-4">
+                <div id="currentMedia" class="mb-4">
+                    <!-- Aquí se mostrará el contenido actual -->
+                </div>
+                <div id="newMediaPreview" class="hidden">
+                    <!-- Aquí se mostrará la vista previa del nuevo contenido -->
+                </div>
+            </div>
         </div>
 
         <div class="form-group" id="mediaUrlContainer">
@@ -348,27 +372,37 @@
 
     function toggleContentType() {
       const contentType = document.getElementById('contentType').value;
-      const evaluationTypes = document.getElementById('evaluationTypes');
       const trainingTypes = document.getElementById('trainingTypes');
-      const optionsContainer = document.getElementById('optionsContainer');
-      const contentLabel = document.getElementById('contentLabel');
-      const questionType = document.getElementById('questionType');
+      const mediaContainer = document.getElementById('mediaContainer');
       
-      evaluationTypes.classList.toggle('hidden', contentType !== 'EVALUATION');
       trainingTypes.classList.toggle('hidden', contentType !== 'TRAINING');
+      mediaContainer.classList.toggle('hidden', contentType !== 'TRAINING');
       
-      if (contentType === 'EVALUATION') {
-          // Si es la primera vez, seleccionar MULTIPLE_CHOICE_QUESTION por defecto
-          if (!questionType.value) {
-              questionType.value = 'MULTIPLE_CHOICE_QUESTION';
-          }
-          const isChoiceQuestion = ['MULTIPLE_CHOICE_QUESTION', 'SINGLE_CHOICE_QUESTION'].includes(questionType.value);
-          optionsContainer.classList.toggle('hidden', !isChoiceQuestion);
-      } else {
-          optionsContainer.classList.add('hidden');
+      if (contentType === 'TRAINING') {
+          toggleMediaType();
+      }
+    }
+
+    function toggleMediaType() {
+      const trainingType = document.getElementById('trainingType').value;
+      const videoContainer = document.getElementById('videoInputContainer');
+      const imageContainer = document.getElementById('imageInputContainer');
+      
+      // Ocultar todos los contenedores
+      videoContainer.classList.add('hidden');
+      imageContainer.classList.add('hidden');
+      
+      // Mostrar el contenedor correspondiente
+      if (trainingType === 'VIDEO') {
+          videoContainer.classList.remove('hidden');
+      } else if (trainingType === 'IMAGE') {
+          imageContainer.classList.remove('hidden');
       }
       
-      contentLabel.textContent = contentType === 'TRAINING' ? 'Contenido' : 'Pregunta';
+      // Limpiar las vistas previas
+      document.getElementById('newMediaPreview').innerHTML = '';
+      document.getElementById('video').value = '';
+      document.getElementById('image').value = '';
     }
 
     function openAddQuestionModal() {
@@ -522,7 +556,8 @@
         const contentType = document.getElementById('contentType').value;
         const nodeId = document.getElementById('nodeId').value;
         const questionText = document.getElementById('questionText').value;
-        const mediaFile = document.getElementById('mediaFile')?.files[0]
+        const videoFile = document.getElementById('video')?.files[0]
+        const imageFile = document.getElementById('image')?.files[0]
 
         const nodeData = {
             id: nodeId ? parseInt(nodeId) : Date.now(),
@@ -536,16 +571,16 @@
         
         // Crear el objeto del nodo
         if (contentType === 'TRAINING') {
-            if (mediaFile) {
-              console.log(mediaFile)
-              if (mediaFile.type === 'video/mp4') {
-                formData.append('video', mediaFile);
+            if (videoFile) {
+              console.log(videoFile)
+              if (videoFile.type === 'video/mp4') {
+                formData.append('video', videoFile);
                 nodeData.media_pending = true;
-                nodeData.media_url = mediaFile.name;
+                nodeData.media_url = videoFile.name;
               } else {
-                formData.append('image', mediaFile);
+                formData.append('image', videoFile);
                 nodeData.media_pending = true;
-                nodeData.media_url = mediaFile.name;
+                nodeData.media_url = videoFile.name;
               }
             } else if (nodeId) {
                 const existingNode = trainingNodes.find(n => n.id === parseInt(nodeId));
@@ -800,43 +835,81 @@
         const contentType = document.getElementById('contentType').value;
         const trainingType = document.getElementById('trainingType').value;
         const mediaContainer = document.getElementById('mediaContainer');
-        const mediaFile = document.getElementById('mediaFile');
+        const videoContainer = document.getElementById('videoInputContainer');
+        const imageContainer = document.getElementById('imageInputContainer');
         
-        const showMedia = contentType === 'TRAINING' && 
-                         ['VIDEO', 'IMAGE'].includes(trainingType);
+        mediaContainer.classList.toggle('hidden', contentType !== 'TRAINING');
         
-        mediaContainer.classList.toggle('hidden', !showMedia);
-        
-        if (showMedia) {
-            mediaFile.accept = trainingType === 'VIDEO' ? 'video/*' : 'image/*';
-        } else {
-            document.getElementById('mediaPreview').classList.add('hidden');
+        if (contentType === 'TRAINING') {
+            videoContainer.classList.toggle('hidden', trainingType !== 'VIDEO');
+            imageContainer.classList.toggle('hidden', trainingType !== 'IMAGE');
+            
+            // Limpiar los inputs cuando se cambia el tipo
+            if (trainingType === 'VIDEO') {
+                document.getElementById('image').value = '';
+            } else if (trainingType === 'IMAGE') {
+                document.getElementById('video').value = '';
+            }
         }
     }
 
-    function handleFilePreview(event) {
+    function handleFilePreview(event, type) {
         const file = event.target.files[0];
-        const mediaPreview = document.getElementById('mediaPreview');
-        mediaPreview.classList.remove('hidden');
+        if (!file) return;
 
-        if (file.type.startsWith('video/')) {
+        const newMediaPreview = document.getElementById('newMediaPreview');
+        newMediaPreview.classList.remove('hidden');
+
+        if (type === 'video') {
             const videoUrl = URL.createObjectURL(file);
-            mediaPreview.innerHTML = `
-                <video controls width="320">
+            newMediaPreview.innerHTML = `
+                <h4>Vista previa del nuevo video:</h4>
+                <video controls width="320" class="media-preview">
                     <source src="${videoUrl}" type="${file.type}">
                     Tu navegador no soporta la reproducción de video.
                 </video>
                 <div class="media-name">${file.name}</div>
             `;
-        } else {
+        } else if (type === 'image') {
             const reader = new FileReader();
             reader.onload = function(e) {
-                mediaPreview.innerHTML = `
-                    <img src="${e.target.result}" class="media-thumbnail" alt="Vista previa">
+                newMediaPreview.innerHTML = `
+                    <h4>Vista previa de la nueva imagen:</h4>
+                    <img src="${e.target.result}" class="media-preview" alt="Vista previa">
                     <div class="media-name">${file.name}</div>
                 `;
             };
             reader.readAsDataURL(file);
+        }
+    }
+
+    function showCurrentMedia(mediaUrl, type) {
+        if (!mediaUrl) return;
+        
+        const currentMedia = document.getElementById('currentMedia');
+        if (type === 'VIDEO') {
+            currentMedia.innerHTML = `
+                <h4>Video actual:</h4>
+                <video controls width="320" class="media-preview">
+                    <source src="/media/${mediaUrl}" type="video/mp4">
+                    Tu navegador no soporta la reproducción de video.
+                </video>
+            `;
+        } else if (type === 'IMAGE') {
+            currentMedia.innerHTML = `
+                <h4>Imagen actual:</h4>
+                <img src="/media/${mediaUrl}" class="media-preview" alt="Imagen actual">
+            `;
+        }
+    }
+
+    function updateMediaDisplay(response) {
+        if (response.status === 'success' && response.data.media_url) {
+            const type = response.data.type || 'VIDEO';
+            showCurrentMedia(response.data.media_url, type);
+            document.getElementById('newMediaPreview').innerHTML = '';
+            document.getElementById('video').value = '';
+            document.getElementById('image').value = '';
         }
     }
 
@@ -861,7 +934,10 @@
         const fileInput = document.querySelector('input[type="file"]');
         if (fileInput) {
             console.log('FileInput encontrado:', fileInput);
-            fileInput.addEventListener('change', handleFilePreview);
+            fileInput.addEventListener('change', function() {
+                const type = this.id.split('-')[0];
+                handleFilePreview(event, type);
+            });
         } else {
             console.error('No se encontró el input de archivo');
         }
