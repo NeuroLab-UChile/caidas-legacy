@@ -117,6 +117,30 @@ def update_evaluation_form(request, template_id):
             }
         }, status=500, json_dumps_params={'indent': 2, 'ensure_ascii': False})
 
+def delete_old_media(old_media_url):
+    """
+    Elimina el archivo de media antiguo si existe
+    """
+    if not old_media_url:
+        return
+    
+    try:
+        # Convertir URL a ruta del sistema de archivos
+        if 'training_videos' in old_media_url or 'training_images' in old_media_url:
+            # Extraer la ruta relativa después de /media/
+            relative_path = old_media_url.split('/media/')[-1]
+            full_path = os.path.join(settings.MEDIA_ROOT, relative_path)
+            
+            logger.info(f"Intentando eliminar archivo antiguo: {full_path}")
+            
+            if os.path.exists(full_path):
+                os.remove(full_path)
+                logger.info(f"Archivo antiguo eliminado: {full_path}")
+            else:
+                logger.warning(f"Archivo antiguo no encontrado: {full_path}")
+    except Exception as e:
+        logger.error(f"Error al eliminar archivo antiguo: {str(e)}")
+
 @require_POST
 @csrf_exempt
 @user_passes_test(lambda u: u.is_staff)
@@ -125,72 +149,54 @@ def update_training_form(request, template_id):
         logger.info("=== Inicio de update_training_form ===")
         logger.info(f"FILES recibidos: {request.FILES}")
         
-        # Verificar qué tipo de archivo se recibió
+        # Obtener el template y sus datos actuales
+        obj = get_object_or_404(CategoryTemplate, id=template_id)
+        training_form_data = json.loads(request.POST.get('training_form', '{}'))
+        nodes = training_form_data.get('training_nodes', [])
+        
+        # Procesar archivo multimedia
         video_file = request.FILES.get('video')
         image_file = request.FILES.get('image')
         
-        if not video_file and not image_file:
-            return JsonResponse({
-                'status': 'error',
-                'message': 'No se recibió ningún archivo'
-            }, status=400)
-
-        # Determinar tipo y procesar archivo
-        if video_file:
-            media_file = video_file
-            file_type = 'video'
-            node_type = 'VIDEO_NODE'
-        else:
-            media_file = image_file
-            file_type = 'image'
-            node_type = 'IMAGE_NODE'
-
-        try:
-            media_url = handle_uploaded_file(media_file, file_type)
-            logger.info(f"Archivo guardado en: {media_url}")
+        if video_file or image_file:
+            media_file = video_file if video_file else image_file
+            file_type = 'video' if video_file else 'image'
             
-            # Obtener y actualizar el formulario
-            obj = get_object_or_404(CategoryTemplate, id=template_id)
-            training_form_data = obj.training_form or {'training_nodes': []}
-            nodes = training_form_data.get('training_nodes', [])
-            
-            # Actualizar el nodo correspondiente
-            node_updated = False
+            # Buscar el nodo que se está actualizando
+            old_media_url = None
             for node in nodes:
                 if node.get('media_pending'):
-                    node['media_url'] = media_url
+                    # Guardar la URL antigua antes de actualizarla
+                    old_media_url = node.get('media_url')
+                    
+                    # Guardar el nuevo archivo
+                    new_media_url = handle_uploaded_file(media_file, file_type)
+                    logger.info(f"Nuevo archivo guardado en: {new_media_url}")
+                    
+                    # Actualizar el nodo
+                    node['media_url'] = new_media_url
                     node['media_pending'] = False
-                    node['type'] = node_type
-                    node_updated = True
+                    node['type'] = 'VIDEO_NODE' if video_file else 'IMAGE_NODE'
+                    
+                    # Eliminar el archivo antiguo si existe
+                    if old_media_url:
+                        delete_old_media(old_media_url)
+                    
                     break
-            
-            if not node_updated:
-                # Si no hay nodo pendiente, crear uno nuevo
-                new_node = {
-                    'id': str(uuid.uuid4()),
-                    'type': node_type,
-                    'media_url': media_url,
-                    'order': len(nodes)
-                }
-                nodes.append(new_node)
-            
-            # Guardar los cambios
-            obj.training_form = training_form_data
-            obj.save()
-            
-            return JsonResponse({
-                'status': 'success',
-                'message': f'{file_type.capitalize()} guardado correctamente',
-                'data': {
-                    'media_url': media_url,
-                    'type': node_type,
-                    'nodes': nodes
-                }
-            })
-            
-        except Exception as e:
-            logger.error(f"Error guardando archivo: {str(e)}", exc_info=True)
-            raise
+        
+        # Guardar los cambios en el template
+        obj.training_form = training_form_data
+        obj.save()
+        
+        return JsonResponse({
+            'status': 'success',
+            'message': 'Contenido actualizado correctamente',
+            'data': {
+                'nodes': nodes,
+                'media_url': new_media_url if 'new_media_url' in locals() else None,
+                'type': 'VIDEO_NODE' if video_file else 'IMAGE_NODE' if image_file else None
+            }
+        })
 
     except Exception as e:
         logger.error(f"Error en update_training_form: {str(e)}", exc_info=True)
