@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import  { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -43,14 +43,23 @@ export default function ProfileScreen() {
   const handleImageSelected = async (uri: string) => {
     try {
       setIsLoading(true);
-      console.log("Subiendo imagen:", uri);
+      
+      // Convertir la imagen a base64
+      const response = await fetch(uri);
+      const blob = await response.blob();
+      const base64 = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
 
-      const response = await apiService.user.uploadProfileImage(uri);
-      console.log("Respuesta de subida:", response.data);
-
-      if (response.data?.profile?.profile_image) {
+      // Enviar la imagen en base64 al servidor
+      const apiResponse = await apiService.user.uploadProfileImage(base64 as string);
+      
+      if (apiResponse.data?.profile?.profile_image) {
         const timestamp = new Date().getTime();
-        const imageUrlWithTimestamp = `${response.data.profile.profile_image}?t=${timestamp}`;
+        const imageUrlWithTimestamp = `${apiResponse.data.profile.profile_image}?t=${timestamp}`;
         setUser((prev: any) => ({
           ...prev,
           profile: {
@@ -63,10 +72,7 @@ export default function ProfileScreen() {
       await loadProfile();
     } catch (error) {
       console.error("Error al subir la imagen:", error);
-      Alert.alert(
-        "Error",
-        "No se pudo subir la imagen. Por favor, intenta de nuevo."
-      );
+      Alert.alert("Error", "No se pudo subir la imagen. Por favor, intenta de nuevo.");
     } finally {
       setIsLoading(false);
     }

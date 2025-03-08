@@ -285,34 +285,20 @@ export class ApiClient {
       return this.handleResponse<UserProfile>(response);
     },
 
-    uploadProfileImage: async (imageUri: string): Promise<ApiResponse<UserProfile>> => {
+    uploadProfileImage: async (base64Image: string): Promise<ApiResponse<UserProfile>> => {
       try {
-        console.log("Starting image upload...");
-
         const formData = new FormData();
-
-        // Obtener el nombre del archivo y su extensión
-        const filename = imageUri.split('/').pop() || 'profile-image.jpg';
-        const match = /\.(\w+)$/.exec(filename);
-        const type = match ? `image/${match[1]}` : 'image/jpeg';
-
-        // Agregar la imagen al FormData con la estructura correcta
-        formData.append('profile_image', {
-          uri: imageUri,
-          type,
-          name: filename,
-        } as any);
+        formData.append('image', base64Image);
 
         const token = await AsyncStorage.getItem('auth_token');
         if (!token) {
           throw new Error('No auth token found');
         }
 
-        // Usar la ruta específica para subir imágenes
         const response = await fetch(
-          this.getUrl('/user/profile/upload_image/'),  // Ruta actualizada
+          this.getUrl('/user/profile/upload_image/'),
           {
-            method: 'POST',  // Cambiado a POST para coincidir con el backend
+            method: 'POST',
             headers: {
               'Authorization': `Bearer ${token}`,
               'Accept': 'application/json',
@@ -321,11 +307,8 @@ export class ApiClient {
           }
         );
 
-        console.log('Upload response status:', response.status);
-
         if (!response.ok) {
           const errorData = await response.json();
-          console.error('Upload error:', errorData);
           throw new Error(errorData.detail || 'Error uploading image');
         }
 

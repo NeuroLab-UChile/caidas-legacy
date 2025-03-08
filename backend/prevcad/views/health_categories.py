@@ -24,6 +24,9 @@ from prevcad.utils import build_media_url
 
 from prevcad.models import UserProfile
 
+import base64
+from django.core.files.base import ContentFile
+
 class HealthCategoryListView(APIView):
 
     
@@ -74,29 +77,22 @@ def save_evaluation_responses(request, category_id):
         # Procesar imágenes y actualizar respuestas
         for node_id, response in responses.items():
             if isinstance(response, dict) and response.get('type') == 'IMAGE_QUESTION':
-                # Obtener todas las imágenes para este nodo específico
-                image_files = sorted([
-                    (k, f) for k, f in request.FILES.items()
-                    if k.startswith(f'image_{node_id}')
-                ], key=lambda x: x[0])
+                processed_images = []
                 
-                if image_files:
-                    processed_images = []
-                    for key, image_file in image_files:
-                        try:
-                            print(f"\nProcesando archivo: {image_file.name}")
-                            print(f"Tipo de contenido: {image_file.content_type}")
-                            print(f"Tamaño: {image_file.size} bytes")
-                            
-                            # Validar que es una imagen
-                            if not image_file.content_type.startswith('image/'):
-                                print(f"Archivo no válido: {image_file.name}")
-                                continue
+                # Procesar imágenes en base64
+                for image_data in response.get('answer', []):
+                    try:
+                        if isinstance(image_data, str) and image_data.startswith('data:image'):
+                            # Extraer el contenido base64
+                            format, imgstr = image_data.split(';base64,')
+                            ext = format.split('/')[-1]
                             
                             # Crear nombre único para la imagen
                             timestamp = timezone.now().strftime('%Y%m%d_%H%M%S_%f')
-                            extension = os.path.splitext(image_file.name)[1].lower() or '.jpg'
-                            filename = f'question_{node_id}_{timestamp}{extension}'
+                            filename = f'question_{node_id}_{timestamp}.{ext}'
+                            
+                            # Convertir base64 a archivo
+                            image_content = ContentFile(base64.b64decode(imgstr))
                             
                             # Definir la ruta relativa
                             relative_path = os.path.join(
@@ -105,19 +101,11 @@ def save_evaluation_responses(request, category_id):
                                 filename
                             )
                             
-                            print(f"Ruta relativa: {relative_path}")
-                            
-                            # Asegurar que el directorio existe
-                            full_path = os.path.join(settings.MEDIA_ROOT, 'evaluation_images', f'category_{category_id}')
-                            os.makedirs(full_path, exist_ok=True)
-                            
                             # Guardar la imagen
-                            saved_path = default_storage.save(relative_path, image_file)
-                            print(f"Archivo guardado en: {saved_path}")
+                            saved_path = default_storage.save(relative_path, image_content)
                             
                             # Construir la URL
                             image_url = build_media_url(saved_path, request, is_backend=False)
-                            print(f"URL generada: {image_url}")
                             
                             processed_images.append({
                                 'url': image_url,
@@ -125,22 +113,17 @@ def save_evaluation_responses(request, category_id):
                                 'timestamp': timezone.now().isoformat()
                             })
                             
-                        except Exception as e:
-                            print(f"Error procesando imagen: {str(e)}")
-                            continue
-                    
-                    if processed_images:
-                        # Actualizar la respuesta con todas las imágenes procesadas
-                        responses[node_id] = {
-                            'type': 'IMAGE_QUESTION',
-                            'answer': {
-                                'images': processed_images
-                            }
+                    except Exception as e:
+                        print(f"Error procesando imagen: {str(e)}")
+                        continue
+                
+                if processed_images:
+                    responses[node_id] = {
+                        'type': 'IMAGE_QUESTION',
+                        'answer': {
+                            'images': processed_images
                         }
-                    else:
-                        print(f"No se procesaron imágenes para node {node_id}")
-                else:
-                    print(f"No se encontraron archivos de imagen para node {node_id}")
+                    }
         
         # Guardar las respuestas en el formulario de evaluación
         evaluation_form = health_category.get_or_create_evaluation_form()
