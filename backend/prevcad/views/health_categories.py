@@ -28,6 +28,9 @@ import base64
 from django.core.files.base import ContentFile
 from rest_framework.parsers import MultiPartParser, FormParser
 
+import logging
+logger = logging.getLogger(__name__)
+
 class HealthCategoryListView(APIView):
 
     
@@ -55,15 +58,24 @@ class HealthCategoryListView(APIView):
 @api_view(['POST'])
 def save_evaluation_responses(request, category_id):
     try:
+        logger.info("=== Iniciando save_evaluation_responses ===")
+        logger.info(f"Usuario: {request.user.username}")
+        logger.info(f"Category ID: {category_id}")
+        
+        # Log del request completo
+        logger.info("Request Data:")
+        logger.info(f"POST data: {request.POST}")
+        logger.info(f"FILES: {request.FILES}")
+        logger.info(f"Content Type: {request.content_type}")
+        logger.info(f"Headers: {request.headers}")
+
         if not request.user.is_authenticated:
+            logger.warning("Usuario no autenticado")
             return Response({
                 'status': 'error',
                 'message': 'Usuario no autenticado'
             }, status=status.HTTP_401_UNAUTHORIZED)
-            
-        print("=== Debug save_evaluation_responses ===")
-        print("Procesando respuestas...")
-            
+
         # Obtener el perfil y la categoría
         user_profile = get_object_or_404(UserProfile, user=request.user)
         health_category = get_object_or_404(
@@ -71,93 +83,118 @@ def save_evaluation_responses(request, category_id):
             id=category_id,
             user=user_profile
         )
-        
+        logger.info(f"Perfil de usuario y categoría encontrados: {user_profile.id}, {health_category.id}")
+
         # Obtener y parsear las respuestas
         responses = request.data.get('responses', {})
+        logger.info(f"Respuestas recibidas: {responses}")
+
         if isinstance(responses, str):
             try:
                 responses = json.loads(responses)
+                logger.info("Respuestas JSON parseadas correctamente")
             except json.JSONDecodeError as e:
-                print("Error decodificando JSON:", str(e))
+                logger.error(f"Error decodificando JSON: {str(e)}")
+                logger.error(f"JSON recibido: {responses}")
                 return Response({
                     'status': 'error',
                     'message': 'Error en el formato de las respuestas'
                 }, status=status.HTTP_400_BAD_REQUEST)
-            
-        # Procesar imágenes y actualizar respuestas
+
+        # Procesar cada respuesta
         for node_id, response in responses.items():
-            print(f"Procesando node_id: {node_id}")
-            
+            logger.info(f"Procesando node_id: {node_id}")
+            logger.info(f"Respuesta: {response}")
+
             if isinstance(response, dict) and response.get('type') == 'IMAGE_QUESTION':
                 processed_images = []
                 images_to_process = response.get('answer', [])
-                
+                logger.info(f"Procesando {len(images_to_process)} imágenes para node_id {node_id}")
+
                 for image_data in images_to_process:
                     try:
-                        if not isinstance(image_data, str) or not image_data.startswith('data:image'):
-                            continue
-                            
-                        # Extraer el contenido base64
-                        format, imgstr = image_data.split(';base64,')
-                        ext = format.split('/')[-1]
+                        logger.info(f"Procesando imagen: {type(image_data)}")
                         
+                        # Si es un archivo
+                        if hasattr(image_data, 'name'):
+                            logger.info(f"Procesando archivo: {image_data.name}")
+                            image_content = image_data
+                            ext = image_data.name.split('.')[-1]
+                        # Si es base64
+                        elif isinstance(image_data, str) and image_data.startswith('data:image'):
+                            logger.info("Procesando imagen base64")
+                            format, imgstr = image_data.split(';base64,')
+                            ext = format.split('/')[-1]
+                            image_content = ContentFile(base64.b64decode(imgstr))
+                        else:
+                            logger.warning(f"Formato de imagen no reconocido: {type(image_data)}")
+                            continue
+
                         # Crear nombre único para la imagen
                         timestamp = timezone.now().strftime('%Y%m%d_%H%M%S_%f')
                         filename = f'question_{node_id}_{timestamp}.{ext}'
-                        
-                        # Convertir base64 a archivo
-                        image_content = ContentFile(base64.b64decode(imgstr))
-                        
+                        logger.info(f"Nombre de archivo generado: {filename}")
+
                         # Definir la ruta relativa
                         relative_path = os.path.join(
                             'evaluation_images',
                             f'category_{category_id}',
                             filename
                         )
-                        
-                        # Asegurar que el directorio existe
-                        os.makedirs(os.path.dirname(os.path.join(settings.MEDIA_ROOT, relative_path)), exist_ok=True)
-                        
+                        logger.info(f"Ruta relativa: {relative_path}")
+
+                        # Crear directorio si no existe
+                        full_path = os.path.join(settings.MEDIA_ROOT, relative_path)
+                        os.makedirs(os.path.dirname(full_path), exist_ok=True)
+                        logger.info(f"Directorio creado/verificado: {os.path.dirname(full_path)}")
+
                         # Guardar la imagen
                         saved_path = default_storage.save(relative_path, image_content)
-                        
+                        logger.info(f"Imagen guardada en: {saved_path}")
+
                         # Construir la URL
                         image_url = build_media_url(saved_path, request, is_backend=False)
-                        
+                        logger.info(f"URL generada: {image_url}")
+
                         processed_images.append({
                             'url': image_url,
                             'filename': filename,
                             'timestamp': timezone.now().isoformat()
                         })
-                        
-                        print(f"Imagen guardada exitosamente: {image_url}")
-                        
+
                     except Exception as e:
-                        print(f"Error procesando imagen: {str(e)}")
+                        logger.error(f"Error procesando imagen: {str(e)}")
+                        logger.error(traceback.format_exc())
                         continue
-                
+
                 if processed_images:
+                    logger.info(f"Imágenes procesadas exitosamente: {len(processed_images)}")
                     responses[node_id] = {
                         'type': 'IMAGE_QUESTION',
                         'answer': processed_images
                     }
-        
-        # Guardar las respuestas en el formulario de evaluación
-        evaluation_form = health_category.get_or_create_evaluation_form()
-        evaluation_form.responses = responses
-        evaluation_form.completed_date = timezone.now()
-        evaluation_form.save()
-        
+
+        # Guardar las respuestas
+        try:
+            evaluation_form = health_category.get_or_create_evaluation_form()
+            evaluation_form.responses = responses
+            evaluation_form.completed_date = timezone.now()
+            evaluation_form.save()
+            logger.info("Respuestas guardadas exitosamente")
+
+        except Exception as e:
+            logger.error(f"Error guardando respuestas en el formulario: {str(e)}")
+            logger.error(traceback.format_exc())
+            raise
+
         return Response({
             'status': 'success',
-            'message': 'Respuestas guardadas correctamente',
-            'processed_images': processed_images if 'processed_images' in locals() else []
+            'message': 'Respuestas guardadas correctamente'
         })
-        
+
     except Exception as e:
-        print(f"Error guardando respuestas: {str(e)}")
-        import traceback
-        traceback.print_exc()
+        logger.error(f"Error general en save_evaluation_responses: {str(e)}")
+        logger.error(traceback.format_exc())
         return Response({
             'status': 'error',
             'message': str(e)
