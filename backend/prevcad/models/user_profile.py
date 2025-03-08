@@ -6,7 +6,7 @@ from django.db import transaction
 import uuid
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from .user_types import UserTypes
+from .user_types import UserTypes, AccessLevel
 from prevcad.utils import build_media_url
 
 
@@ -16,28 +16,19 @@ class UserProfile(models.Model):
         on_delete=models.CASCADE,
         related_name='profile'
     )
-    profile_image = models.ImageField(
-        'Foto de perfil',
-        upload_to='profile_images/',  # Ruta simple
-        null=True,
-        blank=True
-    )
-    phone = models.CharField(
-        'Teléfono',
-        max_length=20,
-        null=True,
-        blank=True
-    )
-    birth_date = models.DateField(
-        'Fecha de nacimiento',
-        null=True,
-        blank=True
-    )
+    phone = models.CharField(max_length=20, blank=True, null=True)
+    birth_date = models.DateField(null=True, blank=True)
     specialty = models.CharField(
         max_length=100,
         blank=True,
         null=True,
         help_text="Especialidad del profesional (si aplica)"
+    )
+    profile_image = models.ImageField(
+        upload_to='profile_images/',
+        null=True,
+        blank=True,
+        verbose_name="Imagen de perfil"
     )
 
     @property
@@ -105,7 +96,24 @@ class UserProfile(models.Model):
                 })
                 
         return roles
+    def has_permission(self, resource_type: str, action: str) -> bool:
+        """
+        Verifica si el usuario tiene un permiso específico.
+        Args:
+            resource_type: Tipo de recurso (usar ResourceType)
+            action: Acción requerida ('view', 'add', 'change', 'delete')
+        """
+        if not self.role:
+            return False
 
+        role_config = UserTypes.get_role_config().get(self.role, {})
+        
+        # Superusuarios tienen todos los permisos
+        if role_config.get('level') == AccessLevel.SUPERUSER:
+            return True
+            
+        permissions = role_config.get('permissions', {})
+        return action in permissions.get(resource_type, [])
     def has_role(self, role):
         """
         Verifica si el usuario tiene un rol específico
