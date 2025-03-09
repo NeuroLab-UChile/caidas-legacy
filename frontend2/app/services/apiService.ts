@@ -399,42 +399,10 @@ export class ApiClient {
     }
   }
 
-  private async createFormDataWithImages(responses: ResponseData, imageResponses: Record<string, string[]>) {
-    // Convertir las respuestas normales y las imágenes en un solo objeto
-    const allResponses = { ...responses };
-
-    // Procesar cada pregunta con imágenes
-    for (const [nodeId, imageUris] of Object.entries(imageResponses)) {
-        try {
-            const base64Images = await Promise.all(
-                imageUris.map(async (uri) => {
-                    const base64 = await FileSystem.readAsStringAsync(uri, {
-                        encoding: FileSystem.EncodingType.Base64,
-                    });
-                    return `data:image/jpeg;base64,${base64}`;
-                })
-            );
-
-            // Añadir las imágenes en base64 a las respuestas
-            allResponses[nodeId] = {
-                type: 'IMAGE_QUESTION',
-                answer: {
-                    images: base64Images
-                }
-            };
-        } catch (error) {
-            console.error(`Error procesando imágenes para nodeId ${nodeId}:`, error);
-        }
-    }
-
-    return JSON.stringify(allResponses);
-  }
-
   public evaluations = {
     saveResponses: async (categoryId: number, responses: ResponseData): Promise<ApiResponse<any>> => {
         try {
-            const processedResponses = await this.createFormDataWithImages(responses, {});
-            
+            // Enviar las respuestas directamente sin procesamiento
             const response = await fetch(
                 this.getUrl(`/health_categories/${categoryId}/responses/`),
                 {
@@ -443,7 +411,7 @@ export class ApiClient {
                         ...(await this.getHeaders()),
                         'Content-Type': 'application/json',
                     },
-                    body: processedResponses,
+                    body: JSON.stringify(responses), // Enviar responses directamente
                 }
             );
 

@@ -31,8 +31,6 @@ from rest_framework.parsers import MultiPartParser, FormParser
 import logging
 logger = logging.getLogger(__name__)
 
-import uuid
-
 class HealthCategoryListView(APIView):
 
     
@@ -61,47 +59,133 @@ class HealthCategoryListView(APIView):
 def save_evaluation_responses(request, category_id):
     try:
         logger.info("=== Iniciando save_evaluation_responses ===")
+        logger.info(f"Usuario: {request.user.username}")
+        logger.info(f"Category ID: {category_id}")
         
-        # Obtener las respuestas
-        responses = request.data
-        
+        # Log del request completo
+        logger.info("Request Data:")
+        logger.info(f"POST data: {request.POST}")
+        logger.info(f"FILES: {request.FILES}")
+        logger.info(f"Content Type: {request.content_type}")
+        logger.info(f"Headers: {request.headers}")
+
+        if not request.user.is_authenticated:
+            logger.warning("Usuario no autenticado")
+            return Response({
+                'status': 'error',
+                'message': 'Usuario no autenticado'
+            }, status=status.HTTP_401_UNAUTHORIZED)
+
+        # Obtener el perfil y la categoría
+        user_profile = get_object_or_404(UserProfile, user=request.user)
+        health_category = get_object_or_404(
+            HealthCategory, 
+            id=category_id,
+            user=user_profile
+        )
+        logger.info(f"Perfil de usuario y categoría encontrados: {user_profile.id}, {health_category.id}")
+
+        # Obtener y parsear las respuestas
+        responses = request.data.get('responses', {})
+        logger.info(f"Respuestas recibidas: {responses}")
+
+        if isinstance(responses, str):
+            try:
+                responses = json.loads(responses)
+                logger.info("Respuestas JSON parseadas correctamente")
+            except json.JSONDecodeError as e:
+                logger.error(f"Error decodificando JSON: {str(e)}")
+                logger.error(f"JSON recibido: {responses}")
+                return Response({
+                    'status': 'error',
+                    'message': 'Error en el formato de las respuestas'
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+        # Procesar cada respuesta
         for node_id, response in responses.items():
             logger.info(f"Procesando node_id: {node_id}")
             logger.info(f"Respuesta: {response}")
-            
-            if isinstance(response, dict) and response.get('type') == 'IMAGE_QUESTION':
-                images = response.get('answer', {}).get('images', [])
-                processed_images = []
-                
-                for base64_image in images:
-                    try:
-                        # Extraer los datos base64
-                        if ';base64,' in base64_image:
-                            format, imgstr = base64_image.split(';base64,')
-                            ext = format.split('/')[-1]
-                        else:
-                            imgstr = base64_image
-                            ext = 'jpg'
-                            
-                        # Decodificar y guardar la imagen
-                        image_data = base64.b64decode(imgstr)
-                        filename = f"{uuid.uuid4()}.{ext}"
-                        filepath = os.path.join('evaluation_images', filename)
-                        
-                        with default_storage.open(filepath, 'wb') as f:
-                            f.write(image_data)
-                            
-                        processed_images.append(filepath)
-                        logger.info(f"Imagen guardada: {filepath}")
-                        
-                    except Exception as e:
-                        logger.error(f"Error procesando imagen base64: {str(e)}")
-                        continue
-                
-                # Actualizar la respuesta con las rutas de las imágenes guardadas
-                response['answer']['images'] = processed_images
 
-        # ... resto del código para guardar las respuestas ...
+            if isinstance(response, dict) and response.get('type') == 'IMAGE_QUESTION':
+                processed_images = []
+                images_to_process = response.get('answer', [])
+                logger.info(f"Procesando {len(images_to_process)} imágenes para node_id {node_id}")
+
+                for image_data in images_to_process:
+                    try:
+                        logger.info(f"Procesando imagen: {type(image_data)}")
+                        
+                        # Si es un archivo
+                        if hasattr(image_data, 'name'):
+                            logger.info(f"Procesando archivo: {image_data.name}")
+                            image_content = image_data
+                            ext = image_data.name.split('.')[-1]
+                        # Si es base64
+                        elif isinstance(image_data, str) and image_data.startswith('data:image'):
+                            logger.info("Procesando imagen base64")
+                            format, imgstr = image_data.split(';base64,')
+                            ext = format.split('/')[-1]
+                            image_content = ContentFile(base64.b64decode(imgstr))
+                        else:
+                            logger.warning(f"Formato de imagen no reconocido: {type(image_data)}")
+                            continue
+
+                        # Crear nombre único para la imagen
+                        timestamp = timezone.now().strftime('%Y%m%d_%H%M%S_%f')
+                        filename = f'question_{node_id}_{timestamp}.{ext}'
+                        logger.info(f"Nombre de archivo generado: {filename}")
+
+                        # Definir la ruta relativa
+                        relative_path = os.path.join(
+                            'evaluation_images',
+                            f'category_{category_id}',
+                            filename
+                        )
+                        logger.info(f"Ruta relativa: {relative_path}")
+
+                        # Crear directorio si no existe
+                        full_path = os.path.join(settings.MEDIA_ROOT, relative_path)
+                        os.makedirs(os.path.dirname(full_path), exist_ok=True)
+                        logger.info(f"Directorio creado/verificado: {os.path.dirname(full_path)}")
+
+                        # Guardar la imagen
+                        saved_path = default_storage.save(relative_path, image_content)
+                        logger.info(f"Imagen guardada en: {saved_path}")
+
+                        # Construir la URL
+                        image_url = build_media_url(saved_path, request, is_backend=False)
+                        logger.info(f"URL generada: {image_url}")
+
+                        processed_images.append({
+                            'url': image_url,
+                            'filename': filename,
+                            'timestamp': timezone.now().isoformat()
+                        })
+
+                    except Exception as e:
+                        logger.error(f"Error procesando imagen: {str(e)}")
+                        logger.error(traceback.format_exc())
+                        continue
+
+                if processed_images:
+                    logger.info(f"Imágenes procesadas exitosamente: {len(processed_images)}")
+                    responses[node_id] = {
+                        'type': 'IMAGE_QUESTION',
+                        'answer': processed_images
+                    }
+
+        # Guardar las respuestas
+        try:
+            evaluation_form = health_category.get_or_create_evaluation_form()
+            evaluation_form.responses = responses
+            evaluation_form.completed_date = timezone.now()
+            evaluation_form.save()
+            logger.info("Respuestas guardadas exitosamente")
+
+        except Exception as e:
+            logger.error(f"Error guardando respuestas en el formulario: {str(e)}")
+            logger.error(traceback.format_exc())
+            raise
 
         return Response({
             'status': 'success',
@@ -109,7 +193,8 @@ def save_evaluation_responses(request, category_id):
         })
 
     except Exception as e:
-        logger.error(f"Error en save_evaluation_responses: {str(e)}")
+        logger.error(f"Error general en save_evaluation_responses: {str(e)}")
+        logger.error(traceback.format_exc())
         return Response({
             'status': 'error',
             'message': str(e)

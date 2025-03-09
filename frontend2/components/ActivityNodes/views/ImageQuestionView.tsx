@@ -2,6 +2,7 @@ import { useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, Image, Platform } from "react-native";
 import { ScrollView } from "react-native";
 import * as ImagePicker from "expo-image-picker";
+import * as FileSystem from 'expo-file-system';
 import { Ionicons } from "@expo/vector-icons";
 import { theme } from "@/src/theme";
 import React = require("react");
@@ -21,6 +22,18 @@ interface ImageQuestionProps {
 export function ImageQuestionView({ data, setResponse }: ImageQuestionProps) {
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
 
+  const convertToBase64 = async (uri: string): Promise<string> => {
+    try {
+      const base64 = await FileSystem.readAsStringAsync(uri, {
+        encoding: FileSystem.EncodingType.Base64
+      });
+      return `data:image/jpeg;base64,${base64}`;
+    } catch (error) {
+      console.error('Error converting to base64:', error);
+      throw error;
+    }
+  };
+
   const handleSelectImage = async () => {
     try {
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -34,11 +47,15 @@ export function ImageQuestionView({ data, setResponse }: ImageQuestionProps) {
         allowsEditing: true,
         aspect: [1, 1],
         quality: 0.7,
+        base64: true,
       });
 
       if (!result.canceled && result.assets && result.assets[0]) {
-        const imageUri = result.assets[0].uri;
-        const newImages = [...selectedImages, imageUri];
+        const base64Image = result.assets[0].base64 
+          ? `data:image/jpeg;base64,${result.assets[0].base64}`
+          : await convertToBase64(result.assets[0].uri);
+        
+        const newImages = [...selectedImages, base64Image];
         setSelectedImages(newImages);
         setResponse({ answer: newImages });
       }
@@ -60,11 +77,15 @@ export function ImageQuestionView({ data, setResponse }: ImageQuestionProps) {
         allowsEditing: true,
         aspect: [1, 1],
         quality: 0.7,
+        base64: true,
       });
 
       if (!result.canceled && result.assets && result.assets[0]) {
-        const imageUri = result.assets[0].uri;
-        const newImages = [...selectedImages, imageUri];
+        const base64Image = result.assets[0].base64 
+          ? `data:image/jpeg;base64,${result.assets[0].base64}`
+          : await convertToBase64(result.assets[0].uri);
+
+        const newImages = [...selectedImages, base64Image];
         setSelectedImages(newImages);
         setResponse({ answer: newImages });
       }
