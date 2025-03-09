@@ -12,6 +12,8 @@ import logging
 from ..decorators import log_action
 from django.conf import settings
 import uuid
+import base64
+from django.core.files.base import ContentFile
 
 # Obtener el modelo User correcto
 User = get_user_model()
@@ -41,48 +43,59 @@ def uploadProfileImage(request):
         logger.info("="*50)
         logger.info("Iniciando uploadProfileImage")
         logger.info(f"Usuario: {request.user}")
-        logger.info(f"FILES: {request.FILES}")
         
-        if 'image' not in request.FILES:
+        # Obtener la imagen en base64 del body
+        image_data = request.data.get('image')
+        if not image_data:
             logger.error("No se encontró imagen en la solicitud")
             return Response(
                 {'error': 'No se proporcionó ninguna imagen'},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        image = request.FILES['image']
-        profile = request.user.profile
+        # Procesar la imagen base64
+        if 'data:' in image_data and ';base64,' in image_data:
+            # Separar el header del contenido base64
+            format, base64_str = image_data.split(';base64,')
+            # Obtener la extensión del archivo
+            ext = format.split('/')[-1]
+        else:
+            base64_str = image_data
+            ext = 'jpg'  # default extension
+
+        # Decodificar base64 a archivo
+        try:
+            image_data = base64.b64decode(base64_str)
+        except Exception as e:
+            logger.error(f"Error decodificando base64: {str(e)}")
+            return Response(
+                {'error': 'Imagen inválida'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Crear un archivo temporal
+        filename = f"{uuid.uuid4()}.{ext}"
+        upload_path = f'profile_images/{request.user.id}'
+        full_path = os.path.join(upload_path, filename)
 
         # Crear el directorio si no existe
-        upload_path = f'profile_images/{request.user.id}'
         full_media_path = os.path.join(settings.MEDIA_ROOT, upload_path)
         os.makedirs(full_media_path, exist_ok=True)
 
-        # Log para debug
-        logger.info(f"Directorio creado: {full_media_path}")
-        logger.info(f"Permisos del directorio: {oct(os.stat(full_media_path).st_mode)[-3:]}")
-
-        # Guardar la imagen con un nombre único y extensión original
-        filename = f"{uuid.uuid4()}{os.path.splitext(image.name)[1].lower()}"
-        full_path = os.path.join(upload_path, filename)
-        absolute_path = os.path.join(settings.MEDIA_ROOT, full_path)
-
         # Guardar la imagen anterior
+        profile = request.user.profile
         old_image = profile.profile_image
-        
-        # Guardar físicamente la nueva imagen primero
-        with open(absolute_path, 'wb+') as destination:
-            for chunk in image.chunks():
-                destination.write(chunk)
+
+        # Guardar la nueva imagen
+        absolute_path = os.path.join(settings.MEDIA_ROOT, full_path)
+        with open(absolute_path, 'wb') as f:
+            f.write(image_data)
 
         # Verificar que el archivo se guardó correctamente
         if not os.path.exists(absolute_path):
             raise Exception("La imagen no se guardó correctamente")
 
-        logger.info(f"Imagen guardada en: {absolute_path}")
-        logger.info(f"Permisos del archivo: {oct(os.stat(absolute_path).st_mode)[-3:]}")
-
-        # Actualizar el perfil con la nueva imagen
+        # Actualizar el perfil
         profile.profile_image = full_path
         profile.save()
 

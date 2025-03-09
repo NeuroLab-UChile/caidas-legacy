@@ -1,7 +1,6 @@
-import  { useState, useEffect } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, Image, ActivityIndicator } from "react-native";
-import { VideoView, useVideoPlayer, type StatusChangeEventPayload } from "expo-video";
-import { useEventListener } from "expo";
+import { VideoPlayerView } from "@/components/VideoPlayer/VideoPlayerView";
+import { useState } from "react";
+import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { theme } from "@/src/theme";
 
 interface VideoNodeViewProps {
@@ -13,103 +12,24 @@ interface VideoNodeViewProps {
 }
 
 export const VideoNodeView: React.FC<VideoNodeViewProps> = ({ data, onNext }) => {
-  const [showVideo, setShowVideo] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  // **Optimización del buffer y calidad**
-  const player = useVideoPlayer(data.media_url, (player) => {
-    player.loop = false;
-    player.volume = 1.0;
-    player.muted = true; // 🔥 Activar mute puede mejorar la reproducción automática en iOS
-    player.timeUpdateEventInterval = 0.5; // 🔥 Reduce el tiempo de actualización para mejor respuesta
-    player.bufferOptions = {
-      minBufferForPlayback: 1, // 🔥 Se inicia con menos buffer
-      preferredForwardBufferDuration: 10, // 🔥 Reduce la espera por buffer
-    };
-  });
-
-  // **📌 Detectar cuando el video está listo**
-  useEventListener(player, "statusChange", async ({ status }: StatusChangeEventPayload) => {
-    if (status === "readyToPlay") {
-      console.log("✅ Video listo para reproducir");
-      setIsLoading(false);
-      try {
-        await player.play();
-      } catch (err) {
-        console.warn("🚨 No se pudo iniciar automáticamente. Esperando interacción.");
-      }
-    }
-  });
-
-  // **📌 Detectar cuando el video comienza a reproducirse**
-  useEventListener(player, "playingChange", ({ isPlaying }) => {
-    if (isPlaying) {
-      console.log("▶️ Video en reproducción");
-      setIsLoading(false);
-    }
-  });
-
-  const handleVideoPress = async () => {
-    try {
-      setShowVideo(true);
-      setIsLoading(true);
-      setError(null);
-      await player.play();
-    } catch (err) {
-      console.error("❌ Error al iniciar el video:", err);
-      setError("No se pudo cargar el video.");
-      setShowVideo(false);
-    }
-  };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>{data.description}</Text>
-
-      <View style={styles.videoContainer}>
-        {!showVideo ? (
-          <TouchableOpacity style={styles.thumbnailContainer} onPress={handleVideoPress}>
-            <Image source={{ uri: `${data.media_url}?thumb=1` }} style={styles.video} resizeMode="contain" />
-            <View style={styles.playButtonOverlay}>
-              {error ? (
-                <View style={styles.errorContainer}>
-                  <Text style={styles.errorText}>{error}</Text>
-                  <Text style={styles.retryText}>Toca para reintentar</Text>
-                </View>
-              ) : (
-                <Text style={styles.playButtonText}>▶️</Text>
-              )}
-            </View>
-          </TouchableOpacity>
-        ) : (
-          <View style={styles.videoWrapper}>
-            <VideoView
-              style={styles.video}
-              player={player}
-              contentFit="contain"
-              nativeControls
-              onFullscreenEnter={() => console.log("Entró a pantalla completa")}
-              onFullscreenExit={() => console.log("Salió de pantalla completa")}
-            />
-            {isLoading && (
-              <View style={styles.loadingOverlay}>
-                <ActivityIndicator size="large" color={theme.colors.primary} />
-                <Text style={styles.loadingText}>Cargando video...</Text>
-              </View>
-            )}
-          </View>
-        )}
-      </View>
-
-      <View style={styles.debugContainer}>
-        <Text style={styles.debugText}>Estado: {player.status}</Text>
-      </View>
+      <VideoPlayerView 
+        url={data.media_url}
+        description={data.description}
+        showDebug={__DEV__}
+      />
 
       {(isComplete || __DEV__) && onNext && (
-        <TouchableOpacity style={[styles.nextButton, isComplete && styles.nextButtonComplete]} onPress={onNext}>
-          <Text style={styles.nextButtonText}>{isComplete ? "Continuar ✓" : "Continuar"}</Text>
+        <TouchableOpacity 
+          style={[styles.nextButton, isComplete && styles.nextButtonComplete]} 
+          onPress={onNext}
+        >
+          <Text style={styles.nextButtonText}>
+            {isComplete ? "Continuar ✓" : "Continuar"}
+          </Text>
         </TouchableOpacity>
       )}
     </View>

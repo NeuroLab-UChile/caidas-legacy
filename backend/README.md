@@ -122,4 +122,10 @@ npm init -y
 # Instala Jest y otras dependencias necesarias
 npm install --save-dev jest @babel/core @babel/preset-env babel-jest jest-environment-jsdom
 
+## Para ver los logs de django
+
+# Ir al directorio de .git
+cd /var/www/we-flow/ 
+
+# Correr el file de logs
 tail -f backend/logs/django.log

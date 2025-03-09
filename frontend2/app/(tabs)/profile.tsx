@@ -1,4 +1,4 @@
-import  { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -16,6 +16,8 @@ import { Ionicons } from "@expo/vector-icons";
 import apiService from "../services/apiService";
 import { theme } from "@/src/theme";
 import * as ImagePicker from "expo-image-picker";
+import * as FileSystem from 'expo-file-system';
+import { useImagePicker } from '@/hooks/useImagePicker';
 
 const { width } = Dimensions.get("window");
 
@@ -23,6 +25,7 @@ export default function ProfileScreen() {
   const [user, setUser] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const { convertToBase64 } = useImagePicker();
 
   const loadProfile = async () => {
     try {
@@ -43,23 +46,19 @@ export default function ProfileScreen() {
   const handleImageSelected = async (uri: string) => {
     try {
       setIsLoading(true);
-      
-      // Convertir la imagen a base64
-      const response = await fetch(uri);
-      const blob = await response.blob();
-      const base64 = await new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = reject;
-        reader.readAsDataURL(blob);
-      });
+      console.log("Subiendo imagen:", uri);
 
-      // Enviar la imagen en base64 al servidor
-      const apiResponse = await apiService.user.uploadProfileImage(base64 as string);
+      const base64Image = await convertToBase64(uri);
       
-      if (apiResponse.data?.profile?.profile_image) {
+      const response = await apiService.user.uploadProfileImage({
+        image: base64Image
+      });
+      
+      console.log("Respuesta de subida:", response.data);
+
+      if (response.data?.profile?.profile_image) {
         const timestamp = new Date().getTime();
-        const imageUrlWithTimestamp = `${apiResponse.data.profile.profile_image}?t=${timestamp}`;
+        const imageUrlWithTimestamp = `${response.data.profile.profile_image}?t=${timestamp}`;
         setUser((prev: any) => ({
           ...prev,
           profile: {
@@ -72,7 +71,10 @@ export default function ProfileScreen() {
       await loadProfile();
     } catch (error) {
       console.error("Error al subir la imagen:", error);
-      Alert.alert("Error", "No se pudo subir la imagen. Por favor, intenta de nuevo.");
+      Alert.alert(
+        "Error",
+        "No se pudo subir la imagen. Por favor, intenta de nuevo."
+      );
     } finally {
       setIsLoading(false);
     }

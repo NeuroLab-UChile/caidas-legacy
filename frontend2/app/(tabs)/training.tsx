@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Alert,
   ActivityIndicator,
+  Image,
 } from "react-native";
 import { useCategories } from "../contexts/categories";
 import { Button, LoadingIndicator } from "@/components/Common";
@@ -19,9 +20,11 @@ import { ActivityNodeType } from "@/components/ActivityNodes";
 import EmptyState from "../containers/EmptyState";
 import { DoctorRecommendations } from "@/components/DoctorRecommendations";
 import { getCategoryStatus } from "@/utils/categoryHelpers";
-import { Video, ResizeMode, AVPlaybackStatus } from "expo-av";
+import { VideoView, useVideoPlayer } from "expo-video";
+import { useEventListener } from "expo";
 import * as FileSystem from "expo-file-system";
 import { theme } from "@/src/theme";
+import { VideoPlayerView } from "@/components/VideoPlayer/VideoPlayerView";
 
 type TrainingState = {
   currentNodeId: number | null;
@@ -48,9 +51,39 @@ const TrainingScreen = () => {
       },
     };
   });
-  const videoRef = useRef<Video>(null);
-  const [localVideoUri, setLocalVideoUri] = useState<string | null>(null);
   const [videoError, setVideoError] = useState<string | null>(null);
+  const [showVideo, setShowVideo] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const player = useVideoPlayer(selectedCategory?.recommendations?.video_url || '', (player) => {
+    player.loop = false;
+    player.volume = 1.0;
+    player.muted = true;
+    player.timeUpdateEventInterval = 0.5;
+    player.bufferOptions = {
+      minBufferForPlayback: 1,
+      preferredForwardBufferDuration: 10,
+    };
+  });
+
+  useEventListener(player, "statusChange", async ({ status }) => {
+    if (status === "readyToPlay") {
+      console.log("✅ Video listo para reproducir");
+      setIsLoading(false);
+      try {
+        await player.play();
+      } catch (err) {
+        console.warn("🚨 No se pudo iniciar automáticamente");
+      }
+    }
+  });
+
+  useEventListener(player, "playingChange", ({ isPlaying }) => {
+    if (isPlaying) {
+      console.log("▶️ Video en reproducción");
+      setIsLoading(false);
+    }
+  });
 
   useEffect(() => {
     fetchCategories();
@@ -226,14 +259,22 @@ const TrainingScreen = () => {
 
   const prepareVideo = async (remoteUrl: string) => {
     try {
+      // Crear directorio de caché si no existe
+      const cacheDir = `${FileSystem.cacheDirectory}videos/`;
+      const dirInfo = await FileSystem.getInfoAsync(cacheDir);
+      if (!dirInfo.exists) {
+        await FileSystem.makeDirectoryAsync(cacheDir, { intermediates: true });
+      }
+
       // Crear un nombre de archivo único para el video
       const filename = remoteUrl.split("/").pop() || "video.mp4";
-      const localUri = `${FileSystem.cacheDirectory}${filename}`;
+      const localUri = `${cacheDir}${filename}`;
 
       // Verificar si ya existe en caché
       const info = await FileSystem.getInfoAsync(localUri);
 
       if (!info.exists) {
+        console.log("📥 Descargando video:", remoteUrl);
         // Descargar el video si no está en caché
         const downloadResumable = FileSystem.createDownloadResumable(
           remoteUrl,
@@ -243,48 +284,45 @@ const TrainingScreen = () => {
             const progress =
               downloadProgress.totalBytesWritten /
               downloadProgress.totalBytesExpectedToWrite;
-            // Puedes usar este progress para mostrar una barra de progreso
-            console.log(`Download progress: ${progress * 100}%`);
+            console.log(`⏳ Progreso: ${(progress * 100).toFixed(2)}%`);
           }
         );
 
-        const downloadResult = await downloadResumable.downloadAsync();
-        if (downloadResult) {
-          setLocalVideoUri(downloadResult.uri);
+        try {
+          const downloadResult = await downloadResumable.downloadAsync();
+          if (downloadResult?.uri) {
+            console.log("✅ Video descargado:", downloadResult.uri);
+          } else {
+            throw new Error("No se pudo obtener la URI del video descargado");
+          }
+        } catch (downloadError) {
+          console.error("❌ Error en la descarga:", downloadError);
+          throw new Error(`Error al descargar: ${downloadError}`);
         }
       } else {
-        setLocalVideoUri(localUri);
+        console.log("📁 Usando video en caché:", localUri);
       }
     } catch (error) {
-      console.error("Error preparing video:", error);
-      setVideoError("Error al preparar el video");
+      console.error("❌ Error preparando video:", error);
+      setVideoError(`Error al preparar el video: ${error}`);
     }
   };
 
   const renderVideo = () => {
-    if (!localVideoUri) {
-      return <></>;
+    if (!selectedCategory?.recommendations?.video_url) {
+      return null;
     }
 
     return (
-      <Video
-        ref={videoRef}
-        source={{ uri: localVideoUri }}
-        useNativeControls
-        resizeMode={ResizeMode.CONTAIN}
-        shouldPlay={false}
-        isLooping={false}
-        style={styles.video}
-        onError={(error) => {
-          console.error("Video playback error:", error);
-          setVideoError("Error al reproducir el video");
-        }}
-        onLoad={() => {
-          console.log("Video loaded successfully");
-        }}
+      <VideoPlayerView 
+        url={selectedCategory.recommendations.video_url}
+        showDebug={__DEV__}
       />
     );
   };
+
+  // Manejar errores a través de los event listeners del player
+
 
   const renderDoctorReview = () => {
     console.log("Rendering doctor review:", selectedCategory?.recommendations);
@@ -354,25 +392,7 @@ const TrainingScreen = () => {
               </Text>
             </View>
 
-            {videoError ? (
-              <View style={styles.errorContainer}>
-                <Ionicons name="alert-circle" size={40} color="#FF6B6B" />
-                <Text style={styles.errorText}>{videoError}</Text>
-                <TouchableOpacity
-                  style={styles.retryButton}
-                  onPress={() => {
-                    setVideoError(null);
-                    if (video_url) {
-                      prepareVideo(video_url);
-                    }
-                  }}
-                >
-                  <Text style={styles.retryButtonText}>Reintentar</Text>
-                </TouchableOpacity>
-              </View>
-            ) : (
-              renderVideo()
-            )}
+            {renderVideo()}
 
             {updated_at && (
               <Text style={styles.updatedAtText}>
@@ -841,16 +861,35 @@ const styles = StyleSheet.create({
     marginTop: 8,
     marginBottom: 16,
   },
-  retryButton: {
-    backgroundColor: "#4CAF50",
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 8,
-  },
-  retryButtonText: {
+  retryText: {
     color: "white",
-    fontSize: 14,
-    fontWeight: "600",
+    marginTop: 8,
+  },
+  thumbnailContainer: {
+    width: "100%",
+    height: "100%",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  playButtonOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.3)",
+  },
+  playButtonText: {
+    fontSize: 40,
+  },
+  videoWrapper: {
+    position: "relative",
+    width: "100%",
+    height: "100%",
+  },
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.5)",
   },
 });
 export default TrainingScreen;

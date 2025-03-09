@@ -293,38 +293,19 @@ export class ApiClient {
       return this.handleResponse<UserProfile>(response);
     },
 
-    uploadProfileImage: async (base64Image: string): Promise<ApiResponse<UserProfile>> => {
-      try {
-        const formData = new FormData();
-        formData.append('image', base64Image);
-
-        const token = await AsyncStorage.getItem('auth_token');
-        if (!token) {
-          throw new Error('No auth token found');
+    uploadProfileImage: async (data: { image: string }): Promise<ApiResponse<UserProfile>> => {
+      const response = await fetch(
+        this.getUrl('/user/profile/upload_image/'),
+        {
+          method: 'POST',
+          headers: {
+            ...(await this.getHeaders()),
+            
+          },
+          body: JSON.stringify(data)
         }
-
-        const response = await fetch(
-          this.getUrl('/user/profile/upload_image/'),
-          {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Accept': 'application/json',
-            },
-            body: formData,
-          }
-        );
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.detail || 'Error uploading image');
-        }
-
-        return this.handleResponse<UserProfile>(response);
-      } catch (error) {
-        console.error("Error uploading image:", error);
-        throw error;
-      }
+      );
+      return this.handleResponse<UserProfile>(response);
     },
 
     deleteProfileImage: async (): Promise<ApiResponse<UserProfile>> => {

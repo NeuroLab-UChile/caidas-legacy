@@ -1,11 +1,10 @@
 import { useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, Image, Platform } from "react-native";
 import { ScrollView } from "react-native";
-import * as ImagePicker from "expo-image-picker";
-import * as FileSystem from 'expo-file-system';
 import { Ionicons } from "@expo/vector-icons";
 import { theme } from "@/src/theme";
 import React = require("react");
+import { useImagePicker } from '@/hooks/useImagePicker';
 
 interface ImageQuestionResponse {
   answer: string[];
@@ -24,38 +23,13 @@ interface ImageQuestionProps {
 }
 
 export function ImageQuestionView({ data, setResponse }: ImageQuestionProps) {
+  const { pickImage, takePhoto } = useImagePicker();
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
-
-  const convertToBase64 = async (uri: string): Promise<string> => {
-    try {
-      const base64 = await FileSystem.readAsStringAsync(uri, {
-        encoding: FileSystem.EncodingType.Base64
-      });
-      return `data:image/jpeg;base64,${base64}`;
-    } catch (error) {
-      console.error('Error converting to base64:', error);
-      throw error;
-    }
-  };
 
   const handleSelectImage = async () => {
     try {
-      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (status !== "granted") {
-        alert("Se necesitan permisos para acceder a la galería");
-        return;
-      }
-
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        aspect: [1, 1],
-        quality: 0.7,
-        base64: true,
-      });
-
-      if (!result.canceled && result.assets && result.assets[0]) {
-        const base64Image = await convertToBase64(result.assets[0].uri);
+      const base64Image = await pickImage();
+      if (base64Image) {
         const newImages = [...selectedImages, base64Image];
         setSelectedImages(newImages);
         setResponse({ 
@@ -71,21 +45,8 @@ export function ImageQuestionView({ data, setResponse }: ImageQuestionProps) {
 
   const handleTakePhoto = async () => {
     try {
-      const { status } = await ImagePicker.requestCameraPermissionsAsync();
-      if (status !== "granted") {
-        alert("Se necesitan permisos para usar la cámara");
-        return;
-      }
-
-      const result = await ImagePicker.launchCameraAsync({
-        allowsEditing: true,
-        aspect: [1, 1],
-        quality: 0.7,
-        base64: true,
-      });
-
-      if (!result.canceled && result.assets && result.assets[0]) {
-        const base64Image = await convertToBase64(result.assets[0].uri);
+      const base64Image = await takePhoto();
+      if (base64Image) {
         const newImages = [...selectedImages, base64Image];
         setSelectedImages(newImages);
         setResponse({ 
