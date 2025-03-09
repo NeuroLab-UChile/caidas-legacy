@@ -450,7 +450,7 @@ def update_recommendation(request, category_id):
         return JsonResponse({
             'status': 'success',
             'message': 'Recomendación actualizada correctamente',
-            'video_url': recommendation.video.url if recommendation.video else None
+            'video_url': build_media_url(recommendation.video.url, request, is_backend=False) if recommendation.video else None
         })
 
     except Exception as e:
