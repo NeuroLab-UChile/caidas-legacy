@@ -29,6 +29,9 @@ urlpatterns = [
   path('prevcad/user/profile/delete_image/', deleteProfileImage, name='delete_profile_image'),
   path('prevcad/health_categories/', HealthCategoryListView.as_view(), name='health-categories'),
   path('prevcad/health-categories/<int:category_id>/responses/', save_evaluation_responses, name='responses'),
+  path('prevcad/health_categories/<int:category_id>/clear_evaluation/', 
+       health_categories.clear_evaluation, 
+       name='clear_evaluation'),
   path('prevcad/text_recommendations/<int:pk>/register_click', TextRecomendationsView.as_view({'post': 'register_click'}), name='recommendation-register-click'),
   path('prevcad/health-categories/create', 
        create_health_category, 
@@ -53,7 +56,5 @@ urlpatterns = [
     admin_views.delete_training_node,
     name='delete_training_node'
   ),
-  path('health_categories/<int:category_id>/clear_evaluation/', 
-       health_categories.clear_evaluation, 
-       name='clear_evaluation'),
+
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
