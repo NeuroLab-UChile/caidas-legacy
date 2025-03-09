@@ -3,6 +3,7 @@ import { API_URL } from '@/constants';
 import authService from './authService';
 import { Category } from '../types/category';
 import { Platform } from 'react-native';
+import * as FileSystem from 'expo-file-system';
 
 // Types
 interface ApiResponse<T> {
@@ -399,90 +400,62 @@ export class ApiClient {
   }
 
   private async createFormDataWithImages(responses: ResponseData, imageResponses: Record<string, string[]>) {
-    const formData = new FormData();
-    formData.append('responses', JSON.stringify(responses));
+    // Convertir las respuestas normales y las imágenes en un solo objeto
+    const allResponses = { ...responses };
 
     // Procesar cada pregunta con imágenes
-    Object.keys(imageResponses).forEach((nodeId) => {
-        const imageUris = imageResponses[nodeId];
-        
-        imageUris.forEach((uri, index) => {
-            try {
-                // Asegurarse de que es una URI válida
-                if (!uri.startsWith('file://')) {
-                    console.error('URI no válida:', uri);
-                    return; // continue en forEach
+    for (const [nodeId, imageUris] of Object.entries(imageResponses)) {
+        try {
+            const base64Images = await Promise.all(
+                imageUris.map(async (uri) => {
+                    const base64 = await FileSystem.readAsStringAsync(uri, {
+                        encoding: FileSystem.EncodingType.Base64,
+                    });
+                    return `data:image/jpeg;base64,${base64}`;
+                })
+            );
+
+            // Añadir las imágenes en base64 a las respuestas
+            allResponses[nodeId] = {
+                type: 'IMAGE_QUESTION',
+                answer: {
+                    images: base64Images
                 }
+            };
+        } catch (error) {
+            console.error(`Error procesando imágenes para nodeId ${nodeId}:`, error);
+        }
+    }
 
-                // Crear el objeto de archivo para FormData
-                const fileObject = {
-                    uri: Platform.OS === 'ios' ? uri.replace('file://', '') : uri,
-                    type: 'image/jpeg',
-                    name: `image_${nodeId}_${index}.jpg`,
-                };
-
-                console.log('Enviando imagen:', fileObject);
-
-                // Añadir al FormData
-                formData.append(`image_${nodeId}_${index}`, fileObject as any);
-
-            } catch (error) {
-                console.error(`Error procesando imagen ${uri}:`, error);
-            }
-        });
-    });
-
-    return formData;
+    return JSON.stringify(allResponses);
   }
 
   public evaluations = {
     saveResponses: async (categoryId: number, responses: ResponseData): Promise<ApiResponse<any>> => {
-      try {
-        // Separar las respuestas normales de las respuestas con imágenes
-        const imageResponses: Record<string, string[]> = {};
-        const normalResponses = { ...responses };
+        try {
+            const processedResponses = await this.createFormDataWithImages(responses, {});
+            
+            const response = await fetch(
+                this.getUrl(`/health_categories/${categoryId}/responses/`),
+                {
+                    method: 'POST',
+                    headers: {
+                        ...(await this.getHeaders()),
+                        'Content-Type': 'application/json',
+                    },
+                    body: processedResponses,
+                }
+            );
 
-        // Identificar y separar las respuestas con imágenes
-        Object.entries(responses).forEach(([key, value]) => {
-          if (
-            typeof value === 'object' && 
-            value !== null && 
-            'type' in value && 
-            value.type === 'IMAGE_QUESTION'
-          ) {
-            const imageQuestion = value as ImageQuestionResponse;
-            if (Array.isArray(imageQuestion.answer)) {
-              imageResponses[key] = imageQuestion.answer;
-              delete normalResponses[key];
+            if (!response.ok) {
+                throw new Error('Error saving responses');
             }
-          }
-        });
 
-        // Crear FormData con las imágenes y respuestas
-        const formData = await this.createFormDataWithImages(normalResponses, imageResponses);
-
-        console.log('Enviando FormData con imágenes:', 
-          Array.from(formData.entries()).map(([key, value]) => ({ key, type: typeof value }))
-        );
-
-        const response = await fetch(
-          this.getUrl(`/health_categories/${categoryId}/responses/`),
-          {
-            method: 'POST',
-            headers: await this.getHeaders(),
-            body: formData,
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error('Error saving responses');
+            return this.handleResponse(response);
+        } catch (error) {
+            console.error('Error in saveResponses:', error);
+            throw error;
         }
-
-        return this.handleResponse(response);
-      } catch (error) {
-        console.error('Error in saveResponses:', error);
-        throw error;
-      }
     },
 
     clearAndStartNew: async (categoryId: number): Promise<ApiResponse<any>> => {
