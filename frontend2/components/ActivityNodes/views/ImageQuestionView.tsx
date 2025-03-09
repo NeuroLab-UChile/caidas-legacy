@@ -7,6 +7,10 @@ import { Ionicons } from "@expo/vector-icons";
 import { theme } from "@/src/theme";
 import React = require("react");
 
+interface ImageQuestionResponse {
+  answer: string[];
+  type: 'IMAGE_QUESTION';
+}
 
 interface ImageQuestionProps {
   data: {
@@ -16,7 +20,7 @@ interface ImageQuestionProps {
     description?: string;
     image?: string;
   };
-  setResponse: (response: { answer: string[] } | null) => void;
+  setResponse: (response: ImageQuestionResponse | null) => void;
 }
 
 export function ImageQuestionView({ data, setResponse }: ImageQuestionProps) {
@@ -51,13 +55,13 @@ export function ImageQuestionView({ data, setResponse }: ImageQuestionProps) {
       });
 
       if (!result.canceled && result.assets && result.assets[0]) {
-        const base64Image = result.assets[0].base64 
-          ? `data:image/jpeg;base64,${result.assets[0].base64}`
-          : await convertToBase64(result.assets[0].uri);
-        
+        const base64Image = await convertToBase64(result.assets[0].uri);
         const newImages = [...selectedImages, base64Image];
         setSelectedImages(newImages);
-        setResponse({ answer: newImages });
+        setResponse({ 
+          answer: newImages,
+          type: 'IMAGE_QUESTION'
+        });
       }
     } catch (error) {
       console.error("Error al seleccionar imagen:", error);
@@ -81,13 +85,13 @@ export function ImageQuestionView({ data, setResponse }: ImageQuestionProps) {
       });
 
       if (!result.canceled && result.assets && result.assets[0]) {
-        const base64Image = result.assets[0].base64 
-          ? `data:image/jpeg;base64,${result.assets[0].base64}`
-          : await convertToBase64(result.assets[0].uri);
-
+        const base64Image = await convertToBase64(result.assets[0].uri);
         const newImages = [...selectedImages, base64Image];
         setSelectedImages(newImages);
-        setResponse({ answer: newImages });
+        setResponse({ 
+          answer: newImages,
+          type: 'IMAGE_QUESTION'
+        });
       }
     } catch (error) {
       console.error("Error al tomar foto:", error);
@@ -98,11 +102,11 @@ export function ImageQuestionView({ data, setResponse }: ImageQuestionProps) {
   const handleRemoveImage = (index: number) => {
     const newImages = selectedImages.filter((_, i) => i !== index);
     setSelectedImages(newImages);
-    setResponse({ answer: newImages });
+    setResponse({ answer: newImages, type: 'IMAGE_QUESTION' });
   };
 
   React.useEffect(() => {
-    setResponse({ answer: [] });
+    setResponse({ answer: [], type: 'IMAGE_QUESTION' });
   }, []);
 
   const imageUrl = data.image 
