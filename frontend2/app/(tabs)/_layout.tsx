@@ -1,4 +1,4 @@
-import React from "react";
+
 import { Tabs } from "expo-router";
 import {
   View,
@@ -93,7 +93,7 @@ export default function TabLayout() {
     <View style={styles.container}>
       <ScrollLayout>
         <Tabs
-          screenOptions={({ route }) => ({
+          screenOptions={({ route }: { route: any }) => ({
             tabBarActiveTintColor: theme.colors.background,
             tabBarInactiveTintColor: theme.colors.background + '80',
             headerShown: true,
@@ -114,7 +114,7 @@ export default function TabLayout() {
               height: route.name === "category-detail" ? 100 : 60,
             },
             headerTitleAlign: "center",
-            header: ({ route }) => {
+            header: ({ route }: { route: any }) => {
               const item = [...leftMenuItems, ...rightMenuItems, ...hiddenItems]
                 .find((item) => item.name === route.name);
               
@@ -193,7 +193,7 @@ export default function TabLayout() {
               marginTop: 4,
               color: theme.colors.background,
             },
-            tabBarIcon: ({ focused }) => {
+            tabBarIcon: ({ focused }: { focused: any }) => {
               const item = [...leftMenuItems, ...rightMenuItems]
                 .find((item) => item.name === route.name);
               if (!item) return null;

@@ -27,7 +27,7 @@ urlpatterns = [
   path('prevcad/user/profile/upload_image/', uploadProfileImage, name='upload_profile_image'),
   path('prevcad/user/profile/delete_image/', deleteProfileImage, name='delete_profile_image'),
   path('prevcad/health_categories/', HealthCategoryListView.as_view(), name='health-categories'),
-  path('prevcad/health-categories/<int:category_id>/responses/', save_evaluation_responses, name='save_responses'),
+  path('prevcad/health-categories/<int:category_id>/responses/', save_evaluation_responses, name='responses'),
   path('prevcad/text_recommendations/<int:pk>/register_click', TextRecomendationsView.as_view({'post': 'register_click'}), name='recommendation-register-click'),
   path('prevcad/health-categories/create', 
        create_health_category, 

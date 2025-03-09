@@ -121,3 +121,5 @@ npm init -y
 
 # Instala Jest y otras dependencias necesarias
 npm install --save-dev jest @babel/core @babel/preset-env babel-jest jest-environment-jsdom
+
+tail -f backend/logs/django.log
