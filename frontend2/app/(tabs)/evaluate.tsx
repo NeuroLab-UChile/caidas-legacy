@@ -1,5 +1,5 @@
 // frontend2/app/(tabs)/evaluate.tsx
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -25,6 +25,7 @@ import EmptyState from "../containers/EmptyState";
 import { useAuth } from "../contexts/auth";
 import { UserProfile } from "../services/apiService";
 import { ProfessionalEvaluation } from "@/components/ProfessionalEvaluation";
+import React = require("react");
 
 interface NodeResponse {
   nodeId: number;
@@ -211,11 +212,19 @@ const EvaluateScreen = () => {
 
               if (selectedCategory?.id) {
                 // Limpiar las respuestas en el backend
-                await apiService.categories.saveResponses(
-                  selectedCategory.id,
-                  new FormData()
-                );
+                try {
+                  // Primero limpiar la evaluación existente
+                  await apiService.evaluations.clearAndStartNew(
+                    selectedCategory.id
+                  );
 
+                  // Luego proceder con la nueva evaluación
+                  // ... tu código para iniciar la evaluación ...
+                  
+              } catch (error) {
+                  console.error('Error:', error);
+                  // Manejar el error apropiadamente
+              }
                 // Reiniciar el estado local
                 const nodes =
                   selectedCategory?.evaluation_form?.question_nodes || [];

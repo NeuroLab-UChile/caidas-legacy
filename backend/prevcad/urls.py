@@ -4,13 +4,14 @@ from django.urls import path, include
 
 from prevcad.views.profiles import getProfile, uploadProfileImage, deleteProfileImage
 from prevcad.views.text_recomendations import TextRecomendationsView
-from prevcad.views.health_categories import HealthCategoryListView, save_evaluation_responses, create_health_category, update_health_category, update_recommendation, save_professional_evaluation
+from prevcad.views.health_categories import HealthCategoryListView, save_evaluation_responses, create_health_category, update_health_category, update_recommendation, save_professional_evaluation, clear_evaluation
 from django.conf import settings
 from django.conf.urls.static import static
 from .views import admin_views
 from .views.appointment_view import AppointmentViewSet
 from .views.admin_views import update_training_form
 import os
+from .views import health_categories
 
 
 router = routers.DefaultRouter(trailing_slash=False)
@@ -52,4 +53,7 @@ urlpatterns = [
     admin_views.delete_training_node,
     name='delete_training_node'
   ),
+  path('health_categories/<int:category_id>/clear_evaluation/', 
+       health_categories.clear_evaluation, 
+       name='clear_evaluation'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -100,7 +100,6 @@ export class ApiClient {
 
   public async getHeaders(includeAuth: boolean = true): Promise<HeadersInit> {
     const headers: HeadersInit = {
-      'Content-Type': 'application/json',
       credentials: 'include',
     };
 
@@ -401,30 +400,36 @@ export class ApiClient {
 
   private async createFormDataWithImages(responses: ResponseData, imageResponses: Record<string, string[]>) {
     const formData = new FormData();
-    
-    // Añadir las respuestas como JSON string
     formData.append('responses', JSON.stringify(responses));
 
     // Procesar cada pregunta con imágenes
-    Object.entries(imageResponses).forEach(([nodeId, imageUris]) => {
-      imageUris.forEach((uri, index) => {
-        try {
-          // Crear el nombre del archivo
-          const filename = uri.split('/').pop() || `image_${Date.now()}.jpg`;
-          
-          // Crear el objeto de archivo para FormData
-          const file = {
-            uri: Platform.OS === 'ios' ? uri.replace('file://', '') : uri,
-            type: 'image/jpeg',
-            name: filename,
-          };
+    Object.keys(imageResponses).forEach((nodeId) => {
+        const imageUris = imageResponses[nodeId];
+        
+        imageUris.forEach((uri, index) => {
+            try {
+                // Asegurarse de que es una URI válida
+                if (!uri.startsWith('file://')) {
+                    console.error('URI no válida:', uri);
+                    return; // continue en forEach
+                }
 
-          // Añadir al FormData con un nombre único
-          formData.append(`image_${nodeId}_${index}`, file as any);
-        } catch (error) {
-          console.error(`Error procesando imagen ${uri}:`, error);
-        }
-      });
+                // Crear el objeto de archivo para FormData
+                const fileObject = {
+                    uri: Platform.OS === 'ios' ? uri.replace('file://', '') : uri,
+                    type: 'image/jpeg',
+                    name: `image_${nodeId}_${index}.jpg`,
+                };
+
+                console.log('Enviando imagen:', fileObject);
+
+                // Añadir al FormData
+                formData.append(`image_${nodeId}_${index}`, fileObject as any);
+
+            } catch (error) {
+                console.error(`Error procesando imagen ${uri}:`, error);
+            }
+        });
     });
 
     return formData;
@@ -461,13 +466,10 @@ export class ApiClient {
         );
 
         const response = await fetch(
-          this.getUrl(`/health_categories/${categoryId}/save_responses/`),
+          this.getUrl(`/health_categories/${categoryId}/responses/`),
           {
             method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${await AsyncStorage.getItem('auth_token')}`,
-              'Accept': 'application/json',
-            },
+            headers: await this.getHeaders(),
             body: formData,
           }
         );
@@ -481,6 +483,29 @@ export class ApiClient {
         console.error('Error in saveResponses:', error);
         throw error;
       }
+    },
+
+    clearAndStartNew: async (categoryId: number): Promise<ApiResponse<any>> => {
+        try {
+            console.log('Iniciando nueva evaluación para categoría:', categoryId);
+            
+            const response = await fetch(
+                this.getUrl(`/health_categories/${categoryId}/clear_evaluation/`),
+                {
+                    method: 'POST',
+                    headers: await this.getHeaders(),
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            return this.handleResponse(response);
+        } catch (error) {
+            console.error('Error al iniciar nueva evaluación:', error);
+            throw error;
+        }
     },
   };
 }

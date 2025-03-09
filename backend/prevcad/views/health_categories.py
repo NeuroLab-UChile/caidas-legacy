@@ -461,3 +461,38 @@ def update_recommendation(request, category_id):
             'status': 'error',
             'message': str(e)
         }, status=500)
+
+@api_view(['POST'])
+def clear_evaluation(request, category_id):
+    try:
+        logger.info("=== Iniciando clear_evaluation ===")
+        logger.info(f"Usuario: {request.user.username}")
+        logger.info(f"Category ID: {category_id}")
+
+        # Obtener la categoría
+        health_category = get_object_or_404(
+            HealthCategory, 
+            id=category_id,
+            user__user=request.user
+        )
+
+        # Limpiar el formulario de evaluación existente
+        if health_category.evaluation_form:
+            health_category.evaluation_form.responses = {}
+            health_category.evaluation_form.is_draft = True
+            health_category.evaluation_form.completed_date = None
+            health_category.evaluation_form.save()
+            
+            logger.info("Formulario de evaluación limpiado exitosamente")
+        
+        return Response({
+            'status': 'success',
+            'message': 'Evaluación reiniciada correctamente'
+        })
+
+    except Exception as e:
+        logger.error(f"Error en clear_evaluation: {str(e)}")
+        return Response({
+            'status': 'error',
+            'message': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
