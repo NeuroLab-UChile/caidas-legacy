@@ -104,26 +104,28 @@
         <div class="space-y-4">
           <div class="flex items-center space-x-4">
             <input type="radio" 
-                   id="use-default"
-                   name="recommendation-type" 
+                   id="recommendation_type_default"
+                   name="recommendation_type" 
                    value="default"
                    {% if recommendation.use_default %}checked{% endif %}
                    {% if not can_edit %}disabled{% endif %}
+                   onclick="handleRadioClick('default')"
                    class="h-5 w-5 text-blue-600 border-gray-300 focus:ring-blue-500">
-            <label for="use-default" class="text-sm font-medium text-gray-700">
+            <label for="recommendation_type_default" class="text-sm font-medium text-gray-700">
               Usar recomendación por defecto
             </label>
           </div>
           
           <div class="flex items-center space-x-4">
             <input type="radio" 
-                   id="use-custom"
-                   name="use-default" 
-                   value="false"
+                   id="recommendation_type_custom"
+                   name="recommendation_type" 
+                   value="custom"
                    {% if not recommendation.use_default %}checked{% endif %}
                    {% if not can_edit %}disabled{% endif %}
+                   onclick="handleRadioClick('custom')"
                    class="h-5 w-5 text-blue-600 border-gray-300 focus:ring-blue-500">
-            <label for="use-custom" class="text-sm font-medium text-gray-700">
+            <label for="recommendation_type_custom" class="text-sm font-medium text-gray-700">
               Usar recomendación personalizada
             </label>
           </div>
@@ -296,8 +298,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Obtener elementos de forma segura
     const elements = {
-        defaultRadio: document.getElementById('use-default'),
-        customRadio: document.getElementById('use-custom'),
+        defaultRadio: document.getElementById('recommendation_type_default'),
+        customRadio: document.getElementById('recommendation_type_custom'),
         recommendationText: document.getElementById('recommendation-text'),
         statusColor: document.getElementById('status-color'),
         isDraft: document.getElementById('is-draft'),
@@ -370,7 +372,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function updateRecommendationText() {
         const recommendationText = document.getElementById('recommendation-text');
         const statusColor = document.getElementById('status-color');
-        const useDefault = document.getElementById('use-default');
+        const useDefault = document.getElementById('recommendation_type_default');
         
         if (!recommendationText || !statusColor || !useDefault) {
             console.warn('Elementos no encontrados');
@@ -572,4 +574,41 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 })
+
+// Función simplificada para manejar los clicks
+function handleRadioClick(type) {
+    // Obtener los elementos
+    const defaultRadio = document.getElementById('recommendation_type_default');
+    const customRadio = document.getElementById('recommendation_type_custom');
+    const recommendationText = document.getElementById('recommendation-text');
+
+    // Actualizar estados
+    if (type === 'default') {
+        defaultRadio.checked = true;
+        customRadio.checked = false;
+        if (recommendationText) {
+            recommendationText.disabled = true;
+            // Aquí puedes agregar la lógica para cargar el texto por defecto
+        }
+    } else {
+        defaultRadio.checked = false;
+        customRadio.checked = true;
+        if (recommendationText) {
+            recommendationText.disabled = false;
+        }
+    }
+}
+
+// Inicializar al cargar la página
+document.addEventListener('DOMContentLoaded', function() {
+    const defaultRadio = document.getElementById('recommendation_type_default');
+    const customRadio = document.getElementById('recommendation_type_custom');
+    
+    // Establecer el estado inicial basado en cual está checked
+    if (defaultRadio && defaultRadio.checked) {
+        handleRadioClick('default');
+    } else if (customRadio && customRadio.checked) {
+        handleRadioClick('custom');
+    }
+});
 </script> 
