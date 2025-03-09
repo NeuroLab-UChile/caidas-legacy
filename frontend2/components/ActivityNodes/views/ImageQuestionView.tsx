@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Image, Platform } from "react
 import { ScrollView } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { theme } from "@/src/theme";
-import React = require("react");
+import React from "react";
 import { useImagePicker } from '@/hooks/useImagePicker';
 
 interface ImageQuestionResponse {

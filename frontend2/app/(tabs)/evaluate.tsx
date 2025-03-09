@@ -25,7 +25,7 @@ import EmptyState from "../containers/EmptyState";
 import { useAuth } from "../contexts/auth";
 import { UserProfile } from "../services/apiService";
 import { ProfessionalEvaluation } from "@/components/ProfessionalEvaluation";
-import React = require("react");
+import React from "react";
 
 interface NodeResponse {
   nodeId: number;

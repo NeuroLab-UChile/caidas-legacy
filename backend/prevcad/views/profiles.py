@@ -43,8 +43,9 @@ def uploadProfileImage(request):
         logger.info("="*50)
         logger.info("Iniciando uploadProfileImage")
         logger.info(f"Usuario: {request.user}")
+        logger.info(f"Content-Type: {request.content_type}")
         
-        # Obtener la imagen en base64 del body
+        # Obtener la imagen en base64 del body JSON
         image_data = request.data.get('image')
         if not image_data:
             logger.error("No se encontró imagen en la solicitud")

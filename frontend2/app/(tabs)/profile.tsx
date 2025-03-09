@@ -11,13 +11,13 @@ import {
   Dimensions,
 } from "react-native";
 
-import { ImageUploader } from "@/components/ImageUploader";
+import { ImageUploader } from "../../components/ImageUploader";
 import { Ionicons } from "@expo/vector-icons";
 import apiService from "../services/apiService";
-import { theme } from "@/src/theme";
+import { theme } from "../../src/theme";
 import * as ImagePicker from "expo-image-picker";
 import * as FileSystem from 'expo-file-system';
-import { useImagePicker } from '@/hooks/useImagePicker';
+import { useImagePicker } from '../../hooks/useImagePicker';
 
 const { width } = Dimensions.get("window");
 
@@ -48,8 +48,10 @@ export default function ProfileScreen() {
       setIsLoading(true);
       console.log("Subiendo imagen:", uri);
 
+      // Usamos el convertToBase64 del hook
       const base64Image = await convertToBase64(uri);
-      
+      console.log("Imagen convertida a base64");
+
       const response = await apiService.user.uploadProfileImage({
         image: base64Image
       });

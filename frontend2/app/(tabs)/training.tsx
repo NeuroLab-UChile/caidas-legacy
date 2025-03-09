@@ -42,6 +42,20 @@ const TrainingScreen = () => {
   const [view, setView] = useState<"training" | "recommendations" | null>(null);
   const [trainingState, setTrainingState] = useState<TrainingState>(() => {
     const nodes = selectedCategory?.training_form?.training_nodes || [];
+    console.log("Inicializando trainingState con nodes:", nodes);
+    
+    if (nodes.length === 0) {
+      console.log("No hay nodos de entrenamiento disponibles");
+      return {
+        currentNodeId: null,
+        history: [],
+        trainingResult: {
+          initial_node_id: null,
+          nodes: [],
+        },
+      };
+    }
+
     return {
       currentNodeId: nodes[0]?.id || null,
       history: [],
@@ -126,6 +140,31 @@ const TrainingScreen = () => {
       console.log("========================");
     }
   }, [selectedCategory, trainingState]);
+
+  useEffect(() => {
+    console.log("Estado inicial:", {
+      selectedCategory,
+      trainingNodes: selectedCategory?.training_form?.training_nodes,
+      currentNodeId: trainingState.currentNodeId,
+      view
+    });
+  }, [selectedCategory, trainingState.currentNodeId, view]);
+
+  useEffect(() => {
+    if (selectedCategory?.training_form?.training_nodes) {
+      const nodes = selectedCategory.training_form.training_nodes;
+      console.log("Actualizando trainingState por cambio en selectedCategory:", nodes);
+      
+      setTrainingState({
+        currentNodeId: nodes[0]?.id || null,
+        history: [],
+        trainingResult: {
+          initial_node_id: nodes[0]?.id || null,
+          nodes: nodes,
+        },
+      });
+    }
+  }, [selectedCategory]);
 
   const handleRestart = useCallback(() => {
     const nodes = selectedCategory?.training_form?.training_nodes || [];
@@ -422,7 +461,7 @@ const TrainingScreen = () => {
 
   return (
     <ScrollView style={styles.container}>
-      <CategoryHeader name={selectedCategory.name} />
+      <CategoryHeader name={selectedCategory?.name || 'Categoría no seleccionada'} />
       {view === "recommendations" && (
         <TouchableOpacity style={styles.backButton} onPress={handleBack}>
           <Ionicons name="arrow-back" size={24} color="#4B5563" />
@@ -469,7 +508,11 @@ const TrainingScreen = () => {
       {view === "recommendations" && renderDoctorReview()}
       {view === "training" && (
         <>
-          {selectedCategory.training_form?.training_nodes?.length === 0 ? (
+          {!selectedCategory?.training_form?.training_nodes ? (
+            <View style={styles.errorContainer}>
+              <Text>No hay nodos de entrenamiento configurados</Text>
+            </View>
+          ) : selectedCategory.training_form.training_nodes.length === 0 ? (
             <View style={styles.completedContainer}>
               <View style={styles.completedCard}>
                 <View style={styles.completedIconContainer}>
@@ -491,9 +534,7 @@ const TrainingScreen = () => {
                 </TouchableOpacity>
               </View>
             </View>
-          ) : trainingState.currentNodeId ? (
-            renderNode(trainingState.currentNodeId)
-          ) : (
+          ) : !trainingState.currentNodeId ? (
             <View style={styles.completedContainer}>
               <View style={styles.completedCard}>
                 <View style={styles.completedIconContainer}>
@@ -528,6 +569,8 @@ const TrainingScreen = () => {
                 </View>
               </View>
             </View>
+          ) : (
+            renderNode(trainingState.currentNodeId)
           )}
         </>
       )}
@@ -850,16 +893,13 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   errorContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 16,
+    padding: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   errorText: {
-    color: "#FF6B6B",
-    textAlign: "center",
-    marginTop: 8,
-    marginBottom: 16,
+    color: 'red',
+    fontSize: 16,
   },
   retryText: {
     color: "white",

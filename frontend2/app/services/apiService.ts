@@ -300,7 +300,7 @@ export class ApiClient {
           method: 'POST',
           headers: {
             ...(await this.getHeaders()),
-            
+            'Content-Type': 'application/json',
           },
           body: JSON.stringify(data)
         }
