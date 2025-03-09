@@ -3,6 +3,7 @@ from prevcad.models import HealthCategory, CategoryTemplate
 from django.conf import settings
 from urllib.parse import urljoin
 
+
 class HealthCategorySerializer(serializers.ModelSerializer):
     # Campos básicos
     name = serializers.SerializerMethodField()
@@ -224,14 +225,15 @@ class HealthCategorySerializer(serializers.ModelSerializer):
                     
                 if hasattr(recommendation, 'professional_role') and recommendation.professional_role:
                     professional_role = recommendation.professional_role
-            domain = settings.DOMAIN if hasattr(settings, 'DOMAIN') else ''
+            domain = getattr(settings, 'BASE_URL', 'https://caidas.uchile.cl')
+   
             base_recommendation = {
                 'status': {
                     'color': status['color'],
                     'text': status['text']
                 },
                 'text': recommendation.text if recommendation else None,
-                'video_url': recommendation.video.url if recommendation.video and recommendation.video.url else None,
+                'video_url': f"{domain}/media/{recommendation.video.url}" if recommendation.video and recommendation.video.url else None,
                 'updated_at': recommendation.updated_at if recommendation else None,
                 'is_draft': recommendation.is_draft if recommendation else True,
                 'professional': {
