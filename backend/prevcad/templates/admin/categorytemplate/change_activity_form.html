@@ -349,24 +349,26 @@
         <div id="mediaContainer" class="form-group hidden">
             <!-- Container para Video -->
             <div id="videoInputContainer" class="hidden">
-                <label for="video">Video</label>
+                <label for="video" class="block mb-2">Video</label>
                 <input type="file" 
                        id="video" 
                        name="video" 
-                       class="form-input" 
+                       class="form-input w-full" 
                        accept="video/*"
                        onchange="handleFilePreview(event, 'video')">
+                <p class="text-sm text-gray-500 mt-1">Formatos soportados: MP4, MOV, etc.</p>
             </div>
 
             <!-- Container para Imagen -->
             <div id="imageInputContainer" class="hidden">
-                <label for="image">Imagen</label>
+                <label for="image" class="block mb-2">Imagen</label>
                 <input type="file" 
                        id="image" 
                        name="image" 
-                       class="form-input" 
+                       class="form-input w-full" 
                        accept="image/*"
                        onchange="handleFilePreview(event, 'image')">
+                <p class="text-sm text-gray-500 mt-1">Formatos soportados: JPG, PNG, etc.</p>
             </div>
 
             <!-- Vista previa del contenido multimedia -->
@@ -431,34 +433,24 @@
 
     function editNode(nodeId, type) {
       console.log('Editando nodo:', nodeId, 'tipo:', type);
-      console.log('Tipo de nodeId:', typeof nodeId);
       
-      if (!nodeId || nodeId === 'null') {
+      if (!nodeId) {
         console.error('ID de nodo inválido:', nodeId);
         return;
       }
 
       const nodes = type === 'TRAINING' ? trainingNodes : evaluationNodes;
-      console.log('Buscando nodo en:', nodes);
-      console.log('IDs disponibles:', nodes.map(n => ({id: n.id, tipo: typeof n.id})));
-      
-      // Intentar encontrar el nodo con diferentes comparaciones
-      const node = nodes.find(n => 
-          String(n.id) === String(nodeId) || 
-          n.id === parseInt(nodeId) || 
-          n.id === nodeId
-      );
+      const node = nodes.find(n => n.id == nodeId);
 
       if (!node) {
         console.error('Nodo no encontrado:', nodeId);
-        console.error('Comparación intentada con:', nodes.map(n => `${n.id} (${typeof n.id})`));
         return;
       }
 
       console.log('Nodo encontrado:', node);
 
       try {
-        // Abrir el modal y configurar campos
+        // Abrir el modal
         const questionModal = document.getElementById('questionModal');
         questionModal?.classList.remove('hidden');
 
@@ -469,42 +461,54 @@
         // Tipo de contenido
         const contentTypeSelect = document.getElementById('contentType');
         if (contentTypeSelect) {
-          contentTypeSelect.value = type;
-          contentTypeSelect.disabled = true;
+            contentTypeSelect.value = type;
+            contentTypeSelect.disabled = true;
         }
 
         // Texto/Pregunta
         const questionText = document.getElementById('questionText');
         if (questionText) {
-          questionText.value = type === 'TRAINING' ? (node.content || '') : (node.question || '');
+            questionText.value = type === 'TRAINING' ? (node.content || '') : (node.question || '');
         }
 
         // Configuración específica por tipo
         if (type === 'TRAINING') {
-          const trainingType = node.type?.replace('_NODE', '') || 'VIDEO';
-          const trainingTypeSelect = document.getElementById('trainingType');
-          if (trainingTypeSelect) {
-            trainingTypeSelect.value = trainingType;
-            toggleMediaType();
-          }
+            const trainingType = node.type?.replace('_NODE', '') || 'VIDEO';
+            const trainingTypeSelect = document.getElementById('trainingType');
+            if (trainingTypeSelect) {
+                trainingTypeSelect.value = trainingType;
+            }
 
-          // Media
-          if (node.media_url) {
+            // Mostrar contenedores de media
             const mediaContainer = document.getElementById('mediaContainer');
             mediaContainer?.classList.remove('hidden');
-            showCurrentMedia(node.media_url, trainingType);
-          }
-        } else {
-          const questionTypeSelect = document.getElementById('questionType');
-          if (questionTypeSelect) {
-            questionTypeSelect.value = node.type || 'SINGLE_CHOICE_QUESTION';
-          }
+            
+            const videoContainer = document.getElementById('videoInputContainer');
+            const imageContainer = document.getElementById('imageInputContainer');
+            
+            videoContainer?.classList.toggle('hidden', trainingType !== 'VIDEO');
+            imageContainer?.classList.toggle('hidden', trainingType !== 'IMAGE');
 
-          // Opciones
-          if (node.options?.length) {
-            options = [...node.options];
-            renderOptions();
-          }
+            // Mostrar media actual
+            if (node.media_url) {
+                showCurrentMedia(node.media_url, trainingType);
+            }
+        } else {
+            const questionTypeSelect = document.getElementById('questionType');
+            if (questionTypeSelect) {
+                questionTypeSelect.value = node.type || 'SINGLE_CHOICE_QUESTION';
+            }
+
+            // Opciones
+            if (node.options?.length) {
+                options = [...node.options];
+                renderOptions();
+                
+                // Mostrar contenedor de opciones
+                const optionsContainer = document.getElementById('optionsContainer');
+                optionsContainer?.classList.toggle('hidden', 
+                    !['MULTIPLE_CHOICE_QUESTION', 'SINGLE_CHOICE_QUESTION'].includes(node.type));
+            }
         }
 
         toggleContentType();
@@ -633,11 +637,37 @@
     function renderNodes(nodes, type) {
         const container = document.getElementById('questionsList');
         if (!container) return;
-
+        
         console.log('Renderizando nodos:', nodes);
-
+        
         container.innerHTML = nodes.map((node, index) => {
             console.log('Renderizando nodo:', node);
+            
+            // Construir la URL del medio correctamente
+            let mediaHtml = '';
+            if (node.media_url) {
+                const mediaUrl = node.media_url.startsWith('/') ? 
+                    node.media_url : 
+                    `/media/${node.media_url}`;
+                    
+                if (node.type === 'VIDEO_NODE') {
+                    mediaHtml = `
+                        <div class="mt-3">
+                            <video controls class="max-w-full h-auto rounded">
+                                <source src="${mediaUrl}" type="video/mp4">
+                                <source src="${mediaUrl}" type="video/quicktime">
+                                <source src="${mediaUrl}" type="video/mov">
+                                Tu navegador no soporta el elemento de video.
+                            </video>
+                        </div>`;
+                } else if (['IMAGE_NODE', 'IMAGE_QUESTION'].includes(node.type)) {
+                    mediaHtml = `
+                        <div class="mt-3">
+                            <img src="${mediaUrl}" alt="Imagen" class="max-w-full h-auto rounded">
+                        </div>`;
+                }
+            }
+            
             return `
                 <div class="node-card p-4 mb-4 border rounded shadow-sm">
                     <div class="flex justify-between items-center">
@@ -646,13 +676,11 @@
                             <span class="ml-2">${getNodeTypeName(node.type)}</span>
                         </div>
                         <div class="flex gap-2">
-                            <button onclick="editNode('${node.id || ''}', '${type}')" 
-                                    class="btn btn-primary"
-                                    data-node-id="${node.id || ''}"
-                                    data-node-type="${type}">
+                            <button onclick="editNode(${node.id}, '${type}')" 
+                                    class="btn btn-primary">
                                 Editar
                             </button>
-                            <button onclick="deleteNode('${node.id || ''}', '${type}')" 
+                            <button onclick="deleteNode(${node.id}, '${type}')" 
                                     class="btn btn-danger">
                                 Eliminar
                             </button>
@@ -663,30 +691,10 @@
                         <p>${node.content || node.question || ''}</p>
                     </div>
 
-                    ${node.media_url ? `
-                        <div class="mt-3">
-                            ${node.type === 'VIDEO_NODE' ? `
-                                <video controls class="max-w-full h-auto">
-                                    <source src="/media/${node.media_url}" type="video/mp4">
-                                    Tu navegador no soporta el elemento de video.
-                                </video>
-                            ` : ['IMAGE_NODE', 'IMAGE_QUESTION'].includes(node.type) ? `
-                                <img src="/media/${node.media_url}" alt="Imagen" class="max-w-full h-auto">
-                            ` : ''}
-                        </div>
-                    ` : ''}
+                    ${mediaHtml}
                 </div>
             `;
         }).join('');
-
-        // Agregar event listeners usando data attributes
-        container.querySelectorAll('.btn-primary').forEach(button => {
-            button.addEventListener('click', (e) => {
-                const nodeId = button.dataset.nodeId;
-                const nodeType = button.dataset.nodeType;
-                editNode(nodeId, nodeType);
-            });
-        });
     }
 
     function openFormModal(type) {
@@ -1030,26 +1038,32 @@
         const file = event.target.files[0];
         if (!file) return;
 
+        console.log('Archivo seleccionado:', file);
+
         const newMediaPreview = document.getElementById('newMediaPreview');
         newMediaPreview.classList.remove('hidden');
 
         if (type === 'video') {
             const videoUrl = URL.createObjectURL(file);
             newMediaPreview.innerHTML = `
-                <h4>Vista previa del nuevo video:</h4>
-                <video controls width="320" class="media-preview">
-                    <source src="${videoUrl}" type="${file.type}">
-                    Tu navegador no soporta la reproducción de video.
-                </video>
-                <div class="media-name">${file.name}</div>
+                <div class="p-4 bg-gray-50 rounded-lg">
+                    <h4 class="text-sm font-semibold text-gray-600 mb-2">Vista previa del nuevo video:</h4>
+                    <video controls class="max-w-full h-auto rounded">
+                        <source src="${videoUrl}" type="${file.type}">
+                        Tu navegador no soporta la reproducción de video.
+                    </video>
+                    <p class="text-sm text-gray-500 mt-2">${file.name}</p>
+                </div>
             `;
         } else if (type === 'image') {
             const reader = new FileReader();
             reader.onload = function(e) {
                 newMediaPreview.innerHTML = `
-                    <h4>Vista previa de la nueva imagen:</h4>
-                    <img src="${e.target.result}" class="media-preview" alt="Vista previa">
-                    <div class="media-name">${file.name}</div>
+                    <div class="p-4 bg-gray-50 rounded-lg">
+                        <h4 class="text-sm font-semibold text-gray-600 mb-2">Vista previa de la nueva imagen:</h4>
+                        <img src="${e.target.result}" class="max-w-full h-auto rounded" alt="Vista previa">
+                        <p class="text-sm text-gray-500 mt-2">${file.name}</p>
+                    </div>
                 `;
             };
             reader.readAsDataURL(file);
@@ -1057,26 +1071,30 @@
     }
 
     function showCurrentMedia(mediaUrl, type) {
-        if (!mediaUrl) return;
-        
         const currentMedia = document.getElementById('currentMedia');
-        // Eliminar '/media/' si ya está incluido en la URL
-        const fullUrl = mediaUrl.startsWith('/') ? mediaUrl : `me/${mediaUrl}`;
+        if (!currentMedia || !mediaUrl) return;
+
+        // Construir la URL correctamente
+        const fullUrl = mediaUrl.startsWith('/') ? mediaUrl : `/media/${mediaUrl}`;
         
-        if (type === 'VIDEO') {
-            currentMedia.innerHTML = `
-                <h4>Video actual:</h4>
-                <video controls width="320" class="media-preview">
-                    <source src="${fullUrl}" type="video/mp4">
-                    Tu navegador no soporta la reproducción de video.
-                </video>
-            `;
-        } else if (type === 'IMAGE') {
-            currentMedia.innerHTML = `
-                <h4>Imagen actual:</h4>
-                <img src="${fullUrl}" class="media-preview" alt="Imagen actual">
-            `;
-        }
+        currentMedia.innerHTML = `
+            <div class="mb-4 p-4 bg-gray-50 rounded-lg">
+                <h4 class="text-sm font-semibold text-gray-600 mb-2">Archivo actual:</h4>
+                ${type === 'VIDEO' || type === 'VIDEO_NODE' ? `
+                    <video controls class="max-w-full h-auto rounded">
+                        <source src="${fullUrl}" type="video/mp4">
+                        <source src="${fullUrl}" type="video/quicktime">
+                        <source src="${fullUrl}" type="video/mov">
+                        Tu navegador no soporta video.
+                    </video>
+                ` : `
+                    <img src="${fullUrl}" 
+                         alt="Imagen actual" 
+                         class="max-w-full h-auto rounded" />
+                `}
+                <p class="text-sm text-gray-500 mt-2">${mediaUrl.split('/').pop()}</p>
+            </div>
+        `;
     }
 
     function updateMediaDisplay(response) {
@@ -1126,11 +1144,37 @@
     function renderNodes(nodes, type) {
         const container = document.getElementById('questionsList');
         if (!container) return;
-
+        
         console.log('Renderizando nodos:', nodes);
-
+        
         container.innerHTML = nodes.map((node, index) => {
             console.log('Renderizando nodo:', node);
+            
+            // Construir la URL del medio correctamente
+            let mediaHtml = '';
+            if (node.media_url) {
+                const mediaUrl = node.media_url.startsWith('/') ? 
+                    node.media_url : 
+                    `/media/${node.media_url}`;
+                    
+                if (node.type === 'VIDEO_NODE') {
+                    mediaHtml = `
+                        <div class="mt-3">
+                            <video controls class="max-w-full h-auto rounded">
+                                <source src="${mediaUrl}" type="video/mp4">
+                                <source src="${mediaUrl}" type="video/quicktime">
+                                <source src="${mediaUrl}" type="video/mov">
+                                Tu navegador no soporta el elemento de video.
+                            </video>
+                        </div>`;
+                } else if (['IMAGE_NODE', 'IMAGE_QUESTION'].includes(node.type)) {
+                    mediaHtml = `
+                        <div class="mt-3">
+                            <img src="${mediaUrl}" alt="Imagen" class="max-w-full h-auto rounded">
+                        </div>`;
+                }
+            }
+            
             return `
                 <div class="node-card p-4 mb-4 border rounded shadow-sm">
                     <div class="flex justify-between items-center">
@@ -1139,13 +1183,11 @@
                             <span class="ml-2">${getNodeTypeName(node.type)}</span>
                         </div>
                         <div class="flex gap-2">
-                            <button onclick="editNode('${node.id || ''}', '${type}')" 
-                                    class="btn btn-primary"
-                                    data-node-id="${node.id || ''}"
-                                    data-node-type="${type}">
+                            <button onclick="editNode(${node.id}, '${type}')" 
+                                    class="btn btn-primary">
                                 Editar
                             </button>
-                            <button onclick="deleteNode('${node.id || ''}', '${type}')" 
+                            <button onclick="deleteNode(${node.id}, '${type}')" 
                                     class="btn btn-danger">
                                 Eliminar
                             </button>
@@ -1156,30 +1198,10 @@
                         <p>${node.content || node.question || ''}</p>
                     </div>
 
-                    ${node.media_url ? `
-                        <div class="mt-3">
-                            ${node.type === 'VIDEO_NODE' ? `
-                                <video controls class="max-w-full h-auto">
-                                    <source src="/media/${node.media_url}" type="video/mp4">
-                                    Tu navegador no soporta el elemento de video.
-                                </video>
-                            ` : ['IMAGE_NODE', 'IMAGE_QUESTION'].includes(node.type) ? `
-                                <img src="/media/${node.media_url}" alt="Imagen" class="max-w-full h-auto">
-                            ` : ''}
-                        </div>
-                    ` : ''}
+                    ${mediaHtml}
                 </div>
             `;
         }).join('');
-
-        // Agregar event listeners usando data attributes
-        container.querySelectorAll('.btn-primary').forEach(button => {
-            button.addEventListener('click', (e) => {
-                const nodeId = button.dataset.nodeId;
-                const nodeType = button.dataset.nodeType;
-                editNode(nodeId, nodeType);
-            });
-        });
     }
 
     document.addEventListener('DOMContentLoaded', function() {
