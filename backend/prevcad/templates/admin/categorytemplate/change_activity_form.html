@@ -836,10 +836,19 @@
     function editNode(nodeId, type) {
         console.log('Editando nodo:', nodeId, 'tipo:', type);
         
-        // Find node in either training or evaluation nodes
+        // Asegurarnos de que los arrays existan y tengan los datos correctos
+        console.log('Training nodes:', trainingNodes);
+        console.log('Evaluation nodes:', evaluationNodes);
+
+        // Convertir nodeId a número si viene como string
+        const numericNodeId = parseInt(nodeId);
+        
+        // Buscar el nodo en el array correspondiente
         const node = type === 'TRAINING' ? 
-            trainingNodes.find(n => n.id === parseInt(nodeId)) :
-            evaluationNodes.find(n => n.id === parseInt(nodeId));
+            trainingNodes.find(n => n.id === numericNodeId) :
+            evaluationNodes.find(n => n.id === numericNodeId);
+
+        console.log('Nodo encontrado:', node);
 
         if (!node) {
             console.error('Nodo no encontrado:', nodeId);
@@ -848,74 +857,57 @@
         }
 
         try {
-            // Set node ID
+            // Abrir el modal
+            const questionModal = document.getElementById('questionModal');
+            if (questionModal) questionModal.classList.remove('hidden');
+
+            // Establecer el ID del nodo
             const nodeIdInput = document.getElementById('nodeId');
             if (nodeIdInput) nodeIdInput.value = node.id;
-            
-            // Set content type
+
+            // Establecer el tipo de contenido
             const contentTypeSelect = document.getElementById('contentType');
             if (contentTypeSelect) {
                 contentTypeSelect.value = type;
                 contentTypeSelect.disabled = true;
+                toggleContentType(); // Asegurarse de que se muestren los campos correctos
             }
 
-            // Show training fields if applicable
-            const trainingTypes = document.getElementById('trainingTypes');
-            if (trainingTypes) trainingTypes.classList.remove('hidden');
-            
-            // Set training type
+            // Establecer el texto de la pregunta/contenido
+            const questionText = document.getElementById('questionText');
+            if (questionText) {
+                questionText.value = type === 'TRAINING' ? node.content : node.question;
+            }
+
             if (type === 'TRAINING') {
+                // Configurar tipo de entrenamiento
                 const trainingTypeSelect = document.getElementById('trainingType');
                 if (trainingTypeSelect) {
-                    if (node.type === 'VIDEO_NODE') {
-                        trainingTypeSelect.value = 'VIDEO';
-                    } else if (node.type === 'IMAGE_NODE') {
-                        trainingTypeSelect.value = 'IMAGE';
-                    } else if (node.type === 'TEXT_NODE') {
-                        trainingTypeSelect.value = 'TEXT';
-                    }
+                    const nodeType = node.type.replace('_NODE', '');
+                    trainingTypeSelect.value = nodeType;
+                    toggleMediaType(); // Actualizar la vista según el tipo
+                }
+
+                // Mostrar media actual si existe
+                if (node.media_url) {
+                    const mediaContainer = document.getElementById('mediaContainer');
+                    if (mediaContainer) mediaContainer.classList.remove('hidden');
+                    showCurrentMedia(node.media_url, node.type);
                 }
             } else {
-                // Handle evaluation type
+                // Configurar tipo de evaluación
                 const questionTypeSelect = document.getElementById('questionType');
-                if (questionTypeSelect) questionTypeSelect.value = node.type;
-                
-                // Handle options if present
+                if (questionTypeSelect) {
+                    questionTypeSelect.value = node.type;
+                }
+
+                // Configurar opciones si existen
                 if (node.options) {
-                    options = [...node.options];
+                    window.options = [...node.options];
                     renderOptions();
                 }
             }
 
-            // Set content/question text
-            const questionText = document.getElementById('questionText');
-            if (questionText) {
-                questionText.value = type === 'TRAINING' ? 
-                    (node.content || '') : 
-                    (node.question || '');
-            }
-
-            // Handle media preview
-            if (node.media_url) {
-                const mediaPreview = document.getElementById('mediaPreview');
-                const mediaContainer = document.getElementById('mediaContainer');
-                
-                if (mediaPreview) mediaPreview.classList.remove('hidden');
-                if (mediaContainer) mediaContainer.classList.remove('hidden');
-                
-                showCurrentMedia(node.media_url, node.type === 'VIDEO_NODE' ? 'VIDEO' : 'IMAGE');
-            }
-
-            // Show media container and toggle type
-            const mediaContainer = document.getElementById('mediaContainer');
-            if (mediaContainer) mediaContainer.classList.remove('hidden');
-            
-            toggleMediaType();
-
-            // Open modal
-            const questionModal = document.getElementById('questionModal');
-            if (questionModal) questionModal.classList.remove('hidden');
-            
         } catch (error) {
             console.error('Error al editar nodo:', error);
             alert('Ocurrió un error al editar el nodo. Por favor, intente nuevamente.');
@@ -1220,6 +1212,26 @@
                 toggleContentType();
                 toggleMediaContainer();
             });
+        }
+    });
+
+    // Asegurarnos de que los arrays se inicialicen correctamente
+    document.addEventListener('DOMContentLoaded', () => {
+        try {
+            const trainingFormData = document.getElementById('training-form-data');
+            const evaluationFormData = document.getElementById('evaluation-form-data');
+
+            if (trainingFormData) {
+                window.trainingNodes = JSON.parse(trainingFormData.textContent || '{}').training_nodes || [];
+                console.log('Training nodes cargados:', window.trainingNodes);
+            }
+
+            if (evaluationFormData) {
+                window.evaluationNodes = JSON.parse(evaluationFormData.textContent || '{}').question_nodes || [];
+                console.log('Evaluation nodes cargados:', window.evaluationNodes);
+            }
+        } catch (error) {
+            console.error('Error al cargar los datos:', error);
         }
     });
   </script>
