@@ -405,11 +405,25 @@
         const trainingData = JSON.parse(document.getElementById('training-form-data')?.textContent || '{}');
         const evaluationData = JSON.parse(document.getElementById('evaluation-form-data')?.textContent || '{}');
 
-        trainingNodes = trainingData?.training_nodes || [];
-        evaluationNodes = evaluationData?.question_nodes || [];
+        console.log('Datos crudos training:', trainingData);
+        console.log('Datos crudos evaluation:', evaluationData);
 
-        console.log('Training nodes inicializados:', trainingNodes);
-        console.log('Evaluation nodes inicializados:', evaluationNodes);
+        // Asegurar IDs únicos y consistentes
+        trainingNodes = (trainingData?.training_nodes || []).map(node => ({
+            ...node,
+            id: node.id?.toString() || crypto.randomUUID()
+        }));
+        
+        evaluationNodes = (evaluationData?.question_nodes || []).map(node => ({
+            ...node,
+            id: node.id?.toString() || crypto.randomUUID()
+        }));
+
+        console.log('Training nodes procesados:', trainingNodes);
+        console.log('Evaluation nodes procesados:', evaluationNodes);
+
+        // Renderizar los nodos iniciales
+        renderNodes(trainingNodes, 'TRAINING');
       } catch (error) {
         console.error('Error al inicializar datos:', error);
       }
@@ -417,17 +431,27 @@
 
     function editNode(nodeId, type) {
       console.log('Editando nodo:', nodeId, 'tipo:', type);
+      console.log('Tipo de nodeId:', typeof nodeId);
       
-      if (!nodeId) {
-        console.error('ID de nodo inválido');
+      if (!nodeId || nodeId === 'null') {
+        console.error('ID de nodo inválido:', nodeId);
         return;
       }
 
       const nodes = type === 'TRAINING' ? trainingNodes : evaluationNodes;
-      const node = nodes.find(n => String(n.id) === String(nodeId));
+      console.log('Buscando nodo en:', nodes);
+      console.log('IDs disponibles:', nodes.map(n => ({id: n.id, tipo: typeof n.id})));
+      
+      // Intentar encontrar el nodo con diferentes comparaciones
+      const node = nodes.find(n => 
+          String(n.id) === String(nodeId) || 
+          n.id === parseInt(nodeId) || 
+          n.id === nodeId
+      );
 
       if (!node) {
         console.error('Nodo no encontrado:', nodeId);
+        console.error('Comparación intentada con:', nodes.map(n => `${n.id} (${typeof n.id})`));
         return;
       }
 
@@ -610,59 +634,59 @@
         const container = document.getElementById('questionsList');
         if (!container) return;
 
-        container.innerHTML = nodes.map((node, index) => `
-            <div class="node-card p-4 mb-4 border rounded shadow-sm">
-                <div class="flex justify-between items-center">
-                    <div>
-                        <span class="font-bold">#${index + 1}</span>
-                        <span class="ml-2">${getNodeTypeName(node.type)}</span>
+        console.log('Renderizando nodos:', nodes);
+
+        container.innerHTML = nodes.map((node, index) => {
+            console.log('Renderizando nodo:', node);
+            return `
+                <div class="node-card p-4 mb-4 border rounded shadow-sm">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <span class="font-bold">#${index + 1}</span>
+                            <span class="ml-2">${getNodeTypeName(node.type)}</span>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="editNode('${node.id || ''}', '${type}')" 
+                                    class="btn btn-primary"
+                                    data-node-id="${node.id || ''}"
+                                    data-node-type="${type}">
+                                Editar
+                            </button>
+                            <button onclick="deleteNode('${node.id || ''}', '${type}')" 
+                                    class="btn btn-danger">
+                                Eliminar
+                            </button>
+                        </div>
                     </div>
-                    <div class="flex gap-2">
-                        <button onclick="editNode(${node.id}, '${type}')" 
-                                class="btn btn-primary">
-                            Editar
-                        </button>
-                        <button onclick="deleteNode(${node.id}, '${type}')" 
-                                class="btn btn-danger">
-                            Eliminar
-                        </button>
+                    
+                    <div class="mt-2">
+                        <p>${node.content || node.question || ''}</p>
                     </div>
+
+                    ${node.media_url ? `
+                        <div class="mt-3">
+                            ${node.type === 'VIDEO_NODE' ? `
+                                <video controls class="max-w-full h-auto">
+                                    <source src="/media/${node.media_url}" type="video/mp4">
+                                    Tu navegador no soporta el elemento de video.
+                                </video>
+                            ` : ['IMAGE_NODE', 'IMAGE_QUESTION'].includes(node.type) ? `
+                                <img src="/media/${node.media_url}" alt="Imagen" class="max-w-full h-auto">
+                            ` : ''}
+                        </div>
+                    ` : ''}
                 </div>
-                
-                ${node.content || node.question ? `
-                    <div class="mt-2">
-                        <p>${node.content || node.question}</p>
-                    </div>
-                ` : ''}
+            `;
+        }).join('');
 
-                ${node.options ? `
-                    <div class="mt-2">
-                        <ul class="list-disc pl-5">
-                            ${node.options.map(option => `<li>${option}</li>`).join('')}
-                        </ul>
-                    </div>
-                ` : ''}
-
-                ${node.media_url ? `
-                    <div class="mt-3">
-                        ${node.type === 'VIDEO_NODE' ? `
-                            <video controls class="max-w-full h-auto">
-                                <source src="/media/${node.media_url}" type="video/mp4">
-                                Tu navegador no soporta el elemento de video.
-                            </video>
-                        ` : ['IMAGE_NODE', 'IMAGE_QUESTION'].includes(node.type) ? `
-                            <img src="/media/${node.media_url}" alt="Imagen" class="max-w-full h-auto">
-                        ` : ''}
-                    </div>
-                ` : ''}
-
-                ${node.type === 'SCALE_QUESTION' ? `
-                    <div class="mt-2">
-                        <p>Escala: ${node.min || 0} - ${node.max || 10}</p>
-                    </div>
-                ` : ''}
-            </div>
-        `).join('');
+        // Agregar event listeners usando data attributes
+        container.querySelectorAll('.btn-primary').forEach(button => {
+            button.addEventListener('click', (e) => {
+                const nodeId = button.dataset.nodeId;
+                const nodeType = button.dataset.nodeType;
+                editNode(nodeId, nodeType);
+            });
+        });
     }
 
     function openFormModal(type) {
@@ -1103,59 +1127,59 @@
         const container = document.getElementById('questionsList');
         if (!container) return;
 
-        container.innerHTML = nodes.map((node, index) => `
-            <div class="node-card p-4 mb-4 border rounded shadow-sm">
-                <div class="flex justify-between items-center">
-                    <div>
-                        <span class="font-bold">#${index + 1}</span>
-                        <span class="ml-2">${getNodeTypeName(node.type)}</span>
+        console.log('Renderizando nodos:', nodes);
+
+        container.innerHTML = nodes.map((node, index) => {
+            console.log('Renderizando nodo:', node);
+            return `
+                <div class="node-card p-4 mb-4 border rounded shadow-sm">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <span class="font-bold">#${index + 1}</span>
+                            <span class="ml-2">${getNodeTypeName(node.type)}</span>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="editNode('${node.id || ''}', '${type}')" 
+                                    class="btn btn-primary"
+                                    data-node-id="${node.id || ''}"
+                                    data-node-type="${type}">
+                                Editar
+                            </button>
+                            <button onclick="deleteNode('${node.id || ''}', '${type}')" 
+                                    class="btn btn-danger">
+                                Eliminar
+                            </button>
+                        </div>
                     </div>
-                    <div class="flex gap-2">
-                        <button onclick="editNode(${node.id}, '${type}')" 
-                                class="btn btn-primary">
-                            Editar
-                        </button>
-                        <button onclick="deleteNode(${node.id}, '${type}')" 
-                                class="btn btn-danger">
-                            Eliminar
-                        </button>
+                    
+                    <div class="mt-2">
+                        <p>${node.content || node.question || ''}</p>
                     </div>
+
+                    ${node.media_url ? `
+                        <div class="mt-3">
+                            ${node.type === 'VIDEO_NODE' ? `
+                                <video controls class="max-w-full h-auto">
+                                    <source src="/media/${node.media_url}" type="video/mp4">
+                                    Tu navegador no soporta el elemento de video.
+                                </video>
+                            ` : ['IMAGE_NODE', 'IMAGE_QUESTION'].includes(node.type) ? `
+                                <img src="/media/${node.media_url}" alt="Imagen" class="max-w-full h-auto">
+                            ` : ''}
+                        </div>
+                    ` : ''}
                 </div>
-                
-                ${node.content || node.question ? `
-                    <div class="mt-2">
-                        <p>${node.content || node.question}</p>
-                    </div>
-                ` : ''}
+            `;
+        }).join('');
 
-                ${node.options ? `
-                    <div class="mt-2">
-                        <ul class="list-disc pl-5">
-                            ${node.options.map(option => `<li>${option}</li>`).join('')}
-                        </ul>
-                    </div>
-                ` : ''}
-
-                ${node.media_url ? `
-                    <div class="mt-3">
-                        ${node.type === 'VIDEO_NODE' ? `
-                            <video controls class="max-w-full h-auto">
-                                <source src="/media/${node.media_url}" type="video/mp4">
-                                Tu navegador no soporta el elemento de video.
-                            </video>
-                        ` : ['IMAGE_NODE', 'IMAGE_QUESTION'].includes(node.type) ? `
-                            <img src="/media/${node.media_url}" alt="Imagen" class="max-w-full h-auto">
-                        ` : ''}
-                    </div>
-                ` : ''}
-
-                ${node.type === 'SCALE_QUESTION' ? `
-                    <div class="mt-2">
-                        <p>Escala: ${node.min || 0} - ${node.max || 10}</p>
-                    </div>
-                ` : ''}
-            </div>
-        `).join('');
+        // Agregar event listeners usando data attributes
+        container.querySelectorAll('.btn-primary').forEach(button => {
+            button.addEventListener('click', (e) => {
+                const nodeId = button.dataset.nodeId;
+                const nodeType = button.dataset.nodeType;
+                editNode(nodeId, nodeType);
+            });
+        });
     }
 
     document.addEventListener('DOMContentLoaded', function() {
