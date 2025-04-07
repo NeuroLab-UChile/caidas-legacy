@@ -26,6 +26,7 @@ class CategoryTemplate(models.Model):
     blank=True
     
   )
+  READONLY_FIELDS = ['name', 'icon', 'is_active']
 
   description = models.TextField(blank=True)
   is_active = models.BooleanField(default=True)

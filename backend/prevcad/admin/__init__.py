@@ -9,3 +9,4 @@ from .appointment import AppointmentAdmin
 from .user import CustomUserAdmin
 from .action_log import ActionLogAdmin
 from ..models import UserProfile
+from .text_recommendation import TextRecomendationAdmin

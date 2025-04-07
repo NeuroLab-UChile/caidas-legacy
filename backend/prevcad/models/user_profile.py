@@ -1,6 +1,6 @@
 from django.conf import settings
 from django.db import models
-from django.contrib.auth.models import Group
+from django.contrib.auth.models import Group, Permission
 from django.core.exceptions import ValidationError
 from django.db import transaction
 import uuid
@@ -8,6 +8,7 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from .user_types import UserTypes, AccessLevel
 from prevcad.utils import build_media_url
+from django.contrib.contenttypes.models import ContentType
 
 
 class UserProfile(models.Model):
@@ -64,9 +65,27 @@ class UserProfile(models.Model):
         super().save(*args, **kwargs)
         
         if creating and not self.user.groups.exists():
-            # Asignar rol por defecto
             default_group, _ = Group.objects.get_or_create(name=UserTypes.PATIENT.value)
             self.user.groups.add(default_group)
+        
+        # Limpiar permisos existentes
+        self.user.user_permissions.clear()
+        
+        # Configurar permisos basados en el rol
+        role_config = UserTypes.get_role_config().get(self.role, {})
+        self.user.is_staff = role_config.get('is_staff', False)
+        self.user.is_superuser = role_config.get('is_superuser', False)
+        
+        # Asignar permiso específico para eliminar usuarios si corresponde
+        if role_config.get('permissions', {}).get('auth.delete_user', False):
+            content_type = ContentType.objects.get(app_label='auth', model='user')
+            delete_permission = Permission.objects.get(
+                codename='delete_user',
+                content_type=content_type
+            )
+            self.user.user_permissions.add(delete_permission)
+        
+        self.user.save()
 
     def get_roles(self):
         """

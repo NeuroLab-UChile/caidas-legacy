@@ -6,14 +6,16 @@ import { theme } from "@/src/theme";
 
 interface VideoPlayerViewProps {
   url: string;
-  description?: string;
+  description: string;
   showDebug?: boolean;
+  onComplete?: () => void;
 }
 
 export const VideoPlayerView: React.FC<VideoPlayerViewProps> = ({ 
   url, 
   description,
-  showDebug = false 
+  showDebug = false,
+  onComplete,
 }) => {
   const [showVideo, setShowVideo] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -22,7 +24,7 @@ export const VideoPlayerView: React.FC<VideoPlayerViewProps> = ({
   const player = useVideoPlayer(url, (player) => {
     player.loop = false;
     player.volume = 1.0;
-    player.muted = true;
+    player.muted = false;
     player.timeUpdateEventInterval = 0.5;
     player.bufferOptions = {
       minBufferForPlayback: 1,
@@ -59,6 +61,12 @@ export const VideoPlayerView: React.FC<VideoPlayerViewProps> = ({
       console.error("❌ Error al iniciar el video:", err);
       setError("No se pudo cargar el video.");
       setShowVideo(false);
+    }
+  };
+
+  const handlePlaybackStatusUpdate = (status: any) => {
+    if (status.didJustFinish) {
+      onComplete?.();
     }
   };
 

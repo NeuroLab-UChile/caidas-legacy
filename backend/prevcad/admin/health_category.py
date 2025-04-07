@@ -27,21 +27,26 @@ from django.db.models import Case, When, Value, IntegerField
 
 
 class UserProfileFilter(admin.SimpleListFilter):
-    title = _('Usuario')  # Nombre que aparece en el panel
-    parameter_name = 'user_filter'  # Parámetro en la URL
+    title = _('Paciente')  # Cambiado de 'Usuario' a 'Paciente'
+    parameter_name = 'user_filter'
 
     def lookups(self, request, model_admin):
         """
         Retorna lista de tuplas (valor, texto) para las opciones del filtro
         """
         users = set()
-        for obj in model_admin.model.objects.select_related('user__user').all():
+        for obj in model_admin.model.objects.select_related('user__user', 'template').all():
             if obj.user and obj.user.user:
                 user = obj.user.user
-                # Tupla con (id, nombre completo (username))
+                # Obtener el nombre completo o username si no hay nombre completo
+                display_name = user.get_full_name() or user.username
+                # Obtener la categoría del template
+                category = obj.template.name if obj.template else "Sin categoría"
+                
+                # Crear la tupla con (id, "Nombre (Categoría)")
                 users.add((
                     str(obj.user.id),
-                    f"{user.get_full_name()} ({user.username})"
+                    f"{display_name} - {category}"
                 ))
         return sorted(users, key=lambda x: x[1].lower())
 
@@ -78,7 +83,8 @@ class HealthCategoryAdmin(admin.ModelAdmin):
         'get_template_name',
         'get_recommendation_status',
         'get_evaluation_type',
-        'get_user_permissions'
+        'get_user_permissions',
+        'get_actions_display'  # Nueva columna
     ]
 
     list_filter = (
@@ -144,14 +150,13 @@ class HealthCategoryAdmin(admin.ModelAdmin):
         request = getattr(self, 'request', None)
         if not request:
             return "Error: No se pudo obtener el contexto de la solicitud"
-        
-        user_profile = getattr(request.user, 'profile', None)
 
         try:
             evaluation_form = obj.get_or_create_evaluation_form()
             professional_responses = evaluation_form.professional_responses or {}
-
             
+            # Verificar si el usuario tiene permisos de edición
+            can_edit = self._check_permission(request.user, 'change')
             
             context = {
                 'health_category': obj,
@@ -160,11 +165,10 @@ class HealthCategoryAdmin(admin.ModelAdmin):
                 'completed_date': evaluation_form.completed_date,
                 'is_completed': bool(evaluation_form.completed_date),
                 'evaluation_tags': obj.template.evaluation_tags if obj.template else [],
-                'can_edit': obj.template.can_user_edit(user_profile),
-               
+                'can_edit': can_edit,  # Solo permitir edición si tiene permisos
+                'user_is_authorized': can_edit,
             }
             
-            # Especificar la ruta completa
             template_path = 'admin/healthcategory/professional_evaluation.html'
             try:
                 return mark_safe(render_to_string(template_path, context))
@@ -178,13 +182,56 @@ class HealthCategoryAdmin(admin.ModelAdmin):
                 '<div class="text-red-500">Error al cargar evaluación profesional: {}</div>',
                 str(e)
             )
-    get_professional_evaluation.short_description = "Evaluación Profesional"
+
+    def get_recommendation_editor(self, obj):
+        """Renderiza el editor de recomendaciones"""
+        try:
+            request = getattr(self, 'request', None)
+            if not request:
+                return "Error: No se pudo obtener el contexto de la solicitud"
+
+            # Verificar si el usuario tiene permisos de edición
+            can_edit = self._check_permission(request.user, 'change')
+            
+            recommendation = obj.get_or_create_recommendation()
+            
+            context = {
+                'health_category': obj,
+                'recommendation': recommendation,
+                'can_edit': can_edit,  # Solo permitir edición si tiene permisos
+                'user_is_authorized': can_edit,
+                'user_name': request.user.get_full_name() or request.user.username,
+                'user_role': 'Doctor' if request.user.groups.filter(name='DOCTOR').exists() else 'Superusuario'
+            }
+            
+            template_path = 'admin/healthcategory/recommendation_editor.html'
+            return mark_safe(render_to_string(template_path, context))
+            
+        except Exception as e:
+            return format_html(
+                '<div class="text-red-500">Error al cargar editor de recomendación: {}</div>',
+                str(e)
+            )
+
+    def get_template_context(self, request, obj=None):
+        """Método helper para obtener el contexto común de los templates"""
+        context = super().get_template_context(request, obj) if hasattr(super(), 'get_template_context') else {}
+        context.update({
+            'can_edit': True,  # Permitir edición si es doctor o superuser
+            'user_is_authorized': True,  # Indicar que el usuario está autorizado
+            'user_name': request.user.get_full_name() or request.user.username,
+            'user_role': 'Doctor' if request.user.groups.filter(name='DOCTOR').exists() else 'Superusuario'
+        })
+        return context
 
     def get_user_info(self, obj):
         if obj.user and obj.user.user:
-            return f"{obj.user.user.get_full_name()} ({obj.user.user.username})"
+            user = obj.user.user
+            display_name = user.get_full_name() or user.username
+            category = obj.template.name if obj.template else "Sin categoría"
+            return f"{display_name} - {category}"
         return "-"
-    get_user_info.short_description = "Información de Usuario"
+    get_user_info.short_description = "Paciente"  # Cambiado de "Información de Usuario" a "Paciente"
 
     def get_template_name(self, obj):
         return obj.template.name
@@ -252,112 +299,36 @@ class HealthCategoryAdmin(admin.ModelAdmin):
     get_completion_date.short_description = 'Estado'
 
     def get_recommendation_status(self, obj):
-        """Muestra el estado de la recomendación con estilos mejorados"""
+        """Muestra el estado de la recomendación con mejor formato"""
         try:
-            recommendation = getattr(obj, 'recommendation', None)
-            if not recommendation:
+            recommendation = obj.get_or_create_recommendation()
+            
+            if recommendation.status_color:
+                color_map = {
+                    'RED': ('#DC2626', '#FEF2F2', '🔴'),
+                    'YELLOW': ('#D97706', '#FEF3C7', '🟡'),
+                    'GREEN': ('#059669', '#D1FAE5', '🟢')
+                }
+                bg_color, text_color, emoji = color_map.get(recommendation.status_color, ('#6B7280', '#F3F4F6', '⚪'))
+                
                 return format_html(
-                    '<span style="'
-                    'color: #6B7280;'
-                    'font-size: 0.875rem;'
-                    'font-style: italic;'
-                    '">Sin recomendación</span>'
+                    '<span style="color: {}; background: {}; padding: 4px 8px; '
+                    'border-radius: 9999px; font-size: 0.75rem;">{} {}</span>',
+                    bg_color, text_color, emoji,
+                    recommendation.is_draft and 'Borrador' or 'Completado'
                 )
             
-            # Configuración de estados con estilos y símbolos
-            status_config = {
-                'verde': {
-                    'color': '#059669',  # Verde esmeralda
-                    'bg': '#ECFDF5',
-                    'border': '#A7F3D0',
-                    'icon': '✓',
-                    'label': 'Favorable'
-                },
-                'amarillo': {
-                    'color': '#D97706',  # Ámbar
-                    'bg': '#FFFBEB',
-                    'border': '#FDE68A',
-                    'icon': '⚠',
-                    'label': 'Precaución'
-                },
-                'rojo': {
-                    'color': '#DC2626',  # Rojo
-                    'bg': '#FEF2F2',
-                    'border': '#FECACA',
-                    'icon': '!',
-                    'label': 'Atención'
-                },
-                'gris': {
-                    'color': '#6B7280',  # Gris
-                    'bg': '#F9FAFB',
-                    'border': '#E5E7EB',
-                    'icon': '○',
-                    'label': 'Pendiente'
-                }
-            }
-            
-            # Obtener configuración del estado actual
-            status = status_config.get(recommendation.status_color, status_config['gris'])
-            
-            # Determinar estado de publicación
-            publication_status = []
-            if recommendation.is_draft:
-                publication_status.append(("Borrador", "#6B7280"))  # Gris
-            else:
-                publication_status.append(("Publicado", "#059669"))  # Verde
-            
-            # Construir el HTML con estilos inline
-            status_html = f'''
-                <div style="display: flex; flex-direction: column; gap: 8px;">
-                    <div style="
-                        display: inline-flex;
-                        align-items: center;
-                        background-color: {status['bg']};
-                        color: {status['color']};
-                        border: 1px solid {status['border']};
-                        padding: 4px 12px;
-                        border-radius: 9999px;
-                        font-size: 0.75rem;
-                        font-weight: 500;
-                        line-height: 1rem;
-                    ">
-                        <span style="margin-right: 4px;">{status['icon']}</span>
-                        {status['label']}
-                    </div>
-                    <div style="
-                        display: flex;
-                        gap: 8px;
-                        font-size: 0.75rem;
-                    ">
-            '''
-            
-            # Agregar pills de estado
-            for label, color in publication_status:
-                status_html += f'''
-                    <span style="
-                        color: {color};
-                        background-color: {color}15;
-                        padding: 2px 8px;
-                        border-radius: 4px;
-                        font-weight: 500;
-                    ">{label}</span>
-                '''
-            
-            status_html += '</div></div>'
-            
-            return format_html(status_html)
-            
-        except Exception as e:
-            print(f"Error en get_recommendation_status: {e}")
             return format_html(
-                '<span style="'
-                'color: #6B7280;'
-                'font-size: 0.875rem;'
-                'font-style: italic;'
-                '">Error al cargar estado</span>'
+                '<span style="color: #6B7280; background: #F3F4F6; padding: 4px 8px; '
+                'border-radius: 9999px; font-size: 0.75rem;">⚪ Sin estado</span>'
             )
 
-    get_recommendation_status.short_description = "Estado de Recomendación"
+        except Exception as e:
+            return format_html(
+                '<span style="color: #DC2626;">Error: {}</span>', str(e)
+            )
+    get_recommendation_status.short_description = 'Estado'
+    get_recommendation_status.allow_tags = True
 
     def get_detailed_responses(self, obj):
         responses = obj.evaluation_form.responses or {}
@@ -399,61 +370,6 @@ class HealthCategoryAdmin(admin.ModelAdmin):
     def get_default_recommendation(self, obj):
         """Retorna la recomendación por defecto basada en el tipo de evaluación"""
         return obj.template.get_default_recommendation()
-
-    def get_recommendation_editor(self, obj):
-        """Renderiza el editor de recomendaciones"""
-        request = getattr(self, 'request', None)
-    
-        if not request:
-            return "Error: No se pudo obtener el contexto de la solicitud"
-
-        try:
-            # Verificar permisos usando el método del modelo
-            user_profile = getattr(request.user, 'profile', None)
-            can_edit = obj.can_user_edit(user_profile)
-            
-            # Obtener el rol y su label
-            user_role = getattr(user_profile, 'role', None)
-            user_role_label = UserTypes(user_role).label if user_role else None
-
-            # Obtener o crear recomendación
-            try:
-                recommendation = obj.recommendation
-            except Recommendation.DoesNotExist:
-                recommendation = Recommendation.objects.create(
-                    health_category=obj,
-                    status_color='gris',
-                    is_draft=True,
-                    use_default=True
-                )
-
-            context = {
-                'recommendation': recommendation,
-                'health_category': obj,
-                'default_recommendations': obj.template.default_recommendations,
-                'can_edit': can_edit,
-                'user_role': user_role,
-                'user_role_label': user_role_label,
-                'is_readonly': obj.template.is_readonly if obj.template else True,
-                'is_draft': recommendation.is_draft,
-                
-            }
-
-         
-            return render_to_string(
-                'admin/healthcategory/recommendation_editor.html',
-                context,
-                request=request
-
-            )
-
-        except Exception as e:
-            import traceback
-            print(f"Error al renderizar el editor: {str(e)}")
-            print(traceback.format_exc())
-            return f"Error al cargar el editor: {str(e)}"
-
-    get_recommendation_editor.short_description = "Editor de Recomendación"
 
     def response_change(self, request, obj):
         """Personaliza la respuesta después de intentar guardar"""
@@ -678,68 +594,94 @@ class HealthCategoryAdmin(admin.ModelAdmin):
         self.request = request  # Guardamos la request directamente en self
         return super().changeform_view(request, object_id, form_url, extra_context)
 
+    def _check_permission(self, user, perm_type):
+        """Verifica permisos incluyendo grupos y permisos directos"""
+        if not user.is_authenticated:
+            return False
+            
+        if user.is_superuser:
+            return True
+
+        # Verificar tanto permisos directos como de grupo
+        perm_name = f'prevcad.{perm_type}_healthcategory'
+        return (
+            user.has_perm(perm_name) or
+            any(group.permissions.filter(codename=f'{perm_type}_healthcategory').exists() 
+                for group in user.groups.all())
+        )
+
+    def has_view_permission(self, request, obj=None):
+        return self._check_permission(request.user, 'view')
+
+    def has_change_permission(self, request, obj=None):
+        return self._check_permission(request.user, 'change')
+
+    def has_add_permission(self, request):
+        return self._check_permission(request.user, 'add')
+
+    def has_delete_permission(self, request, obj=None):
+        return self._check_permission(request.user, 'delete')
+
+    def has_module_permission(self, request):
+        return any([
+            self._check_permission(request.user, perm)
+            for perm in ['view', 'change', 'add', 'delete']
+        ])
+
     def get_user_permissions(self, obj):
-        """Muestra los permisos del usuario actual para esta categoría"""
+        """Muestra los permisos del usuario actual"""
         try:
             request = getattr(self, 'request', None)
-            if not request:
+            if not request or not request.user.is_authenticated:
                 return format_html(
-                    '<span style="color: #6B7280;">Sin información</span>'
+                    '<span style="color: #DC2626; background: #FEF2F2; padding: 2px 8px; '
+                    'border-radius: 4px; font-size: 0.75rem;">🚫 Sin acceso</span>'
                 )
 
-            user_profile = getattr(request.user, 'profile', None)
-            can_edit = obj.template.can_user_edit(user_profile)
-            is_readonly = obj.template.is_readonly if obj.template else True
-
-            # Construir lista de permisos
-            permissions = []
+            user = request.user
             
-  
-            # Verificar permisos específicos
-            if can_edit and not is_readonly:
-                permissions.append((
-                    "✏️ Puede editar",
-                    "#059669",  # Verde
-                    "#ECFDF5"
-                ))
-            elif is_readonly:
-                permissions.append((
-                    "🔒 Solo lectura",
-                    "#DC2626",  # Rojo
-                    "#FEF2F2"
-                ))
-            else:
-                permissions.append((
-                    "🚫 Sin acceso",
-                    "#6B7280",  # Gris
-                    "#F3F4F6"
-                ))
+            # Superusuario
+            if user.is_superuser:
+                return format_html(
+                    '<div style="display: flex; gap: 4px; flex-direction: column;">'
+                    '<span style="color: #059669; background: #ECFDF5; padding: 2px 8px; '
+                    'border-radius: 4px; font-size: 0.75rem;">✏️ Acceso completo</span>'
+                    '<span style="color: #4F46E5; background: #EEF2FF; padding: 2px 8px; '
+                    'border-radius: 4px; font-size: 0.75rem;">👑 Superusuario</span>'
+                    '</div>'
+                )
 
-            # Mostrar rol del usuario
-            user_role = getattr(user_profile, 'role', None)
-            if user_role:
-                permissions.append((
-                    f"👤 {UserTypes(user_role).label}",
-                    "#4F46E5",  # Índigo
-                    "#EEF2FF"
-                ))
+            # Verificar permisos
+            perms = []
+            if self._check_permission(user, 'view'):
+                perms.append('Ver')
+            if self._check_permission(user, 'change'):
+                perms.append('Editar')
+            if self._check_permission(user, 'add'):
+                perms.append('Añadir')
+            if self._check_permission(user, 'delete'):
+                perms.append('Eliminar')
 
-            # Construir HTML con los permisos
-            html = '<div style="display: flex; gap: 4px; flex-direction: column;">'
-            for text, color, bg_color in permissions:
-                html += f'''
-                    <span style="
-                        color: {color};
-                        background: {bg_color};
-                        padding: 2px 8px;
-                        border-radius: 4px;
-                        font-size: 0.75rem;
-                        white-space: nowrap;
-                    ">{text}</span>
-                '''
-            html += '</div>'
+            if perms:
+                groups = [g.name for g in user.groups.all()]
+                role = "Staff" if user.is_staff else "Usuario"
+                
+                return format_html(
+                    '<div style="display: flex; gap: 4px; flex-direction: column;">'
+                    '<span style="color: #0891b2; background: #CFFAFE; padding: 2px 8px; '
+                    'border-radius: 4px; font-size: 0.75rem;">⚙️ {} ({})</span>'
+                    '<span style="color: #4F46E5; background: #EEF2FF; padding: 2px 8px; '
+                    'border-radius: 4px; font-size: 0.75rem;">🔑 {}</span>'
+                    '</div>',
+                    role,
+                    ' • '.join(groups) if groups else 'Sin grupos',
+                    ', '.join(perms)
+                )
 
-            return format_html(html)
+            return format_html(
+                '<span style="color: #DC2626; background: #FEF2F2; padding: 2px 8px; '
+                'border-radius: 4px; font-size: 0.75rem;">🚫 Sin acceso</span>'
+            )
 
         except Exception as e:
             return format_html(
@@ -767,31 +709,56 @@ class HealthCategoryAdmin(admin.ModelAdmin):
             }),
         ]
 
-   
-        
+    def get_actions_display(self, obj):
+        """Muestra botones de acción basados en permisos"""
+        try:
+            request = getattr(self, 'request', None)
+            if not request:
+                return '-'
 
-    def get_queryset(self, request):
-        qs = super().get_queryset(request)
-        user_profile = getattr(request.user, 'profile', None)
+            # Solo mostrar botones si tiene permisos de edición
+            if self._check_permission(request.user, 'change'):
+                actions = []
+                
+                # Botón de editar evaluación
+                if obj.template.evaluation_type == 'PROFESSIONAL':
+                    actions.append(
+                        '<a href="{}" class="button" style="'
+                        'background: #059669; color: white; padding: 4px 8px; '
+                        'border-radius: 4px; text-decoration: none; font-size: 0.75rem; '
+                        'margin-right: 4px;">📝 Evaluar</a>'.format(
+                            f'/admin/prevcad/healthcategory/{obj.id}/change/#professional-evaluation'
+                        )
+                    )
 
-        if user_profile and user_profile.role:
-            # Ordenar manualmente obteniendo los IDs ordenados
-            ordered_ids = [
-            obj.id for obj in sorted(
-                qs,
-                key=lambda obj: user_profile.role in (obj.template.allowed_editor_roles or []),
-                reverse=True  # Los permitidos primero
-            )
-            ]
-            # Reconstruir el queryset con los IDs ordenados
-            return qs.filter(id__in=ordered_ids).order_by(
-            Case(
-                *[When(id=id, then=pos) for pos, id in enumerate(ordered_ids)],
-                default=0
-            )
+                # Botón de editar recomendación
+                actions.append(
+                    '<a href="{}" class="button" style="'
+                    'background: #2563eb; color: white; padding: 4px 8px; '
+                    'border-radius: 4px; text-decoration: none; font-size: 0.75rem; '
+                    'margin-right: 4px;">✏️ Recomendar</a>'.format(
+                        f'/admin/prevcad/healthcategory/{obj.id}/change/#recommendation-editor'
+                    )
+                )
+
+                return format_html(
+                    '<div style="display: flex; gap: 4px;">{}</div>',
+                    mark_safe(''.join(actions))
+                )
+
+            # Si solo tiene permisos de lectura, mostrar mensaje
+            return format_html(
+                '<span style="color: #6B7280; background: #F3F4F6; padding: 2px 8px; '
+                'border-radius: 4px; font-size: 0.75rem;">👁️ Solo lectura</span>'
             )
 
-        return qs
+        except Exception as e:
+            return format_html(
+                '<span style="color: #DC2626;">Error: {}</span>', str(e)
+            )
+
+    get_actions_display.short_description = 'Acciones'
+    get_actions_display.allow_tags = True
 
     class Media:
         css = {

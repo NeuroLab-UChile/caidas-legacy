@@ -9,6 +9,7 @@ import {
   Platform,
   Image,
   KeyboardAvoidingView,
+  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { theme } from "@/src/theme";
@@ -16,6 +17,7 @@ import { ActivityNodeViews } from "./index";
 import { ResultNodeView } from "./views/ResultNodeView";
 import { VideoNodeView } from "./views/VideoNodeView";
 import { ImageNodeView } from "./views/ImageNode";
+import { router } from 'expo-router';
 
 interface ActivityNodeContainerProps {
   type:
@@ -36,6 +38,10 @@ interface ActivityNodeContainerProps {
   onBack: () => void;
   responses: { [key: number]: any };
   categoryId?: number;
+  history: number[];
+  setHistory: React.Dispatch<React.SetStateAction<number[]>>;
+  currentQuestionIndex: number;
+  totalQuestions: number;
 }
 
 export function ActivityNodeContainer({
@@ -45,6 +51,10 @@ export function ActivityNodeContainer({
   onBack,
   responses,
   categoryId,
+  history,
+  setHistory,
+  currentQuestionIndex,
+  totalQuestions,
 }: ActivityNodeContainerProps) {
   const [currentResponse, setCurrentResponse] = useState<any>(null);
 
@@ -60,11 +70,39 @@ export function ActivityNodeContainer({
     }
   };
 
+  const handleBack = () => {
+    if (history.length > 0) {
+      const previousNodeId = history[history.length - 1];
+      onBack();
+      setHistory(prev => prev.slice(0, -1));
+    } else {
+      Alert.alert(
+        "Salir de la evaluación",
+        "¿Estás seguro que deseas salir? Se perderá el progreso.",
+        [
+          { text: "Cancelar", style: "cancel" },
+          {
+            text: "Salir",
+            style: "destructive",
+            onPress: () => {
+              router.push("/(tabs)/action");
+            }
+          }
+        ]
+      );
+    }
+  };
+
   const renderHeader = () => (
-    <TouchableOpacity style={styles.backButton} onPress={onBack}>
-      <Ionicons name="arrow-back" size={24} color={theme.colors.text} />
-      <Text style={styles.backText}>Atrás</Text>
-    </TouchableOpacity>
+    <View>
+      <TouchableOpacity style={styles.backButton} onPress={handleBack}>
+        <Ionicons name="chevron-back" size={24} color={theme.colors.text} />
+        <Text style={styles.backButtonText}>Atrás</Text>
+      </TouchableOpacity>
+      <Text style={styles.questionCounter}>
+        Pregunta {currentQuestionIndex + 1} de {totalQuestions}
+      </Text>
+    </View>
   );
 
   const renderContent = () => {
@@ -164,17 +202,22 @@ const styles = StyleSheet.create({
     color: theme.colors.background,
   },
   backButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    marginBottom: 16,
   },
-  backText: {
+  backButtonText: {
     marginLeft: 8,
     fontSize: 16,
     color: theme.colors.text,
+    fontWeight: '600',
+  },
+  questionCounter: {
+    fontSize: 14,
+    color: theme.colors.textSecondary,
+    textAlign: 'center',
+    marginBottom: 16,
   },
   scrollView: {
     flex: 1,

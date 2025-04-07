@@ -15,6 +15,8 @@ import { CategoryHeader } from "@/components/CategoryHeader";
 import { useRouter } from "expo-router";
 import ActivityNodeContainer from "@/components/ActivityNodes/ActivityNodeContainer";
 import Ionicons from "@expo/vector-icons/Ionicons";
+import { Ionicons as ExpoIonicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 
 import { ActivityNodeType } from "@/components/ActivityNodes";
 import EmptyState from "../containers/EmptyState";
@@ -25,6 +27,7 @@ import { useEventListener } from "expo";
 import * as FileSystem from "expo-file-system";
 import { theme } from "@/src/theme";
 import { VideoPlayerView } from "@/components/VideoPlayer/VideoPlayerView";
+
 
 type TrainingState = {
   currentNodeId: number | null;
@@ -68,6 +71,9 @@ const TrainingScreen = () => {
   const [videoError, setVideoError] = useState<string | null>(null);
   const [showVideo, setShowVideo] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [history, setHistory] = useState<number[]>([]);
+  const nodes = selectedCategory?.training_form?.training_nodes || [];
+  const currentQuestionIndex = nodes.findIndex(node => node.id === trainingState.currentNodeId);
 
   const player = useVideoPlayer(selectedCategory?.recommendations?.video_url || '', (player) => {
     player.loop = false;
@@ -244,57 +250,30 @@ const TrainingScreen = () => {
     [selectedCategory, getCurrentNode]
   );
 
-  const renderNode = useCallback(
-    (nodeId: number | null) => {
-      const node = getCurrentNode(nodeId);
-      if (!node) return null;
+  const handleNodeResponse = (nodeId: number, response: any) => {
+    console.log("Node response:", { nodeId, response });
+    handleNext(response);
+  };
 
-      return (
-        <ActivityNodeContainer
-          type={node.type as ActivityNodeType}
-          data={node}
-          onNext={() => {
-            const nodes = selectedCategory?.training_form?.training_nodes || [];
-            const currentIndex = nodes.findIndex((n) => n.id === nodeId);
-            const nextNodeId =
-              currentIndex < nodes.length - 1
-                ? nodes[currentIndex + 1].id
-                : null;
+  const renderNode = (nodeId: number | null) => {
+    const node = getCurrentNode(nodeId);
+    if (!node) return null;
 
-            setTrainingState((prev) => ({
-              ...prev,
-              currentNodeId: nextNodeId,
-              history: [...prev.history, node.id],
-              trainingResult: {
-                ...prev.trainingResult,
-                nodes: prev.trainingResult.nodes,
-              },
-            }));
-          }}
-          onBack={() => {
-            if (trainingState.history.length > 0) {
-              const previousNodeId =
-                trainingState.history[trainingState.history.length - 1];
-              setTrainingState((prev) => ({
-                ...prev,
-                currentNodeId: previousNodeId,
-                history: prev.history.slice(0, -1),
-                trainingResult: {
-                  ...prev.trainingResult,
-                  nodes: prev.trainingResult.nodes,
-                },
-              }));
-            } else {
-              setView(null);
-            }
-          }}
-          responses={{}}
-          categoryId={selectedCategory?.id}
-        />
-      );
-    },
-    [getCurrentNode, trainingState, selectedCategory, setView]
-  );
+    return (
+      <ActivityNodeContainer
+        type={node.type as ActivityNodeType}
+        data={node}
+        onNext={(response: any) => handleNodeResponse(node.id, response)}
+        onBack={handleBack}
+        categoryId={selectedCategory?.id}
+        responses={[]}
+        history={history}
+        setHistory={setHistory}
+        currentQuestionIndex={currentQuestionIndex}
+        totalQuestions={nodes.length}
+      />
+    );
+  };
 
   const prepareVideo = async (remoteUrl: string) => {
     try {
@@ -355,6 +334,7 @@ const TrainingScreen = () => {
     return (
       <VideoPlayerView 
         url={selectedCategory.recommendations.video_url}
+        description={selectedCategory.recommendations.text}
         showDebug={__DEV__}
       />
     );
@@ -453,7 +433,11 @@ const TrainingScreen = () => {
   };
 
   const handleBack = () => {
-    setView(null);
+    if (view) {
+      setView(null);
+    } else {
+      router.push("/(tabs)/action");
+    }
   };
 
   if (loading) return <LoadingIndicator />;
@@ -462,12 +446,17 @@ const TrainingScreen = () => {
   return (
     <ScrollView style={styles.container}>
       <CategoryHeader name={selectedCategory?.name || 'Categoría no seleccionada'} />
-      {view === "recommendations" && (
-        <TouchableOpacity style={styles.backButton} onPress={handleBack}>
-          <Ionicons name="arrow-back" size={24} color="#4B5563" />
-          <Text style={styles.backButtonText}>Volver</Text>
-        </TouchableOpacity>
-      )}
+      
+      <TouchableOpacity 
+        style={styles.backButton} 
+        onPress={handleBack}
+      >
+        <Ionicons name="chevron-back" size={24} color={theme.colors.text} />
+        <Text style={styles.backButtonText}>
+          {view ? 'Volver' : 'Volver al inicio'}
+        </Text>
+      </TouchableOpacity>
+
       {!view && (
         <View style={styles.viewSelection}>
           {selectedCategory?.recommendations && (
@@ -786,19 +775,17 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   backButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#f0f0f0",
-    paddingVertical: 14,
-    paddingHorizontal: 24,
-    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
     marginBottom: 16,
   },
   backButtonText: {
-    color: "#4B5563",
-    fontSize: 16,
-    fontWeight: "600",
     marginLeft: 8,
+    fontSize: 16,
+    color: theme.colors.text,
+    fontFamily: "System",
+    fontWeight: '600',
   },
   statusContainer: {
     flexDirection: "row",

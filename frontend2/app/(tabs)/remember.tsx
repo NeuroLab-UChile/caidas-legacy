@@ -10,6 +10,7 @@ import {
 import apiService from "../services/apiService";
 import { theme } from "@/src/theme";
 import { IconSymbol } from "@/components/ui/IconSymbol";
+import { ScrollView } from "react-native-gesture-handler";
 
 interface TextRecommendation {
   id: number;
@@ -35,6 +36,9 @@ const RememberScreen = () => {
   const [expandedId, setExpandedId] = useState<number | null>(null);
 
   const [clickCount, setClickCount] = useState(0);
+  const [hasMoreData, setHasMoreData] = useState(true);
+  const [page, setPage] = useState(1);
+  const flatListRef = React.useRef<FlatList>(null);
 
   useEffect(() => {
     fetchRecommendations();
@@ -45,13 +49,18 @@ const RememberScreen = () => {
       setLoading(true);
       const response = await apiService.recommendations.getAll();
 
+      if (response.data.recommendations.length === 0) {
+        setHasMoreData(false);
+        return;
+      }
+
       if (refresh) {
         setRecommendations(response.data.recommendations);
+        setPage(1);
+        setHasMoreData(true);
       } else {
-        setRecommendations((prev) => [
-          ...prev,
-          ...response.data.recommendations,
-        ]);
+        setRecommendations((prev) => [...prev, ...response.data.recommendations]);
+        setPage(prev => prev + 1);
       }
     } catch (err) {
       console.error("Error fetching recommendations:", err);
@@ -232,6 +241,47 @@ const RememberScreen = () => {
     );
   };
 
+  const scrollToTop = () => {
+    flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
+  };
+
+  const renderFooter = () => {
+    if (loading) {
+      return (
+        <ActivityIndicator
+          size="large"
+          color={theme.colors.text}
+          style={styles.loader}
+        />
+      );
+    }
+
+    if (!hasMoreData && recommendations.length > 0) {
+      return (
+        <View style={styles.endContainer}>
+          <Text style={[styles.endText, { color: theme.colors.text }]}>
+            Has llegado al final de las recomendaciones
+          </Text>
+          <TouchableOpacity
+            style={styles.backToTopButton}
+            onPress={scrollToTop}
+          >
+            <IconSymbol
+              name="chevron.up"
+              size={24}
+              color={theme.colors.text}
+            />
+            <Text style={[styles.backToTopText, { color: theme.colors.text }]}>
+              Volver arriba
+            </Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+
+    return null;
+  };
+
   if (loading) {
     return (
       <View
@@ -257,6 +307,7 @@ const RememberScreen = () => {
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.primary }]}>
       <FlatList
+        ref={flatListRef}
         data={recommendations}
         renderItem={renderRecommendation}
         keyExtractor={(item, index) => `recommendation-${item.id}-${index}`}
@@ -264,17 +315,9 @@ const RememberScreen = () => {
         style={{ backgroundColor: theme.colors.primary }}
         refreshing={refreshing}
         onRefresh={handleRefresh}
-        onEndReached={handleLoadMore}
+        onEndReached={() => hasMoreData && handleLoadMore()}
         onEndReachedThreshold={0.5}
-        ListFooterComponent={() =>
-          loading ? (
-            <ActivityIndicator
-              size="large"
-              color={theme.colors.text}
-              style={styles.loader}
-            />
-          ) : null
-        }
+        ListFooterComponent={renderFooter}
       />
     </View>
   );
@@ -371,6 +414,30 @@ const styles = StyleSheet.create({
   },
   loader: {
     marginTop: 16,
+  },
+  endContainer: {
+    padding: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  endText: {
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 16,
+    fontFamily: "System",
+  },
+  backToTopButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+  },
+  backToTopText: {
+    marginLeft: 8,
+    fontSize: 16,
+    fontFamily: "System",
+    fontWeight: '600',
   },
 });
 

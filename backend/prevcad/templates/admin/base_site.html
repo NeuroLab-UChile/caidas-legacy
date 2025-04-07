@@ -1,14 +1,17 @@
 {% extends "admin/base.html" %}
 {% load static %}
+{% load i18n %}
 
 {% block extrastyle %}
 {{ block.super }}
-
-{% endblock %}
-
-{% block extrahead %}
-{{ block.super }}
-<script src="{% static 'admin/js/theme.js' %}"></script>
+<!-- Move JavaScript to the end of body or ensure DOM is loaded -->
+<script defer src="{% static 'admin/js/theme.js' %}"></script>
+<!-- Add this to ensure DOM is loaded before running scripts -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Your JavaScript initialization code here
+});
+</script>
 {% endblock %}
 
 {% block title %}
@@ -30,3 +33,38 @@
 {% endblock %}
 
 {% block nav-global %}{% endblock %}
+
+{% block usertools %}
+    {% if has_permission %}
+    <div id="user-tools" style="padding: 10px; background-color: #f8f9fa; border-bottom: 1px solid #dee2e6;">
+        <strong>👤 Usuario:</strong> {{ request.user.username }}
+        {% if request.user.is_superuser %}(Superusuario){% endif %}
+        {% if request.user.is_staff %}(Staff){% endif %}
+        {% if request.user.groups.all %}
+            ({% for group in request.user.groups.all %}{{ group.name }}{% if not forloop.last %}, {% endif %}{% endfor %})
+        {% endif %}
+        {% if site_url %}
+            <a href="{{ site_url }}">{% trans 'View site' %}</a> /
+        {% endif %}
+        {% if user.has_usable_password %}
+            <a href="{% url 'admin:password_change' %}">{% trans 'Change password' %}</a> /
+        {% endif %}
+        <form method="post" action="{% url 'admin:logout' %}" style="display: inline;">
+            {% csrf_token %}
+            <button type="submit" style="background: none; border: none; color: #447e9b; text-decoration: underline; cursor: pointer; padding: 0;">
+                {% trans 'Log out' %}
+            </button>
+        </form>
+    </div>
+    {% endif %}
+{% endblock %}
+
+{% block footer %}
+{{ block.super }}
+<!-- Add your additional JavaScript files here -->
+<script src="{% static 'admin/js/your-other-script.js' %}"></script>
+{% endblock %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Your JavaScript initialization code here
+    });

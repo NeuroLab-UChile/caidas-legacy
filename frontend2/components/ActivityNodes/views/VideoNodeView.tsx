@@ -1,6 +1,6 @@
 import { VideoPlayerView } from "@/components/VideoPlayer/VideoPlayerView";
 import { useState } from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, Platform } from "react-native";
 import { theme } from "@/src/theme";
 
 interface VideoNodeViewProps {
@@ -14,24 +14,33 @@ interface VideoNodeViewProps {
 export const VideoNodeView: React.FC<VideoNodeViewProps> = ({ data, onNext }) => {
   const [isComplete, setIsComplete] = useState(false);
 
+  const handleVideoComplete = () => {
+    setIsComplete(true);
+  };
+
   return (
     <View style={styles.container}>
-      <VideoPlayerView 
-        url={data.media_url}
-        description={data.description}
-        showDebug={__DEV__}
-      />
+      <View style={styles.videoCard}>
+    
+        
+        <View style={styles.videoWrapper}>
+          <VideoPlayerView 
+            url={data.media_url}
+            showDebug={__DEV__}
+            onComplete={handleVideoComplete}
+            description={data.description}
+          />
+        </View>
 
-      {(isComplete || __DEV__) && onNext && (
         <TouchableOpacity 
           style={[styles.nextButton, isComplete && styles.nextButtonComplete]} 
           onPress={onNext}
         >
           <Text style={styles.nextButtonText}>
-            {isComplete ? "Continuar ✓" : "Continuar"}
+            {isComplete ? "Continuar" : "Omitir"}
           </Text>
         </TouchableOpacity>
-      )}
+      </View>
     </View>
   );
 };
@@ -41,84 +50,49 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 16,
   },
-  title: {
+  videoCard: {
+    backgroundColor: theme.colors.card,
+    borderRadius: 24,
+    padding: 20,
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 12,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
+  },
+  description: {
     fontSize: 16,
-    fontWeight: "500",
+    color: theme.colors.text,
     marginBottom: 16,
-    color: theme.colors.text,
-  },
-  videoContainer: {
-    width: "100%",
-    aspectRatio: 16 / 9,
-    backgroundColor: "#000",
-    borderRadius: 8,
-    overflow: "hidden",
-  },
-  video: {
-    width: "100%",
-    height: "100%",
-  },
-  thumbnailContainer: {
-    width: "100%",
-    height: "100%",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  playButtonOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.3)",
-  },
-  playButtonText: {
-    fontSize: 40,
-  },
-  nextButton: {
-    backgroundColor: theme.colors.primary,
-    padding: 16,
-    borderRadius: 8,
-    alignItems: "center",
-    marginTop: 20,
-  },
-  nextButtonComplete: {
-    backgroundColor: theme.colors.success,
-  },
-  nextButtonText: {
-    color: "white",
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  errorContainer: {
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  errorText: {
-    color: theme.colors.error,
-    marginBottom: 8,
-  },
-  retryText: {
-    color: theme.colors.text,
+    lineHeight: 24,
   },
   videoWrapper: {
-    position: "relative",
+    borderRadius: 16,
+    overflow: 'hidden',
+    backgroundColor: theme.colors.background,
+    marginBottom: 16,
   },
-  loadingOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    justifyContent: "center",
+  nextButton: {
+    backgroundColor: `${theme.colors.primary}10`,
+    padding: 12,
+    borderRadius: 12,
     alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.5)",
   },
-  loadingText: {
-    color: "white",
-    marginTop: 8,
+  nextButtonComplete: {
+    backgroundColor: theme.colors.primary,
   },
-  debugContainer: {
-    padding: 10,
-    backgroundColor: "#f0f0f0",
-    marginTop: 10,
+  nextButtonText: {
+    color: theme.colors.primary,
+    fontSize: 14,
+    fontWeight: "600",
   },
-  debugText: {
-    fontSize: 12,
-    color: "#666",
+  nextButtonTextComplete: {
+    color: theme.colors.background,
   },
 });

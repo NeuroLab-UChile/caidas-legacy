@@ -17,6 +17,44 @@ export const ProfessionalEvaluation = () => {
   const professional = recommendations?.professional;
   const evaluation_date = evaluationForm?.completed_date;
 
+  // Verificar si hay una evaluación profesional
+  const hasEvaluation = !!(professional || diagnosis || observations);
+
+  if (!hasEvaluation) {
+    return (
+      <View style={styles.container}>
+        <View style={[styles.gradientBackground]}>
+          <View style={styles.content}>
+            <View style={styles.header}>
+              <View
+                style={[
+                  styles.iconContainer,
+                  { backgroundColor: `${theme.colors.textSecondary}15` },
+                ]}
+              >
+                <Ionicons
+                  name="medical"
+                  size={32}
+                  color={theme.colors.textSecondary}
+                />
+              </View>
+              <Text style={styles.title}>Evaluación Profesional</Text>
+              <Text style={styles.subtitle}>
+                Aún no tienes una evaluación profesional
+              </Text>
+            </View>
+            
+            <View style={[styles.card, styles.messageCard]}>
+              <Text style={styles.messageText}>
+                Para obtener una evaluación profesional, agenda una cita con tu profesional de salud.
+              </Text>
+            </View>
+          </View>
+        </View>
+      </View>
+    );
+  }
+
   const formatDate = (date: string) => {
     return format(new Date(date), "d 'de' MMMM, yyyy", { locale: es });
   };
@@ -227,5 +265,18 @@ const styles = StyleSheet.create({
     width: 16,
     height: 16,
     borderRadius: 4,
+  },
+  messageCard: {
+    backgroundColor: theme.colors.card,
+    padding: 20,
+    borderRadius: 16,
+    alignItems: 'center',
+    marginTop: 16,
+  },
+  messageText: {
+    fontSize: 16,
+    color: theme.colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 24,
   },
 });
