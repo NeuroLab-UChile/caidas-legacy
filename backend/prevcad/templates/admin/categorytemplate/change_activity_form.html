@@ -443,9 +443,10 @@
           <label for="trainingType">Tipo de Entrenamiento</label>
           <select id="trainingType" class="form-select" onchange="toggleMediaType()">
             <option value="VIDEO">Video</option>
-            <option value="TEXT">Texto</option>
             <option value="IMAGE">Imagen</option>
-            <option value="DOCUMENT">Documento</option>
+            <option value="TEXT">Texto</option>
+            <option value="DESCRIPTION">Descripción</option>
+            <option value="WEEKLY_RECIPE">Plan Semanal</option>
           </select>
         </div>
 
@@ -509,6 +510,26 @@
             </div>
         </div>
 
+        <div id="weeklyRecipeContainer" class="form-group">
+            <label class="block mb-2 font-semibold">Plan Semanal de Comidas</label>
+            <textarea 
+                id="weeklyPlanTextarea" 
+                rows="10" 
+                class="form-input w-full font-mono"
+                placeholder='Estructura sugerida:
+{
+    "Lunes": {
+        "Desayuno": "Descripción del desayuno",
+        "Almuerzo": "Descripción del almuerzo",
+        "Cena": "Descripción de la cena"
+    },
+    "Martes": { ... }
+}
+
+Puedes modificar esta estructura o escribir texto libre.'
+            ></textarea>
+        </div>
+
         <div class="flex justify-end gap-2 mt-4">
           <button type="button" class="btn btn-secondary" onclick="closeQuestionModal()">Cancelar</button>
           {% if not is_read_only %}
@@ -539,7 +560,8 @@
             VIDEO: 'VIDEO_NODE',
             IMAGE: 'IMAGE_NODE',
             TEXT: 'TEXT_NODE',
-            DOCUMENT: 'DOCUMENT_NODE'
+            DESCRIPTION: 'DESCRIPTION_NODE',
+            WEEKLY_RECIPE: 'WEEKLY_RECIPE_NODE'
         },
         EVALUATION: {
             SINGLE_CHOICE: 'SINGLE_CHOICE_QUESTION',
@@ -557,7 +579,8 @@
                 [NODE_TYPES.TRAINING.VIDEO]: 'Video',
                 [NODE_TYPES.TRAINING.IMAGE]: 'Imagen',
                 [NODE_TYPES.TRAINING.TEXT]: 'Texto',
-                [NODE_TYPES.TRAINING.DOCUMENT]: 'Documento',
+                [NODE_TYPES.TRAINING.DESCRIPTION]: 'Descripción',
+                [NODE_TYPES.TRAINING.WEEKLY_RECIPE]: 'Plan Semanal',
                 [NODE_TYPES.EVALUATION.SINGLE_CHOICE]: 'Opción única',
                 [NODE_TYPES.EVALUATION.MULTIPLE_CHOICE]: 'Opción múltiple',
                 [NODE_TYPES.EVALUATION.TEXT]: 'Pregunta de texto',
@@ -633,14 +656,13 @@
 
         const trainingType = document.getElementById('trainingType');
         if (trainingType) {
-            trainingType.addEventListener('change', toggleMediaContainer);
+            trainingType.addEventListener('change', toggleMediaType);
         }
 
         const contentType = document.getElementById('contentType');
         if (contentType) {
             contentType.addEventListener('change', () => {
                 toggleContentType();
-                toggleMediaContainer();
             });
         }
     }
@@ -692,18 +714,21 @@
     }
 
     function setupTrainingNode(node) {
-          const trainingType = node.type?.replace('_NODE', '') || 'VIDEO';
-          const trainingTypeSelect = document.getElementById('trainingType');
-          if (trainingTypeSelect) {
+        const trainingType = node.type?.replace('_NODE', '') || 'VIDEO';
+        const trainingTypeSelect = document.getElementById('trainingType');
+        if (trainingTypeSelect) {
             trainingTypeSelect.value = trainingType;
             toggleMediaType();
-          }
+        }
 
-          if (node.media_url) {
+        // Special handling for Weekly Recipe
+        if (trainingType === 'WEEKLY_RECIPE') {
+            setupWeeklyRecipeNode(node);
+        } else if (node.media_url) {
             const mediaContainer = document.getElementById('mediaContainer');
             mediaContainer?.classList.remove('hidden');
             showCurrentMedia(node.media_url, trainingType);
-          }
+        }
     }
 
     function setupEvaluationNode(node) {
@@ -788,7 +813,33 @@
         };
         
         if (contentType === 'TRAINING') {
-            nodeData.content = questionText;
+            nodeData.title = document.getElementById('questionText')?.value || 'Plan Semanal';
+            nodeData.description = 'Plan de alimentación personalizado';
+
+            if (nodeData.type === NODE_TYPES.TRAINING.WEEKLY_RECIPE) {
+                const textarea = document.getElementById('weeklyPlanTextarea');
+                
+                if (!textarea) {
+                    showNotification('No se encontró el área de texto para el plan semanal', 'error');
+                    return null;
+                }
+
+                try {
+                    const weeklyPlan = JSON.parse(textarea.value);
+                    
+                    if (!validateWeeklyPlan()) {
+                        showNotification('El plan semanal no es válido', 'error');
+                        return null;
+                    }
+
+                    nodeData.weekly_plan = weeklyPlan;
+                } catch (error) {
+                    showNotification(`Error al procesar el plan: ${error.message}`, 'error');
+                    return null;
+                }
+            }
+
+            // Manejo de archivos multimedia existente
             if (videoFile || imageFile) {
                 const file = videoFile || imageFile;
                 const validation = utils.validateFile(file);
@@ -800,6 +851,7 @@
                 nodeData.media_url = file.name;
             }
         } else {
+            // Lógica existente para otros tipos de nodos
             nodeData.question = questionText;
             if (['MULTIPLE_CHOICE_QUESTION', 'SINGLE_CHOICE_QUESTION'].includes(nodeData.type)) {
                 if (!state.options.length) {
@@ -1013,12 +1065,29 @@
                     </div>
                     
                     <div class="mt-2">
-                        <p>${node.content || node.question || ''}</p>
+                        <h3 class="font-semibold text-lg">${node.title || node.content || 'Sin título'}</h3>
+                        <p class="text-gray-600">${getNodeSummary(node)}</p>
                     </div>
+                    
                     ${mediaHtml}
                 </div>
             `;
         }).join('');
+    }
+
+    function getNodeSummary(node) {
+        switch(node.type) {
+            case 'WEEKLY_RECIPE_NODE':
+                return 'Plan nutricional semanal';
+            case 'DESCRIPTION_NODE':
+                return node.description ? node.description.substring(0, 100) + '...' : 'Descripción';
+            case 'VIDEO_NODE':
+                return 'Video de entrenamiento';
+            case 'IMAGE_NODE':
+                return 'Imagen de entrenamiento';
+            default:
+                return node.content || node.question || 'Sin descripción';
+        }
     }
 
     function createMediaHtml(node) {
@@ -1090,12 +1159,17 @@
         const trainingTypes = document.getElementById('trainingTypes');
         const evaluationTypes = document.getElementById('evaluationTypes');
         const mediaContainer = document.getElementById('mediaContainer');
+        const weeklyRecipeContainer = document.getElementById('weeklyRecipeContainer');
         
         if (!contentType) return;
 
         trainingTypes?.classList.toggle('hidden', contentType !== 'TRAINING');
         evaluationTypes?.classList.toggle('hidden', contentType !== 'EVALUATION');
         mediaContainer?.classList.toggle('hidden', contentType !== 'TRAINING');
+        weeklyRecipeContainer?.classList.toggle('hidden', 
+            contentType !== 'TRAINING' || 
+            document.getElementById('trainingType')?.value !== 'WEEKLY_RECIPE'
+        );
         
         if (contentType === 'TRAINING') {
             toggleMediaType();
@@ -1106,11 +1180,13 @@
         const trainingType = document.getElementById('trainingType')?.value;
         const videoContainer = document.getElementById('videoInputContainer');
         const imageContainer = document.getElementById('imageInputContainer');
+        const weeklyRecipeContainer = document.getElementById('weeklyRecipeContainer');
         
         if (!trainingType) return;
 
         videoContainer?.classList.toggle('hidden', trainingType !== 'VIDEO');
         imageContainer?.classList.toggle('hidden', trainingType !== 'IMAGE');
+        weeklyRecipeContainer?.classList.toggle('hidden', trainingType !== 'WEEKLY_RECIPE');
     }
 
     function handleFilePreview(event, type) {
@@ -1279,6 +1355,47 @@
 
         renderNodes(nodes, type);
         modal.classList.remove('hidden');
+    }
+
+    function validateWeeklyPlan() {
+        const textarea = document.getElementById('weeklyPlanTextarea');
+        
+        if (!textarea) return true;
+
+        // Permitir cualquier contenido, sin restricciones
+        return true;
+    }
+
+    function setupWeeklyRecipeNode(node) {
+        const textarea = document.getElementById('weeklyPlanTextarea');
+        const weeklyRecipeContainer = document.getElementById('weeklyRecipeContainer');
+
+        if (weeklyRecipeContainer) {
+            weeklyRecipeContainer.classList.remove('hidden');
+        }
+
+        if (node.weekly_plan) {
+            // Convertir a texto, permitiendo edición completa
+            textarea.value = typeof node.weekly_plan === 'object' 
+                ? JSON.stringify(node.weekly_plan, null, 2) 
+                : String(node.weekly_plan);
+        } else {
+            // Establecer un valor por defecto editable
+            textarea.value = `Escribe tu plan semanal aquí...
+
+Puedes usar texto libre o un formato JSON:
+{
+    "Lunes": {
+        "Desayuno": "Descripción del desayuno",
+        "Almuerzo": "Descripción del almuerzo",
+        "Cena": "Descripción de la cena"
+    }
+}`;
+        }
+
+        // Asegurar que el textarea sea editable
+        textarea.readOnly = false;
+        textarea.disabled = false;
     }
   </script>
 {% endblock %}
