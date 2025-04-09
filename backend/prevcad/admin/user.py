@@ -7,6 +7,9 @@ from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 from django import forms
 from django.contrib.auth.models import Permission
+from django.urls import path
+from django.contrib.auth import views as auth_views
+from django.utils.decorators import update_wrapper
 
 class PermissionSelectWidget(forms.SelectMultiple):
     template_name = 'admin/widgets/permission_select.html'
@@ -44,7 +47,7 @@ class CustomUserForm(forms.ModelForm):
 
     class Meta:
         model = User
-        fields = '__all__'
+        fields = ('username', 'first_name', 'last_name', 'email', 'is_staff', 'is_superuser', 'groups', 'user_permissions')
 
 class CustomUserAdmin(UserAdmin):
     actions = ['delete_users_safely']
@@ -52,7 +55,7 @@ class CustomUserAdmin(UserAdmin):
     list_filter = ('groups', 'is_staff', 'is_superuser')
     search_fields = ('username', 'first_name', 'last_name')
     ordering = ('username',)
-    
+
     # Configuración para añadir usuarios
     add_fieldsets = (
         (None, {
@@ -69,9 +72,9 @@ class CustomUserAdmin(UserAdmin):
         }),
     )
 
-    # Actualizar fieldsets para el formulario de edición
+    # Actualizar fieldsets para el formulario de edición - usando la configuración estándar de Django
     fieldsets = (
-        (None, {'fields': ('username', 'password')}),
+        (None, {'fields': ('username',)}),
         ('Información Personal', {'fields': ('first_name', 'last_name', 'email')}),
         ('Permisos', {
             'classes': ('permissions-fieldset',),
@@ -81,6 +84,11 @@ class CustomUserAdmin(UserAdmin):
     )
 
     form = CustomUserForm
+
+    def get_urls(self):
+        from django.urls import path
+        urls = super().get_urls()
+        return urls  # Usamos las URLs por defecto de UserAdmin
 
     def get_readonly_fields(self, request, obj=None):
         if not obj:  # Si es un nuevo usuario, no hay campos de solo lectura

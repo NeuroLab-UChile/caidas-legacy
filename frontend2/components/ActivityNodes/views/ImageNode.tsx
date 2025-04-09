@@ -6,17 +6,16 @@ import {
   StyleSheet,
   ActivityIndicator,
   Dimensions,
-  TouchableOpacity,
 } from "react-native";
 import { theme } from "@/src/theme";
-
 
 interface ImageNodeViewProps {
   data: {
     id: number;
-    description: string;
+    content: string;
     type: string;
     media_url?: string;
+    description?: string;
   };
   onNext?: () => void;
 }
@@ -28,59 +27,57 @@ export const ImageNodeView: React.FC<ImageNodeViewProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  console.log('ImageNodeView data:', data);
-  const imageUrl = data?.media_url || ''
-  console.log('ImageNodeView imageUrl:', imageUrl);
+  const imageUrl = data?.media_url || '';
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>{data.description}</Text>
+      <Text style={styles.title}>{data.content}</Text>
+      {data.description && (
+        <Text style={styles.description}>{data.description}</Text>
+      )}
 
       <View style={styles.imageContainer}>
-        {imageUrl && !error && (
+        {imageUrl ? (
           <Image
             source={{ uri: imageUrl }}
             style={styles.image}
             onLoadStart={() => {
-              console.log('Image loading started:', imageUrl);
               setIsLoading(true);
+              setError(null);
             }}
             onLoad={() => {
-              console.log('Image loaded successfully:', imageUrl);
               setIsLoading(false);
             }}
-            onError={(error) => {
-              console.error('Image load error:', error);
-              setError("Error al cargar la imagen");
+            onError={() => {
+              setError("No se pudo cargar la imagen");
               setIsLoading(false);
             }}
             resizeMode="contain"
           />
+        ) : (
+          <View style={styles.placeholderContainer}>
+            <Text style={styles.placeholderText}>Sin imagen disponible</Text>
+          </View>
+        )}
+
+        {isLoading && (
+          <View style={styles.loadingOverlay}>
+            <ActivityIndicator size="large" color={theme.colors.primary} />
+            <Text style={styles.loadingText}>Cargando imagen...</Text>
+          </View>
         )}
 
         {error && (
           <View style={styles.errorContainer}>
-            <Text style={styles.errorText}>Error: {error}</Text>
+            <Text style={styles.errorText}>{error}</Text>
             {__DEV__ && (
               <Text style={styles.debugText}>
-                URL de la imagen: {imageUrl || "No URL"}
+                URL: {imageUrl || "No URL"}
               </Text>
             )}
           </View>
         )}
       </View>
-
-      {onNext && (
-        <TouchableOpacity
-          style={styles.nextButton}
-          onPress={() => {
-            console.log("Navegando al siguiente desde ImageNodeView");
-            onNext();
-          }}
-        >
-          <Text style={styles.nextButtonText}>Continuar</Text>
-        </TouchableOpacity>
-      )}
     </View>
   );
 };
@@ -91,22 +88,41 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   title: {
-    fontSize: 16,
-    fontWeight: "500",
-    marginBottom: 16,
+    fontSize: 18,
+    fontWeight: "600",
+    marginBottom: 8,
     color: theme.colors.text,
+    textAlign: "center",
+  },
+  description: {
+    fontSize: 14,
+    color: theme.colors.textSecondary,
+    marginBottom: 16,
+    textAlign: "center",
   },
   imageContainer: {
     width: Dimensions.get("window").width - 32,
     aspectRatio: 16 / 9,
-    backgroundColor: "#000",
-    borderRadius: 8,
+    backgroundColor: theme.colors.background,
+    borderRadius: 12,
     overflow: "hidden",
     position: "relative",
+    justifyContent: "center",
+    alignItems: "center",
   },
   image: {
     width: "100%",
     height: "100%",
+  },
+  placeholderContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: theme.colors.surface,
+  },
+  placeholderText: {
+    color: theme.colors.textSecondary,
+    fontSize: 16,
   },
   loadingOverlay: {
     ...StyleSheet.absoluteFillObject,
@@ -119,32 +135,21 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   errorContainer: {
-    flex: 1,
+    ...StyleSheet.absoluteFillObject,
     justifyContent: "center",
     alignItems: "center",
+    backgroundColor: "rgba(255,0,0,0.1)",
     padding: 16,
   },
   errorText: {
     color: theme.colors.error,
     textAlign: "center",
+    fontSize: 16,
     marginBottom: 8,
   },
   debugText: {
     color: theme.colors.text,
     fontSize: 12,
     textAlign: "center",
-  },
-  nextButton: {
-    backgroundColor: theme.colors.primary,
-    padding: 16,
-    borderRadius: 8,
-    alignItems: "center",
-    marginTop: 20,
-    marginHorizontal: 16,
-  },
-  nextButtonText: {
-    color: "white",
-    fontSize: 16,
-    fontWeight: "600",
   },
 });

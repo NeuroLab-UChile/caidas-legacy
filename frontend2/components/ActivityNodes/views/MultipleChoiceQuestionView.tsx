@@ -12,11 +12,14 @@ import { theme } from "@/src/theme";
 
 interface MultipleChoiceQuestionProps {
   data: {
+    id: number;
+    type: string;
     question: string;
-    options: Array<string>;
-    image?: string;
+    description?: string;
+    options: string[];
   };
   setResponse: (response: { selectedOptions: number[] } | null) => void;
+  onNext?: () => void;
 }
 
 export function MultipleChoiceQuestionView({

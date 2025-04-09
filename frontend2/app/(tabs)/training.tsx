@@ -26,7 +26,7 @@ import { VideoView, useVideoPlayer } from "expo-video";
 import { useEventListener } from "expo";
 import * as FileSystem from "expo-file-system";
 import { theme } from "@/src/theme";
-import { VideoPlayerView } from "@/components/VideoPlayer/VideoPlayerView";
+import { VideoPlayerView } from "@/components/VideoPlayer";
 
 
 type TrainingState = {
@@ -74,36 +74,6 @@ const TrainingScreen = () => {
   const [history, setHistory] = useState<number[]>([]);
   const nodes = selectedCategory?.training_form?.training_nodes || [];
   const currentQuestionIndex = nodes.findIndex(node => node.id === trainingState.currentNodeId);
-
-  const player = useVideoPlayer(selectedCategory?.recommendations?.video_url || '', (player) => {
-    player.loop = false;
-    player.volume = 1.0;
-    player.muted = true;
-    player.timeUpdateEventInterval = 0.5;
-    player.bufferOptions = {
-      minBufferForPlayback: 1,
-      preferredForwardBufferDuration: 10,
-    };
-  });
-
-  useEventListener(player, "statusChange", async ({ status }) => {
-    if (status === "readyToPlay") {
-      console.log("✅ Video listo para reproducir");
-      setIsLoading(false);
-      try {
-        await player.play();
-      } catch (err) {
-        console.warn("🚨 No se pudo iniciar automáticamente");
-      }
-    }
-  });
-
-  useEventListener(player, "playingChange", ({ isPlaying }) => {
-    if (isPlaying) {
-      console.log("▶️ Video en reproducción");
-      setIsLoading(false);
-    }
-  });
 
   useEffect(() => {
     fetchCategories();
@@ -292,36 +262,23 @@ const TrainingScreen = () => {
       const info = await FileSystem.getInfoAsync(localUri);
 
       if (!info.exists) {
-        console.log("📥 Descargando video:", remoteUrl);
         // Descargar el video si no está en caché
         const downloadResumable = FileSystem.createDownloadResumable(
           remoteUrl,
           localUri,
-          {},
-          (downloadProgress) => {
-            const progress =
-              downloadProgress.totalBytesWritten /
-              downloadProgress.totalBytesExpectedToWrite;
-            console.log(`⏳ Progreso: ${(progress * 100).toFixed(2)}%`);
-          }
+          {}
         );
 
         try {
           const downloadResult = await downloadResumable.downloadAsync();
-          if (downloadResult?.uri) {
-            console.log("✅ Video descargado:", downloadResult.uri);
-          } else {
+          if (!downloadResult?.uri) {
             throw new Error("No se pudo obtener la URI del video descargado");
           }
         } catch (downloadError) {
-          console.error("❌ Error en la descarga:", downloadError);
           throw new Error(`Error al descargar: ${downloadError}`);
         }
-      } else {
-        console.log("📁 Usando video en caché:", localUri);
       }
     } catch (error) {
-      console.error("❌ Error preparando video:", error);
       setVideoError(`Error al preparar el video: ${error}`);
     }
   };
@@ -335,13 +292,9 @@ const TrainingScreen = () => {
       <VideoPlayerView 
         url={selectedCategory.recommendations.video_url}
         description={selectedCategory.recommendations.text}
-        showDebug={__DEV__}
       />
     );
   };
-
-  // Manejar errores a través de los event listeners del player
-
 
   const renderDoctorReview = () => {
     console.log("Rendering doctor review:", selectedCategory?.recommendations);

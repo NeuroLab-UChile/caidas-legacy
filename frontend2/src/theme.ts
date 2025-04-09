@@ -3,6 +3,7 @@ import { DefaultTheme } from '@react-navigation/native';
 // Paleta de colores base
 const palette = {
   primary: '#F2FF2A',      // Amarillo brillante
+  primaryDark: '#B8C000',  // Amarillo más oscuro para mejor contraste
   secondary: '#FFD700',    // Dorado
   background: '#FFFFFF',   // Blanco
   surface: '#FFFFFF',      // Blanco para superficies
@@ -197,18 +198,21 @@ export const theme = {
   ...DefaultTheme,
   colors: {
     ...DefaultTheme.colors,
-    primary: '#F2FF2A',      // Amarillo brillante
-    background: '#FFFFFF',   // Blanco
-    surface: '#FFFFFF',      // Blanco para superficies
-    text: '#000000',        // Negro para texto general
-    textSecondary: '#000000', // Negro para texto secundario
-    textTertiary: '#000000',  // Negro para texto terciario
-    border: '#E0E0E0',      // Gris claro
-    error: '#FF3B30',       // Rojo para errores
-    success: '#34C759',     // Verde para éxito
-    warning: '#FF9500',     // Naranja para advertencias
-    disabled: '#000000',    // Negro para texto deshabilitado
-    placeholder: '#000000',  // Negro para placeholder
+    primary: palette.primary,
+    primaryDark: palette.primaryDark,
+    background: palette.background,
+    surface: palette.surface,
+    text: palette.accent,
+    textSecondary: palette.grey[700],
+    textTertiary: palette.grey[500],
+    border: palette.grey[300],
+    error: palette.error,
+    success: palette.success,
+    warning: palette.warning,
+    disabled: palette.grey[400],
+    placeholder: palette.grey[500],
+    card: palette.background,
+    notification: palette.primary,
   },
   typography: {
     ...typography,
@@ -516,6 +520,22 @@ export const theme = {
         color: palette.grey[600], // textSecondary
       },
 
+    },
+
+    stepIndicator: {
+      container: {
+        backgroundColor: palette.grey[100],
+        padding: spacing.sm,
+      },
+      text: {
+        color: palette.grey[800],
+        fontSize: typography.sizes.body2,
+        fontWeight: '600',
+      },
+      current: {
+        color: palette.accent,
+        fontWeight: '700',
+      }
     },
   },
 } as const;

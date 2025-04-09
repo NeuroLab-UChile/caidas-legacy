@@ -161,6 +161,11 @@ class CategoryTemplateAdmin(admin.ModelAdmin):
                 self.admin_site.admin_view(self.change_activity_form_view),
                 name='categorytemplate_change_activity_form',
             ),
+            path(
+                '<path:object_id>/update_training_form/',
+                self.admin_site.admin_view(self.update_training_form),
+                name='update_training_form',
+            ),
         ]
         return custom_urls + urls
 
@@ -448,6 +453,85 @@ class CategoryTemplateAdmin(admin.ModelAdmin):
         css = {
             'all': ('admin/css/category_template.css',)
         }
+
+    def update_training_form(self, request, object_id):
+        try:
+            # Obtener el objeto CategoryTemplate
+            obj = self.get_object(request, object_id)
+            if not obj:
+                return JsonResponse({'status': 'error', 'message': 'Objeto no encontrado'}, status=404)
+
+            # Verificar permisos
+            if not self._check_permission(request.user, 'change'):
+                return JsonResponse({'status': 'error', 'message': 'No tienes permisos'}, status=403)
+
+            # Parsear los datos del formulario
+            form_data = json.loads(request.POST.get('training_form', '{}'))
+            training_nodes = form_data.get('training_nodes', [])
+
+            # Manejar la subida de archivos
+            image = request.FILES.get('image')
+            video = request.FILES.get('video')
+
+            # Directorio de almacenamiento
+            import os
+            from django.conf import settings
+
+            training_images_dir = os.path.join(settings.MEDIA_ROOT, 'training_images')
+            os.makedirs(training_images_dir, exist_ok=True)
+
+            # Procesar la imagen si existe
+            if image:
+                # Generar un nombre de archivo único
+                from django.utils.crypto import get_random_string
+                filename = f"{get_random_string(10)}_{image.name}"
+                filepath = os.path.join(training_images_dir, filename)
+
+                # Guardar la imagen
+                with open(filepath, 'wb+') as destination:
+                    for chunk in image.chunks():
+                        destination.write(chunk)
+
+                # Actualizar la URL de la imagen en los nodos
+                for node in training_nodes:
+                    if node.get('media_pending') and node.get('media_url') == image.name:
+                        node['media_url'] = f'training_images/{filename}'
+                        node.pop('media_pending', None)
+
+            # Procesar el video si existe (similar a la imagen)
+            if video:
+                training_videos_dir = os.path.join(settings.MEDIA_ROOT, 'training_videos')
+                os.makedirs(training_videos_dir, exist_ok=True)
+                
+                filename = f"{get_random_string(10)}_{video.name}"
+                filepath = os.path.join(training_videos_dir, filename)
+
+                with open(filepath, 'wb+') as destination:
+                    for chunk in video.chunks():
+                        destination.write(chunk)
+
+                for node in training_nodes:
+                    if node.get('media_pending') and node.get('media_url') == video.name:
+                        node['media_url'] = f'training_videos/{filename}'
+                        node.pop('media_pending', None)
+
+            # Actualizar el formulario de entrenamiento
+            obj.training_form = json.dumps(form_data)
+            obj.save()
+
+            return JsonResponse({
+                'status': 'success', 
+                'message': 'Formulario de entrenamiento actualizado correctamente',
+                'training_nodes': training_nodes
+            })
+
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return JsonResponse({
+                'status': 'error', 
+                'message': f'Error al actualizar: {str(e)}'
+            }, status=500)
 
 admin.site.register(CategoryTemplate, CategoryTemplateAdmin)
 

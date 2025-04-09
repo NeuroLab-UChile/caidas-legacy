@@ -109,7 +109,7 @@ export interface Category {
 }
 
 /**
- * Representa un nodo raíz en el sistema.
+ * Representa un nodo raíz.
  */
 export interface RootNode {
   type: ActivityNodeType;
@@ -117,3 +117,18 @@ export interface RootNode {
   first_button_text: string;
   first_button_node_id: number;
 }
+
+// Export all types as a namespace
+export namespace CategoryTypes {
+  export type QuestionNodeType = QuestionNode;
+  export type EvaluationFormType = EvaluationForm;
+  export type StatusType = Status;
+  export type RecommendationType = Recommendation;
+  export type ProfessionalResponsesType = ProfessionalResponses;
+  export type TrainingFormType = TrainingForm;
+  export type TrainingNodeType = TrainingNode;
+  export type CategoryType = Category;
+  export type RootNodeType = RootNode;
+}
+
+export default CategoryTypes;

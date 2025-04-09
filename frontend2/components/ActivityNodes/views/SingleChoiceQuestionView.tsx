@@ -18,6 +18,7 @@ interface SingleChoiceQuestionViewProps {
     options: string[];
   };
   setResponse: (response: { selectedOption: number }) => void;
+  onNext?: () => void;
 }
 
 export function SingleChoiceQuestionView({
