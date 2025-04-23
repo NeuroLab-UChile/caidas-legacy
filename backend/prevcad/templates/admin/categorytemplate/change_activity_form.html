@@ -412,11 +412,9 @@
       </div>
       <div class="flex justify-end gap-2 mt-4">
         <button class="btn btn-secondary" onclick="closeModal()">Cerrar</button>
-        {% if not is_read_only %}
-            <button id="addQuestionBtn" class="btn btn-primary" onclick="openAddQuestionModal()">
-                Agregar
-            </button>
-        {% endif %}
+        <button id="addQuestionBtn" class="btn btn-primary" onclick="openAddQuestionModal()">
+            Agregar
+        </button>
       </div>
     </div>
   </div>
@@ -532,9 +530,7 @@ Puedes modificar esta estructura o escribir texto libre.'
 
         <div class="flex justify-end gap-2 mt-4">
           <button type="button" class="btn btn-secondary" onclick="closeQuestionModal()">Cancelar</button>
-          {% if not is_read_only %}
-              <button type="submit" class="btn btn-primary">Guardar</button>
-          {% endif %}
+          <button type="submit" class="btn btn-primary">Guardar</button>
         </div>
       </form>
     </div>
@@ -550,7 +546,8 @@ Puedes modificar esta estructura o escribir texto libre.'
         evaluationNodes: [],
         options: [],
         currentType: null,
-        mediaPreview: null
+        mediaPreview: null,
+        evaluationType: '{{ original.evaluation_type }}'
     };
 
     // Constantes
@@ -612,22 +609,22 @@ Puedes modificar esta estructura o escribir texto libre.'
         const trainingData = JSON.parse(document.getElementById('training-form-data')?.textContent || '{}');
         const evaluationData = JSON.parse(document.getElementById('evaluation-form-data')?.textContent || '{}');
 
-            state.trainingNodes = (trainingData?.training_nodes || []).map(node => ({
+        state.trainingNodes = (trainingData?.training_nodes || []).map(node => ({
             ...node,
             id: node.id?.toString() || crypto.randomUUID()
         }));
         
-            state.evaluationNodes = (evaluationData?.question_nodes || []).map(node => ({
+        state.evaluationNodes = (evaluationData?.question_nodes || []).map(node => ({
             ...node,
             id: node.id?.toString() || crypto.randomUUID()
         }));
 
-            initializeEventListeners();
-            renderNodes(state.trainingNodes, 'TRAINING');
+        initializeEventListeners();
+        renderNodes(state.trainingNodes, 'TRAINING');
       } catch (error) {
         console.error('Error al inicializar datos:', error);
-            showNotification('Error al cargar los datos iniciales', 'error');
-        }
+        showNotification('Error al cargar los datos iniciales', 'error');
+      }
     });
 
     // Event Listeners
@@ -1348,10 +1345,16 @@ Puedes modificar esta estructura o escribir texto libre.'
         const modal = document.getElementById('formModal');
         const modalTitle = document.getElementById('modalTitle');
         const nodes = type === 'TRAINING' ? state.trainingNodes : state.evaluationNodes;
+        const addQuestionBtn = document.getElementById('addQuestionBtn');
 
         modalTitle.textContent = type === 'TRAINING' ? 
             'Gestión de Contenido de Entrenamiento' : 
             'Gestión de Preguntas de Evaluación';
+
+        // Mostrar el botón de agregar si tiene permisos
+        if (addQuestionBtn) {
+            addQuestionBtn.style.display = 'block';
+        }
 
         renderNodes(nodes, type);
         modal.classList.remove('hidden');
@@ -1396,6 +1399,32 @@ Puedes usar texto libre o un formato JSON:
         // Asegurar que el textarea sea editable
         textarea.readOnly = false;
         textarea.disabled = false;
+    }
+
+    function evaluation_form_button(obj) {
+        return `
+        <div class="form-row field-evaluation_form">
+            <label for="id_evaluation_form">Formulario de Evaluación</label>
+            <button type="button" 
+                    class="btn btn-primary" 
+                    onclick="openFormModal('EVALUATION')">
+                Editar Formulario
+            </button>
+        </div>
+        `;
+    }
+
+    function training_form_button(obj) {
+        return `
+        <div class="form-row field-training_form">
+            <label for="id_training_form">Formulario de Entrenamiento</label>
+            <button type="button" 
+                    class="btn btn-primary" 
+                    onclick="openFormModal('TRAINING')">
+                Editar Formulario
+            </button>
+        </div>
+        `;
     }
   </script>
 {% endblock %}

@@ -103,42 +103,23 @@ class CategoryTemplateAdmin(admin.ModelAdmin):
 
 
     def _check_permission(self, user, perm_type):
-        """Verifica permisos incluyendo grupos y permisos directos"""
-        if not user.is_authenticated:
-            return False
-            
-        if user.is_superuser:
-            return True
-
-        # Verificar si es doctor (igual que en HealthCategory)
-        if user.groups.filter(name='DOCTOR').exists():
-            return True
-
-        # Verificar permisos directos y de grupo
-        perm_name = f'prevcad.{perm_type}_categorytemplate'
-        return (
-            user.has_perm(perm_name) or
-            any(group.permissions.filter(codename=f'{perm_type}_categorytemplate').exists() 
-                for group in user.groups.all())
-        )
+        """Verifica permisos usando el sistema estándar de Django"""
+        return user.has_perm(f'prevcad.{perm_type}_evaluationform')
 
     def has_view_permission(self, request, obj=None):
-        return self._check_permission(request.user, 'view')
+        return request.user.has_perm('prevcad.view_evaluationform')
 
     def has_change_permission(self, request, obj=None):
-        return self._check_permission(request.user, 'change')
+        return request.user.has_perm('prevcad.change_evaluationform')
 
     def has_add_permission(self, request):
-        return self._check_permission(request.user, 'add')
+        return request.user.has_perm('prevcad.add_evaluationform')
 
     def has_delete_permission(self, request, obj=None):
-        return self._check_permission(request.user, 'delete')
+        return request.user.has_perm('prevcad.delete_evaluationform')
 
     def has_module_permission(self, request):
-        return any([
-            self._check_permission(request.user, perm)
-            for perm in ['view', 'change', 'add', 'delete']
-        ])
+        return request.user.has_perm('prevcad.view_evaluationform')
 
     def save_model(self, request, obj, form, change):
         """Guarda el modelo con manejo de permisos"""
@@ -166,6 +147,11 @@ class CategoryTemplateAdmin(admin.ModelAdmin):
                 self.admin_site.admin_view(self.update_training_form),
                 name='update_training_form',
             ),
+            path(
+                '<path:object_id>/update_self_evaluation_form/',
+                self.admin_site.admin_view(self.update_self_evaluation_form),
+                name='update_self_evaluation_form',
+            ),
         ]
         return custom_urls + urls
 
@@ -174,18 +160,26 @@ class CategoryTemplateAdmin(admin.ModelAdmin):
         if obj is None:
             raise Http404("CategoryTemplate no encontrado")
 
+        # Verificar permisos de edición
+        has_change_permission = self._check_permission(request.user, 'change')
+        has_view_permission = self._check_permission(request.user, 'view')
+
+        if not has_view_permission:
+            raise PermissionDenied
+
         context = {
             'title': 'Gestionar Formularios',
             'original': obj,
             'is_popup': False,
             'is_nav_sidebar_enabled': True,
-            'has_permission': True,
+            'has_permission': has_view_permission,
+            'can_edit': has_change_permission,  # Nueva variable para controlar edición
             'site_url': '/',
             'site_header': self.admin_site.site_header,
             'site_title': self.admin_site.site_title,
             'app_label': 'prevcad',
             'opts': obj._meta,
-            'is_read_only': not self._check_permission(request.user, 'change'),
+            'is_read_only': not has_change_permission,
             **self.admin_site.each_context(request),
         }
         
@@ -199,59 +193,58 @@ class CategoryTemplateAdmin(admin.ModelAdmin):
         """Muestra botones de acción basados en permisos"""
         try:
             request = getattr(self, 'request', None)
-            if not request:
-                return '-'
+            if not request or not self._check_permission(request.user, 'change'):
+                return ''
 
-            # Solo mostrar botones si tiene permisos de edición
-            if self._check_permission(request.user, 'change'):
-                actions = []
-                
-                # Botón de editar template
-                actions.append(
-                    '<a href="{}" class="button" style="'
-                    'background: #059669; color: white; padding: 4px 8px; '
-                    'border-radius: 4px; text-decoration: none; font-size: 0.75rem; '
-                    'margin-right: 4px; display: inline-block;">✏️ Editar Template</a>'.format(
-                        reverse('admin:prevcad_categorytemplate_change', args=[obj.id])
-                    )
+            actions = []
+            
+            # Botón de editar template
+            actions.append(
+                '<a href="{}" class="button" style="'
+                'background: #059669; color: white; padding: 4px 8px; '
+                'border-radius: 4px; text-decoration: none; font-size: 0.75rem; '
+                'margin-right: 4px; display: inline-block;">✏️ Editar Template</a>'.format(
+                    reverse('admin:prevcad_categorytemplate_change', args=[obj.id])
                 )
+            )
 
-                # Botón de editar formulario de evaluación
-                if obj.evaluation_type == 'PROFESSIONAL':
-                    actions.append(
-                        '<a href="{}#evaluation-form" class="button" style="'
-                        'background: #2563eb; color: white; padding: 4px 8px; '
-                        'border-radius: 4px; text-decoration: none; font-size: 0.75rem; '
-                        'margin-right: 4px; display: inline-block;">📝 Editar Evaluación</a>'.format(
-                            reverse('admin:prevcad_categorytemplate_change', args=[obj.id])
-                        )
-                    )
-
-                # Botón de editar formulario de entrenamiento
+            # Botón según tipo de evaluación
+            if obj.evaluation_type == 'PROFESSIONAL':
                 actions.append(
-                    '<a href="{}#training-form" class="button" style="'
+                    '<a href="{}#evaluation-form" class="button" style="'
                     'background: #2563eb; color: white; padding: 4px 8px; '
                     'border-radius: 4px; text-decoration: none; font-size: 0.75rem; '
-                    'margin-right: 4px; display: inline-block;">📚 Editar Entrenamiento</a>'.format(
+                    'margin-right: 4px; display: inline-block;">📝 Editar Evaluación</a>'.format(
                         reverse('admin:prevcad_categorytemplate_change', args=[obj.id])
                     )
                 )
-
-                return format_html(
-                    '<div style="display: flex; gap: 4px; flex-wrap: wrap;">{}</div>',
-                    mark_safe(''.join(actions))
+            elif obj.evaluation_type == 'SELF':
+                actions.append(
+                    '<a href="{}" class="button" style="'
+                    'background: #2563eb; color: white; padding: 4px 8px; '
+                    'border-radius: 4px; text-decoration: none; font-size: 0.75rem; '
+                    'margin-right: 4px; display: inline-block;">📝 Editar Evaluación</a>'.format(
+                        reverse('admin:prevcad_categorytemplate_change_activity_form', args=[obj.id])
+                    )
                 )
 
-            # Si solo tiene permisos de lectura
+            # Botón de entrenamiento
+            actions.append(
+                '<a href="{}#training-form" class="button" style="'
+                'background: #2563eb; color: white; padding: 4px 8px; '
+                'border-radius: 4px; text-decoration: none; font-size: 0.75rem; '
+                'display: inline-block;">📚 Editar Entrenamiento</a>'.format(
+                    reverse('admin:prevcad_categorytemplate_change', args=[obj.id])
+                )
+            )
+
             return format_html(
-                '<span style="color: #6B7280; background: #F3F4F6; padding: 2px 8px; '
-                'border-radius: 4px; font-size: 0.75rem;">👁️ Solo lectura</span>'
+                '<div style="display: flex; gap: 4px; flex-wrap: wrap;">{}</div>',
+                mark_safe(''.join(actions))
             )
 
         except Exception as e:
-            return format_html(
-                '<span style="color: #DC2626;">Error: {}</span>', str(e)
-            )
+            return ''
 
     get_actions_display.short_description = 'Acciones'
     get_actions_display.allow_tags = True
@@ -286,48 +279,29 @@ class CategoryTemplateAdmin(admin.ModelAdmin):
                 )
 
             user = request.user
-            
-            # Superusuario
-            if user.is_superuser:
-                return format_html(
-                    '<div style="display: flex; gap: 4px; flex-direction: column;">'
-                    '<span style="color: #059669; background: #ECFDF5; padding: 2px 8px; '
-                    'border-radius: 4px; font-size: 0.75rem;">✏️ Acceso completo</span>'
-                    '<span style="color: #4F46E5; background: #EEF2FF; padding: 2px 8px; '
-                    'border-radius: 4px; font-size: 0.75rem;">👑 Superusuario</span>'
-                    '</div>'
-                )
-
-            # Verificar permisos
             perms = []
-            if self._check_permission(user, 'view'):
-                perms.append('Ver')
-            if self._check_permission(user, 'change'):
-                perms.append('Editar')
-            if self._check_permission(user, 'add'):
-                perms.append('Añadir')
-            if self._check_permission(user, 'delete'):
-                perms.append('Eliminar')
+            
+            # Verificar permisos específicos
+            permission_types = {
+                'view': '👁️ Ver',
+                'change': '✏️ Editar',
+                'add': '➕ Añadir',
+                'delete': '🗑️ Eliminar'
+            }
 
-            if perms:
-                groups = [g.name for g in user.groups.all()]
-                role = "Staff" if user.is_staff else "Usuario"
-                
-                return format_html(
-                    '<div style="display: flex; gap: 4px; flex-direction: column;">'
-                    '<span style="color: #0891b2; background: #CFFAFE; padding: 2px 8px; '
-                    'border-radius: 4px; font-size: 0.75rem;">⚙️ {} ({})</span>'
-                    '<span style="color: #4F46E5; background: #EEF2FF; padding: 2px 8px; '
-                    'border-radius: 4px; font-size: 0.75rem;">🔑 {}</span>'
-                    '</div>',
-                    role,
-                    ' • '.join(groups) if groups else 'Sin grupos',
-                    ', '.join(perms)
-                )
+            # Mostrar permisos del grupo
+            for perm_type, label in permission_types.items():
+                if user.has_perm(f'prevcad.{perm_type}_evaluationform'):
+                    perms.append(
+                        f'<span style="color: #1F2937; background: #F3F4F6; padding: 2px 8px; '
+                        f'border-radius: 4px; font-size: 0.75rem;">{label}</span>'
+                    )
 
             return format_html(
+                '<div style="display: flex; gap: 4px; flex-wrap: wrap;">{}</div>',
+                format_html(''.join(perms)) if perms else 
                 '<span style="color: #DC2626; background: #FEF2F2; padding: 2px 8px; '
-                'border-radius: 4px; font-size: 0.75rem;">🚫 Sin acceso</span>'
+                'border-radius: 4px; font-size: 0.75rem;">❌ Sin permisos</span>'
             )
 
         except Exception as e:
@@ -359,20 +333,21 @@ class CategoryTemplateAdmin(admin.ModelAdmin):
             }),
         ]
         
-        if obj and obj.evaluation_type == 'PROFESSIONAL':
-            fieldsets.extend([
-                ('Formulario de Evaluación', {
-                    'fields': ('evaluation_form_button',),
-                    
-                }),
-            ])
-
-        if obj and obj.evaluation_type == 'PROFESSIONAL':
-            fieldsets.extend([
-                ('Formulario de Evaluación', {
-                    'fields': ('evaluation_tags',),
-                }),
-            ])
+        if obj:
+            # Solo mostrar formulario de evaluación para autoevaluación
+            if obj.evaluation_type == 'SELF':
+                fieldsets.extend([
+                    ('Formulario de Autoevaluación', {
+                        'fields': ('evaluation_form_button',),
+                    }),
+                ])
+            # Solo mostrar tags para evaluación profesional
+            elif obj.evaluation_type == 'PROFESSIONAL':
+                fieldsets.extend([
+                    ('Tags de Evaluación', {
+                        'fields': ('evaluation_tags',),
+                    }),
+                ])
 
         fieldsets.append(('Formulario de Entrenamiento', {
             'fields': ('training_form_button',),
@@ -388,26 +363,37 @@ class CategoryTemplateAdmin(admin.ModelAdmin):
     display_tags.short_description = "Tags de Evaluación"
 
     def evaluation_form_button(self, obj):
+        request = getattr(self, 'request', None)
+        can_edit = request and request.user.has_perm('prevcad.change_evaluationform')
+        
+        eval_type = "Evaluación Profesional" if obj.evaluation_type == 'PROFESSIONAL' else "Autoevaluación"
+        
         return mark_safe(f"""
         <div class="form-row field-evaluation_form">
-            <label for="id_evaluation_form">Formulario de Evaluación</label>
-            <button type="button" class="btn btn-primary" onclick="openFormModal('EVALUATION')">
-            Ver Formulario
+            <label for="id_evaluation_form">Formulario de {eval_type}</label>
+            <button type="button" 
+                    class="btn btn-primary" 
+                    onclick="openFormModal('EVALUATION')">
+                {'Editar Formulario' if can_edit else 'Ver Formulario'}
             </button>
         </div>
         """)
     evaluation_form_button.short_description = "Formulario de Evaluación"
 
     def training_form_button(self, obj):
+        request = getattr(self, 'request', None)
+        can_edit = request and request.user.has_perm('prevcad.change_evaluationform')
+        
         return mark_safe(f"""
         <div class="form-row field-training_form">
             <label for="id_training_form">Formulario de Entrenamiento</label>
-            <button type="button" class="btn btn-primary" onclick="openFormModal('TRAINING')">
-            Ver Formulario
+            <button type="button" 
+                    class="btn btn-primary" 
+                    onclick="openFormModal('TRAINING')">
+                {'Editar Formulario' if can_edit else 'Ver Formulario'}
             </button>
         </div>
         """)
-
     training_form_button.short_description = "Formulario de Entrenamiento"
 
 
@@ -461,9 +447,12 @@ class CategoryTemplateAdmin(admin.ModelAdmin):
             if not obj:
                 return JsonResponse({'status': 'error', 'message': 'Objeto no encontrado'}, status=404)
 
-            # Verificar permisos
+            # Verificar permisos de edición
             if not self._check_permission(request.user, 'change'):
-                return JsonResponse({'status': 'error', 'message': 'No tienes permisos'}, status=403)
+                return JsonResponse({
+                    'status': 'error', 
+                    'message': 'No tienes permisos para realizar esta acción'
+                }, status=403)
 
             # Parsear los datos del formulario
             form_data = json.loads(request.POST.get('training_form', '{}'))
@@ -530,6 +519,39 @@ class CategoryTemplateAdmin(admin.ModelAdmin):
             traceback.print_exc()
             return JsonResponse({
                 'status': 'error', 
+                'message': f'Error al actualizar: {str(e)}'
+            }, status=500)
+        
+    def update_self_evaluation_form(self, request, object_id):
+        try:
+            # Obtener el objeto CategoryTemplate
+            obj = self.get_object(request, object_id)
+            if not obj:
+                return JsonResponse({'status': 'error', 'message': 'Objeto no encontrado'}, status=404)
+            
+            # Verificar permisos de edición
+            if not self._check_permission(request.user, 'change'):
+                return JsonResponse({
+                    'status': 'error', 
+                    'message': 'No tienes permisos para realizar esta acción'
+                }, status=403)
+            
+            # Parsear los datos del formulario
+            form_data = json.loads(request.POST.get('self_evaluation_form', '{}'))
+
+            # Actualizar el formulario de autoevaluación
+            obj.self_evaluation_form = json.dumps(form_data)
+            obj.save()
+
+            return JsonResponse({
+                'status': 'success',
+                'message': 'Formulario de autoevaluación actualizado correctamente'
+            })
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return JsonResponse({
+                'status': 'error',
                 'message': f'Error al actualizar: {str(e)}'
             }, status=500)
 

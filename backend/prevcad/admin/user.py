@@ -10,6 +10,7 @@ from django.contrib.auth.models import Permission
 from django.urls import path
 from django.contrib.auth import views as auth_views
 from django.utils.decorators import update_wrapper
+from django.contrib.contenttypes.models import ContentType
 
 class PermissionSelectWidget(forms.SelectMultiple):
     template_name = 'admin/widgets/permission_select.html'
@@ -17,23 +18,20 @@ class PermissionSelectWidget(forms.SelectMultiple):
     def get_context(self, name, value, attrs):
         context = super().get_context(name, value, attrs)
         
-        # Agrupar permisos por categoría
-        grouped_permissions = {
-            'Administración': [
-                p for p in self.choices if 'Administración' in str(p[1])
-            ],
-            'Autenticación y autorización': [
-                p for p in self.choices if 'Autenticación' in str(p[1])
-            ],
-            'Otros permisos': [
-                p for p in self.choices if not any(
-                    cat in str(p[1]) 
-                    for cat in ['Administración', 'Autenticación']
-                )
-            ]
-        }
+        # Agrupar permisos por app
+        grouped_choices = {}
+        content_types = ContentType.objects.all()
         
-        context['widget']['grouped_permissions'] = grouped_permissions
+        for ct in content_types:
+            app_perms = Permission.objects.filter(content_type=ct)
+            if app_perms.exists():
+                app_label = ct.app_label.title()
+                if app_label not in grouped_choices:
+                    grouped_choices[app_label] = []
+                for perm in app_perms:
+                    grouped_choices[app_label].append((perm.id, perm.name))
+        
+        context['widget']['grouped_choices'] = grouped_choices
         context['widget']['value'] = value or []
         return context
 
@@ -84,6 +82,9 @@ class CustomUserAdmin(UserAdmin):
     )
 
     form = CustomUserForm
+    formfield_overrides = {
+        User._meta.get_field('user_permissions'): {'widget': PermissionSelectWidget},
+    }
 
     def get_urls(self):
         from django.urls import path
