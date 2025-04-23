@@ -179,6 +179,9 @@ def save_evaluation_responses(request, category_id):
             evaluation_form = health_category.get_or_create_evaluation_form()
             evaluation_form.responses = responses
             evaluation_form.completed_date = timezone.now()
+            evaluation_form.is_draft = False
+            health_category.recommendation.is_draft = False
+            health_category.recommendation.save()
             evaluation_form.save()
             logger.info("Respuestas guardadas exitosamente")
 
@@ -357,6 +360,8 @@ def save_professional_evaluation(request, category_id):
             # Actualizar el formulario
             evaluation_form.is_draft = False
             evaluation_form.completed_date = now
+            health_category.clear_recommendation()
+            
             
             # Actualizar la recomendación
             try:
@@ -481,8 +486,10 @@ def clear_evaluation(request, category_id):
             health_category.evaluation_form.responses = {}
             health_category.evaluation_form.is_draft = True
             health_category.evaluation_form.completed_date = None
+            
             health_category.evaluation_form.save()
             
+            health_category.clear_recommendation()
             logger.info("Formulario de evaluación limpiado exitosamente")
         
         return Response({

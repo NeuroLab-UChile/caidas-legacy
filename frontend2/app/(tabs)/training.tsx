@@ -28,7 +28,6 @@ import * as FileSystem from "expo-file-system";
 import { theme } from "@/src/theme";
 import { VideoPlayerView } from "@/components/VideoPlayer";
 
-
 type TrainingState = {
   currentNodeId: number | null;
   history: number[];
@@ -43,10 +42,9 @@ const TrainingScreen = () => {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [view, setView] = useState<"training" | "recommendations" | null>(null);
+
   const [trainingState, setTrainingState] = useState<TrainingState>(() => {
     const nodes = selectedCategory?.training_form?.training_nodes || [];
-    console.log("Inicializando trainingState con nodes:", nodes);
-    
     if (nodes.length === 0) {
       console.log("No hay nodos de entrenamiento disponibles");
       return {
@@ -73,7 +71,9 @@ const TrainingScreen = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [history, setHistory] = useState<number[]>([]);
   const nodes = selectedCategory?.training_form?.training_nodes || [];
-  const currentQuestionIndex = nodes.findIndex(node => node.id === trainingState.currentNodeId);
+  const currentQuestionIndex = nodes.findIndex(
+    (node) => node.id === trainingState.currentNodeId,
+  );
 
   useEffect(() => {
     fetchCategories();
@@ -122,15 +122,18 @@ const TrainingScreen = () => {
       selectedCategory,
       trainingNodes: selectedCategory?.training_form?.training_nodes,
       currentNodeId: trainingState.currentNodeId,
-      view
+      view,
     });
   }, [selectedCategory, trainingState.currentNodeId, view]);
 
   useEffect(() => {
     if (selectedCategory?.training_form?.training_nodes) {
       const nodes = selectedCategory.training_form.training_nodes;
-      console.log("Actualizando trainingState por cambio en selectedCategory:", nodes);
-      
+      console.log(
+        "Actualizando trainingState por cambio en selectedCategory:",
+        nodes,
+      );
+
       setTrainingState({
         currentNodeId: nodes[0]?.id || null,
         history: [],
@@ -158,7 +161,7 @@ const TrainingScreen = () => {
     (nodeId: number | null) => {
       const node =
         selectedCategory?.training_form?.training_nodes.find(
-          (node) => node.id === nodeId
+          (node) => node.id === nodeId,
         ) || null;
 
       console.log("Getting current node:", {
@@ -168,13 +171,13 @@ const TrainingScreen = () => {
           (n) => ({
             id: n.id,
             type: n.type,
-          })
+          }),
         ),
       });
 
       return node;
     },
-    [selectedCategory]
+    [selectedCategory],
   );
 
   const handleNext = useCallback(
@@ -192,7 +195,7 @@ const TrainingScreen = () => {
         // Encontrar el índice del nodo actual
         const currentIndex =
           selectedCategory?.training_form?.training_nodes.findIndex(
-            (node) => node.id === prev.currentNodeId
+            (node) => node.id === prev.currentNodeId,
           );
 
         // Obtener el siguiente nodo
@@ -217,12 +220,28 @@ const TrainingScreen = () => {
         }
       });
     },
-    [selectedCategory, getCurrentNode]
+    [selectedCategory, getCurrentNode],
   );
 
   const handleNodeResponse = (nodeId: number, response: any) => {
     console.log("Node response:", { nodeId, response });
     handleNext(response);
+  };
+  const handleNavigateBefore = () => {
+    console.log("Navegando hacia atrás. Índice actual:", currentQuestionIndex);
+    if (currentQuestionIndex > 0) {
+      const previousNode = nodes[currentQuestionIndex - 1];
+      console.log("Nodo anterior:", previousNode);
+      if (previousNode) {
+        // Actualizar el estado con el nodo anterior y mantener las respuestas existentes
+        setTrainingState((prev) => ({
+          ...prev,
+          currentNodeId: previousNode.id,
+          // Mantener las respuestas existentes
+          history: prev.history.filter((r) => r !== prev.currentNodeId),
+        }));
+      }
+    }
   };
 
   const renderNode = (nodeId: number | null) => {
@@ -235,10 +254,9 @@ const TrainingScreen = () => {
         data={node}
         onNext={(response: any) => handleNodeResponse(node.id, response)}
         onBack={handleBack}
+        onBefore={handleNavigateBefore}
         categoryId={selectedCategory?.id}
         responses={[]}
-        history={history}
-        setHistory={setHistory}
         currentQuestionIndex={currentQuestionIndex}
         totalQuestions={nodes.length}
       />
@@ -266,7 +284,7 @@ const TrainingScreen = () => {
         const downloadResumable = FileSystem.createDownloadResumable(
           remoteUrl,
           localUri,
-          {}
+          {},
         );
 
         try {
@@ -289,7 +307,7 @@ const TrainingScreen = () => {
     }
 
     return (
-      <VideoPlayerView 
+      <VideoPlayerView
         url={selectedCategory.recommendations.video_url}
         description={selectedCategory.recommendations.text}
       />
@@ -398,15 +416,14 @@ const TrainingScreen = () => {
 
   return (
     <ScrollView style={styles.container}>
-      <CategoryHeader name={selectedCategory?.name || 'Categoría no seleccionada'} />
-      
-      <TouchableOpacity 
-        style={styles.backButton} 
-        onPress={handleBack}
-      >
+      <CategoryHeader
+        name={selectedCategory?.name || "Categoría no seleccionada"}
+      />
+
+      <TouchableOpacity style={styles.backButton} onPress={handleBack}>
         <Ionicons name="chevron-back" size={24} color={theme.colors.text} />
         <Text style={styles.backButtonText}>
-          {view ? 'Volver' : 'Volver al inicio'}
+          {view ? "Volver" : "Volver al inicio"}
         </Text>
       </TouchableOpacity>
 

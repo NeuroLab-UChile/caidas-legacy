@@ -1,4 +1,4 @@
-import  { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, memo } from "react";
 import {
   View,
   Text,
@@ -6,9 +6,16 @@ import {
   TouchableOpacity,
   ScrollView,
   Platform,
+  AccessibilityInfo,
+  AccessibilityRole,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { theme } from "@/src/theme";
+
+interface Option {
+  id: number;
+  text: string;
+}
 
 interface MultipleChoiceQuestionProps {
   data: {
@@ -20,35 +27,94 @@ interface MultipleChoiceQuestionProps {
   };
   setResponse: (response: { selectedOptions: number[] } | null) => void;
   onNext?: () => void;
+  maxSelections?: number;
 }
+
+const OptionButton = memo(
+  ({
+    option,
+    isSelected,
+    onToggle,
+  }: {
+    option: Option;
+    isSelected: boolean;
+    onToggle: (id: number) => void;
+  }) => (
+    <TouchableOpacity
+      key={`option-${option.id}`}
+      style={[styles.optionButton, isSelected && styles.selectedOptionButton]}
+      onPress={() => onToggle(option.id)}
+      activeOpacity={0.7}
+      accessibilityRole="checkbox"
+      accessibilityState={{ checked: isSelected }}
+      accessibilityLabel={`${option.text}, ${isSelected ? "seleccionado" : "no seleccionado"}`}
+      accessibilityHint="Toca para seleccionar o deseleccionar esta opción"
+    >
+      <View style={styles.optionContent}>
+        <Ionicons
+          name={isSelected ? "checkbox" : "square-outline"}
+          size={24}
+          color={isSelected ? theme.colors.primary : theme.colors.text}
+          style={styles.checkbox}
+        />
+        <Text
+          style={[styles.optionText, isSelected && styles.selectedOptionText]}
+          numberOfLines={3}
+        >
+          {option.text}
+        </Text>
+      </View>
+    </TouchableOpacity>
+  ),
+);
+
+OptionButton.displayName = "OptionButton";
 
 export function MultipleChoiceQuestionView({
   data,
   setResponse,
+  maxSelections = Infinity,
 }: MultipleChoiceQuestionProps) {
   const [selectedOptions, setSelectedOptions] = useState<number[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     setSelectedOptions([]);
     setResponse(null);
+    setError(null);
   }, [data.question]);
 
-  const toggleOption = (optionId: number) => {
-    const newSelection = selectedOptions.includes(optionId)
-      ? selectedOptions.filter((id) => id !== optionId)
-      : [...selectedOptions, optionId];
+  const toggleOption = useCallback(
+    (optionId: number) => {
+      setSelectedOptions((prev) => {
+        const isCurrentlySelected = prev.includes(optionId);
+        let newSelection: number[];
 
-    setSelectedOptions(newSelection);
-    setResponse(
-      newSelection.length > 0 ? { selectedOptions: newSelection } : null
-    );
-  };
+        if (isCurrentlySelected) {
+          newSelection = prev.filter((id) => id !== optionId);
+        } else {
+          if (prev.length >= maxSelections) {
+            setError(`Puedes seleccionar máximo ${maxSelections} opciones`);
+            return prev;
+          }
+          newSelection = [...prev, optionId];
+          setError(null);
+        }
 
-  const formattedOptions = data.options.map(
+        setResponse(
+          newSelection.length > 0 ? { selectedOptions: newSelection } : null,
+        );
+        return newSelection;
+      });
+    },
+    [maxSelections, setResponse],
+  );
+
+  const formattedOptions: Option[] = data.options.map(
     (option: string, index: number) => ({
       id: index,
       text: option,
-    })
+    }),
   );
 
   return (
@@ -58,47 +124,45 @@ export function MultipleChoiceQuestionView({
       showsVerticalScrollIndicator={true}
       bounces={true}
       alwaysBounceVertical={true}
+      accessibilityRole="radiogroup"
+      accessibilityLabel="Lista de opciones múltiples"
     >
-      <View>
-        <Text style={styles.questionText}>{data.question}</Text>
+      <View accessible={true}>
+        <Text style={styles.questionText} accessibilityRole="header">
+          {data.question}
+        </Text>
+        {data.description && (
+          <Text style={styles.description}>{data.description}</Text>
+        )}
       </View>
 
       <View style={styles.optionsContainer}>
-        {formattedOptions.map((option, index) => {
-          const isSelected = selectedOptions.includes(option.id);
-          return (
-            <TouchableOpacity
-              key={`option-${index}`}
-              style={[
-                styles.optionButton,
-                isSelected && styles.selectedOptionButton,
-              ]}
-              onPress={() => toggleOption(option.id)}
-              activeOpacity={0.7}
-            >
-              <View style={styles.optionContent}>
-                <Ionicons
-                  name={isSelected ? "checkbox" : "square-outline"}
-                  size={24}
-                  color={isSelected ? theme.colors.primary : theme.colors.text}
-                  style={styles.checkbox}
-                />
-                <Text
-                  style={[
-                    styles.optionText,
-                    isSelected && styles.selectedOptionText,
-                  ]}
-                >
-                  {option.text}
-                </Text>
-              </View>
-            </TouchableOpacity>
-          );
-        })}
+        {formattedOptions.map((option) => (
+          <OptionButton
+            key={option.id}
+            option={option}
+            isSelected={selectedOptions.includes(option.id)}
+            onToggle={toggleOption}
+          />
+        ))}
       </View>
 
+      {error && (
+        <Text style={styles.errorText} accessibilityRole="alert">
+          {error}
+        </Text>
+      )}
+
       {selectedOptions.length > 0 && (
-        <Text style={styles.selectionCount}>
+        <Text
+          style={styles.selectionCount}
+          accessibilityRole="text"
+          accessibilityLabel={`${selectedOptions.length} ${
+            selectedOptions.length === 1
+              ? "opción seleccionada"
+              : "opciones seleccionadas"
+          }`}
+        >
           {selectedOptions.length}{" "}
           {selectedOptions.length === 1
             ? "opción seleccionada"
@@ -124,8 +188,15 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "600",
     color: theme.colors.text,
-    marginBottom: 24,
+    marginBottom: 16,
     lineHeight: 28,
+  },
+  description: {
+    fontSize: 16,
+    color: theme.colors.text,
+    opacity: 0.8,
+    marginBottom: 24,
+    lineHeight: 22,
   },
   optionsContainer: {
     gap: 12,
@@ -177,5 +248,12 @@ const styles = StyleSheet.create({
     opacity: 0.7,
     textAlign: "center",
     marginTop: 16,
+  },
+  errorText: {
+    fontSize: 14,
+    color: theme.colors.error || "#dc2626",
+    textAlign: "center",
+    marginTop: 8,
+    marginBottom: 8,
   },
 });

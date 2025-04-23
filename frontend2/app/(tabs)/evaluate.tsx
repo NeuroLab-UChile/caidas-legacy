@@ -212,25 +212,46 @@ const EvaluateScreen = () => {
 
   const handleStartNewEvaluation = () => {
     const nodes = selectedCategory?.evaluation_form?.question_nodes || [];
-    
+
     if (nodes.length === 0) {
       Alert.alert("Error", "No hay preguntas disponibles para esta evaluación");
       return;
     }
 
-    setEvaluationState({
-      currentNodeId: nodes[0]?.id || null,
-      responses: [],
-      completed: false,
-      history: [],
-      evaluationResult: {
-        initial_node_id: nodes[0]?.id || null,
-        nodes: nodes
-      }
-    });
-    
-    // Resetear el historial
-    setHistory([]);
+    Alert.alert(
+      "Iniciar Nueva Evaluación",
+      "¿Estás seguro de que deseas iniciar una nueva evaluación? La evaluación anterior quedará guardada.",
+      [
+        {
+          text: "Cancelar",
+          style: "cancel",
+        },
+        {
+          text: "Iniciar",
+          style: "default",
+          onPress: async () => {
+            setEvaluationState({
+              currentNodeId: nodes[0]?.id || null,
+              responses: [],
+              completed: false,
+              history: [],
+              evaluationResult: {
+                initial_node_id: nodes[0]?.id || null,
+                nodes: nodes,
+              },
+            });
+
+            // Resetear el historial
+            setHistory([]);
+            if (selectedCategory?.id) {
+              await apiService.evaluations.clearAndStartNew(
+                selectedCategory.id,
+              );
+            }
+          },
+        },
+      ],
+    );
   };
 
   const getNextNodeId = (currentNodeId: number): number | null => {
@@ -309,78 +330,101 @@ const EvaluateScreen = () => {
     };
   };
 
+  const handleNavigateBack = () => {
+    // Solo para el botón de Salir
+    Alert.alert(
+      "",
+      selectedCategory?.evaluation_type?.type === "PROFESSIONAL"
+        ? "¿Finalizar evaluación?"
+        : "¿Finalizar entrenamiento?",
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Finalizar",
+          style: "destructive",
+          onPress: () => router.push("/(tabs)/action"),
+        },
+      ],
+    );
+  };
+
+  const handleNavigateBefore = () => {
+    console.log("Navegando hacia atrás. Índice actual:", currentQuestionIndex);
+    if (currentQuestionIndex > 0) {
+      const previousNode = nodes[currentQuestionIndex - 1];
+      console.log("Nodo anterior:", previousNode);
+      if (previousNode) {
+        // Actualizar el estado con el nodo anterior y mantener las respuestas existentes
+        setEvaluationState((prev) => ({
+          ...prev,
+          currentNodeId: previousNode.id,
+          // Mantener las respuestas existentes
+          responses: prev.responses.filter(
+            (r) => r.nodeId !== prev.currentNodeId,
+          ),
+        }));
+      }
+    }
+  };
+
   const handleNodeResponse = async (nodeId: number, response: any) => {
     try {
       const node = getCurrentNode(nodeId);
       if (!node) throw new Error("Nodo no encontrado");
 
       const formattedResponse = formatNodeResponse(node, response);
-      const newResponses = {
-        ...Object.fromEntries(
-          evaluationState.responses.map((r) => [r.nodeId, r.response])
-        ),
-        [nodeId]: formattedResponse,
-      };
+
+      // Actualizar las respuestas manteniendo el formato correcto
+      const newResponses = [
+        ...evaluationState.responses.filter((r) => r.nodeId !== nodeId),
+        { nodeId, response: formattedResponse },
+      ];
 
       const nextNodeId = getNextNodeId(nodeId);
-      const isCompleted =
-        !nextNodeId ||
-        Object.keys(newResponses).length ===
-          selectedCategory?.evaluation_form?.question_nodes.length;
+      const isCompleted = !nextNodeId || newResponses.length === nodes.length;
 
       if (isCompleted && selectedCategory?.id) {
         setLoading(true);
         try {
           const formData = new FormData();
 
-          // Agregar las respuestas como JSON string
-          const responsesObj: Record<string, any> = {};
-          Object.entries(newResponses).forEach(([key, value]) => {
-            responsesObj[key] = value;
-          });
+          // Convertir las respuestas al formato esperado por el API
+          const responsesObj = newResponses.reduce(
+            (acc, curr) => {
+              acc[curr.nodeId] = curr.response;
+              return acc;
+            },
+            {} as Record<string, any>,
+          );
+
           formData.append("responses", JSON.stringify(responsesObj));
 
           // Procesar imágenes si existen
-          Object.entries(newResponses).forEach(
-            ([key, value]: [string, any]) => {
-              if (value.type === "IMAGE_QUESTION" && value.answer?.images) {
-                value.answer.images.forEach(
-                  (imageUri: string, index: number) => {
-                    // Crear un nombre único para cada imagen
-                    const imageName = `image_${key}_${index}.jpg`;
-
-                    // Agregar la imagen al FormData con el nombre correcto
-                    formData.append(`image_${key}`, {
-                      uri: imageUri,
-                      type: "image/jpeg",
-                      name: imageName,
-                    } as any);
-                  }
-                );
-              }
+          newResponses.forEach((nodeResponse) => {
+            const response = nodeResponse.response;
+            if (response.type === "IMAGE_QUESTION" && response.answer?.images) {
+              response.answer.images.forEach(
+                (imageUri: string, index: number) => {
+                  const imageName = `image_${nodeResponse.nodeId}_${index}.jpg`;
+                  formData.append(`image_${nodeResponse.nodeId}`, {
+                    uri: imageUri,
+                    type: "image/jpeg",
+                    name: imageName,
+                  } as any);
+                },
+              );
             }
-          );
-
-          console.log(
-            "Enviando FormData con imágenes:",
-            Array.from(formData.entries()).map(([key, value]) => ({
-              key,
-              type: value instanceof File ? "File" : typeof value,
-            }))
-          );
+          });
 
           await apiService.categories.saveResponses(
             selectedCategory.id,
-            formData
+            formData,
           );
           await fetchCategories();
 
           setEvaluationState({
             currentNodeId: null,
-            responses: Object.entries(newResponses).map(([key, value]) => ({
-              nodeId: parseInt(key),
-              response: value as NodeResponse["response"],
-            })),
+            responses: newResponses,
             completed: true,
             history: [],
             evaluationResult: {
@@ -399,13 +443,9 @@ const EvaluateScreen = () => {
       } else {
         setEvaluationState((prev) => ({
           ...prev,
-          responses: Object.entries(newResponses).map(([key, value]) => ({
-            nodeId: parseInt(key),
-            response: value as NodeResponse["response"],
-          })),
+          responses: newResponses,
           currentNodeId: nextNodeId,
           completed: false,
-          history: [...prev.history, nodeId],
         }));
       }
     } catch (error) {
@@ -428,7 +468,7 @@ const EvaluateScreen = () => {
     return nodes.find((node) => node.id === nodeId) || null;
   };
 
-  const renderNode = (nodeId: number | null, handleBack: () => void) => {
+  const renderNode = (nodeId: number | null) => {
     const node = getCurrentNode(nodeId);
     if (!node) return null;
 
@@ -437,13 +477,17 @@ const EvaluateScreen = () => {
         type={node.type}
         data={node}
         onNext={(response: any) => handleNodeResponse(node.id, response)}
-        onBack={handleBack}
+        onBefore={handleNavigateBefore}
+        onBack={handleNavigateBack}
         categoryId={selectedCategory?.id}
         responses={evaluationState.responses}
-        history={history}
-        setHistory={setHistory}
         currentQuestionIndex={currentQuestionIndex}
         totalQuestions={nodes.length}
+        nodeType={
+          selectedCategory?.evaluation_type?.type === "PROFESSIONAL"
+            ? "evaluation"
+            : "training"
+        }
       />
     );
   };
@@ -493,7 +537,8 @@ const EvaluateScreen = () => {
   };
 
   const renderCompletedEvaluation = () => {
-    const updatedBy = selectedCategory?.recommendations?.professional?.name || "Sistema";
+    const updatedBy =
+      selectedCategory?.recommendations?.professional?.name || "Sistema";
     const updatedDate = selectedCategory?.evaluation_form?.completed_date;
 
     return (
@@ -508,17 +553,24 @@ const EvaluateScreen = () => {
 
         <View style={styles.resultCard}>
           <View style={styles.statusContainer}>
-            <View style={[styles.statusIndicator, { backgroundColor: status?.color || theme.colors.success }]} />
+            <View
+              style={[
+                styles.statusIndicator,
+                { backgroundColor: status?.color || theme.colors.success },
+              ]}
+            />
             <Text style={[styles.statusText, { color: theme.colors.text }]}>
               {status?.text || "Poco Riesgoso"}
             </Text>
           </View>
 
           <View style={styles.recommendationsContainer}>
-            <Text style={styles.recommendationsTitle}>Recomendaciones médicas:</Text>
+            <Text style={styles.recommendationsTitle}>
+              Recomendaciones médicas:
+            </Text>
             <Text style={styles.recommendationsText}>
-              {selectedCategory?.recommendations?.text || 
-               "Su hogar presenta medidas previas de mitigación de riesgos. Reevalúe áreas clave para mantener la seguridad."}
+              {selectedCategory?.recommendations?.text ||
+                "Su hogar presenta medidas previas de mitigación de riesgos. Reevalúe áreas clave para mantener la seguridad."}
             </Text>
           </View>
 
@@ -572,11 +624,7 @@ const EvaluateScreen = () => {
       return renderCompletedEvaluation();
     }
 
-    return renderNode(evaluationState.currentNodeId, handleBack);
-  };
-
-  const handleBack = () => {
-    router.push("/(tabs)/action"); // Cambiado a la ruta correcta del menú principal
+    return renderNode(evaluationState.currentNodeId);
   };
 
   if (loading) {

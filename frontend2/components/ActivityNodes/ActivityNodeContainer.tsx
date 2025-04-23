@@ -29,61 +29,87 @@ import { ScaleQuestionView } from './views/ScaleQuestionView';
 import { ImageQuestionView } from './views/ImageQuestionView';
 import { WeeklyRecipeNodeView } from './views/WeeklyRecipeNodeView';
 import { CategoryDescriptionView } from './views/CategoryDescriptionView';
+import { commonStyles } from "./styles/commonStyles";
 
 interface ActivityNodeContainerProps {
   type: ActivityNodeType;
   data: any;
   onNext?: (response?: any) => void;
+  onBefore?: () => void;
   onBack?: () => void;
   categoryId?: number;
   responses?: any[];
-  history?: number[];
-  setHistory?: (history: number[]) => void;
   currentQuestionIndex: number;
   totalQuestions: number;
-  nodeType?: 'training' | 'evaluation';
+  nodeType?: "training" | "evaluation";
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: theme.colors.background,
+  },
+  content: {
+    flex: 1,
+    padding: 16,
+  },
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  header: {
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+  },
+  footer: {
+    padding: 16,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.border,
+    backgroundColor: theme.colors.background,
+  },
+  btn: {
+    flex: 1,
+    height: 56,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: theme.colors.primary,
+    borderWidth: 1,
+    borderColor: "#000",
+    fontWeight: "600",
+    color: "#000",
+  },
+  btnOutline: {
+    backgroundColor: "transparent",
+    borderWidth: 1,
+    borderColor: theme.colors.primary,
+  },
+  btnDisabled: {
+    backgroundColor: theme.colors.disabled,
+    borderColor: "transparent",
+  },
+  text: {
+    fontSize: 17,
+    color: "#000",
+    fontWeight: "600",
+  },
+});
 
 export const ActivityNodeContainer: React.FC<ActivityNodeContainerProps> = ({
   type,
   data,
   onNext,
+  onBefore,
   onBack,
   categoryId,
   responses = [],
-  history = [],
-  setHistory,
   currentQuestionIndex,
   totalQuestions,
-  nodeType = 'training'
+  nodeType = "training",
 }) => {
   const [currentResponse, setCurrentResponse] = useState<any>(null);
-  const [showExitModal, setShowExitModal] = useState(false);
-
-  const NodeComponent =
-    ActivityNodeViews[type as keyof typeof ActivityNodeViews];
-
-  const handleBack = () => {
-    const message = nodeType === 'training' 
-      ? '¿Deseas finalizar el entrenamiento?' 
-      : '¿Deseas finalizar la evaluación?';
-      
-    Alert.alert(
-      'Confirmar salida',
-      message,
-      [
-        {
-          text: 'Cancelar',
-          style: 'cancel',
-        },
-        {
-          text: 'Sí, finalizar',
-          style: 'destructive',
-          onPress: onBack
-        },
-      ]
-    );
-  };
 
   const handleNext = (response?: any) => {
     if (onNext) {
@@ -91,54 +117,15 @@ export const ActivityNodeContainer: React.FC<ActivityNodeContainerProps> = ({
     }
   };
 
-  const ExitConfirmationModal = () => (
-    <Modal
-      animationType="fade"
-      transparent={true}
-      visible={showExitModal}
-      onRequestClose={() => setShowExitModal(false)}
-    >
-      <View style={styles.modalOverlay}>
-        <View style={styles.modalContent}>
-          <Text style={styles.modalTitle}>Salir de la evaluación</Text>
-          <Text style={styles.modalText}>
-            ¿Estás seguro que deseas salir? Se perderá el progreso.
-          </Text>
-          <View style={styles.modalButtons}>
-            <TouchableOpacity
-              style={[styles.modalButton, styles.cancelButton]}
-              onPress={() => setShowExitModal(false)}
-            >
-              <Text style={styles.cancelButtonText}>CANCELAR</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.modalButton, styles.exitButton]}
-              onPress={() => {
-                setShowExitModal(false);
-                router.push("/(tabs)/action");
-              }}
-            >
-              <Text style={styles.exitButtonText}>SALIR</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
-    </Modal>
-  );
-
   const renderContent = () => {
     const commonProps = {
       data,
       onNext: handleNext,
-      setResponse: setCurrentResponse
+      setResponse: setCurrentResponse,
     };
-
-    console.log('Rendering node type:', type);
-    console.log('Node data:', data);
 
     switch (type) {
       case "VIDEO_NODE":
-        console.log('Rendering video node with data:', data);
         return <VideoNodeView {...commonProps} />;
       case "RESULT_NODE":
         return <ResultNodeView {...commonProps} />;
@@ -177,172 +164,48 @@ export const ActivityNodeContainer: React.FC<ActivityNodeContainerProps> = ({
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={styles.container}
-      >
-        <View style={styles.header}>
-          <TouchableOpacity style={styles.backButton} onPress={handleBack}>
-            <Text style={styles.backText}>Volver</Text>
-          </TouchableOpacity>
-          <StepIndicator current={currentQuestionIndex + 1} total={totalQuestions} />
-        </View>
+    <View style={styles.container}>
+      <View style={[styles.row, styles.header]}>
+        <TouchableOpacity onPress={onBack}>
+          <Text style={styles.text}>Salir</Text>
+        </TouchableOpacity>
+        <StepIndicator
+          current={currentQuestionIndex + 1}
+          total={totalQuestions}
+        />
+        <View style={{ width: 40 }} />
+      </View>
 
-        <ScrollView
-          style={styles.content}
-          contentContainerStyle={styles.contentContainer}
-          showsVerticalScrollIndicator={false}
-        >
-          {renderContent()}
-        </ScrollView>
+      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        {renderContent()}
+      </ScrollView>
 
-    
-          <View style={styles.buttonContainer}>
+      <View style={styles.footer}>
+        <View style={styles.row}>
+          {currentQuestionIndex > 0 && (
             <TouchableOpacity
-              style={[
-                styles.nextButton,
-                (type.includes('QUESTION') && !currentResponse) && styles.nextButtonDisabled
-              ]}
-              onPress={handleNext}
-              disabled={type.includes('QUESTION') && !currentResponse}
+              style={[styles.btn, styles.btnOutline]}
+              onPress={onBefore}
             >
-              <Text style={styles.nextText}>{getButtonText()}</Text>
+              <Text style={styles.text}>Anterior</Text>
             </TouchableOpacity>
-          </View>
-    
-      </KeyboardAvoidingView>
-      <ExitConfirmationModal />
-    </SafeAreaView>
+          )}
+          <TouchableOpacity
+            style={[
+              styles.btn,
+              type.includes("QUESTION") &&
+                !currentResponse &&
+                styles.btnDisabled,
+            ]}
+            onPress={handleNext}
+            disabled={type.includes("QUESTION") && !currentResponse}
+          >
+            <Text style={styles.text}>{getButtonText()}</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </View>
   );
 };
-
-const BUTTON_HEIGHT = 70;
-const BOTTOM_NAV_HEIGHT = 90;
-
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: theme.colors.background,
-  },
-  container: {
-    flex: 1,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
-  },
-  backButton: {
-    padding: 8,
-  },
-  backText: {
-    fontSize: 16,
-    color: theme.colors.text,
-    fontWeight: '500',
-  },
-  content: {
-    flex: 1,
-  },
-  contentContainer: {
-    padding: 16,
-    paddingBottom: 100,
-  },
-  buttonContainer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    paddingHorizontal: 16,
-    paddingBottom: 24,
-    paddingTop: 12,
-    backgroundColor: theme.colors.background,
-    borderTopWidth: 1,
-    borderTopColor: theme.colors.border,
-  },
-  nextButton: {
-    backgroundColor: theme.colors.primary,
-    borderRadius: 16,
-    height: 56,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  nextButtonDisabled: {
-    backgroundColor: theme.colors.disabled,
-    opacity: 0.7,
-  },
-  nextText: {
-    color: theme.colors.text,
-    fontSize: 18,
-    fontWeight: '600',
-    letterSpacing: 0.5,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  modalContent: {
-    backgroundColor: theme.colors.background,
-    borderRadius: 16,
-    padding: 24,
-    width: '100%',
-    maxWidth: 400,
-    alignItems: 'center',
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: theme.colors.text,
-    marginBottom: 12,
-  },
-  modalText: {
-    fontSize: 16,
-    color: theme.colors.textSecondary,
-    textAlign: 'center',
-    marginBottom: 24,
-  },
-  modalButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: '100%',
-    gap: 12,
-  },
-  modalButton: {
-    flex: 1,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  cancelButton: {
-    backgroundColor: `${theme.colors.primary}15`,
-  },
-  exitButton: {
-    backgroundColor: theme.colors.error,
-  },
-  cancelButtonText: {
-    color: theme.colors.primary,
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  exitButtonText: {
-    color: theme.colors.background,
-    fontSize: 14,
-    fontWeight: '600',
-  },
-});
 
 export default ActivityNodeContainer;

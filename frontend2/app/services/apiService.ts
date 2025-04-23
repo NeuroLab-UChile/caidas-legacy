@@ -44,7 +44,7 @@ export class ApiClient {
 
   constructor() {
     this.baseUrl = API_URL;
-    this.prevcadPrefix = '/prevcad';
+    this.prevcadPrefix = "/prevcad";
     this.initializeTokenRefresh();
   }
 
@@ -60,7 +60,7 @@ export class ApiClient {
 
   private async validateAndRefreshToken(): Promise<boolean> {
     try {
-      const token = await AsyncStorage.getItem('auth_token');
+      const token = await AsyncStorage.getItem("auth_token");
       if (!token) return false;
 
       const tokenData = this.parseJwt(token);
@@ -71,7 +71,7 @@ export class ApiClient {
       const currentTime = Date.now();
 
       if (expirationTime - currentTime < this.tokenRefreshThreshold) {
-        const refreshToken = await AsyncStorage.getItem('refresh_token');
+        const refreshToken = await AsyncStorage.getItem("refresh_token");
         if (!refreshToken) return false;
 
         const newToken = await authService.refreshToken(refreshToken);
@@ -80,57 +80,62 @@ export class ApiClient {
 
       return true;
     } catch (error) {
-      console.error('Error validating token:', error);
+      console.error("Error validating token:", error);
       return false;
     }
   }
 
   private parseJwt(token: string) {
     try {
-      const base64Url = token.split('.')[1];
-      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-      const jsonPayload = decodeURIComponent(atob(base64).split('').map(c =>
-        '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)
-      ).join(''));
+      const base64Url = token.split(".")[1];
+      const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+      const jsonPayload = decodeURIComponent(
+        atob(base64)
+          .split("")
+          .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+          .join(""),
+      );
       return JSON.parse(jsonPayload);
     } catch (error) {
-      console.error('Error parsing JWT:', error);
+      console.error("Error parsing JWT:", error);
       return null;
     }
   }
 
   public async getHeaders(includeAuth: boolean = true): Promise<HeadersInit> {
     const headers: HeadersInit = {
-      credentials: 'include',
+      credentials: "include",
     };
 
     if (includeAuth) {
-      const token = await AsyncStorage.getItem('auth_token');
+      const token = await AsyncStorage.getItem("auth_token");
       if (!token) {
-        throw new Error('No auth token found');
+        throw new Error("No auth token found");
       }
 
       // Solo validar si es necesario
-      if (Date.now() - this.lastTokenValidation > this.tokenValidationInterval) {
+      if (
+        Date.now() - this.lastTokenValidation >
+        this.tokenValidationInterval
+      ) {
         const isValid = await this.validateAndRefreshToken();
         if (!isValid) {
           await authService.logout();
-          throw new Error('Session expired');
+          throw new Error("Session expired");
         }
         this.lastTokenValidation = Date.now();
       }
 
-      headers['Authorization'] = `Bearer ${token}`;
+      headers["Authorization"] = `Bearer ${token}`;
     }
 
     return headers;
   }
 
-
   private async handleResponse<T>(response: Response): Promise<ApiResponse<T>> {
     if (response.status === 401) {
-      const token = await AsyncStorage.getItem('auth_token');
-      const refreshToken = await AsyncStorage.getItem('refresh_token');
+      const token = await AsyncStorage.getItem("auth_token");
+      const refreshToken = await AsyncStorage.getItem("refresh_token");
 
       if (token && refreshToken) {
         // Intentar validar el token actual primero
@@ -144,9 +149,9 @@ export class ApiClient {
               ...response,
               headers: {
                 ...response.headers,
-                'Authorization': `Bearer ${newToken}`,
-                credentials: 'include',
-              }
+                Authorization: `Bearer ${newToken}`,
+                credentials: "include",
+              },
             });
             return this.handleResponse(newResponse);
           }
@@ -155,7 +160,7 @@ export class ApiClient {
 
       // Si no se pudo recuperar la sesión, hacer logout
       await authService.logout();
-      throw new Error('Session expired');
+      throw new Error("Session expired");
     }
 
     if (!response.ok) {
@@ -171,32 +176,33 @@ export class ApiClient {
   }
 
   private getUrl(endpoint: string, usePrevcadPrefix: boolean = true): string {
-    return `${this.baseUrl}${usePrevcadPrefix ? this.prevcadPrefix : ''}${endpoint}`;
+    return `${this.baseUrl}${usePrevcadPrefix ? this.prevcadPrefix : ""}${endpoint}`;
   }
 
   // Health Categories
   public categories = {
     create: async (templateId: number): Promise<ApiResponse<Category>> => {
-      const response = await fetch(
-        this.getUrl('/health-categories/create'),
-        {
-          method: 'POST',
-          headers: await this.getHeaders(true),
-          body: JSON.stringify({ template_id: templateId }),
-        }
-      );
+      const response = await fetch(this.getUrl("/health-categories/create"), {
+        method: "POST",
+        headers: await this.getHeaders(true),
+        body: JSON.stringify({ template_id: templateId }),
+      });
       return this.handleResponse<Category>(response);
     },
 
-    saveResponses: async (categoryId: number, formData: FormData): Promise<ApiResponse<any>> => {
+    saveResponses: async (
+      categoryId: number,
+      formData: FormData,
+    ): Promise<ApiResponse<any>> => {
       try {
         const response = await fetch(
           this.getUrl(`/health-categories/${categoryId}/responses/`),
           {
-            method: 'POST',
+            method: "POST",
             body: formData,
             headers: await this.getHeaders(true),
-          });
+          },
+        );
 
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
@@ -204,67 +210,70 @@ export class ApiClient {
 
         return await response.json();
       } catch (error) {
-        console.error('Error in saveResponses:', error);
+        console.error("Error in saveResponses:", error);
         throw error;
       }
     },
 
     getAll: async (): Promise<ApiResponse<Category[]>> => {
       try {
-        const token = await AsyncStorage.getItem('auth_token');
+        const token = await AsyncStorage.getItem("auth_token");
         if (!token) {
-          throw new Error('No auth token found');
+          throw new Error("No auth token found");
         }
 
-        const response = await fetch(
-          this.getUrl('/health_categories/'),
-          {
-            headers: await this.getHeaders(true),
-          }
-        );
+        const response = await fetch(this.getUrl("/health_categories/"), {
+          headers: await this.getHeaders(true),
+        });
         return this.handleResponse<Category[]>(response);
       } catch (error) {
-        console.error('Error fetching categories:', error);
+        console.error("Error fetching categories:", error);
         throw error;
       }
     },
 
     getById: async (id: number): Promise<ApiResponse<Category>> => {
-      const response = await fetch(
-        this.getUrl(`/health_categories/${id}`),
-        {
-          headers: await this.getHeaders(true),
-        }
-      );
+      const response = await fetch(this.getUrl(`/health_categories/${id}`), {
+        headers: await this.getHeaders(true),
+      });
       return this.handleResponse<Category>(response);
     },
 
-
+    deleteRecommendation: async (
+      categoryId: number,
+    ): Promise<ApiResponse<any>> => {
+      const response = await fetch(
+        this.getUrl(
+          `/admin/healthcategory/${categoryId}/delete-recommendation/`,
+        ),
+        {
+          method: "DELETE",
+          headers: await this.getHeaders(),
+        },
+      );
+      return this.handleResponse(response);
+    },
   };
-
 
   // User Management
   public user = {
     getProfile: async (): Promise<ApiResponse<UserProfile>> => {
       try {
-        const token = await AsyncStorage.getItem('auth_token');
+        const token = await AsyncStorage.getItem("auth_token");
         if (!token) {
-          throw new Error('No auth token found');
+          throw new Error("No auth token found");
         }
 
-        const response = await fetch(
-          this.getUrl('/user/profile/'),
-          {
-            headers: await this.getHeaders(),
-          }
-        );
+        const response = await fetch(this.getUrl("/user/profile/"), {
+          headers: await this.getHeaders(),
+        });
 
         if (!response.ok) {
           const errorText = await response.text();
-          console.error('Profile Error Response:', {
+          console.error("Profile Error Response:", {
             status: response.status,
             statusText: response.statusText,
-            body: errorText
+            body: errorText,
           });
           throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -276,46 +285,41 @@ export class ApiClient {
           message: data.message,
         };
       } catch (error) {
-        console.error('Error fetching profile:', error);
+        console.error("Error fetching profile:", error);
         throw error;
       }
     },
 
-    updateProfile: async (data: Partial<UserProfile>): Promise<ApiResponse<UserProfile>> => {
-      const response = await fetch(
-        this.getUrl('/user/profile'),
-        {
-          method: 'PUT',
-          headers: await this.getHeaders(),
-          body: JSON.stringify(data),
-        }
-      );
+    updateProfile: async (
+      data: Partial<UserProfile>,
+    ): Promise<ApiResponse<UserProfile>> => {
+      const response = await fetch(this.getUrl("/user/profile"), {
+        method: "PUT",
+        headers: await this.getHeaders(),
+        body: JSON.stringify(data),
+      });
       return this.handleResponse<UserProfile>(response);
     },
 
-    uploadProfileImage: async (data: { image: string }): Promise<ApiResponse<UserProfile>> => {
-      const response = await fetch(
-        this.getUrl('/user/profile/upload_image/'),
-        {
-          method: 'POST',
-          headers: {
-            ...(await this.getHeaders()),
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(data)
-        }
-      );
+    uploadProfileImage: async (data: {
+      image: string;
+    }): Promise<ApiResponse<UserProfile>> => {
+      const response = await fetch(this.getUrl("/user/profile/upload_image/"), {
+        method: "POST",
+        headers: {
+          ...(await this.getHeaders()),
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      });
       return this.handleResponse<UserProfile>(response);
     },
 
     deleteProfileImage: async (): Promise<ApiResponse<UserProfile>> => {
-      const response = await fetch(
-        this.getUrl('/user/profile/delete_image/'),
-        {
-          method: 'DELETE',
-          headers: await this.getHeaders(),
-        }
-      );
+      const response = await fetch(this.getUrl("/user/profile/delete_image/"), {
+        method: "DELETE",
+        headers: await this.getHeaders(),
+      });
       return this.handleResponse<UserProfile>(response);
     },
   };
@@ -323,111 +327,110 @@ export class ApiClient {
   public recommendations = {
     getAll: async (): Promise<ApiResponse<any>> => {
       try {
-        const token = await AsyncStorage.getItem('auth_token');
+        const token = await AsyncStorage.getItem("auth_token");
         if (!token) {
-          throw new Error('No auth token found');
+          throw new Error("No auth token found");
         }
 
-        const response = await fetch(
-          this.getUrl('/text_recommendations/'),
-          {
-            headers: await this.getHeaders(),
-          }
-        );
+        const response = await fetch(this.getUrl("/text_recommendations/"), {
+          headers: await this.getHeaders(),
+        });
         return this.handleResponse(response);
       } catch (error) {
-        console.error('Error fetching recommendations:', error);
+        console.error("Error fetching recommendations:", error);
         throw error;
       }
     },
-    registerClick: async (recommendationId: number): Promise<ApiResponse<any>> => {
+    registerClick: async (
+      recommendationId: number,
+    ): Promise<ApiResponse<any>> => {
       const response = await fetch(
         this.getUrl(`/text_recommendations/${recommendationId}/register_click`),
         {
-          method: 'POST',
+          method: "POST",
           headers: {
             ...(await this.getHeaders()),
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
+            Accept: "application/json",
+            "Content-Type": "application/json",
           },
-        }
+        },
       );
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('Error Response:', {
+        console.error("Error Response:", {
           status: response.status,
           statusText: response.statusText,
-          body: errorText
+          body: errorText,
         });
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       const data = await response.json();
       return data;
-    }
+    },
   };
 
   public events = {
     getAll: async (): Promise<ApiResponse<any>> => {
-      const response = await fetch(
-        this.getUrl('/appointments/'),
-        {
-          headers: await this.getHeaders(),
-        }
-      );
+      const response = await fetch(this.getUrl("/appointments/"), {
+        headers: await this.getHeaders(),
+      });
       return this.handleResponse(response);
-    }
-  }
+    },
+  };
 
   public evaluations = {
-    saveResponses: async (categoryId: number, responses: ResponseData): Promise<ApiResponse<any>> => {
-        try {
-            // Enviar las respuestas directamente sin procesamiento
-            const response = await fetch(
-                this.getUrl(`/health_categories/${categoryId}/responses/`),
-                {
-                    method: 'POST',
-                    headers: {
-                        ...(await this.getHeaders()),
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(responses), // Enviar responses directamente
-                }
-            );
+    saveResponses: async (
+      categoryId: number,
+      responses: ResponseData,
+    ): Promise<ApiResponse<any>> => {
+      try {
+        // Enviar las respuestas directamente sin procesamiento
+        const response = await fetch(
+          this.getUrl(`/health_categories/${categoryId}/responses/`),
+          {
+            method: "POST",
+            headers: {
+              ...(await this.getHeaders()),
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(responses), // Enviar responses directamente
+          },
+        );
 
-            if (!response.ok) {
-                throw new Error('Error saving responses');
-            }
-
-            return this.handleResponse(response);
-        } catch (error) {
-            console.error('Error in saveResponses:', error);
-            throw error;
+        if (!response.ok) {
+          throw new Error("Error saving responses");
         }
+
+        return this.handleResponse(response);
+      } catch (error) {
+        console.error("Error in saveResponses:", error);
+        throw error;
+      }
     },
 
     clearAndStartNew: async (categoryId: number): Promise<ApiResponse<any>> => {
-        try {
-            console.log('Iniciando nueva evaluación para categoría:', categoryId);
-            
-            const response = await fetch(
-                this.getUrl(`/health_categories/${categoryId}/clear_evaluation/`),
-                {
-                    method: 'POST',
-                    headers: await this.getHeaders(),
-                }
-            );
+      try {
+        console.log("Iniciando nueva evaluación para categoría:", categoryId);
 
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
+        const response = await fetch(
+          this.getUrl(`/health_categories/${categoryId}/clear_evaluation/`),
+          {
+            method: "POST",
+            headers: await this.getHeaders(),
+          },
+        );
 
-            return this.handleResponse(response);
-        } catch (error) {
-            console.error('Error al iniciar nueva evaluación:', error);
-            throw error;
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
         }
+
+        return this.handleResponse(response);
+      } catch (error) {
+        console.error("Error al iniciar nueva evaluación:", error);
+        throw error;
+      }
     },
   };
 }

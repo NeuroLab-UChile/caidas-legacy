@@ -146,6 +146,23 @@ class HealthCategory(models.Model):
         except Exception as e:
             return False, f"Error al guardar la recomendación: {str(e)}"
 
+    def clear_evaluation(self):
+        """
+        Limpia el formulario de evaluación
+        """
+        self.evaluation_form.responses = {}
+        self.evaluation_form.is_draft = True
+        self.evaluation_form.completed_date = None
+        self.evaluation_form.save()
+
+
+    def clear_recommendation(self):
+        """
+        Limpia la recomendación
+        """
+        self.recommendation.text = ''
+        self.recommendation.save()
+
     def get_status(self):
         try:
             return {

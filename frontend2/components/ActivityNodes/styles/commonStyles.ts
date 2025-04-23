@@ -4,48 +4,48 @@ import { theme } from "@/src/theme";
 export const commonStyles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.colors.background,
     padding: 16,
+    backgroundColor: theme.colors.background,
   },
-  question: {
-    fontSize: 18,
-    color: theme.colors.text,
+  text: {
+    fontSize: 17,
+    color: "#000",
     marginBottom: 16,
   },
-  option: {
-    backgroundColor: theme.colors.surface,
+  input: {
+    height: 56,
+    borderRadius: 16,
     padding: 16,
-    borderRadius: 8,
+    backgroundColor: theme.colors.background,
     borderWidth: 1,
     borderColor: theme.colors.border,
-    marginBottom: 12,
+    color: "#000",
   },
-  optionText: {
-    fontSize: 16,
-    color: theme.colors.text,
-  },
-  selectedOption: {
-    backgroundColor: theme.colors.primary + "20",
-    borderColor: theme.colors.primary,
-  },
-  button: {
-    backgroundColor: theme.colors.primary,
-    padding: 16,
-    borderRadius: 8,
+  btn: {
+    height: 56,
+    borderRadius: 16,
     alignItems: "center",
-    marginTop: 16,
+    justifyContent: "center",
+    backgroundColor: theme.colors.primary,
+    borderWidth: 1,
+    borderColor: "#000",
   },
-  buttonText: {
-    fontSize: 16,
-    color: theme.colors.text,
+  btnText: {
+    fontSize: 17,
+    color: "#000",
     fontWeight: "600",
   },
-  input: {
+  btnOutline: {
+    backgroundColor: "transparent",
     borderWidth: 1,
-    borderColor: theme.colors.border,
-    borderRadius: 8,
-    padding: 12,
-    color: theme.colors.text,
-    backgroundColor: theme.colors.surface,
+    borderColor: theme.colors.primary,
+  },
+  btnDisabled: {
+    backgroundColor: theme.colors.disabled,
+    borderColor: "transparent",
+  },
+  row: {
+    flexDirection: "row",
+    gap: 12,
   },
 }); 
