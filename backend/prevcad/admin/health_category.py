@@ -201,7 +201,8 @@ class HealthCategoryAdmin(admin.ModelAdmin):
                 'can_edit': can_edit,  # Solo permitir edición si tiene permisos
                 'user_is_authorized': can_edit,
                 'user_name': request.user.get_full_name() or request.user.username,
-                'user_role': 'Doctor' if request.user.groups.filter(name='DOCTOR').exists() else 'Superusuario'
+                'user_role': 'Doctor' if request.user.groups.filter(name='DOCTOR').exists() else 'Superusuario',
+                'default_recommendations': obj.template.default_recommendations
             }
             
             template_path = 'admin/healthcategory/recommendation_editor.html'
