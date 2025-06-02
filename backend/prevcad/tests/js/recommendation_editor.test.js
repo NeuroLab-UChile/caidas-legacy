@@ -146,7 +146,7 @@ describe('Recommendation Editor', () => {
 
         mockElements.videoInput.dispatchEvent(new Event('change'));
         
-        expect(alertMock).toHaveBeenCalledWith('El archivo es demasiado grande. Máximo 100MB.');
+        expect(alertMock).toHaveBeenCalledWith('El archivo es demasiado grande. Máximo 500MB.');
         expect(mockElements.videoInput.value).toBe('');
     });
 });
@@ -269,9 +269,9 @@ describe('Video Upload Functionality', () => {
     });
 
     test('validación de tamaño de archivo', () => {
-        // Crear un archivo grande (> 100MB)
+        // Crear un archivo grande (> 500MB)
         const largeVideoFile = new File(
-            [new ArrayBuffer(101 * 1024 * 1024)], // 101MB
+            [new ArrayBuffer(501 * 1024 * 1024)], // 501MB
             'large-video.mp4',
             { type: 'video/mp4' }
         );
@@ -283,7 +283,7 @@ describe('Video Upload Functionality', () => {
         });
         videoInput.dispatchEvent(new Event('change'));
 
-        expect(alertMock).toHaveBeenCalledWith('El archivo es demasiado grande. Máximo 100MB.');
+        expect(alertMock).toHaveBeenCalledWith('El archivo es demasiado grande. Máximo 500MB.');
         expect(videoInput.value).toBe('');
     });
 }); 

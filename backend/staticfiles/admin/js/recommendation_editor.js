@@ -303,8 +303,8 @@ document.addEventListener('DOMContentLoaded', function() {
         videoInput.addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (file) {
-                if (file.size > 100 * 1024 * 1024) {
-                    alert('El archivo es demasiado grande. Máximo 100MB.');
+                if (file.size > 500 * 1024 * 1024) {
+                    alert('El archivo es demasiado grande. Máximo 500MB.');
                     this.value = '';
                 } else {
                     console.log('Video seleccionado:', file.name);

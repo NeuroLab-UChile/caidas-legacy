@@ -321,7 +321,7 @@ def delete_training_node(request, template_id, node_id):
 #                 print(f"Procesando video: {video_file.name} ({video_file.size} bytes)")
                 
 #                 # Validar el archivo
-#                 if video_file.size > 100 * 1024 * 1024:  # 100MB limit
+#                 if video_file.size > 500 * 1024 * 1024:  # 500MB limit
 #                     return JsonResponse({
 #                         'status': 'error',
 #                         'message': 'El archivo es demasiado grande'

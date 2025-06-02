@@ -62,7 +62,7 @@ document.addEventListener('DOMContentLoaded', function() {
 {% block footer %}
 {{ block.super }}
 <!-- Add your additional JavaScript files here -->
-<script src="{% static 'admin/js/your-other-script.js' %}"></script>
+{% comment %} <script src="{% static 'admin/js/your-other-script.js' %}"></script> {% endcomment %}
 {% endblock %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
