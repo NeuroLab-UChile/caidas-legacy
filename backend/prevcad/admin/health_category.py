@@ -23,7 +23,7 @@ from django.db.models import Q
 from django.db import connection
 import time
 from django.db.models import Case, When, Value, IntegerField
-
+from django.db.utils import OperationalError
 
 
 class UserProfileFilter(admin.SimpleListFilter):

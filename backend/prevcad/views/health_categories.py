@@ -444,7 +444,9 @@ def update_recommendation(request, category_id):
         if video_file:
             recommendation.video = video_file
             recommendation.save()
-            print(f"Video guardado: {recommendation.video.url}")
+            video_size_mb = video_file.size / (1024 * 1024)  # Convertir a MB
+            print(f"Video guardado: {recommendation.video.url}", 
+                  f"Tamaño: {video_size_mb:.2f} MB")
 
        
         # Actualizar otros campos de la recomendación
