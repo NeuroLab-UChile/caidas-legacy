@@ -19,6 +19,8 @@ from django.contrib.auth import get_user_model
 from django.core.files.storage import default_storage
 from django.conf import settings
 import os
+import traceback
+from django.core.exceptions import ValidationError
 
 from prevcad.utils import build_media_url
 
@@ -337,10 +339,13 @@ def save_professional_evaluation(request, category_id):
         health_category = HealthCategory.objects.get(id=category_id)
         
         # Obtener los datos del request
-        data = json.loads(request.body)
+        # data = json.loads(request.body) # [JV] This produces error, use request.data directly
+        # data = json.loads(request.data)
+        data = request.data
         evaluation_form = health_category.get_or_create_evaluation_form()
         
         # Debug
+        print("Data", data)
         print("Estado inicial:", {
             'is_draft': evaluation_form.is_draft,
             'completed_date': evaluation_form.completed_date
@@ -352,6 +357,8 @@ def save_professional_evaluation(request, category_id):
             evaluation_form.professional_responses = {}
         evaluation_form.professional_responses.update(professional_responses)
         
+        # [JV] Nota, aquí podría extenderse para reclasificar una evaluación como borrador (set is_draft=True)
+
         # Manejar el estado de completado
         if data.get('complete', False):
             print("Marcando como completado...")  # Debug
