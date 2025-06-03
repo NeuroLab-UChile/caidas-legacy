@@ -1,7 +1,15 @@
 import os
+import sys
 import django
 import pandas as pd
 from django.utils.encoding import smart_str
+
+# [JV] If working without venv, run this
+if False:
+    path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    if path not in sys.path:
+        sys.path.append(path)
+
 
 # Configura el entorno de Django
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'backend.settings')

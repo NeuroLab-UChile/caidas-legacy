@@ -1,8 +1,16 @@
 import os
+import sys
 import django
 import json
 import shutil
 from django.conf import settings
+
+# [JV] If working without venv, run this
+if False:
+    path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    if path not in sys.path:
+        sys.path.append(path)
+
 
 # Configura el entorno de Django
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'backend.settings')
@@ -110,7 +118,9 @@ def process_icons(icon_path):
 
 def populate_category_templates_from_file(file_path):
     try:
-        with open(file_path, 'r') as json_file:
+        # with open(file_path, 'r') as json_file:
+        # [JV] required on some systems
+        with open(file_path, 'r', encoding='utf-8') as json_file:
             data = json.load(json_file)
 
         for template_info in data:

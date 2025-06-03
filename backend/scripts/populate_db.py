@@ -1,15 +1,17 @@
 import os
 import django
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'backend.settings')
-django.setup()
+# [JV] This seems obsolete and misleading, I will comment it out for precaution
 
-from prevcad.models import (
-  PhysicalActivity,
-  TextRecomendation
-)
+# os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'backend.settings')
+# django.setup()
 
-PhysicalActivity.objects.all().delete()
-TextRecomendation.objects.all().delete()
+# from prevcad.models import (
+#   PhysicalActivity,
+#   TextRecomendation
+# )
 
-print("All records deleted successfully. Tables are now empty.")
+# PhysicalActivity.objects.all().delete()
+# TextRecomendation.objects.all().delete()
+
+# print("All records deleted successfully. Tables are now empty.")
