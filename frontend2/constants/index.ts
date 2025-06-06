@@ -1,5 +1,5 @@
 export const API_URL = __DEV__ 
-  ? 'https://caidas.uchile.cl/api'  // Desarrollo
+  ? 'http://192.168.1.227:8000/api' // Desarrollo
   : 'https://caidas.uchile.cl/api'; // Producción
 
 // Añade logs para debug
