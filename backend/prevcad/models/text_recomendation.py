@@ -12,7 +12,7 @@ class TextRecomendation(models.Model):
     data = models.TextField(blank=True, null=True, default='')  # data
     practic_data = models.TextField(blank=True, null=True, default='')  # data práctico
     context_explanation = models.TextField(blank=True, null=True, default='')  # Contexto/Explicación
-    quote_link = models.URLField(blank=True, null=True, default='')  # Link (zbib.org para citas APA)
+    quote_link = models.TextField(blank=True, null=True, default='')  # Link (zbib.org para citas APA)
     keywords = models.CharField(max_length=255, blank=True, null=True, default='')  # Keywords
 
     def save(self, *args: Any, **kwargs: Any) -> None:
