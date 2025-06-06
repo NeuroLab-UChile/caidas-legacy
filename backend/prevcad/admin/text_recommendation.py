@@ -5,6 +5,7 @@ from ..models import TextRecomendation
 @admin.register(TextRecomendation)
 class TextRecomendationAdmin(admin.ModelAdmin):
     list_display = [
+        'id',
         'theme',
         'category',
         'sub_category',
