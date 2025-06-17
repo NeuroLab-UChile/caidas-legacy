@@ -1,0 +1,32 @@
+meta {
+  name: Verify Token x
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{host}}/token/verify/
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+      "token": "{{token}}"
+  }
+}
+
+docs {
+  Response:
+  - If valid returns empty dict:
+  ```
+  {}
+  ```
+  - If invalid:
+  ```
+  {
+    "detail": "Token is invalid",
+    "code": "token_not_valid"
+  }
+  ```
+}

@@ -1,0 +1,22 @@
+meta {
+  name: API Root
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{host}}/
+  body: none
+  auth: inherit
+}
+
+docs {
+  Response:
+  ```
+  {
+    "prevcad/text_recommendations/": "http://127.0.0.1:8000/api/prevcad/text_recommendations/",
+    "prevcad/text_recommendations/<int:pk>/register_click": "http://127.0.0.1:8000/api/prevcad/text_recommendations/%3Cint:pk%3E/register_click",
+    "prevcad/appointments/": "http://127.0.0.1:8000/api/prevcad/appointments/"
+  }
+  ```
+}

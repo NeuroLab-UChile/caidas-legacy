@@ -1,0 +1,26 @@
+meta {
+  name: Refresh Token
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{host}}/token/refresh/
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+      "refresh": "{{refresh}}"
+  }
+}
+
+docs {
+  Response:
+  ```
+  {
+    "access": "eyJhb..."
+  }
+  ```
+}

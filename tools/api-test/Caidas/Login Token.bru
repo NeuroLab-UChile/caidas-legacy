@@ -1,0 +1,28 @@
+meta {
+  name: Login Token
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{host}}/token/
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+      "username": "{{user}}",
+      "password": "{{password}}"
+  }
+}
+
+docs {
+  Response:
+  ```
+  {
+    "refresh": "eyJhb...",
+    "access": "eyJhb..."
+  }
+  ```
+}

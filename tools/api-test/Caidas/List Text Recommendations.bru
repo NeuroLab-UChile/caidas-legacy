@@ -1,0 +1,39 @@
+meta {
+  name: List Text Recommendations
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{host}}/prevcad/text_recommendations/
+  body: none
+  auth: inherit
+}
+
+docs {
+  Response:
+  ```
+  {
+    "recommendations": [
+      {
+        "id": 161,
+        "user_clicks": 0,
+        "last_interaction": null,
+        "theme": "",
+        "category": "Cuerpo",
+        "sub_category": "riesgo",
+        "learn": "",
+        "remember": "",
+        "data": "Las personas con pérdida de funcionalidad pueden presentar miedo a caer",
+        "practic_data": "Al comenzar a experimentar una pérdida de funcionalidad, hay que poner atención al riesgo de caídas",
+        "context_explanation": "El miedo a caer puede significar una mayor amenaza a la independencia en actividades de la vida diaria que las mismas caídas y lesiones relacionadas",
+        "quote_link": "Pereira C, Bravo J, Raimundo A, Tomas-Carus P, Mendes F, Baptista F. Risk for physical dependence in community-dwelling older adults: The role of fear of falling, falls and fall-related injuries. 2020;15(3).",
+        "keywords": ""
+      },
+      ...
+    ],
+    "count": 10,
+    "session_id": "80fc1..."
+  }
+  ```
+}
