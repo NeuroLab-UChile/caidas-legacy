@@ -24,6 +24,7 @@ router.register('prevcad/appointments/', AppointmentViewSet, basename='appointme
 urlpatterns = [
   path('prevcad/', include(router.urls)),
   path('', include(router.urls)),
+  path("api_auth/", include("rest_framework.urls", namespace="rest_framework")),
   path('prevcad/user/profile/', getProfile, name='get_profile'),
   path('prevcad/user/profile/upload_image/', uploadProfileImage, name='upload_profile_image'),
   path('prevcad/user/profile/delete_image/', deleteProfileImage, name='delete_profile_image'),

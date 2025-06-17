@@ -1,0 +1,43 @@
+{% extends "rest_framework/base.html" %}
+{% load rest_framework %}
+
+{% comment %}
+https://www.django-rest-framework.org/topics/browsable-api/
+https://github.com/encode/django-rest-framework/blob/master/rest_framework/templates/rest_framework/base.html
+{% endcomment %}
+
+{% block title %}{% if name %}{{ name }} | {% endif %}We Flow REST API{% endblock %}
+
+{% block branding %}
+    {% comment %} <a class='navbar-brand' rel="nofollow" href='https://www.django-rest-framework.org/'> {% endcomment %}
+    <a class='navbar-brand' rel="nofollow" href="{% url 'home' %}">
+        We Flow REST API
+    </a>
+{% endblock %}
+
+{% block userlinks %}
+    {% if user.is_authenticated %}
+        {% comment %} {% optional_logout request user.email %} {% endcomment %}
+        {% optional_logout request user.email csrf_token %}
+    {% else %}
+        {% optional_login request %}
+    {% endif %}
+{% endblock %}
+
+{% comment %}
+{% block breadcrumbs %}
+    <br><br><br>
+    <ul class="breadcrumb">
+    {% for breadcrumb_name, breadcrumb_url in breadcrumblist %}
+        {% if forloop.last %}
+        <li class="active"><a href="{{ breadcrumb_url }}">{{ breadcrumb_name }}</a></li>
+        {% else %}
+        <li><a href="{{ breadcrumb_url }}">{{ breadcrumb_name }}</a></li>
+        {% endif %}
+    {% empty %}
+        {% block breadcrumbs_empty %}&nbsp;{% endblock breadcrumbs_empty %}
+    {% endfor %}
+    </ul>
+{% endblock %}
+{% endcomment %}
+
