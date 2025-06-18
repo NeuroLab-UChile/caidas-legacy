@@ -109,7 +109,7 @@ class HealthCategorySerializer(serializers.ModelSerializer):
         eval_form = obj.get_or_create_evaluation_form()
         if eval_form:
             # Debug
-            print("Procesando evaluation_form para:", obj.template.name if obj.template else "No template")
+            print("-"*30, '\n*', "Procesando evaluation_form para:", obj.template.name if obj.template else "No template")
             
             template = obj.template
             question_nodes = []
@@ -117,8 +117,8 @@ class HealthCategorySerializer(serializers.ModelSerializer):
             if template:
                 # Debug
                 print("Tipo de evaluación:", template.evaluation_type)
-                
-                
+
+
                 # Si es evaluación profesional
                 if template.evaluation_type == 'PROFESSIONAL':
                     question_nodes = [
