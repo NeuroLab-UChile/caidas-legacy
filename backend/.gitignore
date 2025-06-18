@@ -107,10 +107,11 @@ media/
 *.pyc
 *.db
 *.pid
-# django migrations 
-**/migrations/**
-!**/migrations
-!**/migrations/__init__.py
+
+# django migrations -- never should have been ignored
+# **/migrations/**
+# !**/migrations
+# !**/migrations/__init__.py
 
 # Node
 node_modules/
