@@ -1,0 +1,25 @@
+meta {
+  name: List App Activity Log
+  type: http
+  seq: 10
+}
+
+get {
+  url: {{host}}/prevcad/app_activity_log
+  body: none
+  auth: inherit
+}
+
+docs {
+  Response:
+  ```
+  [
+    {
+      "id": 1,
+      "action": "asd",
+      "timestamp": "2025-06-18T01:53:32.743459-04:00",
+      "user": 2
+    }
+  ]
+  ```
+}

@@ -13,5 +13,786 @@ get {
 docs {
   Response:
   ```
+  [
+    {
+      "id": 2,
+      "name": "Actividad Física",
+      "icon": "https://caidas.uchile.cl/media/category_icons/exercise.png",
+      "description": "Manténgase activo y prevenga la pérdida de movilidad con rutinas adaptadas a sus necesidades.",
+      "evaluation_type": {
+        "type": "PROFESSIONAL",
+        "label": "Evaluación Profesional"
+      },
+      "evaluation_form": {
+        "completed_date": "2025-06-03T17:54:09.049781Z",
+        "responses": {},
+        "professional_responses": {
+          "observations": "asdasd2a",
+          "diagnosis": "qweqwe2"
+        },
+        "updated_at": "2025-06-03T17:54:09.057955Z",
+        "question_nodes": [
+          {
+            "id": "observations",
+            "type": "text",
+            "label": "Observaciones",
+            "required": true
+          },
+          {
+            "id": "diagnosis",
+            "type": "text",
+            "label": "Diagnóstico",
+            "required": true
+          }
+        ]
+      },
+      "status": {
+        "color": "#FF0000",
+        "text": "Riesgoso",
+        "is_completed": true,
+        "is_draft": false,
+        "last_updated": "2025-06-03T17:57:26.983746Z",
+        "professional_reviewed": true
+      },
+      "recommendations": {
+        "status": {
+          "color": "#FF0000",
+          "text": "Riesgoso"
+        },
+        "text": "Ha disminuido su actividad física. Considere comenzar una rutina de ejercicios suaves.",
+        "video_url": "https://caidas.uchile.cl/media/recommendations/videos/file_example_MP4_640_3MG.mp4",
+        "updated_at": "2025-06-03T17:57:26.983746Z",
+        "is_draft": false,
+        "professional": {
+          "name": "caidas",
+          "role": null
+        }
+      },
+      "training_form": {
+        "training_nodes": [
+          {
+            "id": 1,
+            "type": "VIDEO_NODE",
+            "title": "Calentamiento Básico",
+            "description": "Aprende la rutina de calentamiento esencial antes de cualquier actividad física",
+            "media_url": "https://caidas.uchile.cl/media/training_videos/warmup.mp4",
+            "next_node_id": 2
+          },
+          {
+            "id": 2,
+            "type": "IMAGE_NODE",
+            "title": "Ejercicios de Equilibrio",
+            "description": "Serie de ejercicios ilustrados para mejorar tu equilibrio y estabilidad",
+            "media_url": null,
+            "next_node_id": 3
+          },
+          {
+            "id": 3,
+            "type": "DESCRIPTION_NODE",
+            "title": "Guía de Progresión",
+            "description": "Aprende cómo aumentar gradualmente la intensidad de tus ejercicios de manera segura",
+            "media_url": null,
+            "next_node_id": 4
+          },
+          {
+            "id": 4,
+            "type": "WEEKLY_RECIPE_NODE",
+            "title": "Plan Semanal de Ejercicios",
+            "description": "Plan estructurado para mantener una rutina constante",
+            "weekly_plan": {
+              "MON": {
+                "MORNING": {
+                  "activity": "Caminata suave",
+                  "duration": "20 minutos",
+                  "intensity": "Baja"
+                },
+                "AFTERNOON": {
+                  "activity": "Ejercicios de equilibrio",
+                  "duration": "15 minutos",
+                  "intensity": "Moderada"
+                }
+              },
+              "WED": {
+                "MORNING": {
+                  "activity": "Estiramientos",
+                  "duration": "15 minutos",
+                  "intensity": "Baja"
+                },
+                "AFTERNOON": {
+                  "activity": "Ejercicios de fuerza",
+                  "duration": "20 minutos",
+                  "intensity": "Moderada"
+                }
+              },
+              "FRI": {
+                "MORNING": {
+                  "activity": "Yoga suave",
+                  "duration": "30 minutos",
+                  "intensity": "Baja-Moderada"
+                }
+              }
+            },
+            "next_node_id": null
+          }
+        ]
+      }
+    },
+    {
+      "id": 7,
+      "name": "Historia de Caídas",
+      "icon": "https://caidas.uchile.cl/media/category_icons/falls.png",
+      "description": "Identifique patrones de incidentes pasados para prevenir futuras caídas y adoptar medidas correctivas en su día a día.",
+      "evaluation_type": {
+        "type": "PROFESSIONAL",
+        "label": "Evaluación Profesional"
+      },
+      "evaluation_form": {
+        "completed_date": null,
+        "responses": {},
+        "professional_responses": {},
+        "updated_at": "2025-06-03T16:55:22.897444Z",
+        "question_nodes": [
+          {
+            "id": "observations",
+            "type": "text",
+            "label": "Observaciones",
+            "required": true
+          },
+          {
+            "id": "diagnosis",
+            "type": "text",
+            "label": "Diagnóstico",
+            "required": true
+          }
+        ]
+      },
+      "status": {
+        "color": "#808080",
+        "text": "Neutral",
+        "is_completed": false,
+        "is_draft": false,
+        "last_updated": "2025-06-03T18:08:10.876659Z",
+        "professional_reviewed": false
+      },
+      "recommendations": {
+        "status": {
+          "color": "#808080",
+          "text": "Neutral"
+        },
+        "text": "None",
+        "video_url": "https://caidas.uchile.cl/media/recommendations/videos/file_example_MP4_640_3MG_j34zlCZ.mp4",
+        "updated_at": "2025-06-03T18:08:10.876659Z",
+        "is_draft": false,
+        "professional": {
+          "name": "caidas",
+          "role": null
+        }
+      },
+      "training_form": {
+        "training_nodes": [
+          {
+            "id": 1,
+            "type": "DESCRIPTION_NODE",
+            "title": "Cómo Evitar Caídas Futuras",
+            "description": "Guía práctica con recomendaciones personalizadas para reducir incidentes relacionados con caídas.",
+            "media_url": null,
+            "next_node_id": null
+          }
+        ]
+      }
+    },
+    {
+      "id": 8,
+      "name": "Estado Óseo y Muscular",
+      "icon": "https://caidas.uchile.cl/media/category_icons/bone_muscle_health.png",
+      "description": "Fortalezca sus huesos y músculos para mantener el equilibrio y reducir el riesgo de fracturas en caso de caídas.",
+      "evaluation_type": {
+        "type": "PROFESSIONAL",
+        "label": "Evaluación Profesional"
+      },
+      "evaluation_form": {
+        "completed_date": null,
+        "responses": {},
+        "professional_responses": {},
+        "updated_at": "2025-06-03T16:55:22.889933Z",
+        "question_nodes": [
+          {
+            "id": "observations",
+            "type": "text",
+            "label": "Observaciones",
+            "required": true
+          },
+          {
+            "id": "diagnosis",
+            "type": "text",
+            "label": "Diagnóstico",
+            "required": true
+          }
+        ]
+      },
+      "status": {
+        "color": "#808080",
+        "text": "Neutral",
+        "is_completed": false,
+        "is_draft": false,
+        "last_updated": "2025-06-03T18:45:57.665979Z",
+        "professional_reviewed": false
+      },
+      "recommendations": {
+        "status": {
+          "color": "#808080",
+          "text": "Neutral"
+        },
+        "text": "aqui test",
+        "video_url": "https://caidas.uchile.cl/media/recommendations/videos/file_example_MP4_640_3MG_ylkIDKD.mp4",
+        "updated_at": "2025-06-03T18:45:57.665979Z",
+        "is_draft": false,
+        "professional": {
+          "name": "caidas",
+          "role": null
+        }
+      },
+      "training_form": {
+        "training_nodes": [
+          {
+            "id": 1,
+            "type": "VIDEO_NODE",
+            "title": "Ejercicios para Fortalecer Huesos y Músculos",
+            "description": "Videos enfocados en ejercicios para mejorar la densidad ósea y la fuerza muscular.",
+            "media_url": "https://caidas.uchile.cl/media/training_videos/bone-muscle-health.mp4",
+            "next_node_id": null
+          }
+        ]
+      }
+    },
+    {
+      "id": 1,
+      "name": "Riesgo Domiciliario",
+      "icon": "https://caidas.uchile.cl/media/category_icons/home_safety.png",
+      "description": "Evalúe los riesgos comunes dentro del hogar, como caídas, problemas de iluminación o desorden.",
+      "evaluation_type": {
+        "type": "SELF",
+        "label": "Autoevaluación"
+      },
+      "evaluation_form": {
+        "completed_date": null,
+        "responses": {},
+        "professional_responses": {},
+        "updated_at": "2025-06-03T16:55:22.934647Z",
+        "question_nodes": [
+          {
+            "id": 1,
+            "type": "SINGLE_CHOICE_QUESTION",
+            "question": "¿En qué tipo de vivienda reside actualmente?",
+            "options": [
+              "Casa",
+              "Departamento",
+              "Parcela/Terreno",
+              "Otro"
+            ]
+          },
+          {
+            "id": 2,
+            "type": "SINGLE_CHOICE_QUESTION",
+            "question": "Si reside en Parcela/Terreno, ¿tiene caminos seguros para transitar por su terreno y llegar a casa?",
+            "options": [
+              "Sí",
+              "No"
+            ],
+            "conditional": {
+              "parent_id": 1,
+              "trigger_option": "Parcela/Terreno"
+            }
+          },
+          {
+            "id": 3,
+            "type": "MULTIPLE_CHOICE_QUESTION",
+            "question": "¿Qué áreas de su hogar utiliza con mayor frecuencia?",
+            "options": [
+              "Cocina",
+              "Living",
+              "Baño",
+              "Habitación",
+              "Escaleras",
+              "Exterior",
+              "Pasillo",
+              "Otro"
+            ]
+          },
+          {
+            "id": 4,
+            "type": "MULTIPLE_CHOICE_QUESTION",
+            "question": "¿En qué lugares de su hogar ha implementado medidas de seguridad para evitar caídas?",
+            "options": [
+              "Barandas",
+              "Alfombras antideslizantes",
+              "Iluminación adecuada",
+              "Retiro de objetos peligrosos",
+              "Otro"
+            ]
+          },
+          {
+            "id": 5,
+            "type": "MULTIPLE_CHOICE_QUESTION",
+            "question": "¿Ha tenido caídas dentro de su casa? En caso afirmativo, ¿dónde ocurrieron?",
+            "options": [
+              "Cocina",
+              "Living",
+              "Baño",
+              "Habitación",
+              "Escaleras",
+              "Exterior",
+              "Pasillo",
+              "No me he caído en casa"
+            ]
+          },
+          {
+            "id": 6,
+            "type": "SINGLE_CHOICE_QUESTION",
+            "question": "¿Tiene especial preocupación de caer en algún lugar de su casa?",
+            "options": [
+              "Sí",
+              "No"
+            ]
+          },
+          {
+            "id": 7,
+            "type": "IMAGE_QUESTION",
+            "question": "Por favor capture fotos de los siguientes lugares de su hogar: entrada"
+          },
+          {
+            "id": 8,
+            "type": "IMAGE_QUESTION",
+            "question": "Por favor capture fotos de los siguientes lugares de su hogar: baño"
+          },
+          {
+            "id": 9,
+            "type": "IMAGE_QUESTION",
+            "question": "Por favor capture fotos de los siguientes lugares de su hogar: escaleras"
+          }
+        ]
+      },
+      "status": {
+        "color": "#808080",
+        "text": "Neutral",
+        "is_completed": false,
+        "is_draft": true,
+        "last_updated": "2025-06-03T16:55:22.938662Z",
+        "professional_reviewed": null
+      },
+      "recommendations": {
+        "status": {
+          "color": "#808080",
+          "text": "Neutral"
+        },
+        "text": null,
+        "video_url": null,
+        "updated_at": "2025-06-03T16:55:22.938662Z",
+        "is_draft": true,
+        "professional": null
+      },
+      "training_form": {
+        "training_nodes": [
+          {
+            "id": 1,
+            "type": "DESCRIPTION_NODE",
+            "title": "Introducción al Riesgo Domiciliario",
+            "description": "Aprenda a identificar y reducir los riesgos más comunes en su hogar, desde evitar tropiezos hasta mejorar la iluminación en pasillos y escaleras.",
+            "media_url": null,
+            "next_node_id": 2
+          },
+          {
+            "id": 2,
+            "type": "VIDEO_NODE",
+            "title": "Prevención de Caídas",
+            "description": "Este video le enseñará técnicas prácticas para minimizar riesgos de caídas, como el uso de barandillas y alfombras antideslizantes.",
+            "media_url": "https://caidas.uchile.cl/media/training_videos/fall-prevention.mp4",
+            "next_node_id": null
+          }
+        ]
+      }
+    },
+    {
+      "id": 3,
+      "name": "Alimentación Saludable",
+      "icon": "https://caidas.uchile.cl/media/category_icons/healthy_diet.png",
+      "description": "Una dieta balanceada es esencial para el bienestar. Su profesional evaluará sus hábitos alimenticios y proporcionará recomendaciones personalizadas.",
+      "evaluation_type": {
+        "type": "PROFESSIONAL",
+        "label": "Evaluación Profesional"
+      },
+      "evaluation_form": {
+        "completed_date": null,
+        "responses": {},
+        "professional_responses": {},
+        "updated_at": "2025-06-03T16:55:22.922311Z",
+        "question_nodes": [
+          {
+            "id": "observations",
+            "type": "text",
+            "label": "Observaciones",
+            "required": true
+          },
+          {
+            "id": "diagnosis",
+            "type": "text",
+            "label": "Diagnóstico",
+            "required": true
+          }
+        ]
+      },
+      "status": {
+        "color": "#808080",
+        "text": "Neutral",
+        "is_completed": false,
+        "is_draft": true,
+        "last_updated": "2025-06-03T16:55:22.925313Z",
+        "professional_reviewed": false
+      },
+      "recommendations": {
+        "status": {
+          "color": "#808080",
+          "text": "Neutral"
+        },
+        "text": null,
+        "video_url": null,
+        "updated_at": "2025-06-03T16:55:22.925313Z",
+        "is_draft": true,
+        "professional": null
+      },
+      "training_form": {
+        "training_nodes": [
+          {
+            "id": 1,
+            "type": "VIDEO_NODE",
+            "title": "Preparación de Comidas Saludables",
+            "description": "Aprende a preparar platos nutritivos y balanceados",
+            "media_url": "https://caidas.uchile.cl/media/training_videos/healthy-cooking.mp4",
+            "next_node_id": 2
+          },
+          {
+            "id": 2,
+            "type": "WEEKLY_RECIPE_NODE",
+            "title": "Plan Nutricional Semanal",
+            "description": "Menú balanceado para toda la semana",
+            "weekly_plan": {
+              "MON": {
+                "BREAKFAST": {
+                  "meal": "Avena con frutas y nueces",
+                  "proteins": "15g",
+                  "notes": "Rica en fibra y omega-3"
+                },
+                "LUNCH": {
+                  "meal": "Ensalada de quinoa con pollo",
+                  "proteins": "25g",
+                  "notes": "Alta en proteínas y hierro"
+                },
+                "DINNER": {
+                  "meal": "Pescado al horno con verduras",
+                  "proteins": "22g",
+                  "notes": "Omega-3 y vitaminas"
+                }
+              },
+              "TUE": {
+                "BREAKFAST": {
+                  "meal": "Yogur con granola y miel",
+                  "proteins": "12g",
+                  "notes": "Probóticos y energía"
+                },
+                "LUNCH": {
+                  "meal": "Wrap de pavo con aguacate",
+                  "proteins": "20g",
+                  "notes": "Grasas saludables"
+                },
+                "DINNER": {
+                  "meal": "Sopa de lentejas",
+                  "proteins": "18g",
+                  "notes": "Rica en hierro y fibra"
+                }
+              },
+              "WED": {
+                "BREAKFAST": {
+                  "meal": "Batido de leche con frutas",
+                  "proteins": "15g",
+                  "notes": "Vitaminas y energía"
+                },
+                "LUNCH": {
+                  "meal": "Bistec con ensalada fresca",
+                  "proteins": "25g",
+                  "notes": "Alta en hierro"
+                },
+                "DINNER": {
+                  "meal": "Salmón al vapor con espinacas",
+                  "proteins": "20g",
+                  "notes": "Omega-3 y antioxidantes"
+                }
+              },
+              "THU": {
+                "BREAKFAST": {
+                  "meal": "Tostadas integrales con queso fresco",
+                  "proteins": "12g",
+                  "notes": "Fibra y calcio"
+                },
+                "LUNCH": {
+                  "meal": "Estofado de pollo con arroz integral",
+                  "proteins": "22g",
+                  "notes": "Baja en grasa y alta en proteínas"
+                },
+                "DINNER": {
+                  "meal": "Ensalada de garbanzos con atún",
+                  "proteins": "20g",
+                  "notes": "Rica en fibra y omega-3"
+                }
+              },
+              "FRI": {
+                "BREAKFAST": {
+                  "meal": "Huevos revueltos con espinacas",
+                  "proteins": "14g",
+                  "notes": "Rica en vitaminas y minerales"
+                },
+                "LUNCH": {
+                  "meal": "Albóndigas de carne con puré de papas",
+                  "proteins": "25g",
+                  "notes": "Alta en proteínas"
+                },
+                "DINNER": {
+                  "meal": "Pescado blanco al horno con ensalada",
+                  "proteins": "20g",
+                  "notes": "Ligero y nutritivo"
+                }
+              },
+              "SAT": {
+                "BREAKFAST": {
+                  "meal": "Pan integral con mantequilla de almendras",
+                  "proteins": "10g",
+                  "notes": "Energía y grasas saludables"
+                },
+                "LUNCH": {
+                  "meal": "Pollo al horno con vegetales asados",
+                  "proteins": "22g",
+                  "notes": "Rico en proteínas y vitaminas"
+                },
+                "DINNER": {
+                  "meal": "Sopa de lentejas con trozos de jamón",
+                  "proteins": "18g",
+                  "notes": "Rica en fibra y hierro"
+                }
+              },
+              "SUN": {
+                "BREAKFAST": {
+                  "meal": "Yogur natural con frutas",
+                  "proteins": "10g",
+                  "notes": "Ligero y saludable"
+                },
+                "LUNCH": {
+                  "meal": "Bistec de vacuno con ensalada de papas",
+                  "proteins": "25g",
+                  "notes": "Rico en hierro y energía"
+                },
+                "DINNER": {
+                  "meal": "Ensalada de garbanzos con huevo cocido",
+                  "proteins": "20g",
+                  "notes": "Proteínas y fibra"
+                }
+              }
+            },
+            "next_node_id": 3
+          },
+          {
+            "id": 3,
+            "type": "IMAGE_NODE",
+            "title": "Guía de Porciones",
+            "description": "Aprende a medir las porciones adecuadas de cada grupo alimenticio",
+            "media_url": null,
+            "next_node_id": null
+          }
+        ]
+      }
+    },
+    {
+      "id": 4,
+      "name": "Valoración Sensorial",
+      "icon": "https://caidas.uchile.cl/media/category_icons/sensory_health.png",
+      "description": "Detecte problemas de visión o audición que puedan aumentar el riesgo de caídas. Mantenga sus sentidos en óptimas condiciones con ejercicios y consultas médicas regulares.",
+      "evaluation_type": {
+        "type": "PROFESSIONAL",
+        "label": "Evaluación Profesional"
+      },
+      "evaluation_form": {
+        "completed_date": null,
+        "responses": {},
+        "professional_responses": {},
+        "updated_at": "2025-06-03T16:55:22.915289Z",
+        "question_nodes": [
+          {
+            "id": "observations",
+            "type": "text",
+            "label": "Observaciones",
+            "required": true
+          },
+          {
+            "id": "diagnosis",
+            "type": "text",
+            "label": "Diagnóstico",
+            "required": true
+          }
+        ]
+      },
+      "status": {
+        "color": "#808080",
+        "text": "Neutral",
+        "is_completed": false,
+        "is_draft": true,
+        "last_updated": "2025-06-03T16:55:22.919312Z",
+        "professional_reviewed": false
+      },
+      "recommendations": {
+        "status": {
+          "color": "#808080",
+          "text": "Neutral"
+        },
+        "text": null,
+        "video_url": null,
+        "updated_at": "2025-06-03T16:55:22.919312Z",
+        "is_draft": true,
+        "professional": null
+      },
+      "training_form": {
+        "training_nodes": [
+          {
+            "id": 1,
+            "type": "VIDEO_NODE",
+            "title": "Consejos para Mejorar la Visión y Audición",
+            "description": "Aprenda ejercicios y hábitos para mantener la salud de sus sentidos.",
+            "media_url": null,
+            "next_node_id": null
+          }
+        ]
+      }
+    },
+    {
+      "id": 5,
+      "name": "Fármacos y Medicación",
+      "icon": "https://caidas.uchile.cl/media/category_icons/medication.png",
+      "description": "Asegúrese de que su medicación no interfiera con su equilibrio o coordinación. Identifique formas de gestionar mejor su tratamiento.",
+      "evaluation_type": {
+        "type": "PROFESSIONAL",
+        "label": "Evaluación Profesional"
+      },
+      "evaluation_form": {
+        "completed_date": null,
+        "responses": {},
+        "professional_responses": {},
+        "updated_at": "2025-06-03T16:55:22.910290Z",
+        "question_nodes": [
+          {
+            "id": "observations",
+            "type": "text",
+            "label": "Observaciones",
+            "required": true
+          },
+          {
+            "id": "diagnosis",
+            "type": "text",
+            "label": "Diagnóstico",
+            "required": true
+          }
+        ]
+      },
+      "status": {
+        "color": "#808080",
+        "text": "Neutral",
+        "is_completed": false,
+        "is_draft": true,
+        "last_updated": "2025-06-03T16:55:22.913292Z",
+        "professional_reviewed": false
+      },
+      "recommendations": {
+        "status": {
+          "color": "#808080",
+          "text": "Neutral"
+        },
+        "text": null,
+        "video_url": null,
+        "updated_at": "2025-06-03T16:55:22.913292Z",
+        "is_draft": true,
+        "professional": null
+      },
+      "training_form": {
+        "training_nodes": [
+          {
+            "id": 1,
+            "type": "DESCRIPTION_NODE",
+            "title": "Guía para un Uso Seguro de Medicamentos",
+            "description": "Descubra cómo evitar interacciones adversas y efectos secundarios con un uso adecuado de medicamentos.",
+            "media_url": null,
+            "next_node_id": null
+          }
+        ]
+      }
+    },
+    {
+      "id": 6,
+      "name": "Cognición y Ánimo",
+      "icon": null,
+      "description": "Evalúe su estado cognitivo y emocional. La mente y el estado de ánimo desempeñan un papel crucial en la prevención de accidentes.",
+      "evaluation_type": {
+        "type": "PROFESSIONAL",
+        "label": "Evaluación Profesional"
+      },
+      "evaluation_form": {
+        "completed_date": null,
+        "responses": {},
+        "professional_responses": {},
+        "updated_at": "2025-06-03T16:55:22.904310Z",
+        "question_nodes": [
+          {
+            "id": "observations",
+            "type": "text",
+            "label": "Observaciones",
+            "required": true
+          },
+          {
+            "id": "diagnosis",
+            "type": "text",
+            "label": "Diagnóstico",
+            "required": true
+          }
+        ]
+      },
+      "status": {
+        "color": "#808080",
+        "text": "Neutral",
+        "is_completed": false,
+        "is_draft": true,
+        "last_updated": "2025-06-03T16:55:22.907432Z",
+        "professional_reviewed": false
+      },
+      "recommendations": {
+        "status": {
+          "color": "#808080",
+          "text": "Neutral"
+        },
+        "text": null,
+        "video_url": null,
+        "updated_at": "2025-06-03T16:55:22.907432Z",
+        "is_draft": true,
+        "professional": null
+      },
+      "training_form": {
+        "training_nodes": [
+          {
+            "id": "1",
+            "type": "VIDEO_NODE",
+            "title": "why tho?",
+            "description": "Plan de alimentación personalizado",
+            "media_url": "https://caidas.uchile.cl/media/training_videos/35a31366-9989-4cd4-8f57-98a1cc818a0b.mp4",
+            "next_node_id": null,
+            "media_pending": false
+          }
+        ]
+      }
+    }
+  ]
   ```
 }

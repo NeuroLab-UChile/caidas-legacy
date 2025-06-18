@@ -1,0 +1,29 @@
+meta {
+  name: Create App Activity Log
+  type: http
+  seq: 11
+}
+
+post {
+  url: {{host}}/prevcad/app_activity_log
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+      "action": "app_start"
+  }
+}
+
+docs {
+  Response:
+  ```
+  {
+    "id": 2,
+    "action": "app_start",
+    "timestamp": "2025-06-18T01:58:46.635309-04:00",
+    "user": 2
+  }
+  ```
+}

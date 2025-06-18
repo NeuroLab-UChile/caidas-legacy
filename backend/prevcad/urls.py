@@ -17,6 +17,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from .views import admin_views
 from .views.appointment_view import AppointmentViewSet
+from .views.app_activity_log import AppActivityLogView
 from .views.admin_views import update_training_form
 import os
 from .views import health_categories
@@ -34,8 +35,12 @@ router.register(
     TextRecomendationsView,
     basename="recommendation-register-click",
 )
-
 router.register("prevcad/appointments/", AppointmentViewSet, basename="appointments")
+router.register(
+    "prevcad/app_activity_log", AppActivityLogView, basename="app_activity_log"
+)
+
+
 # Rutas de la API
 urlpatterns = [
     path("prevcad/", include(router.urls)),
