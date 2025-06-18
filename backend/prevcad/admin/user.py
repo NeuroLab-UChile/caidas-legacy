@@ -127,6 +127,10 @@ class CustomUserAdmin(UserAdmin):
     def get_readonly_fields(self, request, obj=None):
         if not obj:  # Si es un nuevo usuario, no hay campos de solo lectura
             return []
+        
+        # Si es superusuario, no tiene campos de solo lectura
+        if request.user.is_superuser:
+            return []
 
         # Si es doctor, no tiene campos de solo lectura
         if request.user.groups.filter(name="DOCTOR").exists():
@@ -220,10 +224,11 @@ class CustomUserAdmin(UserAdmin):
         return obj is None or obj == request.user
 
     def has_delete_permission(self, request, obj=None):
-        return request.user.groups.filter(name="DOCTOR").exists()
+        return request.user.is_superuser or request.user.groups.filter(name="DOCTOR").exists()
 
     def delete_users_safely(self, request, queryset):
         if not self.has_delete_permission(request):
+            print("No tienes permiso para eliminar usuarios.")
             return
 
         for user in queryset:
