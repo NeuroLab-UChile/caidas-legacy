@@ -93,6 +93,12 @@ class CategoryTemplateAdmin(admin.ModelAdmin):
     )
 
 
+    # Needed to have the request available in the form
+    def get_queryset(self, request):
+        # Store the request object for later use in custom fields
+        self.request = request
+        return super().get_queryset(request)
+
 
     def formfield_for_choice_field(self, db_field, request, **kwargs):
         if db_field.name == 'evaluation_type':
@@ -383,6 +389,8 @@ class CategoryTemplateAdmin(admin.ModelAdmin):
     def training_form_button(self, obj):
         request = getattr(self, 'request', None)
         can_edit = request and request.user.has_perm('prevcad.change_evaluationform')
+        # Debug
+        print("DEBUG", request, can_edit)
         
         return mark_safe(f"""
         <div class="form-row field-training_form">
@@ -417,6 +425,12 @@ class CategoryTemplateAdmin(admin.ModelAdmin):
     def get_form(self, request, obj=None, **kwargs):
         form = super().get_form(request, obj, **kwargs)
         
+        # Agregar current user to form context
+        # print("DEBUG: Setting request and user in form context")
+        # print(f"Request: {request}, User: {request.user}")
+        form.request = request
+        form.user = request.user
+
         # Obtener roles profesionales
         professional_roles = UserTypes.get_professional_types()
         
