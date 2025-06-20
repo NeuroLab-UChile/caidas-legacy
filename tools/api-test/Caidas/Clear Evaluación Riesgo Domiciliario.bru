@@ -1,0 +1,21 @@
+meta {
+  name: Clear Evaluación Riesgo Domiciliario
+  type: http
+  seq: 13
+}
+
+post {
+  url: {{host}}/prevcad/health_categories/{{category_id}}/clear_evaluation/
+  body: none
+  auth: inherit
+}
+
+vars:pre-request {
+  category_id: 1
+}
+
+docs {
+  Response:
+  ```
+  ```
+}

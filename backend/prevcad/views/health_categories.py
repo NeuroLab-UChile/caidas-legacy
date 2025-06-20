@@ -82,7 +82,7 @@ def save_evaluation_responses(request, category_id):
         health_category = get_object_or_404(
             HealthCategory, 
             id=category_id,
-            user=user_profile
+            user=user_profile # Internally, user is a ForeignKey to UserProfile
         )
         logger.info(f"Perfil de usuario y categoría encontrados: {user_profile.id}, {health_category.id}")
 
