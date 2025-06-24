@@ -117,6 +117,7 @@ const authService = {
 
         return data.access;
     } catch (error) {
+        // Check here:  Error en refreshToken: [TypeError: Network request failed]
         console.error('Error en refreshToken:', error);
         await this.logout();
         return null;

@@ -233,6 +233,7 @@ export class ApiClient {
     },
 
     getById: async (id: number): Promise<ApiResponse<Category>> => {
+      console.log("Fetching category by ID:", id);
       const response = await fetch(this.getUrl(`/health_categories/${id}`), {
         headers: await this.getHeaders(true),
       });
