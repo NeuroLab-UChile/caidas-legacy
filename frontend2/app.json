@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "frontend2",
-    "slug": "frontend2",
+    "name": "We Train",
+    "slug": "caidas-we-flow",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -20,7 +20,7 @@
       "infoPlist": {
         "NSPhotoLibraryUsageDescription": "La aplicación necesita acceso a tus fotos para subir imágenes de perfil."
       },
-      "bundleIdentifier": "com.anonymous.frontend2"
+      "bundleIdentifier": "com.cica.wetrain"
     },
     "android": {
       "adaptiveIcon": {
@@ -35,7 +35,7 @@
         "android.permission.RECORD_AUDIO",
         "android.permission.INTERNET"
       ],
-      "package": "com.anonymous.frontend2"
+      "package": "com.cica.wetrain"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -59,7 +59,7 @@
       "expo-font",
       "expo-web-browser"
     ],
-    "scheme": "frontend2",
+    "scheme": "wetrain",
     "developmentClient": {
       "silentLaunch": true
     },
@@ -70,12 +70,13 @@
         "origin": false
       },
       "eas": {
-        "projectId": "ef29226d-8b91-41b0-a6e9-fdc541659041"
+        "projectId": "a7f19b89-500b-4ffd-b403-17764f59ce07"
       }
     },
     "platforms": [
       "android",
       "web"
-    ]
+    ],
+    "owner": "juanovenegas"
   }
 }
