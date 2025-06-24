@@ -128,6 +128,8 @@ const authService = {
     try {
       await AsyncStorage.removeItem('auth_token');
       await AsyncStorage.removeItem('refresh_token');
+      await AsyncStorage.removeItem('username');
+      await AsyncStorage.removeItem('password');
     } catch (error) {
       console.error('Error during logout:', error);
       throw error;

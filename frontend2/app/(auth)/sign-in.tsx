@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   View,
   TextInput,
@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import CheckBox from "expo-checkbox"; // https://docs.expo.dev/versions/latest/sdk/checkbox/
 import Constants from "expo-constants";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { router } from "expo-router";
 import { theme } from "@/src/theme";
@@ -21,12 +22,42 @@ export default function SignIn() {
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [autoLoginMessage, setAutoLoginMessage] = useState("");
   const { signIn } = useAuth();
 
-  ///TODO: detectar si hay usuario y contraseña guardados en el dispositivo e iniciar sesión automáticamente
+  // Detectar si hay usuario y contraseña guardados en el dispositivo e iniciar sesión automáticamente
+  const autoLogin = async () => {
+    const storedUsername = await AsyncStorage.getItem("username");
+    const storedPassword = await AsyncStorage.getItem("password");
 
-  const handleLogin = async () => {
-    if (!username || !password) {
+    if (storedUsername && storedPassword) {
+      console.log("Iniciando sesión automáticamente con:", storedUsername);
+      setUsername(storedUsername);
+      setPassword(storedPassword);
+      setRememberMe(true);
+
+      // Mostrar mensaje de auto-login y esperar 1 segundo antes de iniciar sesión
+      setAutoLoginMessage("Iniciando sesión automáticamente...");
+      setTimeout(() => {
+        handleLogin(storedUsername, storedPassword);
+      }, 3000); // Esperar para mostrar el mensaje
+    }
+  };
+
+  // Llamar a autoLogin al montar el componente
+  useEffect(() => {
+    autoLogin();
+  }, []);
+
+  const handleLogin = async (
+    _username: string = "",
+    _password: string = ""
+  ) => {
+    // Si no se pasan username y password, usar los del estado
+    if (!_username) _username = username;
+    if (!_password) _password = password;
+    // Validar que se hayan ingresado usuario y contraseña
+    if (!_username || !_password) {
       setError("Por favor ingresa usuario y contraseña");
       return;
     }
@@ -34,15 +65,19 @@ export default function SignIn() {
     try {
       setIsLoading(true);
       setError("");
-      console.log("Intentando login con:", username);
+      console.log("Intentando login con:", _username);
 
-      const success = await signIn(username, password);
+      const success = await signIn(_username, _password);
 
       if (success) {
         console.log("Login exitoso, redirigiendo...");
-
-       ///TODO: guardar usuario y contraseña si rememberMe es true
-
+        // Guardar usuario y contraseña si rememberMe es true
+        if (rememberMe) {
+          await AsyncStorage.setItem("username", _username);
+          await AsyncStorage.setItem("password", _password);
+          console.log("Credenciales guardadas");
+        }
+        // Redirigir a la pantalla de acción
         router.replace("/(tabs)/action/");
       } else {
         setError("Credenciales incorrectas");
@@ -77,6 +112,9 @@ export default function SignIn() {
       <Text style={styles.title}>Iniciar Sesión</Text>
 
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
+      {autoLoginMessage ? (
+        <Text style={styles.autoLoginMessage}>{autoLoginMessage}</Text>
+      ) : null}
 
       <TextInput
         placeholder="Usuario"
@@ -123,7 +161,7 @@ export default function SignIn() {
           pressed && styles.buttonPressed,
           isLoading && styles.buttonDisabled,
         ]}
-        onPress={handleLogin}
+        onPress={() => handleLogin()}
         disabled={isLoading}
       >
         {isLoading ? (
@@ -185,6 +223,12 @@ const styles = StyleSheet.create({
   },
   errorText: {
     color: "red",
+    marginBottom: theme.spacing.md,
+    textAlign: "center",
+    fontFamily: theme.typography.fonts.primary.regular,
+  },
+  autoLoginMessage: {
+    color: "green",
     marginBottom: theme.spacing.md,
     textAlign: "center",
     fontFamily: theme.typography.fonts.primary.regular,
