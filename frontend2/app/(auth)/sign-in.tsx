@@ -1,6 +1,15 @@
 import { useState } from "react";
-import { View, TextInput, Pressable, Text, StyleSheet, ActivityIndicator, Alert } from "react-native";
-import Constants from 'expo-constants';
+import {
+  View,
+  TextInput,
+  Pressable,
+  Text,
+  StyleSheet,
+  ActivityIndicator,
+  Alert,
+} from "react-native";
+import CheckBox from "expo-checkbox"; // https://docs.expo.dev/versions/latest/sdk/checkbox/
+import Constants from "expo-constants";
 
 import { router } from "expo-router";
 import { theme } from "@/src/theme";
@@ -9,9 +18,12 @@ import { useAuth } from "../contexts/auth";
 export default function SignIn() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const { signIn } = useAuth();
+
+  ///TODO: detectar si hay usuario y contraseña guardados en el dispositivo e iniciar sesión automáticamente
 
   const handleLogin = async () => {
     if (!username || !password) {
@@ -22,18 +34,21 @@ export default function SignIn() {
     try {
       setIsLoading(true);
       setError("");
-      console.log('Intentando login con:', username);
-      
+      console.log("Intentando login con:", username);
+
       const success = await signIn(username, password);
-      
+
       if (success) {
-        console.log('Login exitoso, redirigiendo...');
+        console.log("Login exitoso, redirigiendo...");
+
+       ///TODO: guardar usuario y contraseña si rememberMe es true
+
         router.replace("/(tabs)/action/");
       } else {
         setError("Credenciales incorrectas");
       }
     } catch (error) {
-      console.error('Error en login:', error);
+      console.error("Error en login:", error);
       setError("Error al iniciar sesión. Intenta nuevamente.");
       Alert.alert(
         "Error",
@@ -55,8 +70,8 @@ export default function SignIn() {
   return (
     <View style={styles.container}>
       <Text style={styles.versionText}>
-        Versión: {Constants.expoConfig?.version || '1.0.0'}
-        {__DEV__ ? ' (Debug)' : ' (Release)'}
+        Versión: {Constants.expoConfig?.version || "1.0.0"}
+        {__DEV__ ? " (Debug)" : " (Release)"}
       </Text>
 
       <Text style={styles.title}>Iniciar Sesión</Text>
@@ -84,11 +99,29 @@ export default function SignIn() {
         editable={!isLoading}
       />
 
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          marginBottom: theme.spacing.md,
+        }}
+      >
+        <CheckBox
+          value={rememberMe}
+          onValueChange={setRememberMe}
+          disabled={isLoading}
+          color={theme.colors.text + "80"}
+        />
+        <Text style={{ color: theme.colors.text + "80", marginLeft: 8 }}>
+          Recordarme
+        </Text>
+      </View>
+
       <Pressable
         style={({ pressed }) => [
           styles.button,
           pressed && styles.buttonPressed,
-          isLoading && styles.buttonDisabled
+          isLoading && styles.buttonDisabled,
         ]}
         onPress={handleLogin}
         disabled={isLoading}
@@ -101,7 +134,7 @@ export default function SignIn() {
       </Pressable>
 
       <Text style={styles.serverStatus}>
-        Servidor: {isLoading ? 'Conectando...' : 'Listo'}
+        Servidor: {isLoading ? "Conectando..." : "Listo"}
       </Text>
     </View>
   );
@@ -151,9 +184,9 @@ const styles = StyleSheet.create({
     fontFamily: theme.typography.fonts.primary.bold,
   },
   errorText: {
-    color: 'red',
+    color: "red",
     marginBottom: theme.spacing.md,
-    textAlign: 'center',
+    textAlign: "center",
     fontFamily: theme.typography.fonts.primary.regular,
   },
   buttonDisabled: {
@@ -161,15 +194,15 @@ const styles = StyleSheet.create({
   },
   serverStatus: {
     marginTop: theme.spacing.xl,
-    textAlign: 'center',
-    color: theme.colors.text + '80',
+    textAlign: "center",
+    color: theme.colors.text + "80",
     fontSize: theme.typography.sizes.caption,
   },
   versionText: {
-    position: 'absolute',
+    position: "absolute",
     top: 40,
     right: 20,
     fontSize: 12,
-    color: theme.colors.text + '80',
+    color: theme.colors.text + "80",
   },
 });
