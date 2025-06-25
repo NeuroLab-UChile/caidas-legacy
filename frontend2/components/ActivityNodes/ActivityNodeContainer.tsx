@@ -156,7 +156,7 @@ export const ActivityNodeContainer: React.FC<ActivityNodeContainerProps> = ({
 
   const getButtonText = () => {
     console.log("Current type:", type);
-    console.log("Current response:", currentResponse);
+    // console.log("Current response:", currentResponse);
     switch (type) {
       case "RESULT_NODE":
         return "Finalizar";

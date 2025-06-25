@@ -25,10 +25,11 @@ export const useImagePicker = () => {
       throw new Error("Se necesitan permisos para acceder a la galería");
     }
 
+    console.log("Pickeando imagen en useImagePicker");
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
-      aspect: options.aspect || [1, 1],
+      // aspect: options.aspect || [1, 1], // Do not restrict aspect ratio
       quality: options.quality || 0.7,
       base64: true,
     });
@@ -47,7 +48,7 @@ export const useImagePicker = () => {
 
     const result = await ImagePicker.launchCameraAsync({
       allowsEditing: true,
-      aspect: options.aspect || [1, 1],
+      // aspect: options.aspect || [1, 1], // Do not restrict aspect ratio
       quality: options.quality || 0.7,
       base64: true,
     });
