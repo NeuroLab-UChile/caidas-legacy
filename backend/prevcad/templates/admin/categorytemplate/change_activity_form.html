@@ -689,7 +689,11 @@ Puedes modificar esta estructura o escribir texto libre.'
         const contentTypeSelect = document.getElementById('contentType');
         if (contentTypeSelect) {
           contentTypeSelect.value = type;
-          contentTypeSelect.disabled = true;
+          //contentTypeSelect.disabled = true;
+          // Disable all options except the selected one
+            Array.from(contentTypeSelect.options).forEach(option => {
+                option.disabled = option.value !== type;
+            });
         }
 
         const questionText = document.getElementById('questionText');
