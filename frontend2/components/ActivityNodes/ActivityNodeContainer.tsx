@@ -18,17 +18,17 @@ import { ActivityNodeViews, ActivityNodeType } from "./index";
 import { ResultNodeView } from "./views/ResultNodeView";
 import { VideoNodeView } from "./views/VideoNodeView";
 import { ImageNodeView } from "./views/ImageNode";
-import { router } from 'expo-router';
-import { StepIndicator } from '../ui/StepIndicator';
-import { NavigationBar } from '../ui/NavigationBar';
-import { TextNodeView } from './views/TextNodeView';
-import { SingleChoiceQuestionView } from './views/SingleChoiceQuestionView';
-import { MultipleChoiceQuestionView } from './views/MultipleChoiceQuestionView';
-import { TextQuestionView } from './views/TextQuestionView';
-import { ScaleQuestionView } from './views/ScaleQuestionView';
-import { ImageQuestionView } from './views/ImageQuestionView';
-import { WeeklyRecipeNodeView } from './views/WeeklyRecipeNodeView';
-import { CategoryDescriptionView } from './views/CategoryDescriptionView';
+import { router } from "expo-router";
+import { StepIndicator } from "../ui/StepIndicator";
+import { NavigationBar } from "../ui/NavigationBar";
+import { TextNodeView } from "./views/TextNodeView";
+import { SingleChoiceQuestionView } from "./views/SingleChoiceQuestionView";
+import { MultipleChoiceQuestionView } from "./views/MultipleChoiceQuestionView";
+import { TextQuestionView } from "./views/TextQuestionView";
+import { ScaleQuestionView } from "./views/ScaleQuestionView";
+import { ImageQuestionView } from "./views/ImageQuestionView";
+import { WeeklyRecipeNodeView } from "./views/WeeklyRecipeNodeView";
+import { CategoryDescriptionView } from "./views/CategoryDescriptionView";
 import { commonStyles } from "./styles/commonStyles";
 
 interface ActivityNodeContainerProps {
@@ -112,8 +112,10 @@ export const ActivityNodeContainer: React.FC<ActivityNodeContainerProps> = ({
   const [currentResponse, setCurrentResponse] = useState<any>(null);
 
   const handleNext = (response?: any) => {
+    console.log("Handling next step with response:", currentResponse);
     if (onNext) {
-      onNext(response || currentResponse);
+      // onNext(response || currentResponse); // [JV] This seems to be the critical bug
+      onNext(currentResponse);
     }
   };
 
@@ -153,6 +155,8 @@ export const ActivityNodeContainer: React.FC<ActivityNodeContainerProps> = ({
   };
 
   const getButtonText = () => {
+    console.log("Current type:", type);
+    console.log("Current response:", currentResponse);
     switch (type) {
       case "RESULT_NODE":
         return "Finalizar";

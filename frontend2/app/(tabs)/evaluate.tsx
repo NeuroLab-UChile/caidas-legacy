@@ -27,7 +27,7 @@ import { useAuth } from "../contexts/auth";
 import { UserProfile } from "../services/apiService";
 import { ProfessionalEvaluation } from "@/components/ProfessionalEvaluation";
 import React from "react";
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from "@expo/vector-icons";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 
@@ -171,10 +171,14 @@ const EvaluateScreen = () => {
     initializeEvaluationState(selectedCategory)
   );
 
-  const status = selectedCategory?.recommendations?.status as Status | undefined;
+  const status = selectedCategory?.recommendations?.status as
+    | Status
+    | undefined;
 
   const nodes = selectedCategory?.evaluation_form?.question_nodes || [];
-  const currentQuestionIndex = nodes.findIndex(node => node.id === evaluationState.currentNodeId);
+  const currentQuestionIndex = nodes.findIndex(
+    (node) => node.id === evaluationState.currentNodeId
+  );
 
   useEffect(() => {
     const refreshData = async () => {
@@ -220,7 +224,7 @@ const EvaluateScreen = () => {
 
     Alert.alert(
       "Iniciar Nueva Evaluación",
-      "¿Estás seguro de que deseas iniciar una nueva evaluación? La evaluación anterior quedará guardada.",
+      "¿Estás seguro de que deseas iniciar una nueva evaluación? La evaluación anterior se sobreescribirá.", // Antes era "quedará guardada", pero eso no está implementado
       [
         {
           text: "Cancelar",
@@ -245,12 +249,12 @@ const EvaluateScreen = () => {
             setHistory([]);
             if (selectedCategory?.id) {
               await apiService.evaluations.clearAndStartNew(
-                selectedCategory.id,
+                selectedCategory.id
               );
             }
           },
         },
-      ],
+      ]
     );
   };
 
@@ -324,6 +328,8 @@ const EvaluateScreen = () => {
       return { ...baseResponse, answer: response };
     }
 
+    // console.log("DEBUG", typeof response);
+
     return {
       ...baseResponse,
       answer: formatter(response),
@@ -344,7 +350,7 @@ const EvaluateScreen = () => {
           style: "destructive",
           onPress: () => router.push("/(tabs)/action"),
         },
-      ],
+      ]
     );
   };
 
@@ -360,7 +366,7 @@ const EvaluateScreen = () => {
           currentNodeId: previousNode.id,
           // Mantener las respuestas existentes
           responses: prev.responses.filter(
-            (r) => r.nodeId !== prev.currentNodeId,
+            (r) => r.nodeId !== prev.currentNodeId
           ),
         }));
       }
@@ -389,13 +395,10 @@ const EvaluateScreen = () => {
           const formData = new FormData();
 
           // Convertir las respuestas al formato esperado por el API
-          const responsesObj = newResponses.reduce(
-            (acc, curr) => {
-              acc[curr.nodeId] = curr.response;
-              return acc;
-            },
-            {} as Record<string, any>,
-          );
+          const responsesObj = newResponses.reduce((acc, curr) => {
+            acc[curr.nodeId] = curr.response;
+            return acc;
+          }, {} as Record<string, any>);
 
           formData.append("responses", JSON.stringify(responsesObj));
 
@@ -411,14 +414,14 @@ const EvaluateScreen = () => {
                     type: "image/jpeg",
                     name: imageName,
                   } as any);
-                },
+                }
               );
             }
           });
 
           await apiService.categories.saveResponses(
             selectedCategory.id,
-            formData,
+            formData
           );
           await fetchCategories();
 
@@ -688,8 +691,8 @@ const styles = StyleSheet.create({
     }),
   },
   statusContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 24,
   },
   statusIndicator: {
@@ -700,7 +703,7 @@ const styles = StyleSheet.create({
   },
   statusText: {
     fontSize: 24,
-    fontWeight: '600',
+    fontWeight: "600",
     color: theme.colors.text,
   },
   recommendationsContainer: {
@@ -708,7 +711,7 @@ const styles = StyleSheet.create({
   },
   recommendationsTitle: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
     color: theme.colors.textSecondary,
     marginBottom: 12,
   },
@@ -728,9 +731,9 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   metadataRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 8,
   },
   metadataLabel: {
@@ -740,13 +743,13 @@ const styles = StyleSheet.create({
   metadataValue: {
     fontSize: 14,
     color: theme.colors.text,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   newEvaluationButton: {
     backgroundColor: theme.colors.primary,
     borderRadius: 16,
     padding: 16,
-    alignItems: 'center',
+    alignItems: "center",
     marginTop: 24,
     ...Platform.select({
       ios: {
@@ -763,24 +766,24 @@ const styles = StyleSheet.create({
   newEvaluationButtonText: {
     color: theme.colors.text,
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   startButton: {
     backgroundColor: theme.colors.primary,
     paddingVertical: 12,
     paddingHorizontal: 24,
     borderRadius: 8,
-    alignItems: 'center',
+    alignItems: "center",
     marginTop: 16,
   },
   startButtonText: {
     color: theme.colors.background,
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingVertical: 12,
   },
   backButtonText: {
@@ -810,7 +813,7 @@ const styles = StyleSheet.create({
   startText: {
     fontSize: 18,
     color: theme.colors.text,
-    textAlign: 'center',
+    textAlign: "center",
     marginVertical: 16,
   },
   welcomeContainer: {
