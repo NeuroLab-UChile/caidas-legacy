@@ -8,4 +8,4 @@ class AppActivityLogSerializer(serializers.ModelSerializer):
     class Meta:
         model = AppActivityLog
         fields = "__all__"
-        read_only_fields = ["timestamp"]
+        read_only_fields = ["n_entries", "updated_date", "created_date"]
