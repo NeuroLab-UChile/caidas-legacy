@@ -18,11 +18,11 @@ from pydantic import BaseModel, RootModel, Field, ValidationError, constr
 
 
 class AppActivityLog(models.Model):
-    """Modelo para registrar actividades de la aplicación"""
+    """Modelo para registrar actividades en la aplicación"""
 
     class Meta:
-        verbose_name = "Registro de Actividad de la Aplicación"
-        verbose_name_plural = "Registros de Actividad de la Aplicación"
+        verbose_name = "Registro de Actividad en la Aplicación"
+        verbose_name_plural = "Registros de Actividad en la Aplicación"
         ordering = ["-date"]
         indexes = [
             models.Index(fields=["date"]),
@@ -52,6 +52,22 @@ class AppActivityLog(models.Model):
     )
     n_entries = models.IntegerField(
         null=True, blank=True, verbose_name="Número de Entradas"
+    )
+    n_logins = models.IntegerField(
+        null=True, blank=True, verbose_name="Número de Inicios de Sesión"
+    )
+    time_in_app = models.IntegerField(
+        null=True,
+        blank=True,
+        verbose_name="Tiempo en la Aplicación (segundos)",
+        help_text="Tiempo total en la aplicación en segundos",
+    )
+    time_in_app_str = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+        verbose_name="Tiempo en la Aplicación",
+        help_text="Tiempo total en la aplicación",
     )
     updated_date = models.DateTimeField(auto_now=True)
     created_date = models.DateTimeField(auto_now_add=True)
@@ -101,6 +117,7 @@ class AppActivityLog(models.Model):
         # By using update, we can add new actions with different timestamps without altering the rest
         self.actions.update(new_actions)
         self.n_entries = len(self.actions)
+        self.update_summary()
         self.save()
 
     @classmethod
@@ -119,11 +136,10 @@ class AppActivityLog(models.Model):
         instance.add_actions(actions)
         return instance
 
-    def get_summary(self) -> Dict[str, Any]:
-        """Get a summary of the actions for the day."""
+    def update_summary(self):
+        """Update the summary fields based on the current actions."""
 
-        print("Getting summary")
-        n_logins = sum(1 for action in self.actions.values() if action == "login")
+        self.n_logins = sum(1 for action in self.actions.values() if action == "login")
 
         # Estimate time_in_app with this simple logic:
         # Assuming each login is the start of a session, let's count the time between a login
@@ -158,14 +174,16 @@ class AppActivityLog(models.Model):
             add_delta(session_start, previous_timestamp)
 
         # Now have a version in the form of "HH:MM:SS"
-        time_in_app = int(time_in_app)  # Convert to seconds
-        time_in_app_str = str(datetime.timedelta(seconds=time_in_app))
+        self.time_in_app = int(time_in_app)  # Convert to seconds
+        self.time_in_app_str = str(datetime.timedelta(seconds=time_in_app))
 
+    def get_summary(self) -> Dict[str, Any]:
+        """Get a summary of the actions for the day."""
         return {
             "user": self.user,
             "date": self.date,
             "n_entries": self.n_entries,
-            "n_logins": n_logins,
-            "time_in_app": time_in_app,
-            "time_in_app_str": time_in_app_str,
+            "n_logins": self.n_logins,
+            "time_in_app": self.time_in_app,
+            "time_in_app_str": self.time_in_app_str,
         }

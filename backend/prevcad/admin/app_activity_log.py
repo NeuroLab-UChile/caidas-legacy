@@ -5,7 +5,16 @@ from ..models import AppActivityLog
 @admin.register(AppActivityLog)
 class AppActivityLogAdmin(admin.ModelAdmin):
     ordering = ["-date"]
-    list_display = ["id", "user", "date", "n_entries", "updated_date", "created_date"]
+    list_display = [
+        "id",
+        "user",
+        "date",
+        "n_entries",
+        "n_logins",
+        "time_in_app_str",
+        "updated_date",
+        "created_date",
+    ]
     list_filter = ["user", "date", "updated_date", "created_date"]
     search_fields = ["user__username"]
 
