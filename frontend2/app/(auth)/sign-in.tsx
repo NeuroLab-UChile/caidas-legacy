@@ -40,7 +40,7 @@ export default function SignIn() {
       setAutoLoginMessage("Iniciando sesión automáticamente...");
       setTimeout(() => {
         handleLogin(storedUsername, storedPassword);
-      }, 3000); // Esperar para mostrar el mensaje
+      }, 2000); // Esperar para mostrar el mensaje
     }
   };
 

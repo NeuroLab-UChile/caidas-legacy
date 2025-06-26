@@ -168,6 +168,7 @@ export default function TabLayout() {
                           name="power"
                           size={18}
                           color={theme.colors.background}
+                          style={styles.logoutIcon}
                         />
                         <Text style={[styles.logoutText, { color: theme.colors.background }]}>
                           Salir

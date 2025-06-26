@@ -164,7 +164,7 @@ export default function ActionScreen() {
             </Text>
             <View style={styles.expandIconContainer}>
               <IconSymbol
-                name="chevron.down"
+                name="chevron-down"
                 size={24}
                 color={theme.colors.text}
                 style={[
