@@ -17,14 +17,15 @@ import { router } from "expo-router";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 
 const { width } = Dimensions.get("window");
-const SPACING = 16;
+const SPACING = 8; // 16;
 const COLUMNS = 2;
 const CARD_WIDTH = (width - SPACING * (COLUMNS + 1)) / COLUMNS;
 
 export default function ActionScreen() {
   const { categories, selectedCategory, setSelectedCategory, loading, error } =
     useCategories();
-  const [isCategoriesExpanded, setIsCategoriesExpanded] = useState(false);
+  // const [isCategoriesExpanded, setIsCategoriesExpanded] = useState(false);
+  const isCategoriesExpanded = true; // Mantener expandido por defecto
 
   const handleCategoryPress = (category: Category) => {
     setSelectedCategory(category);
@@ -63,47 +64,46 @@ export default function ActionScreen() {
       }
 
       // Validar que la URL sea string y tenga formato correcto
-      if (typeof iconUrl !== 'string') {
-        console.warn('Invalid icon URL type:', typeof iconUrl);
+      if (typeof iconUrl !== "string") {
+        console.warn("Invalid icon URL type:", typeof iconUrl);
         return <IconSymbol name="folder" size={24} color={theme.colors.text} />;
       }
 
       // Manejar URLs absolutas
-      if (iconUrl.startsWith('http')) {
+      if (iconUrl.startsWith("http")) {
         return (
           <Image
             source={{ uri: iconUrl }}
             style={styles.iconImage}
             resizeMode="contain"
-            defaultSource={require('@/assets/images/default-icon.png')}
+            defaultSource={require("@/assets/images/default-icon.png")}
             onError={(error) => {
-              console.warn('Error loading image:', error.nativeEvent.error);
+              console.warn("Error loading image:", error.nativeEvent.error);
             }}
           />
         );
       }
 
       // Para URLs relativas o base64, asegurarse de que sean válidas
-      if (iconUrl.startsWith('data:image/') || iconUrl.startsWith('/media/')) {
+      if (iconUrl.startsWith("data:image/") || iconUrl.startsWith("/media/")) {
         return (
           <Image
             source={{ uri: iconUrl }}
             style={styles.iconImage}
             resizeMode="contain"
-            defaultSource={require('@/assets/images/default-icon.png')}
+            defaultSource={require("@/assets/images/default-icon.png")}
             onError={(error) => {
-              console.warn('Error loading image:', error.nativeEvent.error);
+              console.warn("Error loading image:", error.nativeEvent.error);
             }}
           />
         );
       }
 
       // Si no coincide con ningún formato válido, mostrar icono por defecto
-      console.warn('Unsupported icon URL format:', iconUrl);
+      console.warn("Unsupported icon URL format:", iconUrl);
       return <IconSymbol name="folder" size={24} color={theme.colors.text} />;
-
     } catch (error) {
-      console.error('Error rendering icon:', error);
+      console.error("Error rendering icon:", error);
       return <IconSymbol name="folder" size={24} color={theme.colors.text} />;
     }
   };
@@ -150,10 +150,10 @@ export default function ActionScreen() {
           >
             <IconSymbol name="calendar" size={32} color={theme.colors.text} />
             <Text style={styles.actionTitle}>Eventos</Text>
-            <Text style={styles.actionSubtitle}>Ver próximos eventos</Text>
+            {/* <Text style={styles.actionSubtitle}>Ver próximos eventos</Text> */}
           </TouchableOpacity>
 
-          <TouchableOpacity
+          {/* <TouchableOpacity
             style={styles.actionCard}
             onPress={() => setIsCategoriesExpanded(!isCategoriesExpanded)}
           >
@@ -173,7 +173,9 @@ export default function ActionScreen() {
                 ]}
               />
             </View>
-          </TouchableOpacity>
+          </TouchableOpacity> */}
+
+          <Text style={styles.actionTitle}>Categorías</Text>
 
           {isCategoriesExpanded && (
             <View style={styles.expandedCategories}>
@@ -237,7 +239,7 @@ const styles = StyleSheet.create({
   actionCard: {
     backgroundColor: theme.colors.card,
     borderRadius: 16,
-    padding: SPACING * 2,
+    padding: SPACING, // * 2,
     alignItems: "center",
     justifyContent: "center",
     elevation: 4,
@@ -251,6 +253,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: theme.colors.text,
     marginTop: SPACING,
+    textAlign: "center",
   },
   actionSubtitle: {
     fontSize: 16,
@@ -298,7 +301,7 @@ const styles = StyleSheet.create({
   iconImage: {
     width: "90%",
     height: "90%",
-    backgroundColor: 'transparent', // Evitar fondo blanco
+    backgroundColor: "transparent", // Evitar fondo blanco
   },
   categoryCardTitle: {
     fontSize: 14,
