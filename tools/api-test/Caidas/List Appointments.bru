@@ -1,0 +1,55 @@
+meta {
+  name: List Appointments
+  type: http
+  seq: 14
+}
+
+get {
+  url: {{host}}/prevcad/appointments/
+  body: none
+  auth: inherit
+}
+
+docs {
+  Response:
+  ```
+  [
+    {
+      "id": 4,
+      "title": "Cita confirmada doc",
+      "description": "Confirmatres",
+      "date": "2025-06-29T18:08:26-04:00",
+      "status": "CONFIRMED",
+      "created_at": "2025-06-27T18:08:41.013317-04:00",
+      "user": 2
+    },
+    {
+      "id": 1,
+      "title": "Cita Odontólogo",
+      "description": "test cita dentista",
+      "date": "2025-06-28T17:32:43-04:00",
+      "status": "PENDING",
+      "created_at": "2025-06-27T17:32:49.687710-04:00",
+      "user": 2
+    },
+    {
+      "id": 3,
+      "title": "Otra Cita cancelada",
+      "description": "se caneló sorry",
+      "date": "2025-06-25T17:51:48-04:00",
+      "status": "CANCELLED",
+      "created_at": "2025-06-27T17:51:54.908442-04:00",
+      "user": 2
+    },
+    {
+      "id": 2,
+      "title": "Cita Médico",
+      "description": "al medico por no comer manzanas",
+      "date": "2025-06-24T17:41:33-04:00",
+      "status": "COMPLETED",
+      "created_at": "2025-06-27T17:41:41.939242-04:00",
+      "user": 2
+    }
+  ]
+  ```
+}
