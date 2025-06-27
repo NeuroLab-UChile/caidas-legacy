@@ -14,17 +14,21 @@ npm install
 
 ```bash
 npm start
-## o
+# O
 npx expo start
+# O por USB
+npx expo run:android
 ```
 
 3. Build the app
 
 ```bash
-# Local
-npx expo build --local
-# Cloud
-npx expo build
+# Install EAS CLI globally
+npm install --global eas-cli
+# Local build
+eas build --platform android --local
+# Cloud build
+eas build --platform android
 ```
 
 ----
