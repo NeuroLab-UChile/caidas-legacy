@@ -129,3 +129,15 @@ cd /var/www/we-flow/
 
 # Correr el file de logs
 tail -f backend/logs/django.log
+
+
+----
+
+## Dev
+
+```bash
+cd backend
+python manage.py migrate
+python manage.py runserver 0.0.0.0:8000
+```
+
