@@ -81,7 +81,7 @@ const RememberScreen = () => {
 
   const handleLoadMore = () => {
     if (!loading) {
-      fetchRecommendations();
+      fetchRecommendations(true);
     }
   };
 
@@ -271,12 +271,24 @@ const RememberScreen = () => {
             style={styles.backToTopButton}
             onPress={scrollToTop}
           >
-            <IconSymbol name="chevron.up" size={24} color={theme.colors.text} />
+            <IconSymbol name="chevron-up" size={24} color={theme.colors.text} />
             <Text style={[styles.backToTopText, { color: theme.colors.text }]}>
               Volver arriba
             </Text>
           </TouchableOpacity>
         </View>
+      );
+    } else {
+      // Retorna un botón para obtener más recomendaciones
+      return (
+        <TouchableOpacity
+          style={styles.loadMoreButton}
+          onPress={handleLoadMore}
+        >
+          <Text style={[styles.loadMoreText, { color: theme.colors.text }]}>
+            Cargar más
+          </Text>
+        </TouchableOpacity>
       );
     }
 
@@ -316,7 +328,7 @@ const RememberScreen = () => {
         style={{ backgroundColor: theme.colors.primary }}
         refreshing={refreshing}
         onRefresh={handleRefresh}
-        onEndReached={() => hasMoreData && handleLoadMore()}
+        // onEndReached={() => hasMoreData && handleLoadMore()}
         onEndReachedThreshold={0.5}
         ListFooterComponent={renderFooter}
       />
@@ -436,6 +448,26 @@ const styles = StyleSheet.create({
   },
   backToTopText: {
     marginLeft: 8,
+    fontSize: 16,
+    fontFamily: "System",
+    fontWeight: "600",
+  },
+  loadMoreButton: {
+    padding: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(255,255,255,0.1)",
+    borderRadius: 20,
+    marginVertical: 16,
+    borderWidth: 2,
+    borderColor: theme.colors.text,
+    // marginHorizontal: 50,
+    // width: 200,
+    // Align center and small width
+    width: "80%",
+    alignSelf: "center",
+  },
+  loadMoreText: {
     fontSize: 16,
     fontFamily: "System",
     fontWeight: "600",
