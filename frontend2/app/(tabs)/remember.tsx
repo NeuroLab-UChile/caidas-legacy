@@ -59,8 +59,11 @@ const RememberScreen = () => {
         setPage(1);
         setHasMoreData(true);
       } else {
-        setRecommendations((prev) => [...prev, ...response.data.recommendations]);
-        setPage(prev => prev + 1);
+        setRecommendations((prev) => [
+          ...prev,
+          ...response.data.recommendations,
+        ]);
+        setPage((prev) => prev + 1);
       }
     } catch (err) {
       console.error("Error fetching recommendations:", err);
@@ -92,11 +95,13 @@ const RememberScreen = () => {
 
         const response = await apiService.recommendations.registerClick(id);
 
-        if (newClickCount >= 5) {
-          console.log("Reached 5 clicks, fetching new recommendations");
-          handleRefresh();
-          setClickCount(0);
-        } else if (response.data && response.data.more_recommendations) {
+        // [JV] remove this 5 click refesh for now
+        // if (newClickCount >= 5) {
+        //   console.log("Reached 5 clicks, fetching new recommendations");
+        //   handleRefresh();
+        //   setClickCount(0);
+        // } else
+        if (response.data && response.data.more_recommendations) {
           setRecommendations(response.data.more_recommendations);
         }
       }
@@ -152,7 +157,7 @@ const RememberScreen = () => {
               {capitalizeFirstLetter(item.data)}
             </Text>
 
-            <Text
+            {/* <Text
               style={[
                 styles.categoryText,
                 {
@@ -161,11 +166,11 @@ const RememberScreen = () => {
                 },
               ]}
             >
-              //{capitalizeFirstLetter(item.category)}/
+              {capitalizeFirstLetter(item.category)}/
               {item.sub_category !== "nan"
                 ? capitalizeFirstLetter(item.sub_category)
                 : ""}
-            </Text>
+            </Text> */}
           </View>
 
           {isExpanded ? (
@@ -188,7 +193,7 @@ const RememberScreen = () => {
                   </Text>
                 )}
 
-              {item.practic_data && item.practic_data !== "nan" && (
+              {/* {item.practic_data && item.practic_data !== "nan" && (
                 <Text
                   style={[
                     styles.practicalText,
@@ -198,26 +203,26 @@ const RememberScreen = () => {
                 >
                   {"\n"}Práctica: {item.practic_data}
                 </Text>
-              )}
+              )} */}
 
-              {item.keywords && item.keywords !== "nan" && (
+              {/* {item.keywords && item.keywords !== "nan" && (
                 <Text
                   style={[styles.keywordsText, { color: theme.colors.text }]}
                 >
                   {"\n"}Palabras clave: {item.keywords}
                 </Text>
-              )}
+              )} */}
 
-              {item.quote_link && item.quote_link !== "nan" && (
+              {/* {item.quote_link && item.quote_link !== "nan" && (
                 <Text style={[styles.sourceText, { color: theme.colors.text }]}>
                   {"\n"}Fuente: {item.quote_link}
                 </Text>
-              )}
+              )} */}
             </View>
           ) : (
             <View style={styles.instructionContainer}>
               <IconSymbol
-                name={isExpanded ? "chevron.up" : "chevron.down"}
+                name={isExpanded ? "chevron-up" : "chevron-down"}
                 size={40}
                 color={theme.colors.text}
               />
@@ -266,11 +271,7 @@ const RememberScreen = () => {
             style={styles.backToTopButton}
             onPress={scrollToTop}
           >
-            <IconSymbol
-              name="chevron.up"
-              size={24}
-              color={theme.colors.text}
-            />
+            <IconSymbol name="chevron.up" size={24} color={theme.colors.text} />
             <Text style={[styles.backToTopText, { color: theme.colors.text }]}>
               Volver arriba
             </Text>
@@ -417,27 +418,27 @@ const styles = StyleSheet.create({
   },
   endContainer: {
     padding: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   endText: {
     fontSize: 16,
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: 16,
     fontFamily: "System",
   },
   backToTopButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     padding: 12,
     borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: "rgba(255,255,255,0.1)",
   },
   backToTopText: {
     marginLeft: 8,
     fontSize: 16,
     fontFamily: "System",
-    fontWeight: '600',
+    fontWeight: "600",
   },
 });
 
