@@ -11,6 +11,8 @@ import apiService from "../services/apiService";
 import { theme } from "@/src/theme";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { ScrollView } from "react-native-gesture-handler";
+import { useFocusEffect } from "@react-navigation/native";
+import { useCallback } from "react";
 
 interface TextRecommendation {
   id: number;
@@ -39,6 +41,12 @@ const RememberScreen = () => {
   const [hasMoreData, setHasMoreData] = useState(true);
   const [page, setPage] = useState(1);
   const flatListRef = React.useRef<FlatList>(null);
+
+  useFocusEffect(
+    useCallback(() => {
+      apiService.activityLog.trackAction("screen recomendaciones"); // Record action
+    }, [])
+  );
 
   useEffect(() => {
     fetchRecommendations();
@@ -81,6 +89,7 @@ const RememberScreen = () => {
 
   const handleLoadMore = () => {
     if (!loading) {
+      apiService.activityLog.trackAction("load_more_recommendations"); // Record action
       fetchRecommendations(true);
     }
   };
@@ -93,6 +102,7 @@ const RememberScreen = () => {
         const newClickCount = clickCount + 1;
         setClickCount(newClickCount);
 
+        apiService.activityLog.trackAction(`click_recommendation ${id}`); // Record action
         const response = await apiService.recommendations.registerClick(id);
 
         // [JV] remove this 5 click refesh for now

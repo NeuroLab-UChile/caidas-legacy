@@ -30,6 +30,8 @@ import React from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { useFocusEffect } from "@react-navigation/native";
+import { useCallback } from "react";
 
 interface NodeResponse {
   nodeId: number;
@@ -180,6 +182,12 @@ const EvaluateScreen = () => {
     (node) => node.id === evaluationState.currentNodeId
   );
 
+  useFocusEffect(
+    useCallback(() => {
+      apiService.activityLog.trackAction("screen evaluar"); // Record action
+    }, [])
+  );
+
   useEffect(() => {
     const refreshData = async () => {
       setLoading(true);
@@ -248,6 +256,9 @@ const EvaluateScreen = () => {
             // Resetear el historial
             setHistory([]);
             if (selectedCategory?.id) {
+              apiService.activityLog.trackAction(
+                `start_evaluation ${selectedCategory.id}`
+              ); // Record action
               await apiService.evaluations.clearAndStartNew(
                 selectedCategory.id
               );
@@ -436,6 +447,9 @@ const EvaluateScreen = () => {
             },
           });
 
+          apiService.activityLog.trackAction(
+            `completed_evaluation ${selectedCategory.id}`
+          ); // Record action
           Alert.alert("Éxito", "Evaluación guardada correctamente");
         } catch (error) {
           console.error("Error saving responses:", error);

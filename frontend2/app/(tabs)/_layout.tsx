@@ -1,4 +1,3 @@
-
 import { Tabs } from "expo-router";
 import {
   View,
@@ -14,8 +13,9 @@ import { router } from "expo-router";
 import { HapticTab } from "@/components/HapticTab";
 import { theme } from "@/src/theme";
 import authService from "../services/authService";
+import { apiService } from "@/app/services/apiService";
 import { ScrollLayout } from "@/components/ScrollLayout";
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from "@expo/vector-icons";
 
 const BOTTOM_TAB_HEIGHT = 83;
 const MIDDLE_BUTTON_SIZE = 76;
@@ -23,7 +23,7 @@ const { width } = Dimensions.get("window");
 const SCREEN_WIDTH = width * 0.95;
 
 // Definimos los tipos de iconos que estamos usando
-type IconNames = 
+type IconNames =
   | "calendar"
   | "checkbox"
   | "walk"
@@ -70,7 +70,7 @@ const hiddenItems: MenuItem[] = [
     name: "action",
     title: "WE-TRAIN",
     customIcon: require("@/assets/images/logo_color.png"),
-    icon: undefined
+    icon: undefined,
   },
   {
     name: "category-detail",
@@ -95,14 +95,22 @@ export default function TabLayout() {
         <Tabs
           screenOptions={({ route }: { route: any }) => ({
             tabBarActiveTintColor: theme.colors.background,
-            tabBarInactiveTintColor: theme.colors.background + '80',
+            tabBarInactiveTintColor: theme.colors.background + "80",
             headerShown: true,
             tabBarButton: HapticTab,
             headerTitle: () => {
-              const item = [...leftMenuItems, ...rightMenuItems, ...hiddenItems]
-                .find((item) => item.name === route.name);
+              const item = [
+                ...leftMenuItems,
+                ...rightMenuItems,
+                ...hiddenItems,
+              ].find((item) => item.name === route.name);
               return (
-                <Text style={[styles.headerTitle, { color: theme.colors.background }]}>
+                <Text
+                  style={[
+                    styles.headerTitle,
+                    { color: theme.colors.background },
+                  ]}
+                >
                   {item?.title || route.name}
                 </Text>
               );
@@ -115,13 +123,22 @@ export default function TabLayout() {
             },
             headerTitleAlign: "center",
             header: ({ route }: { route: any }) => {
-              const item = [...leftMenuItems, ...rightMenuItems, ...hiddenItems]
-                .find((item) => item.name === route.name);
-              
+              const item = [
+                ...leftMenuItems,
+                ...rightMenuItems,
+                ...hiddenItems,
+              ].find((item) => item.name === route.name);
+
               return (
-                <View style={[styles.headerContainer, { backgroundColor: theme.colors.text }]}>
+                <View
+                  style={[
+                    styles.headerContainer,
+                    { backgroundColor: theme.colors.text },
+                  ]}
+                >
                   <View style={styles.headerTopRow}>
-                    {(route.name === "events" || route.name === "category-detail") && (
+                    {(route.name === "events" ||
+                      route.name === "category-detail") && (
                       <TouchableOpacity
                         onPress={() => router.push("/(tabs)/action")}
                         style={styles.backArrowButton}
@@ -134,7 +151,12 @@ export default function TabLayout() {
                       </TouchableOpacity>
                     )}
 
-                    <Text style={[styles.headerTitle, { color: theme.colors.background }]}>
+                    <Text
+                      style={[
+                        styles.headerTitle,
+                        { color: theme.colors.background },
+                      ]}
+                    >
                       {item?.title || route.name}
                     </Text>
 
@@ -150,18 +172,30 @@ export default function TabLayout() {
                               style: "destructive",
                               onPress: async () => {
                                 try {
+                                  await apiService.activityLog.trackAction(
+                                    "logout"
+                                  ); // Record action - ensure it occurs before logout
                                   await authService.logout();
                                   router.replace("/sign-in");
                                 } catch (error) {
-                                  console.error("Error al cerrar sesión:", error);
-                                  Alert.alert("Error", "No se pudo cerrar la sesión");
+                                  console.error(
+                                    "Error al cerrar sesión:",
+                                    error
+                                  );
+                                  Alert.alert(
+                                    "Error",
+                                    "No se pudo cerrar la sesión"
+                                  );
                                 }
                               },
                             },
                           ]
                         );
                       }}
-                      style={[styles.logoutButton, { backgroundColor: theme.colors.text }]}
+                      style={[
+                        styles.logoutButton,
+                        { backgroundColor: theme.colors.text },
+                      ]}
                     >
                       <View style={styles.logoutContent}>
                         <IconSymbol
@@ -170,7 +204,12 @@ export default function TabLayout() {
                           color={theme.colors.background}
                           style={styles.logoutIcon}
                         />
-                        <Text style={[styles.logoutText, { color: theme.colors.background }]}>
+                        <Text
+                          style={[
+                            styles.logoutText,
+                            { color: theme.colors.background },
+                          ]}
+                        >
                           Salir
                         </Text>
                       </View>
@@ -195,20 +234,27 @@ export default function TabLayout() {
               color: theme.colors.background,
             },
             tabBarIcon: ({ focused }: { focused: any }) => {
-              const item = [...leftMenuItems, ...rightMenuItems]
-                .find((item) => item.name === route.name);
+              const item = [...leftMenuItems, ...rightMenuItems].find(
+                (item) => item.name === route.name
+              );
               if (!item) return null;
 
               return (
-                <View style={[
-                  styles.iconContainer,
-                  focused && styles.activeIconContainer
-                ]}>
+                <View
+                  style={[
+                    styles.iconContainer,
+                    focused && styles.activeIconContainer,
+                  ]}
+                >
                   {item.icon && (
                     <Ionicons
                       name={item.icon}
                       size={24}
-                      color={focused ? theme.colors.background : theme.colors.background + '80'}
+                      color={
+                        focused
+                          ? theme.colors.background
+                          : theme.colors.background + "80"
+                      }
                     />
                   )}
                 </View>
@@ -259,14 +305,21 @@ export default function TabLayout() {
         activeOpacity={0.8}
         style={[styles.middleButton, { backgroundColor: theme.colors.text }]}
       >
-        <View style={[styles.middleButtonTop, { borderColor: theme.colors.text }]} />
+        <View
+          style={[styles.middleButtonTop, { borderColor: theme.colors.text }]}
+        />
         <View style={styles.middleButtonContent}>
           <Image
             source={require("@/assets/images/logo_color.png")}
             style={styles.middleButtonLogo}
             resizeMode="contain"
           />
-          <Text style={[styles.middleButtonText, { color: theme.colors.background }]}>
+          <Text
+            style={[
+              styles.middleButtonText,
+              { color: theme.colors.background },
+            ]}
+          >
             WE-TRAIN
           </Text>
         </View>
@@ -325,8 +378,8 @@ const styles = StyleSheet.create({
   iconContainer: {
     width: 40,
     height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     borderRadius: 20,
   },
   activeIconContainer: {

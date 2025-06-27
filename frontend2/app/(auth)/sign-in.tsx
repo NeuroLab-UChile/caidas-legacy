@@ -15,6 +15,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 import { theme } from "@/src/theme";
 import { useAuth } from "../contexts/auth";
+import { apiService } from "@/app/services/apiService";
 
 export default function SignIn() {
   const [username, setUsername] = useState("");
@@ -77,6 +78,7 @@ export default function SignIn() {
           await AsyncStorage.setItem("password", _password);
           console.log("Credenciales guardadas");
         }
+        apiService.activityLog.trackAction("login"); // Record action
         // Redirigir a la pantalla de acción
         router.replace("/(tabs)/action/");
       } else {

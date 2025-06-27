@@ -15,6 +15,8 @@ import { IconSymbol } from "@/components/ui/IconSymbol";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { apiService } from "../services/apiService";
+import { useFocusEffect } from "@react-navigation/native";
+import { useCallback } from "react";
 
 interface Event {
   id: number;
@@ -38,6 +40,12 @@ export default function EventsScreen() {
   useEffect(() => {
     fetchEvents();
   }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      apiService.activityLog.trackAction("screen eventos"); // Record action
+    }, [])
+  );
 
   const fetchEvents = async () => {
     try {

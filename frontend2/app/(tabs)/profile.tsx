@@ -16,8 +16,10 @@ import { Ionicons } from "@expo/vector-icons";
 import apiService from "../services/apiService";
 import { theme } from "../../src/theme";
 import * as ImagePicker from "expo-image-picker";
-import * as FileSystem from 'expo-file-system';
-import { useImagePicker } from '../../hooks/useImagePicker';
+import * as FileSystem from "expo-file-system";
+import { useImagePicker } from "../../hooks/useImagePicker";
+import { useFocusEffect } from "@react-navigation/native";
+import { useCallback } from "react";
 
 const { width } = Dimensions.get("window");
 
@@ -39,6 +41,12 @@ export default function ProfileScreen() {
     }
   };
 
+  useFocusEffect(
+    useCallback(() => {
+      apiService.activityLog.trackAction("screen perfil"); // Record action
+    }, [])
+  );
+
   useEffect(() => {
     loadProfile();
   }, []);
@@ -53,9 +61,9 @@ export default function ProfileScreen() {
       console.log("Imagen convertida a base64");
 
       const response = await apiService.user.uploadProfileImage({
-        image: base64Image
+        image: base64Image,
       });
-      
+
       console.log("Respuesta de subida:", response.data);
 
       if (response.data?.profile?.profile_image) {
@@ -192,7 +200,11 @@ export default function ProfileScreen() {
         <View style={styles.profileImageSection}>
           <TouchableOpacity
             style={styles.imageContainer}
-            onPress={user?.profile?.profile_image ? handleImageOptions : showImageSourceOptions}
+            onPress={
+              user?.profile?.profile_image
+                ? handleImageOptions
+                : showImageSourceOptions
+            }
             activeOpacity={0.7}
           >
             {user?.profile?.profile_image ? (
@@ -201,10 +213,12 @@ export default function ProfileScreen() {
                   key={user?.profile?.profile_image}
                   source={{
                     uri: user?.profile?.profile_image,
-                    cache: 'reload',
+                    cache: "reload",
                   }}
                   style={styles.existingImage}
-                  onError={(e) => console.log('Error loading image:', e.nativeEvent.error)}
+                  onError={(e) =>
+                    console.log("Error loading image:", e.nativeEvent.error)
+                  }
                 />
                 <View style={styles.editButton}>
                   <Ionicons name="pencil" size={16} color="black" />
@@ -217,9 +231,9 @@ export default function ProfileScreen() {
                   { backgroundColor: theme.colors.border },
                 ]}
               >
-                <Ionicons 
-                  name="person-circle-outline" 
-                  size={60} 
+                <Ionicons
+                  name="person-circle-outline"
+                  size={60}
                   color={theme.colors.text}
                 />
               </View>

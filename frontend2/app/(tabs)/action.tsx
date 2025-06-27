@@ -15,6 +15,9 @@ import { theme } from "@/src/theme";
 import { Category } from "../types/category";
 import { router } from "expo-router";
 import { IconSymbol } from "@/components/ui/IconSymbol";
+import { useFocusEffect } from "@react-navigation/native";
+import { useCallback } from "react";
+import { apiService } from "@/app/services/apiService";
 
 const { width } = Dimensions.get("window");
 const SPACING = 8; // 16;
@@ -27,8 +30,18 @@ export default function ActionScreen() {
   // const [isCategoriesExpanded, setIsCategoriesExpanded] = useState(false);
   const isCategoriesExpanded = true; // Mantener expandido por defecto
 
+  useFocusEffect(
+    useCallback(() => {
+      apiService.activityLog.trackAction("screen home"); // Record action
+    }, [])
+  );
+
   const handleCategoryPress = (category: Category) => {
+    // console.log("Categoría seleccionada:", category.name);
     setSelectedCategory(category);
+    // Definir nombre en minusculas y reemplazar espacios por guiones bajos
+    const categoryName = category.name.toLowerCase().replace(/\s+/g, "_");
+    apiService.activityLog.trackAction(`category_selected ${categoryName}`); // Record action
     router.push("/(tabs)/category-detail");
   };
 

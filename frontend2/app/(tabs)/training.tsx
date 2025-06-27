@@ -15,8 +15,8 @@ import { CategoryHeader } from "@/components/CategoryHeader";
 import { useRouter } from "expo-router";
 import ActivityNodeContainer from "@/components/ActivityNodes/ActivityNodeContainer";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { Ionicons as ExpoIonicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { Ionicons as ExpoIonicons } from "@expo/vector-icons";
+import { router } from "expo-router";
 
 import { ActivityNodeType } from "@/components/ActivityNodes";
 import EmptyState from "../containers/EmptyState";
@@ -27,6 +27,8 @@ import { useEventListener } from "expo";
 import * as FileSystem from "expo-file-system";
 import { theme } from "@/src/theme";
 import { VideoPlayerView } from "@/components/VideoPlayer";
+import { useFocusEffect } from "@react-navigation/native";
+import { apiService } from "@/app/services/apiService";
 
 type TrainingState = {
   currentNodeId: number | null;
@@ -42,6 +44,12 @@ const TrainingScreen = () => {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [view, setView] = useState<"training" | "recommendations" | null>(null);
+
+  useFocusEffect(
+    useCallback(() => {
+      apiService.activityLog.trackAction("screen entrenar"); // Record action
+    }, [])
+  );
 
   const [trainingState, setTrainingState] = useState<TrainingState>(() => {
     const nodes = selectedCategory?.training_form?.training_nodes || [];
@@ -72,7 +80,7 @@ const TrainingScreen = () => {
   const [history, setHistory] = useState<number[]>([]);
   const nodes = selectedCategory?.training_form?.training_nodes || [];
   const currentQuestionIndex = nodes.findIndex(
-    (node) => node.id === trainingState.currentNodeId,
+    (node) => node.id === trainingState.currentNodeId
   );
 
   useEffect(() => {
@@ -131,7 +139,7 @@ const TrainingScreen = () => {
       const nodes = selectedCategory.training_form.training_nodes;
       console.log(
         "Actualizando trainingState por cambio en selectedCategory:",
-        nodes,
+        nodes
       );
 
       setTrainingState({
@@ -161,7 +169,7 @@ const TrainingScreen = () => {
     (nodeId: number | null) => {
       const node =
         selectedCategory?.training_form?.training_nodes.find(
-          (node) => node.id === nodeId,
+          (node) => node.id === nodeId
         ) || null;
 
       console.log("Getting current node:", {
@@ -171,13 +179,13 @@ const TrainingScreen = () => {
           (n) => ({
             id: n.id,
             type: n.type,
-          }),
+          })
         ),
       });
 
       return node;
     },
-    [selectedCategory],
+    [selectedCategory]
   );
 
   const handleNext = useCallback(
@@ -195,7 +203,7 @@ const TrainingScreen = () => {
         // Encontrar el índice del nodo actual
         const currentIndex =
           selectedCategory?.training_form?.training_nodes.findIndex(
-            (node) => node.id === prev.currentNodeId,
+            (node) => node.id === prev.currentNodeId
           );
 
         // Obtener el siguiente nodo
@@ -220,7 +228,7 @@ const TrainingScreen = () => {
         }
       });
     },
-    [selectedCategory, getCurrentNode],
+    [selectedCategory, getCurrentNode]
   );
 
   const handleNodeResponse = (nodeId: number, response: any) => {
@@ -284,7 +292,7 @@ const TrainingScreen = () => {
         const downloadResumable = FileSystem.createDownloadResumable(
           remoteUrl,
           localUri,
-          {},
+          {}
         );
 
         try {
@@ -434,6 +442,9 @@ const TrainingScreen = () => {
               style={styles.optionCard}
               onPress={() => {
                 console.log("Abriendo recomendaciones");
+                apiService.activityLog.trackAction(
+                  `open_recommendations ${selectedCategory.id}`
+                ); // Record action
                 setView("recommendations");
               }}
             >
@@ -452,7 +463,12 @@ const TrainingScreen = () => {
 
           <TouchableOpacity
             style={styles.optionCard}
-            onPress={() => setView("training")}
+            onPress={() => {
+              apiService.activityLog.trackAction(
+                `open_training ${selectedCategory.id}`
+              ); // Record action
+              setView("training");
+            }}
           >
             <View style={styles.iconContainer}>
               <Ionicons name="fitness" size={32} color="#2196F3" />
@@ -745,8 +761,8 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     padding: 12,
     marginBottom: 16,
   },
@@ -755,7 +771,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: theme.colors.text,
     fontFamily: "System",
-    fontWeight: '600',
+    fontWeight: "600",
   },
   statusContainer: {
     flexDirection: "row",
@@ -851,11 +867,11 @@ const styles = StyleSheet.create({
   },
   errorContainer: {
     padding: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   errorText: {
-    color: 'red',
+    color: "red",
     fontSize: 16,
   },
   retryText: {

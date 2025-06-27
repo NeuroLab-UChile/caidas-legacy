@@ -30,6 +30,7 @@ import { ImageQuestionView } from "./views/ImageQuestionView";
 import { WeeklyRecipeNodeView } from "./views/WeeklyRecipeNodeView";
 import { CategoryDescriptionView } from "./views/CategoryDescriptionView";
 import { commonStyles } from "./styles/commonStyles";
+import { apiService } from "@/app/services/apiService";
 
 interface ActivityNodeContainerProps {
   type: ActivityNodeType;
@@ -113,6 +114,10 @@ export const ActivityNodeContainer: React.FC<ActivityNodeContainerProps> = ({
 
   const handleNext = (response?: any) => {
     console.log("Handling next step with response:", currentResponse);
+    apiService.activityLog.trackAction(
+      `node_next ${categoryId} ${currentQuestionIndex + 1}/${totalQuestions}`
+    );
+
     if (onNext) {
       // onNext(response || currentResponse); // [JV] This seems to be the critical bug
       onNext(currentResponse);
