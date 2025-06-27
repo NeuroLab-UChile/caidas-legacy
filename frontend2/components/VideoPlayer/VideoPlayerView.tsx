@@ -20,7 +20,8 @@ export const VideoPlayerView: React.FC<VideoPlayerViewProps> = ({
 
   return (
     <View style={styles.container}>
-      {description && <Text style={styles.title}>{description}</Text>}
+      {/* This text was repeated with an external card */}
+      {/* {description && <Text style={styles.title}>{description}</Text>} */}
 
       <View style={styles.videoContainer}>
         <VideoView
