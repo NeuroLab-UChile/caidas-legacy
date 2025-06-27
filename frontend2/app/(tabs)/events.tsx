@@ -8,6 +8,8 @@ import {
   ActivityIndicator,
   Dimensions,
   StatusBar,
+  ScrollView,
+  RefreshControl,
 } from "react-native";
 import { router } from "expo-router";
 import { theme } from "@/src/theme";
@@ -38,11 +40,12 @@ export default function EventsScreen() {
   const [selectedFilter, setSelectedFilter] = useState<string>("all");
 
   useEffect(() => {
-    fetchEvents();
+    // fetchEvents(); // --> Moved to useFocusEffect to refetch every time the screen is focused
   }, []);
 
   useFocusEffect(
     useCallback(() => {
+      fetchEvents(); // Refetch events when screen is focused
       apiService.activityLog.trackAction("screen eventos"); // Record action
     }, [])
   );
@@ -52,7 +55,7 @@ export default function EventsScreen() {
       setLoading(true);
       // Aquí iría tu llamada a la API
       const response = await apiService.events.getAll();
-      console.log(response, "elisa eventos");
+      // console.log(response, "elisa eventos");
       setEvents(response.data);
     } catch (error) {
       console.error("Error fetching events:", error);
@@ -60,6 +63,11 @@ export default function EventsScreen() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const reloadEvents = () => {
+    apiService.activityLog.trackAction("reload eventos"); // Record action
+    fetchEvents();
   };
 
   const getPriorityColor = (priority: string) => {
@@ -77,20 +85,40 @@ export default function EventsScreen() {
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case "completed":
-        return "checkmark.circle";
-      case "cancelled":
-        return "xmark.circle";
+      case "COMPLETED":
+        return "checkmark-circle";
+      case "CANCELLED":
+        return "close-circle-sharp";
+      case "CONFIRMED":
+        return "checkmark-circle-outline";
+      case "PENDING":
+        return "time-outline";
       default:
-        return "clock";
+        return "time-outline"; // fallback to a valid IconName
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "COMPLETED":
+        return "green";
+      case "CANCELLED":
+        return "red";
+      case "CONFIRMED":
+        return "blue";
+      case "PENDING":
+        return "orange";
+      default:
+        return "gray";
     }
   };
 
   const filters = [
     { id: "all", label: "Todos" },
-    { id: "pending", label: "Pendientes" },
-    { id: "completed", label: "Completados" },
-    { id: "cancelled", label: "Cancelados" },
+    { id: "PENDING", label: "Pendientes" },
+    { id: "CONFIRMED", label: "Confirmados" },
+    { id: "COMPLETED", label: "Completados" },
+    { id: "CANCELLED", label: "Cancelados" },
   ];
 
   const filteredEvents = events.filter((event) =>
@@ -116,6 +144,20 @@ export default function EventsScreen() {
             </Text>
           </View>
         </View>
+
+        {/* Status */}
+        <View style={styles.statusContainer}>
+          <IconSymbol
+            name={getStatusIcon(item.status)}
+            size={16}
+            color={getStatusColor(item.status)}
+          />
+          <Text style={styles.statusText}>
+            {filters
+              .find((f) => f.id.toLowerCase() === item.status.toLowerCase())
+              ?.label.slice(0, -1) || item.status}
+          </Text>
+        </View>
       </TouchableOpacity>
     );
   };
@@ -132,7 +174,7 @@ export default function EventsScreen() {
     return (
       <View style={styles.errorContainer}>
         <Text style={styles.errorText}>{error}</Text>
-        <TouchableOpacity style={styles.retryButton} onPress={fetchEvents}>
+        <TouchableOpacity style={styles.retryButton} onPress={reloadEvents}>
           <Text style={styles.retryText}>Reintentar</Text>
         </TouchableOpacity>
       </View>
@@ -142,36 +184,48 @@ export default function EventsScreen() {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" />
-
-      <View style={styles.filtersContainer}>
-        <FlatList
-          horizontal
-          data={filters}
-          showsHorizontalScrollIndicator={false}
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              style={[
-                styles.filterButton,
-                selectedFilter === item.id && styles.filterButtonActive,
-              ]}
-              onPress={() => setSelectedFilter(item.id)}
-            >
-              <Text
+      <ScrollView
+        // Padding and margin 0
+        contentContainerStyle={{ padding: 0, margin: 0 }}
+        // style={{ flex: 1 }}
+        refreshControl={
+          <RefreshControl refreshing={loading} onRefresh={reloadEvents} />
+        }
+      >
+        <View style={styles.filtersContainer}>
+          <FlatList
+            horizontal
+            data={filters}
+            showsHorizontalScrollIndicator={false}
+            renderItem={({ item }) => (
+              <TouchableOpacity
                 style={[
-                  styles.filterText,
-                  selectedFilter === item.id && styles.filterTextActive,
+                  styles.filterButton,
+                  selectedFilter === item.id && styles.filterButtonActive,
                 ]}
+                onPress={() => setSelectedFilter(item.id)}
               >
-                {item.label}
-              </Text>
-            </TouchableOpacity>
-          )}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.filtersContent}
-        />
-      </View>
+                <Text
+                  style={[
+                    styles.filterText,
+                    selectedFilter === item.id && styles.filterTextActive,
+                  ]}
+                >
+                  {item.label}
+                </Text>
+              </TouchableOpacity>
+            )}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={styles.filtersContent}
+          />
+        </View>
+      </ScrollView>
 
       <FlatList
+        style={styles.listContainer}
+        refreshControl={
+          <RefreshControl refreshing={loading} onRefresh={reloadEvents} />
+        }
         data={filteredEvents || []}
         renderItem={renderEvent}
         keyExtractor={(item) => item.id.toString()}
@@ -217,6 +271,7 @@ const styles = StyleSheet.create({
   },
   filtersContainer: {
     marginTop: SPACING,
+    marginBottom: SPACING / 2,
   },
   filtersContent: {
     paddingHorizontal: SPACING,
@@ -353,5 +408,15 @@ const styles = StyleSheet.create({
     color: theme.colors.text,
     opacity: 0.7,
     marginTop: SPACING,
+  },
+  statusContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 8,
+  },
+  statusText: {
+    fontSize: 14,
+    color: theme.colors.text,
+    marginLeft: 4,
   },
 });

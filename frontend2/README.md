@@ -29,6 +29,11 @@ npm install --global eas-cli
 eas build --platform android --local
 # Cloud build
 eas build --platform android
+
+# Or directly from Android cli
+npx expo prebuild
+cd android
+./gradlew assembleRelease
 ```
 
 ----
