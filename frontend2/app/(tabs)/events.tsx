@@ -184,42 +184,42 @@ export default function EventsScreen() {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" />
-      <ScrollView
+      {/* <ScrollView
         // Padding and margin 0
         contentContainerStyle={{ padding: 0, margin: 0 }}
         // style={{ flex: 1 }}
         refreshControl={
           <RefreshControl refreshing={loading} onRefresh={reloadEvents} />
         }
-      >
-        <View style={styles.filtersContainer}>
-          <FlatList
-            horizontal
-            data={filters}
-            showsHorizontalScrollIndicator={false}
-            renderItem={({ item }) => (
-              <TouchableOpacity
+      > */}
+      <View style={styles.filtersContainer}>
+        <FlatList
+          horizontal
+          data={filters}
+          showsHorizontalScrollIndicator={false}
+          renderItem={({ item }) => (
+            <TouchableOpacity
+              style={[
+                styles.filterButton,
+                selectedFilter === item.id && styles.filterButtonActive,
+              ]}
+              onPress={() => setSelectedFilter(item.id)}
+            >
+              <Text
                 style={[
-                  styles.filterButton,
-                  selectedFilter === item.id && styles.filterButtonActive,
+                  styles.filterText,
+                  selectedFilter === item.id && styles.filterTextActive,
                 ]}
-                onPress={() => setSelectedFilter(item.id)}
               >
-                <Text
-                  style={[
-                    styles.filterText,
-                    selectedFilter === item.id && styles.filterTextActive,
-                  ]}
-                >
-                  {item.label}
-                </Text>
-              </TouchableOpacity>
-            )}
-            keyExtractor={(item) => item.id}
-            contentContainerStyle={styles.filtersContent}
-          />
-        </View>
-      </ScrollView>
+                {item.label}
+              </Text>
+            </TouchableOpacity>
+          )}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.filtersContent}
+        />
+      </View>
+      {/* </ScrollView> */}
 
       <FlatList
         style={styles.listContainer}
@@ -298,8 +298,11 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   listContainer: {
-    padding: SPACING,
-    paddingBottom: SPACING * 4,
+    // padding: SPACING,
+    // paddingBottom: SPACING * 4,
+    marginTop: SPACING / 4,
+    paddingLeft: SPACING,
+    paddingRight: SPACING,
   },
   eventCard: {
     backgroundColor: theme.colors.background,

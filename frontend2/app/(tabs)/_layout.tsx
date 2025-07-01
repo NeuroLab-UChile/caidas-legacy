@@ -8,9 +8,9 @@ import {
   Alert,
   Image,
 } from "react-native";
-import React, { useEffect, useState } from "react"; 
-import { useAuth } from "../contexts/auth"; 
-import { apiService } from "@/app/services/apiService"; 
+import React, { useEffect, useState } from "react";
+import { useAuth } from "../contexts/auth";
+import { apiService } from "@/app/services/apiService";
 
 import { WelcomeAlert } from "@/components/WelcomeAlert";
 import { IconSymbol } from "@/components/ui/IconSymbol";
@@ -34,13 +34,14 @@ type IconNames =
   | "person"
   | "power"
   | "chevron-back"
-  | "folder";
+  | "folder"
+  | "cloud-download";
 
-  interface Event {
+interface Event {
   id: number;
   title: string;
   description: string;
-  date: string; 
+  date: string;
   status: "pending" | "completed" | "cancelled" | null | string;
 }
 
@@ -100,75 +101,99 @@ const hiddenItems: MenuItem[] = [
     title: "Eventos",
     icon: "calendar",
   },
+  {
+    name: "downloads",
+    title: "Contenido Descargable",
+    icon: "cloud-download",
+  },
 ];
 
 export default function TabLayout() {
   const { userProfile } = useAuth();
-  
+
   // Estados para controlar nuestro modal de alerta
-  const [alertInfo, setAlertInfo] = useState({ title: '', message: '' });
+  const [alertInfo, setAlertInfo] = useState({ title: "", message: "" });
   const [isAlertVisible, setIsAlertVisible] = useState(false);
   const [initialAlertShown, setInitialAlertShown] = useState(false); // Para que se muestre solo una vez
 
   useEffect(() => {
     // La lógica se ejecuta solo si hay un usuario y la alerta inicial no se ha mostrado
     if (userProfile && !initialAlertShown) {
-      
       const fetchAndPrepareAlert = async () => {
         setInitialAlertShown(true); // Marcamos como mostrada inmediatamente
         try {
           // 1. OBTENEMOS LAS CITAS/EVENTOS
           const appointmentsResponse = await apiService.events.getAll();
-          const allEvents = appointmentsResponse?.data as Event[] || [];
+          const allEvents = (appointmentsResponse?.data as Event[]) || [];
 
           // 2. BUSCAMOS LA PRÓXIMA CITA FUTURA PENDIENTE
           const now = new Date();
           now.setHours(0, 0, 0, 0);
 
           const upcomingEvents = allEvents
-            .map(event => ({ ...event, parsedDate: new Date(event.date) }))
-            .filter(event => 
-                event.status !== 'completed' && 
-                event.status !== 'cancelled' && 
+            .map((event) => ({ ...event, parsedDate: new Date(event.date) }))
+            .filter(
+              (event) =>
+                event.status !== "completed" &&
+                event.status !== "cancelled" &&
                 event.parsedDate >= now
             )
             .sort((a, b) => a.parsedDate.getTime() - b.parsedDate.getTime());
 
-          const nextEvent = upcomingEvents.length > 0 ? upcomingEvents[0] : null;
+          const nextEvent =
+            upcomingEvents.length > 0 ? upcomingEvents[0] : null;
 
-          const userName = userProfile.first_name || userProfile.username || "usuario";
+          const userName =
+            userProfile.first_name || userProfile.username || "usuario";
           let finalTitle = `¡Hola, ${userName}!`;
-          let finalMessage = '';
+          let finalMessage = "";
 
           // 3. LÓGICA PRINCIPAL: Si hay un próximo evento, lo mostramos.
           if (nextEvent) {
             finalTitle = "¡Recordatorio de Próximo Evento!";
-            const dateOptions: Intl.DateTimeFormatOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-            const formattedDate = nextEvent.parsedDate.toLocaleDateString('es-ES', dateOptions);
+            const dateOptions: Intl.DateTimeFormatOptions = {
+              weekday: "long",
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+            };
+            const formattedDate = nextEvent.parsedDate.toLocaleDateString(
+              "es-ES",
+              dateOptions
+            );
             finalMessage = `Recuerda tu próximo evento: "${nextEvent.title}" el día ${formattedDate}.\n\nDescripción: ${nextEvent.description}`;
-          } 
+          }
           // 4. LÓGICA DE RESPALDO: Si no hay eventos, buscamos una recomendación aleatoria.
           else {
-            const recommendationsResponse = await apiService.recommendations.getAll();
-            const allRecommendations = recommendationsResponse?.data?.recommendations as TextRecommendation[] || [];
+            const recommendationsResponse =
+              await apiService.recommendations.getAll();
+            const allRecommendations =
+              (recommendationsResponse?.data
+                ?.recommendations as TextRecommendation[]) || [];
 
             if (allRecommendations.length > 0) {
-              const randomIndex = Math.floor(Math.random() * allRecommendations.length);
+              const randomIndex = Math.floor(
+                Math.random() * allRecommendations.length
+              );
               const randomRecommendation = allRecommendations[randomIndex];
               finalTitle = "Recomendación del día";
               finalMessage = randomRecommendation.data;
             } else {
-              finalMessage = "No tienes eventos ni recomendaciones nuevas por ahora. ¡Que tengas un excelente día!";
+              finalMessage =
+                "No tienes eventos ni recomendaciones nuevas por ahora. ¡Que tengas un excelente día!";
             }
           }
 
           // 5. Guardamos la información y hacemos visible el Modal
           setAlertInfo({ title: finalTitle, message: finalMessage });
           setIsAlertVisible(true);
-
         } catch (error) {
           console.error("Error al preparar la alerta:", error);
-          setAlertInfo({ title: `¡Bienvenido/a, ${userProfile.first_name || 'usuario'}!`, message: 'No se pudo conectar al servidor para obtener tus novedades.' });
+          setAlertInfo({
+            title: `¡Bienvenido/a, ${userProfile.first_name || "usuario"}!`,
+            message:
+              "No se pudo conectar al servidor para obtener tus novedades.",
+          });
           setIsAlertVisible(true);
         }
       };
@@ -230,6 +255,7 @@ export default function TabLayout() {
                 >
                   <View style={styles.headerTopRow}>
                     {(route.name === "events" ||
+                      route.name === "downloads" ||
                       route.name === "category-detail") && (
                       <TouchableOpacity
                         onPress={() => router.push("/(tabs)/action")}

@@ -166,6 +166,14 @@ export default function ActionScreen() {
             {/* <Text style={styles.actionSubtitle}>Ver próximos eventos</Text> */}
           </TouchableOpacity>
 
+          <TouchableOpacity
+            style={styles.actionCard}
+            onPress={() => router.push("/(tabs)/downloads")}
+          >
+            <IconSymbol name="cloud-download" size={32} color={theme.colors.text} />
+            <Text style={styles.actionTitle}>Contenido Descargable</Text>
+          </TouchableOpacity>
+
           {/* <TouchableOpacity
             style={styles.actionCard}
             onPress={() => setIsCategoriesExpanded(!isCategoriesExpanded)}
