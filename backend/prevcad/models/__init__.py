@@ -26,6 +26,7 @@ from .action_log import ActionLog
 from .app_activity_log import AppActivityLog
 from .user import User
 from .user_types import UserTypes, AccessLevel, ResourceType
+from .downloads import DownloadableContent, DownloadByUser
 
 __all__ = [
     "CategoryTemplate",
@@ -53,4 +54,6 @@ __all__ = [
     "AccessLevel",
     "ResourceType",
     "AppActivityLog",
+    "DownloadableContent",
+    "DownloadByUser",
 ]
