@@ -1,4 +1,4 @@
-package com.anonymous.frontend2
+package com.cica.wetrain
 
 import android.app.Application
 import android.content.res.Configuration
