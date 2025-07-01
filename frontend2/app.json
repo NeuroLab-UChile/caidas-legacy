@@ -4,10 +4,10 @@
     "slug": "caidas-we-flow",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/images/logo_color.png",
     "userInterfaceStyle": "light",
     "splash": {
-      "image": "./assets/icon.png",
+      "image": "./assets/images/logo_color.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -24,7 +24,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/icon.png",
+        "foregroundImage": "./assets/images/logo_color.png",
         "backgroundColor": "#ffffff"
       },
       "permissions": [
@@ -38,7 +38,7 @@
       "package": "com.cica.wetrain"
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/images/logo_color.png"
     },
     "plugins": [
       "expo-router",
