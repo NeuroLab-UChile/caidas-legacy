@@ -23,10 +23,14 @@ import { useCallback } from "react";
 
 interface Download {
   id: number;
-  title: string;
-  description: string;
-  url: string;
-  status: "PENDING" | "DOWNLOADED";
+  downloaded: boolean;
+  download_date: string;
+  content: {
+    id: number;
+    title: string;
+    description: string;
+    file: string;
+  };
 }
 
 const { width } = Dimensions.get("window");
@@ -52,27 +56,11 @@ export default function DownloadsScreen() {
   const fetchDownloads = async () => {
     try {
       setLoading(true);
-      // const response = await apiService.downloads.getAll();
-      // Use mock response for testing
-      const response = {
-        data: [
-          {
-            id: 1,
-            title: "Ejercicios para Tobillos",
-            description: "Guía de ejercicios de fortalecimiento de tobillos",
-            url: "https://www.google.com/search?q=ejercicios+de+tobillos",
-            status: "PENDING" as "PENDING",
-          },
-          {
-            id: 2,
-            title: "Guía de Prevención para el Hogar",
-            description: "Instrucciones para habilitar el hogar seguro",
-            url: "https://www.sanidad.gob.es/areas/promocionPrevencion/lesiones/ocioHogar/documentosTecnicos/docs/Prevenir_caidas_en_el_hogar.pdf",
-            status: "PENDING" as "PENDING",
-          },
-        ],
-      };
+      // Actual API call
+      const response = await apiService.downloads.downloadableContentList();
       setDownloads(response.data);
+      console.log("Downloads fetched:", JSON.stringify(response.data, null, 2));
+      setError(null); // Clear any previous errors
     } catch (error) {
       console.error("Error fetching downloads:", error);
       setError("Error al cargar los descargables");
@@ -92,41 +80,42 @@ export default function DownloadsScreen() {
         <View style={styles.statusContainer}>
           <IconSymbol
             name={
-              item.status === "PENDING"
-                ? "radio-button-off"
-                : "checkmark-circle-outline"
+              item.downloaded ? "checkmark-circle-outline" : "radio-button-off"
             }
             size={20}
             color={
-              item.status === "PENDING"
-                ? theme.colors.warning
-                : theme.colors.success
+              item.downloaded ? theme.colors.success : theme.colors.warning
             }
           />
         </View>
       </View>
-      <Text style={[styles.cell, { flex: 0.8 }]}>{item.title}</Text>
-      <Text style={[styles.cell, { flex: 1 }]}>{item.description}</Text>
+      <Text style={[styles.cell, { flex: 0.8 }]}>{item.content.title}</Text>
+      <Text style={[styles.cell, { flex: 1 }]}>{item.content.description}</Text>
       {/* Downloads button download-outline*/}
       <TouchableOpacity
         style={[
           styles.cell,
           { flex: 0.8, justifyContent: "center", alignItems: "center" },
         ]}
-        onPress={() => {
+        onPress={async () => {
           apiService.activityLog.trackAction(`download ${item.id}`); // Record action
-          // Set status to DOWNLOADED if it was PENDING
-          if (item.status === "PENDING") {
-            item.status = "DOWNLOADED";
+          // Send to API
+          const response = await apiService.downloads.registerDownload(
+            item.content.id
+          );
+          // Set downloaded to true if response was successful
+          if (response.status === 201 && !item.downloaded) {
+            item.downloaded = true;
             setDownloads((prev) =>
               prev.map((d) => (d.id === item.id ? item : d))
             );
-            // Send to API
-            ///TODO
+          } else {
+            console.error("Error registering download:", response);
+            return;
           }
-          // For now just open the URL in a browser
-          console.log(`Downloading: ${item.url}`);
-          Linking.openURL(item.url);
+          // For now just open the URL in a browser to be downloaded
+          console.log(`Downloading: ${item.content.file}`);
+          Linking.openURL(item.content.file);
         }}
       >
         <IconSymbol name="download-outline" size={30} color={"black"} />
@@ -141,7 +130,11 @@ export default function DownloadsScreen() {
   ];
 
   const filteredDownloads = downloads.filter((download) =>
-    selectedFilter === "all" ? true : download.status === selectedFilter
+    selectedFilter === "all"
+      ? true
+      : selectedFilter === "DOWNLOADED"
+      ? download.downloaded
+      : !download.downloaded
   );
 
   if (loading) {

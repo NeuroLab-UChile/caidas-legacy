@@ -488,6 +488,41 @@ export class ApiClient {
       }
     },
   };
+
+  public downloads = {
+    downloadableContentList: async (): Promise<ApiResponse<any>> => {
+      try {
+        const response = await fetch(this.getUrl("/downloads"), {
+          headers: await this.getHeaders(),
+        });
+        return this.handleResponse(response);
+      } catch (error) {
+        console.error("Error fetching downloadable content list:", error);
+        throw error;
+      }
+    },
+    registerDownload: async (content: number): Promise<ApiResponse<any>> => {
+      try {
+        const response = await fetch(this.getUrl("/downloads"), {
+          method: "POST",
+          headers: {
+            ...(await this.getHeaders()),
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ content, downloaded: true }),
+        });
+
+        if (!response.ok) {
+          throw new Error("Error registering download");
+        }
+
+        return this.handleResponse(response);
+      } catch (error) {
+        console.error("Error in registerDownload:", error);
+        throw error;
+      }
+    },
+  };
 }
 
 export const apiService = new ApiClient();
