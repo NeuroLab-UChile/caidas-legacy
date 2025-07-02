@@ -12,7 +12,7 @@ import { theme } from "@/src/theme";
 interface ImageNodeViewProps {
   data: {
     id: number;
-    content: string;
+    title: string;
     type: string;
     media_url?: string;
     description?: string;
@@ -24,14 +24,16 @@ export const ImageNodeView: React.FC<ImageNodeViewProps> = ({
   data,
   onNext,
 }) => {
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const imageUrl = data?.media_url || '';
 
+  console.log("ImageNodeView data:", data);
+
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>{data.content}</Text>
+      <Text style={styles.title}>{data.title}</Text>
       {data.description && (
         <Text style={styles.description}>{data.description}</Text>
       )}
@@ -89,7 +91,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 18,
-    fontWeight: "600",
+    fontWeight: "bold",
     marginBottom: 8,
     color: theme.colors.text,
     textAlign: "center",

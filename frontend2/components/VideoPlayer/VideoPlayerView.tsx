@@ -1,6 +1,11 @@
+// Important note: this Video player doesn't support high resolution videos.
+// If it's failing, reduce the video resolution with:
+// ffmpeg -i input.mp4 -c:v libx264 -profile:v main -preset fast -crf 23 -vf scale=-2:1080 output.mp4
+
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { VideoView, useVideoPlayer } from "expo-video";
+import { useEventListener } from "expo";
 import { theme } from "@/src/theme";
 
 interface VideoPlayerViewProps {
@@ -8,14 +13,21 @@ interface VideoPlayerViewProps {
   description?: string;
 }
 
-export const VideoPlayerView: React.FC<VideoPlayerViewProps> = ({ 
-  url, 
+export const VideoPlayerView: React.FC<VideoPlayerViewProps> = ({
+  url,
   description,
 }) => {
   const player = useVideoPlayer(url, (player) => {
     player.loop = false;
     player.volume = 1.0;
     player.muted = false;
+  });
+
+  useEventListener(player, "statusChange", ({ status, error }) => {
+    console.log("Player status changed: ", status);
+    if (error) {
+      console.error("Player error: ", error);
+    }
   });
 
   return (

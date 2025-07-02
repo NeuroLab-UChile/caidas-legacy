@@ -1,23 +1,43 @@
 import { VideoPlayerView } from "@/components/VideoPlayer";
-import { View, StyleSheet } from "react-native";
+import { View, StyleSheet, Text } from "react-native";
 import { theme } from "@/src/theme";
 
 interface VideoNodeViewProps {
   data: {
+    title: string;
     description: string;
     media_url: string;
   };
   onNext?: () => void;
 }
 
-export const VideoNodeView: React.FC<VideoNodeViewProps> = ({ data, onNext }) => {
+export const VideoNodeView: React.FC<VideoNodeViewProps> = ({
+  data,
+  onNext,
+}) => {
+  console.log("VideoNodeView data:", data);
+
   return (
     <View style={styles.container}>
+      <View style={{ marginBottom: 16 }}>
+        <Text
+          style={{
+            fontSize: 24,
+            fontWeight: "bold",
+            color: theme.colors.text,
+            textAlign: "center",
+          }}
+        >
+          {data.title}
+        </Text>
+      </View>
+
+      <Text style={{ color: theme.colors.text, marginBottom: 16, fontSize: 16 }}>
+        {data.description}
+      </Text>
+
       <View style={styles.videoCard}>
-        <VideoPlayerView 
-          url={data.media_url}
-          description={data.description}
-        />
+        <VideoPlayerView url={data.media_url} description={data.description} />
       </View>
     </View>
   );

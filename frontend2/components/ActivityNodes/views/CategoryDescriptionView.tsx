@@ -5,6 +5,7 @@ import { theme } from "@/src/theme";
 
 interface CategoryDescriptionProps {
   data: {
+    title: string;
     description: string;
     image?: string;
     first_button_text?: string;
@@ -26,6 +27,11 @@ export function CategoryDescriptionView({
           resizeMode="cover"
         />
       )}
+
+      {/* title */}
+      <Text style={[styles.description, { color: theme.colors.text, fontWeight: "bold" }]}>
+        {data.title}
+      </Text>
 
       <Text style={[styles.description, { color: theme.colors.text }]}>
         {data.description}

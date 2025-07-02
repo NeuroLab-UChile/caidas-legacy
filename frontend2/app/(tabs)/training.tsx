@@ -671,6 +671,7 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 16,
     backgroundColor: "#F5F6F8",
+    marginBottom: 40,
   },
   completedCard: {
     backgroundColor: "white",

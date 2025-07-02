@@ -587,7 +587,8 @@ const EvaluateScreen = () => {
             </Text>
             <Text style={styles.recommendationsText}>
               {selectedCategory?.recommendations?.text ||
-                "Su hogar presenta medidas previas de mitigación de riesgos. Reevalúe áreas clave para mantener la seguridad."}
+                // "Su hogar presenta medidas previas de mitigación de riesgos. Reevalúe áreas clave para mantener la seguridad."
+                "No hay recomendaciones disponibles, consulte con su tratante."}
             </Text>
           </View>
 
