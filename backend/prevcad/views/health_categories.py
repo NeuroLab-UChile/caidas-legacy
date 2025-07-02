@@ -42,7 +42,9 @@ class HealthCategoryListView(APIView):
         
         user_profile = get_object_or_404(UserProfile, user=request.user)
         categories = HealthCategory.objects.filter(user__user=request.user)
-        
+        # Sort by id
+        categories = categories.order_by('id')
+
         serialized_categories = []
         
         for category in categories:
