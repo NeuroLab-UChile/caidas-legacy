@@ -170,7 +170,11 @@ export default function ActionScreen() {
             style={styles.actionCard}
             onPress={() => router.push("/(tabs)/downloads")}
           >
-            <IconSymbol name="cloud-download" size={32} color={theme.colors.text} />
+            <IconSymbol
+              name="cloud-download"
+              size={32}
+              color={theme.colors.text}
+            />
             <Text style={styles.actionTitle}>Contenido Descargable</Text>
           </TouchableOpacity>
 
@@ -349,6 +353,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     margin: SPACING,
     padding: SPACING,
+    marginBottom: SPACING * 5,
     backgroundColor: theme.colors.card,
     borderRadius: 12,
     elevation: 3,

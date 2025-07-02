@@ -343,6 +343,7 @@ const styles = StyleSheet.create({
   profileContent: {
     flex: 1,
     paddingTop: 20,
+    paddingBottom: 10,
   },
   profileImageSection: {
     alignItems: "center",

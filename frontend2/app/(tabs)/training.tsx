@@ -598,6 +598,7 @@ const styles = StyleSheet.create({
   },
   recommendationsContainer: {
     flex: 1,
+    marginBottom: 40,
   },
   recommendationsCard: {
     backgroundColor: "white",

@@ -476,6 +476,7 @@ const styles = StyleSheet.create({
     // Align center and small width
     width: "80%",
     alignSelf: "center",
+    marginBottom: 50,
   },
   loadMoreText: {
     fontSize: 16,
