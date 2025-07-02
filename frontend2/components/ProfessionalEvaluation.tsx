@@ -43,10 +43,11 @@ export const ProfessionalEvaluation = () => {
                 Aún no tienes una evaluación profesional
               </Text>
             </View>
-            
+
             <View style={[styles.card, styles.messageCard]}>
               <Text style={styles.messageText}>
-                Para obtener una evaluación profesional, agenda una cita con tu profesional de salud.
+                Para obtener una evaluación profesional, agenda una cita con tu
+                profesional de salud.
               </Text>
             </View>
           </View>
@@ -68,8 +69,24 @@ export const ProfessionalEvaluation = () => {
     },
   ];
 
+  const mapIconColor = (color: string) => {
+    console.log("Mapping color:", color);
+    switch (color) {
+      case "#008000":
+        return "checkmark-circle" as keyof typeof Ionicons.glyphMap;
+      case "#FFFF00":
+        return "warning" as keyof typeof Ionicons.glyphMap;
+      case "#FF0000":
+        return "close-circle" as keyof typeof Ionicons.glyphMap;
+      case "#808080":
+        return "ban" as keyof typeof Ionicons.glyphMap;
+      default:
+        return "help-circle" as keyof typeof Ionicons.glyphMap;
+    }
+  };
+
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: `${statusColor}99` }]}>
       <View style={[styles.gradientBackground]}>
         <View style={styles.content}>
           {/* Header */}
@@ -81,7 +98,8 @@ export const ProfessionalEvaluation = () => {
               ]}
             >
               <Ionicons
-                name="checkmark-circle"
+                // name="checkmark-circle"
+                name={mapIconColor(recommendations?.status?.color!)}
                 size={32}
                 color={theme.colors.text}
               />
@@ -142,7 +160,7 @@ export const ProfessionalEvaluation = () => {
           )}
 
           {/* Color Indicator */}
-          {recommendations?.status?.color && (
+          {/* {recommendations?.status?.color && (
             <View style={styles.colorIndicator}>
               <Text style={styles.colorText}>
                 Color de recomendación profesional:
@@ -151,7 +169,7 @@ export const ProfessionalEvaluation = () => {
                 style={[styles.colorSquare, { backgroundColor: statusColor }]}
               />
             </View>
-          )}
+          )} */}
         </View>
       </View>
     </View>
@@ -183,6 +201,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 16,
+    borderWidth: 1,
   },
   title: {
     fontSize: 28,
@@ -193,7 +212,7 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: 18,
-    color: theme.colors.textSecondary,
+    color: "black", //theme.colors.textSecondary,
     textAlign: "center",
   },
   card: {
@@ -270,13 +289,13 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.card,
     padding: 20,
     borderRadius: 16,
-    alignItems: 'center',
+    alignItems: "center",
     marginTop: 16,
   },
   messageText: {
     fontSize: 16,
     color: theme.colors.textSecondary,
-    textAlign: 'center',
+    textAlign: "center",
     lineHeight: 24,
   },
 });
