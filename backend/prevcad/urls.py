@@ -18,6 +18,7 @@ from django.conf.urls.static import static
 from .views import admin_views
 from .views.appointment_view import AppointmentViewSet
 from .views.app_activity_log import AppActivityLogView
+from .views.downloads import DownloadByUserViewSet
 from .views.admin_views import update_training_form
 import os
 from .views import health_categories
@@ -39,7 +40,7 @@ router.register("prevcad/appointments/", AppointmentViewSet, basename="appointme
 router.register(
     "prevcad/app_activity_log", AppActivityLogView, basename="app_activity_log"
 )
-
+router.register("prevcad/downloads", DownloadByUserViewSet, basename="downloads")
 
 # Rutas de la API
 urlpatterns = [
