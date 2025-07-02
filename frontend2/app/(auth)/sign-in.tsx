@@ -16,6 +16,7 @@ import { router } from "expo-router";
 import { theme } from "@/src/theme";
 import { useAuth } from "../contexts/auth";
 import { apiService } from "@/app/services/apiService";
+import { termsAndConditions } from "@/constants/terms_and_conditions"; // Importar términos y condiciones
 
 export default function SignIn() {
   const [username, setUsername] = useState("");
@@ -24,6 +25,7 @@ export default function SignIn() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [autoLoginMessage, setAutoLoginMessage] = useState("");
+  const [acceptTerms, setAcceptTerms] = useState(false);
   const { signIn } = useAuth();
 
   // Detectar si hay usuario y contraseña guardados en el dispositivo e iniciar sesión automáticamente
@@ -54,6 +56,11 @@ export default function SignIn() {
     _username: string = "",
     _password: string = ""
   ) => {
+    if (!acceptTerms) {
+      setError("Debes aceptar los términos y condiciones para continuar.");
+      return;
+    }
+
     // Si no se pasan username y password, usar los del estado
     if (!_username) _username = username;
     if (!_password) _password = password;
@@ -104,6 +111,13 @@ export default function SignIn() {
     setPassword(text.toLowerCase());
   };
 
+  const showTermsPopup = () => {
+    Alert.alert("Términos y Condiciones", termsAndConditions, [
+      { text: "Aceptar", onPress: () => setAcceptTerms(true) },
+      { text: "Cancelar", onPress: () => setAcceptTerms(false) },
+    ]);
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.versionText}>
@@ -150,10 +164,38 @@ export default function SignIn() {
           value={rememberMe}
           onValueChange={setRememberMe}
           disabled={isLoading}
-          color={theme.colors.text + "80"}
+          color={"black"}
         />
-        <Text style={{ color: theme.colors.text + "80", marginLeft: 8 }}>
-          Recordarme
+        <Text style={{ color: "black", marginLeft: 8 }}>Recordarme</Text>
+      </View>
+
+      {/* Link a popup y checkbox de Aceptar términos y condiciones */}
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          marginBottom: theme.spacing.md,
+        }}
+      >
+        <CheckBox
+          value={acceptTerms}
+          onValueChange={setAcceptTerms}
+          disabled={isLoading}
+          color={"black"}
+        />
+        <Text style={{ color: "black", marginLeft: 8 }}>
+          Acepto los{" "}
+          {/* términos y condiciones debe ser un link que active un popup */}
+          <Text
+            style={{
+              color: "blue",
+              fontWeight: "bold",
+              textDecorationLine: "underline",
+            }}
+            onPress={showTermsPopup}
+          >
+            términos y condiciones
+          </Text>
         </Text>
       </View>
 
@@ -161,7 +203,7 @@ export default function SignIn() {
         style={({ pressed }) => [
           styles.button,
           pressed && styles.buttonPressed,
-          isLoading && styles.buttonDisabled,
+          (!acceptTerms || isLoading) && styles.buttonDisabled,
         ]}
         onPress={() => handleLogin()}
         disabled={isLoading}
@@ -237,6 +279,8 @@ const styles = StyleSheet.create({
   },
   buttonDisabled: {
     opacity: 0.5,
+    backgroundColor: theme.colors.disabled,
+    borderColor: theme.colors.disabled,
   },
   serverStatus: {
     marginTop: theme.spacing.xl,
