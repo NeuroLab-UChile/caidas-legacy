@@ -392,14 +392,22 @@ export default function TabLayout() {
             />
           ))}
 
-          {hiddenItems.map((item) => (
+          {hiddenItems.map((item, idx) => (
             <Tabs.Screen
               key={item.name}
               name={item.name}
               options={{
                 title: item.title,
                 headerTitle: item.title,
-                tabBarButton: () => null,
+                // "Hack" to generate spacing and maintain the navigation items
+                ...(idx < 3 && {
+                  // tabBarButton: () => null,
+                  href: null, // Hide from tab bar
+                }),
+                ...(idx >= 3 && {
+                  tabBarButton: () => null,
+                  // href: null, // Hide from tab bar
+                }),
               }}
             />
           ))}
