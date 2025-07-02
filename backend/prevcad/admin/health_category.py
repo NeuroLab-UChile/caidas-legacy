@@ -86,6 +86,7 @@ class HealthCategoryAdmin(admin.ModelAdmin):
     ]
 
     list_filter = (
+        "user__user__username",
         UserProfileFilter,
         "template",
     )
