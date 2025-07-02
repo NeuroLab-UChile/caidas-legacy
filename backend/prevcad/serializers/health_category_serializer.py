@@ -267,9 +267,10 @@ class HealthCategorySerializer(serializers.ModelSerializer):
                     domain = getattr(settings, 'BASE_URL', 'https://caidas.uchile.cl')
                     node['media_url'] = urljoin(domain, f'/media/{node["media_url"]}')
                     
+                ##[NOTE] Commented out the HTTPS enforcement -- check if no error occurs
                 # Asegurarse de que la URL sea HTTPS
-                if not node['media_url'].startswith('https://'):
-                    node['media_url'] = node['media_url'].replace('http://', 'https://')
+                # if not node['media_url'].startswith('https://'):
+                #     node['media_url'] = node['media_url'].replace('http://', 'https://')
         
         training_form['training_nodes'] = training_nodes
         return training_form

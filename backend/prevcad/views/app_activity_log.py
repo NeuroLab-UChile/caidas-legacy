@@ -21,6 +21,8 @@ class AppActivityLogView(viewsets.ModelViewSet):
         actions = request.data.get("actions", {})
         date = request.data.get("date")
 
+        print(user, date, actions)
+
         # Check if date exists, if not, set it to today
         if not date:
             date = timezone.now().date()
@@ -31,7 +33,7 @@ class AppActivityLogView(viewsets.ModelViewSet):
 
         # Check if an instance already exists
         instance, created = AppActivityLog.objects.get_or_create(user=user, date=date)
-        print("Created: ", created)
+        # print("Created: ", created)
 
         instance = cast(AppActivityLog, instance)
 
