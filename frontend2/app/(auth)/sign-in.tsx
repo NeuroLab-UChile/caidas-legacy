@@ -38,12 +38,13 @@ export default function SignIn() {
       setUsername(storedUsername);
       setPassword(storedPassword);
       setRememberMe(true);
+      setAcceptTerms(true); // Aceptar términos automáticamente si hay credenciales guardadas
 
       // Mostrar mensaje de auto-login y esperar 1 segundo antes de iniciar sesión
       setAutoLoginMessage("Iniciando sesión automáticamente...");
       setTimeout(() => {
-        handleLogin(storedUsername, storedPassword);
-      }, 2000); // Esperar para mostrar el mensaje
+        handleLogin(storedUsername, storedPassword, true);
+      }, 2000); // Esperar para iniciar sesión automáticamente
     }
   };
 
@@ -54,9 +55,10 @@ export default function SignIn() {
 
   const handleLogin = async (
     _username: string = "",
-    _password: string = ""
+    _password: string = "",
+    forcedAcceptTerms: boolean = false
   ) => {
-    if (!acceptTerms) {
+    if (!acceptTerms && !forcedAcceptTerms) {
       setError("Debes aceptar los términos y condiciones para continuar.");
       return;
     }
