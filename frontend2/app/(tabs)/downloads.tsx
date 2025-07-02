@@ -11,6 +11,7 @@ import {
   ScrollView,
   RefreshControl,
   Linking,
+  Platform,
 } from "react-native";
 import { router } from "expo-router";
 import { theme } from "@/src/theme";
@@ -20,6 +21,7 @@ import { es } from "date-fns/locale";
 import { apiService } from "../services/apiService";
 import { useFocusEffect } from "@react-navigation/native";
 import { useCallback } from "react";
+import * as IntentLauncher from "expo-intent-launcher";
 
 interface Download {
   id: number;
@@ -137,6 +139,14 @@ export default function DownloadsScreen() {
       : !download.downloaded
   );
 
+  const openDownloadsFolder = () => {
+    if (Platform.OS === "android") {
+      IntentLauncher.startActivityAsync("android.intent.action.VIEW_DOWNLOADS");
+    } else {
+      alert("Esta función solo está disponible en Android por ahora");
+    }
+  };
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -168,6 +178,12 @@ export default function DownloadsScreen() {
         }
       > */}
       <View style={styles.filtersContainer}>
+        <TouchableOpacity
+          style={styles.openButton}
+          onPress={openDownloadsFolder}
+        >
+          <IconSymbol name={"folder-open"} size={25} color={"black"} />
+        </TouchableOpacity>
         <FlatList
           horizontal
           data={filters}
@@ -265,9 +281,9 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: theme.colors.text,
   },
-  addButton: {
-    width: 44,
-    height: 44,
+  openButton: {
+    width: 50,
+    height: 50,
     borderRadius: 22,
     backgroundColor: theme.colors.primary,
     justifyContent: "center",
@@ -276,18 +292,22 @@ const styles = StyleSheet.create({
   filtersContainer: {
     marginTop: SPACING,
     marginBottom: SPACING / 2,
+    paddingHorizontal: SPACING,
+    flexDirection: "row",
   },
   filtersContent: {
     paddingHorizontal: SPACING,
   },
   filterButton: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 10,
     paddingVertical: 8,
     borderRadius: 20,
     marginRight: 8,
     backgroundColor: theme.colors.background,
     borderWidth: 1,
     borderColor: theme.colors.border,
+    justifyContent: "center",
+    alignItems: "center",
   },
   filterButtonActive: {
     backgroundColor: theme.colors.primary,
