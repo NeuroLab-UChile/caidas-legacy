@@ -87,7 +87,7 @@ export default function SignIn() {
           await AsyncStorage.setItem("password", _password);
           console.log("Credenciales guardadas");
         }
-        await apiService.activityLog.trackAction("login"); // Record action
+        await apiService.activityLog.trackAction("login", 2); // Record action
         // Redirigir a la pantalla de acción
         router.replace("/(tabs)/action/");
       } else {

@@ -473,9 +473,12 @@ export class ApiClient {
         throw error;
       }
     },
-    trackAction: async (tag: string): Promise<ApiResponse<any>> => {
+    trackAction: async (
+      tag: string,
+      offset_seconds: number = 0
+    ): Promise<ApiResponse<any>> => {
       try {
-        const now = new Date();
+        const now = new Date(new Date().getTime() - offset_seconds * 1000);
         const date = now.toISOString().split("T")[0]; // yyyy-mm-dd
         const time = now.toTimeString().split(" ")[0]; // HH:MM:SS
         console.log("[Tracking action]", `${date} ${time}`, "-", tag);
