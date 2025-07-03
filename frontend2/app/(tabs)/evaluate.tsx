@@ -232,7 +232,7 @@ const EvaluateScreen = () => {
 
     Alert.alert(
       "Iniciar Nueva Evaluación",
-      "¿Estás seguro de que deseas iniciar una nueva evaluación? La evaluación anterior se sobreescribirá.", // Antes era "quedará guardada", pero eso no está implementado
+      "¿Estás seguro de que deseas iniciar una nueva evaluación? La evaluación anterior se eliminará.", // Antes era "quedará guardada", pero eso no está implementado
       [
         {
           text: "Cancelar",

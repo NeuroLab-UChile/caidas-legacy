@@ -119,9 +119,23 @@ export const ActivityNodeContainer: React.FC<ActivityNodeContainerProps> = ({
       `node_next ${categoryId} ${currentQuestionIndex + 1}/${totalQuestions}`
     );
 
+    // Mostrar Toast de que la imagen se guardo correctamente
+    if (type === "IMAGE_QUESTION") {
+      const nimages = currentResponse?.answer.length;
+      if (nimages == 1) {
+        Alert.alert("", "Imagen guardada correctamente");
+      } else if (nimages > 1) {
+        Alert.alert("", "Imágenes guardadas correctamente");
+      } else {
+        Alert.alert("", "No se seleccionaron imágenes");
+      }
+    }
+
     if (onNext) {
       // onNext(response || currentResponse); // [JV] This seems to be the critical bug
       onNext(currentResponse);
+      // Clean currentResponse
+      setCurrentResponse(null);
     }
   };
 

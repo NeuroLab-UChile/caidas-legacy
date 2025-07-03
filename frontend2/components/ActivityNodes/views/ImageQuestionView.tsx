@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState , useEffect} from "react";
 import { View, Text, StyleSheet, TouchableOpacity, Image, Platform } from "react-native";
 import { ScrollView } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
@@ -25,6 +25,12 @@ interface ImageQuestionProps {
 export function ImageQuestionView({ data, setResponse }: ImageQuestionProps) {
   const { pickImage, takePhoto } = useImagePicker();
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
+
+  // oneffect data clean selectedimages
+  useEffect(() => {
+    setSelectedImages([]);
+    setResponse({ answer: [], type: 'IMAGE_QUESTION' });
+  }, [data]);
 
   const handleSelectImage = async () => {
     try {
