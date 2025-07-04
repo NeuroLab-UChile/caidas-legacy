@@ -120,7 +120,7 @@ export class ApiClient {
       ) {
         const isValid = await this.validateAndRefreshToken();
         if (!isValid) {
-          await authService.logout();
+          await authService.logout(false); // No olvidar el usuario en este logout de error
           throw new Error("Session expired");
         }
         this.lastTokenValidation = Date.now();
@@ -159,7 +159,7 @@ export class ApiClient {
       }
 
       // Si no se pudo recuperar la sesión, hacer logout
-      await authService.logout();
+      await authService.logout(false); // No olvidar el usuario en este logout de error
       throw new Error("Session expired");
     }
 
@@ -473,14 +473,31 @@ export class ApiClient {
         throw error;
       }
     },
+    // This fixes UTC date issues
+    getLocalDateAndTimeStrings: (date: Date = new Date()): [string, string] => {
+      // Pad single digits with leading zero
+      const pad = (n: number) => String(n).padStart(2, "0");
+      // Get local date parts
+      const year = date.getFullYear();
+      const month = pad(date.getMonth() + 1); // Months are 0-based
+      const day = pad(date.getDate());
+      const hour = pad(date.getHours());
+      const minute = pad(date.getMinutes());
+      const second = pad(date.getSeconds());
+
+      const dateStr = `${year}-${month}-${day}`;
+      const timeStr = `${hour}:${minute}:${second}`;
+      return [dateStr, timeStr];
+    },
     trackAction: async (
       tag: string,
       offset_seconds: number = 0
     ): Promise<ApiResponse<any>> => {
       try {
         const now = new Date(new Date().getTime() - offset_seconds * 1000);
-        const date = now.toISOString().split("T")[0]; // yyyy-mm-dd
-        const time = now.toTimeString().split(" ")[0]; // HH:MM:SS
+        // const date = now.toISOString().split("T")[0]; // yyyy-mm-dd  // <-- this produces error (next day offset) when over 20:00 Chile time
+        // const time = now.toTimeString().split(" ")[0]; // HH:MM:SS
+        const [date, time] = this.activityLog.getLocalDateAndTimeStrings(now);
         console.log("[Tracking action]", `${date} ${time}`, "-", tag);
         return await apiService.activityLog.logActivity(date, {
           [time]: tag,

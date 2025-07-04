@@ -1,6 +1,6 @@
-import { API_URL } from '@/constants';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { apiService } from './apiService';
+import { API_URL } from "@/constants";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { apiService } from "./apiService";
 
 export interface AuthResponse {
   user: {
@@ -20,33 +20,33 @@ export interface LoginCredentials {
 const authService = {
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
     try {
-      console.log('Environment:', __DEV__ ? 'Development' : 'Production');
-      console.log('Login attempt to:', `${API_URL}/token/`);
-      
+      console.log("Environment:", __DEV__ ? "Development" : "Production");
+      console.log("Login attempt to:", `${API_URL}/token/`);
+
       const response = await fetch(`${API_URL}/token/`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(credentials),
       });
 
-      console.log('Response status:', response.status);
+      console.log("Response status:", response.status);
       const data = await response.json();
       console.log("Datos de autenticación:", data);
 
       if (!response.ok) {
         console.error("Error de autenticación:", data);
-        throw new Error(data.detail || 'Error en la autenticación');
+        throw new Error(data.detail || "Error en la autenticación");
       }
 
       if (!data.access) {
-        throw new Error('Token de acceso no recibido');
+        throw new Error("Token de acceso no recibido");
       }
 
       return data;
     } catch (error) {
-      console.error('Error en login:', error);
+      console.error("Error en login:", error);
       throw error;
     }
   },
@@ -56,7 +56,7 @@ const authService = {
       const response = await apiService.user.getProfile();
       return response.data;
     } catch (error) {
-      console.error('Error getting user info:', error);
+      console.error("Error getting user info:", error);
       throw error;
     }
   },
@@ -64,16 +64,16 @@ const authService = {
   async validateToken(token: string): Promise<boolean> {
     try {
       const response = await fetch(`${API_URL}/token/verify/`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ token }),
       });
 
       if (!response.ok) {
         // Si el token no es válido, intentar refrescarlo automáticamente
-        const refreshToken = await AsyncStorage.getItem('refresh_token');
+        const refreshToken = await AsyncStorage.getItem("refresh_token");
         if (refreshToken) {
           const newToken = await authService.refreshToken(refreshToken);
           return newToken !== null;
@@ -89,52 +89,57 @@ const authService = {
 
   async refreshToken(refreshToken: string): Promise<string | null> {
     try {
-        console.log('Intentando refrescar token con:', refreshToken.substring(0, 20) + '...');
-        
-        const response = await fetch(`${API_URL}/token/refresh/`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ refresh: refreshToken }),
-        });
+      console.log(
+        "Intentando refrescar token con:",
+        refreshToken.substring(0, 20) + "..."
+      );
 
-        console.log('Refresh response status:', response.status);
-        const data = await response.json();
-        console.log('Refresh response data:', data);
+      const response = await fetch(`${API_URL}/token/refresh/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ refresh: refreshToken }),
+      });
 
-        if (!response.ok) {
-            console.error('Error refreshing token:', data);
-            await this.logout();
-            return null;
-        }
+      console.log("Refresh response status:", response.status);
+      const data = await response.json();
+      console.log("Refresh response data:", data);
 
-        // Guardar tanto el nuevo access token como el refresh token
-        await AsyncStorage.setItem('auth_token', data.access);
-        if (data.refresh) {
-            await AsyncStorage.setItem('refresh_token', data.refresh);
-        }
-
-        return data.access;
-    } catch (error) {
-        // Check here:  Error en refreshToken: [TypeError: Network request failed]
-        console.error('Error en refreshToken:', error);
-        await this.logout();
+      if (!response.ok) {
+        console.error("Error refreshing token:", data);
+        await this.logout(false); // No olvidar el usuario en este logout de error
         return null;
+      }
+
+      // Guardar tanto el nuevo access token como el refresh token
+      await AsyncStorage.setItem("auth_token", data.access);
+      if (data.refresh) {
+        await AsyncStorage.setItem("refresh_token", data.refresh);
+      }
+
+      return data.access;
+    } catch (error) {
+      // Check here:  Error en refreshToken: [TypeError: Network request failed]
+      console.error("Error en refreshToken:", error);
+      await this.logout(false); // No olvidar el usuario en este logout de error
+      return null;
     }
   },
 
-  async logout(): Promise<void> {
+  async logout(forgetUser: boolean = true): Promise<void> {
     try {
-      await AsyncStorage.removeItem('auth_token');
-      await AsyncStorage.removeItem('refresh_token');
-      await AsyncStorage.removeItem('username');
-      await AsyncStorage.removeItem('password');
+      await AsyncStorage.removeItem("auth_token");
+      await AsyncStorage.removeItem("refresh_token");
+      if (forgetUser) {
+        await AsyncStorage.removeItem("username");
+        await AsyncStorage.removeItem("password");
+      }
     } catch (error) {
-      console.error('Error during logout:', error);
+      console.error("Error during logout:", error);
       throw error;
     }
   },
 };
 
-export default authService; 
+export default authService;
