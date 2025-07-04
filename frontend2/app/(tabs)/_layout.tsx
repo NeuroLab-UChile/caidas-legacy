@@ -58,6 +58,15 @@ interface MenuItem {
   customIcon?: any;
 }
 
+const leftHiddenItems: MenuItem[] = [
+  {
+    name: "action",
+    title: "WE-TRAIN",
+    customIcon: require("@/assets/images/logo_color.png"),
+    icon: undefined,
+  },
+];
+
 const leftMenuItems: MenuItem[] = [
   {
     name: "remember",
@@ -85,12 +94,12 @@ const rightMenuItems: MenuItem[] = [
 ];
 
 const hiddenItems: MenuItem[] = [
-  {
-    name: "action",
-    title: "WE-TRAIN",
-    customIcon: require("@/assets/images/logo_color.png"),
-    icon: undefined,
-  },
+  // {
+  //   name: "action",
+  //   title: "WE-TRAIN",
+  //   customIcon: require("@/assets/images/logo_color.png"),
+  //   icon: undefined,
+  // },
   {
     name: "category-detail",
     title: "Detalle de Categoría",
@@ -217,6 +226,7 @@ export default function TabLayout() {
             tabBarButton: HapticTab,
             headerTitle: () => {
               const item = [
+                ...leftHiddenItems,
                 ...leftMenuItems,
                 ...rightMenuItems,
                 ...hiddenItems,
@@ -241,6 +251,7 @@ export default function TabLayout() {
             headerTitleAlign: "center",
             header: ({ route }: { route: any }) => {
               const item = [
+                ...leftHiddenItems,
                 ...leftMenuItems,
                 ...rightMenuItems,
                 ...hiddenItems,
@@ -380,6 +391,18 @@ export default function TabLayout() {
             },
           })}
         >
+          {leftHiddenItems.map((item) => (
+            <Tabs.Screen
+              key={item.name}
+              name={item.name}
+              options={{
+                title: item.title,
+                headerTitle: item.title,
+                href: null, // Hide from tab bar
+              }}
+            />
+          ))}
+
           {leftMenuItems.map((item) => (
             <Tabs.Screen
               key={item.name}
@@ -400,11 +423,11 @@ export default function TabLayout() {
                 title: item.title,
                 headerTitle: item.title,
                 // "Hack" to generate spacing and maintain the navigation items
-                ...(idx < 3 && {
+                ...(idx < 2 && {
                   // tabBarButton: () => null,
                   href: null, // Hide from tab bar
                 }),
-                ...(idx >= 3 && {
+                ...(idx >= 2 && {
                   tabBarButton: () => null,
                   // href: null, // Hide from tab bar
                 }),
