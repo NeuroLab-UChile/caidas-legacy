@@ -21,6 +21,7 @@ import { termsAndConditions } from "@/constants/terms_and_conditions"; // Import
 export default function SignIn() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
@@ -144,16 +145,32 @@ export default function SignIn() {
         editable={!isLoading}
       />
 
-      <TextInput
-        placeholder="Contraseña"
-        value={password}
-        onChangeText={handleChangePassword}
-        secureTextEntry
-        style={styles.input}
-        placeholderTextColor={theme.colors.text + "80"}
-        autoCapitalize="none"
-        editable={!isLoading}
-      />
+      <View style={{ position: "relative" }}>
+        <TextInput
+          placeholder="Contraseña"
+          value={password}
+          onChangeText={handleChangePassword}
+          secureTextEntry={!showPassword}
+          style={styles.input}
+          placeholderTextColor={theme.colors.text + "80"}
+          autoCapitalize="none"
+          editable={!isLoading}
+        />
+        <Pressable
+          onPress={() => setShowPassword((prev) => !prev)}
+          style={{
+            position: "absolute",
+            right: 16,
+            height: "100%",
+            // justifyContent: "center",
+            // alignItems: "center",
+            padding: 8,
+          }}
+          disabled={isLoading}
+        >
+          <Text style={{ fontSize: 28 }}>{showPassword ? "🙈" : "👁️"}</Text>
+        </Pressable>
+      </View>
 
       <View
         style={{
