@@ -9,6 +9,7 @@ import {
   Image,
 } from "react-native";
 import React, { useEffect, useState } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAuth } from "../contexts/auth";
 import { apiService } from "@/app/services/apiService";
 
@@ -121,7 +122,12 @@ export default function TabLayout() {
   const { userProfile } = useAuth();
 
   // Estados para controlar nuestro modal de alerta
-  const [alertInfo, setAlertInfo] = useState({ title: "", message: "" });
+  const [alertInfo, setAlertInfo] = useState({
+    title: "",
+    message: "",
+    showOnPostpone: false,
+    eventId: 0, // ID del evento para posponer
+  });
   const [isAlertVisible, setIsAlertVisible] = useState(false);
   const [initialAlertShown, setInitialAlertShown] = useState(false); // Para que se muestre solo una vez
 
@@ -139,12 +145,46 @@ export default function TabLayout() {
           const now = new Date();
           now.setHours(0, 0, 0, 0);
 
+          // Get postponed events from AsyncStorage
+          // Format: "postponedEvents": { [eventId]: timestamp }
+          const postponedEventsString = await AsyncStorage.getItem(
+            "postponedEvents"
+          );
+          const postponedEvents = postponedEventsString
+            ? JSON.parse(postponedEventsString)
+            : {};
+          // Check if we need to remove any postponed events that are older than 1 week
+          const oneWeekAgo = new Date();
+          // TEST -1 minute
+          // oneWeekAgo.setMinutes(oneWeekAgo.getMinutes() - 1); // Test with 1 minute ago
+          // REAL -1 week
+          oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+          console.log("Comparing with oneWeekAgo:", oneWeekAgo);
+          let postponedEventsChanged = false;
+          Object.keys(postponedEvents).forEach((eventId) => {
+            if (new Date(postponedEvents[eventId]) < oneWeekAgo) {
+              // Re-enable the event if it's been more than a week
+              delete postponedEvents[eventId];
+              postponedEventsChanged = true;
+              console.log(`Postponed event ${eventId} removed after 1 week`);
+            }
+          });
+          // If we changed the postponed events, save them back to AsyncStorage
+          if (postponedEventsChanged) {
+            console.log("Postponed events:", postponedEvents);
+            await AsyncStorage.setItem(
+              "postponedEvents",
+              JSON.stringify(postponedEvents)
+            );
+          }
+
           const upcomingEvents = allEvents
             .map((event) => ({ ...event, parsedDate: new Date(event.date) }))
             .filter(
               (event) =>
                 event.status !== "completed" &&
                 event.status !== "cancelled" &&
+                !postponedEvents[event.id] && // Exclude postponed events
                 event.parsedDate >= now
             )
             .sort((a, b) => a.parsedDate.getTime() - b.parsedDate.getTime());
@@ -156,10 +196,14 @@ export default function TabLayout() {
             userProfile.first_name || userProfile.username || "usuario";
           let finalTitle = `¡Hola, ${userName}!`;
           let finalMessage = "";
+          let showOnPostpone = false;
+          let eventId = 0; // ID del evento para posponer
 
           // 3. LÓGICA PRINCIPAL: Si hay un próximo evento, lo mostramos.
           if (nextEvent) {
             finalTitle = "¡Recordatorio de Próximo Evento!";
+            showOnPostpone = true; // Hacemos visible el botón de posponer
+            eventId = nextEvent.id;
             const dateOptions: Intl.DateTimeFormatOptions = {
               weekday: "long",
               year: "numeric",
@@ -174,6 +218,7 @@ export default function TabLayout() {
           }
           // 4. LÓGICA DE RESPALDO: Si no hay eventos, buscamos una recomendación aleatoria.
           else {
+            showOnPostpone = false; // No hacemos visible el botón de posponer si no hay eventos
             const recommendationsResponse =
               await apiService.recommendations.getAll();
             const allRecommendations =
@@ -194,7 +239,12 @@ export default function TabLayout() {
           }
 
           // 5. Guardamos la información y hacemos visible el Modal
-          setAlertInfo({ title: finalTitle, message: finalMessage });
+          setAlertInfo({
+            title: finalTitle,
+            message: finalMessage,
+            showOnPostpone: showOnPostpone,
+            eventId: eventId,
+          });
           setIsAlertVisible(true);
         } catch (error) {
           console.error("Error al preparar la alerta:", error);
@@ -202,6 +252,8 @@ export default function TabLayout() {
             title: `¡Bienvenido/a, ${userProfile.first_name || "usuario"}!`,
             message:
               "No se pudo conectar al servidor para obtener tus novedades.",
+            showOnPostpone: false,
+            eventId: 0,
           });
           setIsAlertVisible(true);
         }
@@ -477,6 +529,30 @@ export default function TabLayout() {
         visible={isAlertVisible}
         title={alertInfo.title}
         message={alertInfo.message}
+        showOnPostpone={!!alertInfo.showOnPostpone}
+        onPostpone={async () => {
+          setIsAlertVisible(false);
+          console.log("Alerta pospuesta por 1 semana");
+          // Store id and timestamp in AsyncStorage
+          const postponedEventsString = await AsyncStorage.getItem(
+            "postponedEvents"
+          );
+          const postponedEvents = postponedEventsString
+            ? JSON.parse(postponedEventsString)
+            : {};
+          const now = new Date();
+          postponedEvents[alertInfo.eventId] = now.toISOString(); // Store as ISO string
+          await AsyncStorage.setItem(
+            "postponedEvents",
+            JSON.stringify(postponedEvents)
+          );
+          console.log("Postponed events:", postponedEvents);
+          // Show confirmation alert
+          Alert.alert(
+            "Recordatorio pospuesto",
+            "El recordatorio ha sido pospuesto por 1 semana. Puedes volver a revisarlo en la sección de Eventos."
+          );
+        }}
         onClose={() => setIsAlertVisible(false)}
       />
     </View>
