@@ -473,8 +473,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 return response.json();
             })
             .then(data => {
-                if (data.success) {
+                console.log('Respuesta del servidor:', data);
+                if (data.status === 'success') {
                     console.log('Guardado exitoso');
+                    alert('Recomendación guardada exitosamente');
                     window.location.reload();
                 } else {
                     throw new Error(data.error || 'Error al guardar');
