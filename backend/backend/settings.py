@@ -161,7 +161,7 @@ INSTALLED_APPS = [
     'prevcad',
     'rest_framework_simplejwt',
     'django_admin_tailwind',
-
+    "admin_reorder",  # Allows grouping admin sidebar models
 ]
 
 MIDDLEWARE = [
@@ -175,6 +175,9 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.locale.LocaleMiddleware',
+    # Extra
+    # "admin_reorder.middleware.ModelAdminReorder", # Replaced by custom ModelAdminReorderWithNav
+    "prevcad.middleware.ModelAdminReorderWithNav",  # *
 ]
 
 # Configuración de Django Rest Framework
@@ -362,3 +365,49 @@ LOGGING = {
         },
     },
 }
+
+
+
+# Admin reorder
+# https://stackoverflow.com/questions/31352496/how-to-group-models-in-django-admink
+# https://github.com/mishbahr/django-modeladmin-reorder
+ADMIN_REORDER = [
+    {
+        "app": "prevcad",
+        "label": "Usuarios",
+        "models": [
+            "auth.User",
+            "auth.Group",
+            "prevcad.UserProfile",
+        ],
+    },
+    {
+        "app": "prevcad",
+        "label": "Sistema We Train",
+        "models": [
+            "prevcad.DownloadableContent",
+            "prevcad.CategoryTemplate",
+            "prevcad.ActionLog",
+            "prevcad.TextRecomendation",
+        ],
+    },
+    {
+        "app": "prevcad",
+        "label": "Datos de Usuario",
+        "models": [
+            "prevcad.Appointment",
+            "prevcad.DownloadByUser",
+            "prevcad.HealthCategory",
+            "prevcad.AppActivityLog",
+            "prevcad.UserRecommendationInteraction",
+        ],
+    },
+    {
+        "app": "prevcad",
+        "label": "Modelos Extra",
+        "models": [
+            "prevcad.EvaluationForm",
+            "prevcad.Recommendation",
+        ],
+    },
+]

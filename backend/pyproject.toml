@@ -22,6 +22,7 @@ moviepy = "^2.1.1"
 django = "^5.1.4"
 firebase-admin = "^6.6.0"
 whitenoise = "^6.8.2"
+django-modeladmin-reorder = "^0.3.1"
 
 
 [build-system]

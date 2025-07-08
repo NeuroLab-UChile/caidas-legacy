@@ -29,6 +29,7 @@ from .user_types import UserTypes, AccessLevel, ResourceType
 from .downloads import DownloadableContent, DownloadByUser
 
 __all__ = [
+    "ActionLog",
     "CategoryTemplate",
     "HealthCategory",
     "TextRecomendation",
