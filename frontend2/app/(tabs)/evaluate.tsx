@@ -231,8 +231,14 @@ const EvaluateScreen = () => {
     }
 
     Alert.alert(
-      "Iniciar Nueva Evaluación",
-      "¿Estás seguro de que deseas iniciar una nueva evaluación? La evaluación anterior se eliminará.", // Antes era "quedará guardada", pero eso no está implementado
+      "Repetir Evaluación",
+      // Antes era "quedará guardada", pero eso no está implementado
+      "¿Estás seguro de que deseas repetir la evaluación?\n" +
+        "La evaluación anterior se eliminará y no se podrá recuperar.\n" +
+        "El cuestionario debe repetirse solo en estos casos:\n" +
+        "  - Si se respondió incorrectamente.\n" +
+        "  - Si ha habido cambios en el hogar.\n" +
+        "  - Si el profesional lo indica.",
       [
         {
           text: "Cancelar",
@@ -577,7 +583,8 @@ const EvaluateScreen = () => {
               ]}
             />
             <Text style={[styles.statusText, { color: theme.colors.text }]}>
-              {status?.text || "Poco Riesgoso"}
+              {/* {status?.text || "Poco Riesgoso"} */}
+              {status?.text || "Sin evaluación"}
             </Text>
           </View>
 
@@ -588,7 +595,8 @@ const EvaluateScreen = () => {
             <Text style={styles.recommendationsText}>
               {selectedCategory?.recommendations?.text ||
                 // "Su hogar presenta medidas previas de mitigación de riesgos. Reevalúe áreas clave para mantener la seguridad."
-                "No hay recomendaciones disponibles, consulte con su tratante."}
+                // "No hay recomendaciones disponibles, consulte con su tratante."
+                "¡Muchas gracias por sus respuestas! En los próximos días recibirá recomendaciones personalizadas de un profesional de la salud de nuestro equipo. Manténgase revisando esta sección."}
             </Text>
           </View>
 
@@ -609,10 +617,25 @@ const EvaluateScreen = () => {
 
           <TouchableOpacity
             style={styles.newEvaluationButton}
-            onPress={handleStartNewEvaluation}
+            onPress={() => router.push("/training")}
           >
-            <Text style={styles.newEvaluationButtonText}>
-              Iniciar Nueva Evaluación
+            <Text style={styles.newEvaluationButtonText}>Ir al Contenido</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={handleStartNewEvaluation}
+            style={{ alignSelf: "center", marginTop: 24 }}
+          >
+            <Text
+              style={{
+                textDecorationLine: "underline",
+                textAlign: "center",
+                color: theme.colors.textSecondary,
+                fontSize: 16,
+                fontWeight: "500",
+              }}
+            >
+              ¿Respondiste incorrectamente? Repetir evaluación
             </Text>
           </TouchableOpacity>
         </View>

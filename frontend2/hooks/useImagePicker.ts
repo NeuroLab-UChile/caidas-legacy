@@ -1,5 +1,5 @@
 import * as ImagePicker from "expo-image-picker";
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from "expo-file-system";
 
 interface ImagePickerOptions {
   aspect?: [number, number];
@@ -10,11 +10,11 @@ export const useImagePicker = () => {
   const convertToBase64 = async (uri: string): Promise<string> => {
     try {
       const base64 = await FileSystem.readAsStringAsync(uri, {
-        encoding: FileSystem.EncodingType.Base64
+        encoding: FileSystem.EncodingType.Base64,
       });
       return `data:image/jpeg;base64,${base64}`;
     } catch (error) {
-      console.error('Error converting to base64:', error);
+      console.error("Error converting to base64:", error);
       throw error;
     }
   };
@@ -28,7 +28,7 @@ export const useImagePicker = () => {
     console.log("Pickeando imagen en useImagePicker");
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
+      allowsEditing: false, // true
       // aspect: options.aspect || [1, 1], // Do not restrict aspect ratio
       quality: options.quality || 0.7,
       base64: true,
@@ -47,7 +47,7 @@ export const useImagePicker = () => {
     }
 
     const result = await ImagePicker.launchCameraAsync({
-      allowsEditing: true,
+      allowsEditing: false, // true
       // aspect: options.aspect || [1, 1], // Do not restrict aspect ratio
       quality: options.quality || 0.7,
       base64: true,
@@ -62,6 +62,6 @@ export const useImagePicker = () => {
   return {
     pickImage,
     takePhoto,
-    convertToBase64
+    convertToBase64,
   };
-}; 
+};

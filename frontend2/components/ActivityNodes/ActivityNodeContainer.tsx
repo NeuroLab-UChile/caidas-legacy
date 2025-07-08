@@ -183,6 +183,9 @@ export const ActivityNodeContainer: React.FC<ActivityNodeContainerProps> = ({
       case "WEEKLY_RECIPE_NODE":
         return "Continuar";
       default:
+        if (currentQuestionIndex === totalQuestions - 1) {
+          return "Finalizar";
+        }
         return "Siguiente";
     }
   };
