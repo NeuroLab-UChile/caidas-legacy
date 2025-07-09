@@ -13,3 +13,4 @@ from .text_recommendation import TextRecomendationAdmin
 from .app_activity_log import AppActivityLogAdmin
 from .user_recommendation_interaction import UserRecommendationInteractionAdmin
 from .downloads import DownloadableContentAdmin, DownloadByUserAdmin
+from .system_document import SystemDocumentAdmin

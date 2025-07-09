@@ -389,6 +389,7 @@ ADMIN_REORDER = [
             "prevcad.CategoryTemplate",
             "prevcad.ActionLog",
             "prevcad.TextRecomendation",
+            "prevcad.SystemDocument",
         ],
     },
     {

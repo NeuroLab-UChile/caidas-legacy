@@ -27,6 +27,7 @@ from .app_activity_log import AppActivityLog
 from .user import User
 from .user_types import UserTypes, AccessLevel, ResourceType
 from .downloads import DownloadableContent, DownloadByUser
+from .system_document import SystemDocument
 
 __all__ = [
     "ActionLog",
@@ -57,4 +58,5 @@ __all__ = [
     "AppActivityLog",
     "DownloadableContent",
     "DownloadByUser",
+    "SystemDocument",
 ]
