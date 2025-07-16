@@ -34,11 +34,15 @@
         </div>
 
         <!-- Formulario de evaluación profesional -->
+
+
+
         <form method="post" class="mb-6">
             {% csrf_token %}
             <div class="space-y-6">
                 <!-- Diagnóstico y Observaciones -->
-                <div>
+                <div class="flex">
+                <div style="flex-basis: 0; flex-grow: 9; flex-shrink: 1;">
                     <label for="diagnosis" class="block text-sm font-medium text-gray-700">Diagnóstico</label>
                     <div class="mt-1">
                         <textarea
@@ -50,6 +54,66 @@
                         >{{ professional_responses.diagnosis|default:"" }}</textarea>
                     </div>
                 </div>
+                    
+            {% if diagnosis_format%}
+                <div style="position: relative; right: 0px; top: 0px; z-index: 1; flex-basis: 0; flex-grow: 0; flex-shrink: 1;">
+                    <div class="border border-gray-300 rounded-md p-4 bg-gray-50 items-center space-x-3 mb-4 ml-4"
+                        style="position: absolute; top: 0; left: 10px; z-index: 1;">
+                        <h3 style="margin: 4px">
+                            Formato de diagnóstico
+                        </h3>
+                        <pre class="flex-1 text-sm text-gray-700" id="diagnosis-format-text">
+{{diagnosis_format|default:""}}
+                        </pre>
+                        <button type="button"
+                            class="copy-diagnosis-format px-3 py-1 bg-indigo-600 text-white rounded hover:bg-indigo-700 focus:outline-none border border-transparent"
+                            style="margin: 8px"
+                            onclick="
+                                const diagnosis = document.getElementById('diagnosis');
+                                const formatText = document.getElementById('diagnosis-format-text').textContent.trim();
+                                if (diagnosis.value.trim() !== '') {
+                                    if (!confirm('El diagnóstico ya tiene contenido. ¿Desea sobrescribirlo con el formato?')) return;
+                                }
+                                diagnosis.value = formatText;
+                            ">
+                            Copiar al diagnóstico
+                        </button>
+
+                        {% if observations_format %}
+                            <div class="flex gap-2 mt-2">
+                                <button type="button"
+                                    class="copy-observation-risk px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 focus:outline-none border border-transparent mr-2"
+                                    onclick="
+                                        const obs = document.getElementById('observations');
+                                        const riskText = `{{ observations_format.risk|default:''|escapejs }}`.trim();
+                                        if (obs.value.trim() !== '') {
+                                            if (!confirm('Las observaciones ya tienen contenido. ¿Desea sobrescribirlas con el formato de riesgo?')) return;
+                                        }
+                                        obs.value = riskText;
+                                    ">
+                                    Observación con riesgo
+                                </button>
+                                <button type="button"
+                                    class="copy-observation-no-risk px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 focus:outline-none border border-transparent"
+                                    style="background-color: #2c6b2fff;"
+                                    onclick="
+                                        const obs = document.getElementById('observations');
+                                        const noRiskText = `{{ observations_format.no_risk|default:''|escapejs }}`.trim();
+                                        if (obs.value.trim() !== '') {
+                                            if (!confirm('Las observaciones ya tienen contenido. ¿Desea sobrescribirlas con el formato sin riesgo?')) return;
+                                        }
+                                        obs.value = noRiskText;
+                                    ">
+                                    Observación sin riesgo
+                                </button>
+                            </div>
+                        {% endif %}
+
+                    </div>
+                </div>
+            {% endif %}
+                    
+            </div>
 
                 <div>
                     <label for="observations" class="block text-sm font-medium text-gray-700">Observaciones</label>
@@ -82,6 +146,7 @@
                 {% endif %}
             </div>
         </form>
+
 
         <!-- Respuestas previas -->
         <div class="professional-responses space-y-4">

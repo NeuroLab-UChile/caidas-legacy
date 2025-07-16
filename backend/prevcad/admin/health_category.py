@@ -24,6 +24,7 @@ from django.db import connection
 import time
 from django.db.models import Case, When, Value, IntegerField
 from django.db.utils import OperationalError
+from .health_category_diagnosis_format import diagnosis_formats, observations_format
 
 
 class UserProfileFilter(admin.SimpleListFilter):
@@ -117,7 +118,7 @@ class HealthCategoryAdmin(admin.ModelAdmin):
         "get_recommendation_status",
     )
 
-    def get_evaluation_type(self, obj):
+    def get_evaluation_type(self, obj: HealthCategory):
         return obj.template.evaluation_type if obj.template else "Sin template"
 
     get_evaluation_type.short_description = "Tipo de Evaluación"
@@ -140,7 +141,7 @@ class HealthCategoryAdmin(admin.ModelAdmin):
             "timesince": timesince(local_date),
         }
 
-    def get_professional_evaluation(self, obj):
+    def get_professional_evaluation(self, obj: HealthCategory):
         """Renderiza el formulario de evaluación profesional"""
         if (
             not hasattr(obj, "template")
@@ -151,6 +152,8 @@ class HealthCategoryAdmin(admin.ModelAdmin):
         request = getattr(self, "request", None)
         if not request:
             return "Error: No se pudo obtener el contexto de la solicitud"
+        
+        # print(obj.template.name)  # Debug para ver el nombre del template
 
         try:
             evaluation_form = obj.get_or_create_evaluation_form()
@@ -168,6 +171,8 @@ class HealthCategoryAdmin(admin.ModelAdmin):
                 "evaluation_tags": obj.template.evaluation_tags if obj.template else [],
                 "can_edit": can_edit,  # Solo permitir edición si tiene permisos
                 "user_is_authorized": can_edit,
+                "diagnosis_format": diagnosis_formats.get(obj.template.name, None),
+                "observations_format": observations_format,
             }
 
             template_path = "admin/healthcategory/professional_evaluation.html"
@@ -186,7 +191,7 @@ class HealthCategoryAdmin(admin.ModelAdmin):
         
     get_professional_evaluation.short_description = "Evaluación Profesional"
 
-    def get_recommendation_editor(self, obj):
+    def get_recommendation_editor(self, obj: HealthCategory):
         """Renderiza el editor de recomendaciones"""
         try:
             request = getattr(self, "request", None)
@@ -242,7 +247,7 @@ class HealthCategoryAdmin(admin.ModelAdmin):
         )
         return context
 
-    def get_user_info(self, obj):
+    def get_user_info(self, obj: HealthCategory):
         if obj.user and obj.user.user:
             user = obj.user.user
             display_name = user.get_full_name() or user.username
@@ -254,12 +259,12 @@ class HealthCategoryAdmin(admin.ModelAdmin):
         "Paciente"  # Cambiado de "Información de Usuario" a "Paciente"
     )
 
-    def get_template_name(self, obj):
+    def get_template_name(self, obj: HealthCategory):
         return obj.template.name
 
     get_template_name.short_description = "Plantilla"
 
-    def get_completion_status(self, obj):
+    def get_completion_status(self, obj: HealthCategory):
         status = obj.get_status()
         if status["is_completed"]:
             return "Completado"
@@ -270,7 +275,7 @@ class HealthCategoryAdmin(admin.ModelAdmin):
 
     get_completion_status.short_description = "Estado"
 
-    def get_completion_date(self, obj):
+    def get_completion_date(self, obj: HealthCategory):
         """Muestra la fecha de completado según el tipo de evaluación"""
         try:
             if not obj.template:
@@ -332,7 +337,7 @@ class HealthCategoryAdmin(admin.ModelAdmin):
 
     get_completion_date.short_description = "Estado"
 
-    def get_recommendation_status(self, obj):
+    def get_recommendation_status(self, obj: HealthCategory):
         """Muestra el estado de la recomendación con mejor formato"""
         try:
             recommendation = obj.get_or_create_recommendation()
@@ -368,7 +373,7 @@ class HealthCategoryAdmin(admin.ModelAdmin):
     get_recommendation_status.short_description = "Estado"
     get_recommendation_status.allow_tags = True
 
-    def get_detailed_responses(self, obj):
+    def get_detailed_responses(self, obj: HealthCategory):
         responses = obj.evaluation_form.responses or {}
         processed_responses = {}
 
@@ -405,11 +410,11 @@ class HealthCategoryAdmin(admin.ModelAdmin):
             instance.save()
         formset.save_m2m()
 
-    def get_default_recommendation(self, obj):
+    def get_default_recommendation(self, obj: HealthCategory):
         """Retorna la recomendación por defecto basada en el tipo de evaluación"""
         return obj.template.get_default_recommendation()
 
-    def response_change(self, request, obj):
+    def response_change(self, request, obj: HealthCategory):
         """Personaliza la respuesta después de intentar guardar"""
         if "_save" in request.POST and hasattr(request, "_permission_denied"):
             # Si hubo un error de permisos, redirigir de vuelta al formulario
@@ -420,7 +425,7 @@ class HealthCategoryAdmin(admin.ModelAdmin):
             return HttpResponseRedirect(url)
         return super().response_change(request, obj)
 
-    def save_model(self, request, obj, form, change):
+    def save_model(self, request, obj: HealthCategory, form, change):
         from django.db import connection
         import time
 

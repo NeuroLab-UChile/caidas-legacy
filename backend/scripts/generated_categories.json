@@ -15,21 +15,13 @@
           "id": 1,
           "type": "SINGLE_CHOICE_QUESTION",
           "question": "¿En qué tipo de vivienda reside actualmente?",
-          "options": [
-            "Casa",
-            "Departamento",
-            "Parcela/Terreno",
-            "Otro"
-          ]
+          "options": ["Casa", "Departamento", "Parcela/Terreno", "Otro"]
         },
         {
           "id": 2,
           "type": "SINGLE_CHOICE_QUESTION",
           "question": "Si reside en Parcela/Terreno, ¿tiene caminos seguros para transitar por su terreno y llegar a casa?",
-          "options": [
-            "Sí",
-            "No"
-          ],
+          "options": ["Sí", "No"],
           "conditional": {
             "parent_id": 1,
             "trigger_option": "Parcela/Terreno"
@@ -81,23 +73,25 @@
           "id": 6,
           "type": "SINGLE_CHOICE_QUESTION",
           "question": "¿Tiene especial preocupación de caer en algún lugar de su casa?",
-          "options": [
-            "Sí",
-            "No"
-          ]
+          "options": ["Sí", "No"]
         },
         {
           "id": 7,
-          "type": "IMAGE_QUESTION",
-          "question": "Por favor capture fotos de los siguientes lugares de su hogar: entrada"
+          "type": "TEXT_QUESTION",
+          "question": "Si usted tiene una o más mascotas, por favor escriba qué animales son y cuántos tiene (por ejemplo: \"Tengo 1 perro y 2 gatos\"). Si no tiene mascotas, escriba: \"No tengo mascotas\"."
         },
         {
           "id": 8,
           "type": "IMAGE_QUESTION",
-          "question": "Por favor capture fotos de los siguientes lugares de su hogar: baño"
+          "question": "Por favor capture fotos de los siguientes lugares de su hogar: entrada"
         },
         {
           "id": 9,
+          "type": "IMAGE_QUESTION",
+          "question": "Por favor capture fotos de los siguientes lugares de su hogar: baño"
+        },
+        {
+          "id": 10,
           "type": "IMAGE_QUESTION",
           "question": "Por favor capture fotos de los siguientes lugares de su hogar: escaleras"
         }
@@ -132,9 +126,7 @@
       "risk": "Su actividad física es insuficiente. Considere aumentar su actividad física con ejercicios suaves."
     },
     "evaluation_type": "PROFESSIONAL",
-    "evaluation_tags": [
-      "exercise"
-    ],
+    "evaluation_tags": ["exercise"],
     "training_form": {
       "training_nodes": [
         {
@@ -366,10 +358,7 @@
       "risk": "Ha notado dificultades para ver objetos a corta distancia. Considere consultar a un oculista."
     },
     "evaluation_type": "PROFESSIONAL",
-    "evaluation_tags": [
-      "vision",
-      "hearing"
-    ],
+    "evaluation_tags": ["vision", "hearing"],
     "training_form": {
       "training_nodes": [
         {
@@ -392,10 +381,7 @@
       "risk": "Su actividad física es insuficiente. Considere aumentar su actividad física con ejercicios suaves."
     },
     "evaluation_type": "PROFESSIONAL",
-    "evaluation_tags": [
-      "medication",
-      "safety"
-    ],
+    "evaluation_tags": ["medication", "safety"],
     "training_form": {
       "training_nodes": [
         {
@@ -418,10 +404,7 @@
       "risk": "Ha notado dificultades para concentrarse durante el día. Considere consultar a un especialista."
     },
     "evaluation_type": "PROFESSIONAL",
-    "evaluation_tags": [
-      "mind",
-      "emotion"
-    ],
+    "evaluation_tags": ["mind", "emotion"],
     "training_form": {
       "training_nodes": [
         {
@@ -444,9 +427,7 @@
       "risk": "Ha sufrido una caída en el último año. Considere adoptar medidas preventivas."
     },
     "evaluation_type": "PROFESSIONAL",
-    "evaluation_tags": [
-      "falls"
-    ],
+    "evaluation_tags": ["falls"],
     "training_form": {
       "training_nodes": [
         {
@@ -469,10 +450,7 @@
       "risk": "Su actividad física es insuficiente. Considere aumentar su actividad física con ejercicios suaves."
     },
     "evaluation_type": "PROFESSIONAL",
-    "evaluation_tags": [
-      "bone",
-      "muscle"
-    ],
+    "evaluation_tags": ["bone", "muscle"],
     "training_form": {
       "training_nodes": [
         {

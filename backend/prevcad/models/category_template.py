@@ -42,7 +42,6 @@ class CategoryTemplate(models.Model):
     default='SELF',
     verbose_name="Tipo de Evaluación",
     help_text="Define quién puede realizar la evaluación"
-    
   )
   evaluation_form = models.JSONField(
     null=True,
@@ -101,8 +100,10 @@ class CategoryTemplate(models.Model):
   def available_roles(self):
         """Retorna lista de choices para roles disponibles"""
         return [(role.value, role.label) for role in UserTypes]
+
   def get_default_recommendation(self):
     return self.default_recommendations
+  
   def clean(self):
         """Valida que los roles seleccionados sean válidos"""
         super().clean()
