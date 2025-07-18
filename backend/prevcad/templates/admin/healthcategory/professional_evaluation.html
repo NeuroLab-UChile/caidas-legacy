@@ -219,9 +219,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     message: complete ? 'Evaluación completada exitosamente' : 'Borrador guardado exitosamente'
                 });
                 
-                setTimeout(() => {
+                // setTimeout(() => {
+                    alert('Evaluación guardada exitosamente, recargando página...');
                     window.location.reload();
-                }, 1500);
+                // }, 1500);
             }
         } catch (error) {
             console.error('Error:', error);

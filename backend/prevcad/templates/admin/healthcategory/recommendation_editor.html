@@ -439,53 +439,76 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         // Event listener para el formulario
+        // Mejor desactivar los botones con submit, and gray out with styles
+        const submitButtons = form.querySelectorAll('input[type="submit"]');
+        submitButtons.forEach(button => {
+            button.disabled = true;
+            button.style.backgroundColor = '#f0f0f0'; // Gris claro
+            button.style.color = '#a0a0a0'; // Gris oscuro
+            button.style.cursor = 'not-allowed'; // Cambiar cursor a no permitido
+        });
+        // Tambien desactivar link de Eliminar (<a> class deletelink)
+        const deleteLink = form.querySelector('.deletelink');
+        if (deleteLink) {
+            deleteLink.style.pointerEvents = 'none'; // Desactivar clics
+            deleteLink.style.color = '#a0a0a0'; // Gris oscuro
+            deleteLink.style.textDecoration = 'line-through'; // Tachado
+        }
+
         addSafeEventListener(form, 'submit', function(e) {
             e.preventDefault();
-            const formData = new FormData(form);
 
-            // Añadir múltiples archivos de video al FormData
-            if (elements.videoInput && elements.videoInput.files.length > 0) {
-                Array.from(elements.videoInput.files).forEach((file, index) => {
-                    formData.append(`videos`, file); // Usa el mismo nombre para múltiples videos
-                });
-            }
+            alert("Guarde mediante los botones de cada sección\n(evaluación / recomendación)");
+            return;
 
-            // Obtener el CSRF token
-            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-            const url = "{% url 'update_recommendation' category_id=health_category.id %}";
+            // Dejado para revisión futura
+
+            // const formData = new FormData(form);
+
+            // // Añadir múltiples archivos de video al FormData
+            // if (elements.videoInput && elements.videoInput.files.length > 0) {
+            //     Array.from(elements.videoInput.files).forEach((file, index) => {
+            //         formData.append(`videos`, file); // Usa el mismo nombre para múltiples videos
+            //     });
+            // }
+
+            // // Obtener el CSRF token
+            // const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            // const url = "{% url 'update_recommendation' category_id=health_category.id %}";
             
+            // console.log('POSTing URL:', url, formData);
 
-            fetch(url, {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-CSRFToken': csrfToken,
-               
-                },
-                credentials: 'same-origin'
-            })
-            .then(response => {
-                if (!response.ok) {
-                    return response.text().then(text => {
-                        throw new Error(text);
-                    });
-                }
-                return response.json();
-            })
-            .then(data => {
-                console.log('Respuesta del servidor:', data);
-                if (data.status === 'success') {
-                    console.log('Guardado exitoso');
-                    alert('Recomendación guardada exitosamente');
-                    window.location.reload();
-                } else {
-                    throw new Error(data.error || 'Error al guardar');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Ha ocurrido un error al guardar la recomendación: ' + error.message);
-            });
+            // fetch(url, {
+            //     method: 'POST',
+            //     body: formData,
+            //     headers: {
+            //         'X-CSRFToken': csrfToken,
+            //     },
+            //     credentials: 'same-origin'
+            // })
+            // .then(response => {
+            //     if (!response.ok) {
+            //         return response.text().then(text => {
+            //             throw new Error(text);
+            //         });
+            //     }
+            //     return response.json();
+            // })
+            // .then(data => {
+            //     console.log('Respuesta del servidor:', data);
+            //     if (data.status === 'success') {
+            //         console.log('Guardado exitoso');
+            //         // alert('Recomendación guardada exitosamente');
+            //         alert('ERROR');
+            //         window.location.reload();
+            //     } else {
+            //         throw new Error(data.error || 'Error al guardar');
+            //     }
+            // })
+            // .catch(error => {
+            //     console.error('Error:', error);
+            //     alert('Ha ocurrido un error al guardar la recomendación: ' + error.message);
+            // });
         });
 
         // Inicializar
@@ -565,6 +588,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
 
                 if (response.ok) {
+                    console.log(await response.json());
+                    alert('Recomendación guardada exitosamente, recargando página...');
                     window.location.reload();
                 } else {
                     throw new Error('Error al guardar la recomendación');
