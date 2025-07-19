@@ -461,8 +461,13 @@
         </div>
 
         <div class="form-group">
-          <label for="questionText" id="contentLabel">Pregunta</label>
+          <label for="questionText" id="contentLabel">Pregunta/Título</label>
           <input type="text" id="questionText" class="form-input" required>
+        </div>
+
+        <div class="form-group">
+          <label for="descriptionText" id="contentLabel">Descripción</label>
+          <input type="text" id="descriptionText" class="form-input">
         </div>
 
         <div id="optionsContainer" class="hidden">
@@ -696,9 +701,16 @@ Puedes modificar esta estructura o escribir texto libre.'
             });
         }
 
+        console.log('Editing node:', type, node);
+
         const questionText = document.getElementById('questionText');
         if (questionText) {
-          questionText.value = type === 'TRAINING' ? (node.content || '') : (node.question || '');
+          questionText.value = type === 'TRAINING' ? (node.title || '') : (node.question || '');
+        }
+
+        const descriptionText = document.getElementById('descriptionText');
+        if (descriptionText) {
+          descriptionText.value = type === 'TRAINING' ? (node.description || '') : (node.description || '');
         }
 
         if (type === 'TRAINING') {
@@ -780,6 +792,7 @@ Puedes modificar esta estructura o escribir texto libre.'
         const contentType = document.getElementById('contentType')?.value;
         const nodeId = document.getElementById('nodeId')?.value;
         const questionText = document.getElementById('questionText')?.value;
+        const descriptionText = document.getElementById('descriptionText')?.value;
         const videoFile = document.getElementById('video')?.files?.[0];
         const imageFile = document.getElementById('image')?.files?.[0];
 
@@ -788,7 +801,7 @@ Puedes modificar esta estructura o escribir texto libre.'
             return null;
         }
 
-        const nodeData = createNodeData(contentType, nodeId, questionText, videoFile, imageFile);
+        const nodeData = createNodeData(contentType, nodeId, questionText, descriptionText, videoFile, imageFile);
         if (!nodeData) return null;
 
         const formData = new FormData();
@@ -805,7 +818,7 @@ Puedes modificar esta estructura o escribir texto libre.'
         return formData;
     }
 
-    function createNodeData(contentType, nodeId, questionText, videoFile, imageFile) {
+    function createNodeData(contentType, nodeId, questionText, descriptionText, videoFile, imageFile) {
         const nodeData = {
             id: nodeId ? String(nodeId) : String(Date.now()),
             type: contentType === 'TRAINING' ? 
@@ -815,7 +828,7 @@ Puedes modificar esta estructura o escribir texto libre.'
         
         if (contentType === 'TRAINING') {
             nodeData.title = document.getElementById('questionText')?.value || 'Plan Semanal';
-            nodeData.description = 'Plan de alimentación personalizado';
+            nodeData.description = document.getElementById('descriptionText')?.value || 'Contenido de entrenamiento';
 
             if (nodeData.type === NODE_TYPES.TRAINING.WEEKLY_RECIPE) {
                 const textarea = document.getElementById('weeklyPlanTextarea');
@@ -1066,7 +1079,7 @@ Puedes modificar esta estructura o escribir texto libre.'
                     </div>
                     
                     <div class="mt-2">
-                        <h3 class="font-semibold text-lg">${node.title || node.content || 'Sin título'}</h3>
+                        <h3 class="font-semibold text-lg">${node.title || node.content || ''}</h3>
                         <p class="text-gray-600">${getNodeSummary(node)}</p>
                     </div>
                     
@@ -1081,11 +1094,12 @@ Puedes modificar esta estructura o escribir texto libre.'
             case 'WEEKLY_RECIPE_NODE':
                 return 'Plan nutricional semanal';
             case 'DESCRIPTION_NODE':
-                return node.description ? node.description.substring(0, 100) + '...' : 'Descripción';
             case 'VIDEO_NODE':
-                return 'Video de entrenamiento';
             case 'IMAGE_NODE':
-                return 'Imagen de entrenamiento';
+            case 'TEXT_NODE':
+                return node.description ? node.description.substring(0, 200) + (node.description.length > 200 ? '...' : '') : 'Descripción';
+                // return 'Video de entrenamiento';
+                // return 'Imagen de entrenamiento';
             default:
                 return node.content || node.question || 'Sin descripción';
         }
