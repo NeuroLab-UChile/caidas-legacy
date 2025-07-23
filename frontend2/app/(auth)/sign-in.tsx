@@ -92,7 +92,9 @@ export default function SignIn() {
         // Redirigir a la pantalla de acción
         router.replace("/(tabs)/action/");
       } else {
-        setError("Credenciales incorrectas");
+        setError(
+          "Error en login, revise sus credenciales y su conexión a internet."
+        );
       }
     } catch (error) {
       console.error("Error en login:", error);
