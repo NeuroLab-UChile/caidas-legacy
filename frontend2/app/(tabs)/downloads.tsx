@@ -169,14 +169,6 @@ export default function DownloadsScreen() {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" />
-      {/* <ScrollView
-        // Padding and margin 0
-        contentContainerStyle={{ padding: 0, margin: 0 }}
-        // style={{ flex: 1 }}
-        refreshControl={
-          <RefreshControl refreshing={loading} onRefresh={reloadDownloads} />
-        }
-      > */}
       <View style={styles.filtersContainer}>
         <TouchableOpacity
           style={styles.openButton}
@@ -212,13 +204,10 @@ export default function DownloadsScreen() {
       </View>
 
       {/* Table header */}
-      <View style={styles.table}>
-        <View
-          style={[
-            styles.table_header,
-            { paddingLeft: SPACING, paddingRight: SPACING },
-          ]}
-        >
+      <View
+        style={[styles.table, { paddingLeft: SPACING, paddingRight: SPACING }]}
+      >
+        <View style={styles.table_header}>
           <View
             style={[styles.cell_header, { flex: 0.2 }, styles.statusContainer]}
           >
@@ -231,33 +220,30 @@ export default function DownloadsScreen() {
           <Text style={[styles.cell_header, { flex: 0.8 }]}>Título</Text>
           <Text style={[styles.cell_header, { flex: 1 }]}>Descripción</Text>
           <Text style={[styles.cell_header, { flex: 0.8 }]}>Descarga</Text>
-          {/* </View> */}
         </View>
-
-        <FlatList
-          style={styles.listContainer}
-          refreshControl={
-            <RefreshControl refreshing={loading} onRefresh={reloadDownloads} />
-          }
-          data={filteredDownloads || []}
-          renderItem={renderDownloadItem}
-          keyExtractor={(item) => item.id.toString()}
-          // contentContainerStyle={styles.listContainer}
-          contentContainerStyle={styles.table}
-          showsVerticalScrollIndicator={false}
-          ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <IconSymbol
-                name="cloud-offline"
-                size={64}
-                color={theme.colors.text}
-              />
-              <Text style={styles.emptyText}>No hay descargas disponibles</Text>
-            </View>
-          }
-        />
       </View>
-      {/* </ScrollView> */}
+
+      <FlatList
+        style={styles.listContainer}
+        refreshControl={
+          <RefreshControl refreshing={loading} onRefresh={reloadDownloads} />
+        }
+        data={filteredDownloads || []}
+        renderItem={renderDownloadItem}
+        keyExtractor={(item) => item.id.toString()}
+        contentContainerStyle={{ paddingBottom: SPACING * 2 }}
+        showsVerticalScrollIndicator={false}
+        ListEmptyComponent={
+          <View style={styles.emptyContainer}>
+            <IconSymbol
+              name="cloud-offline"
+              size={64}
+              color={theme.colors.text}
+            />
+            <Text style={styles.emptyText}>No hay descargas disponibles</Text>
+          </View>
+        }
+      />
     </View>
   );
 }
@@ -325,7 +311,7 @@ const styles = StyleSheet.create({
     // padding: SPACING,
     paddingLeft: SPACING,
     paddingRight: SPACING,
-    paddingBottom: SPACING * 4,
+    paddingBottom: SPACING * 2,
   },
   priorityBadge: {
     flexDirection: "row",
