@@ -1,7 +1,14 @@
 import React from "react";
-import { View, Text, Image, StyleSheet, TouchableOpacity } from "react-native";
-
+import {
+  View,
+  Text,
+  Image,
+  StyleSheet,
+  TouchableOpacity,
+  Linking,
+} from "react-native";
 import { theme } from "@/src/theme";
+import { TextWithHyperlinks } from "@/components/ui/TextWithHyperlinks";
 
 interface CategoryDescriptionProps {
   data: {
@@ -18,6 +25,10 @@ export function CategoryDescriptionView({
   data,
   onNext,
 }: CategoryDescriptionProps) {
+  const description = (
+    <TextWithHyperlinks>{data.description}</TextWithHyperlinks>
+  );
+
   return (
     <View style={styles.container}>
       {data.image && (
@@ -29,13 +40,19 @@ export function CategoryDescriptionView({
       )}
 
       {/* title */}
-      <Text style={[styles.description, { color: theme.colors.text, fontWeight: "bold" }]}>
+      <Text
+        style={[
+          styles.description,
+          { color: theme.colors.text, fontWeight: "bold" },
+        ]}
+      >
         {data.title}
       </Text>
 
-      <Text style={[styles.description, { color: theme.colors.text }]}>
+      {/* <Text style={[styles.description, { color: theme.colors.text }]}>
         {data.description}
-      </Text>
+      </Text> */}
+      {description}
 
       <View style={styles.buttonContainer}>
         {data.first_button_text && (

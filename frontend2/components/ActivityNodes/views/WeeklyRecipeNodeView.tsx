@@ -1,6 +1,6 @@
-
 import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { theme } from "@/src/theme";
+import { TextWithHyperlinks } from "@/components/ui/TextWithHyperlinks";
 
 interface MealInfo {
   meal?: string;
@@ -61,6 +61,10 @@ export const WeeklyRecipeNodeView: React.FC<RecipeNodeViewProps> = ({
   const isExercisePlan =
     Object.values(data.weekly_plan)[0]?.MORNING?.activity !== undefined;
 
+  const description = (
+    <TextWithHyperlinks>{data.description}</TextWithHyperlinks>
+  );
+
   const renderScheduleItem = (scheduleInfo: MealInfo, scheduleType: string) => {
     if (!scheduleInfo) return null;
 
@@ -111,7 +115,8 @@ export const WeeklyRecipeNodeView: React.FC<RecipeNodeViewProps> = ({
   return (
     <ScrollView style={styles.container}>
       <Text style={styles.title}>{data.title}</Text>
-      <Text style={styles.description}>{data.description}</Text>
+      {/* <Text style={styles.description}>{data.description}</Text> */}
+      {description}
 
       {Object.entries(data.weekly_plan).map(([day, schedule], index) => (
         <View key={`day-${index}-${day}`} style={styles.dayContainer}>

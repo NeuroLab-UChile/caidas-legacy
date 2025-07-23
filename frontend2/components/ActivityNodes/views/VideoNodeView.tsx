@@ -1,6 +1,7 @@
 import { VideoPlayerView } from "@/components/VideoPlayer";
 import { View, StyleSheet, Text } from "react-native";
 import { theme } from "@/src/theme";
+import { TextWithHyperlinks } from "@/components/ui/TextWithHyperlinks";
 
 interface VideoNodeViewProps {
   data: {
@@ -17,6 +18,10 @@ export const VideoNodeView: React.FC<VideoNodeViewProps> = ({
 }) => {
   console.log("VideoNodeView data:", data);
 
+  const description = (
+    <TextWithHyperlinks>{data.description}</TextWithHyperlinks>
+  );
+
   return (
     <View style={styles.container}>
       <View style={{ marginBottom: 16 }}>
@@ -32,9 +37,14 @@ export const VideoNodeView: React.FC<VideoNodeViewProps> = ({
         </Text>
       </View>
 
-      <Text style={{ color: theme.colors.text, marginBottom: 16, fontSize: 16 }}>
+      {/* <Text
+        style={{ color: theme.colors.text, marginBottom: 16, fontSize: 16 }}
+      >
         {data.description}
-      </Text>
+      </Text> */}
+      {description}
+
+      {/* Video Player */}
 
       <View style={styles.videoCard}>
         <VideoPlayerView url={data.media_url} description={data.description} />

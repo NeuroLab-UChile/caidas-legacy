@@ -8,6 +8,7 @@ import {
   Dimensions,
 } from "react-native";
 import { theme } from "@/src/theme";
+import { TextWithHyperlinks } from "@/components/ui/TextWithHyperlinks";
 
 interface ImageNodeViewProps {
   data: {
@@ -27,16 +28,20 @@ export const ImageNodeView: React.FC<ImageNodeViewProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const imageUrl = data?.media_url || '';
-
+  const imageUrl = data?.media_url || "";
   console.log("ImageNodeView data:", data);
+
+  const description = data.description ? (
+    <TextWithHyperlinks>{data.description}</TextWithHyperlinks>
+  ) : null;
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>{data.title}</Text>
-      {data.description && (
+      {/* {data.description && (
         <Text style={styles.description}>{data.description}</Text>
-      )}
+      )} */}
+      {description}
 
       <View style={styles.imageContainer}>
         {imageUrl ? (
@@ -73,9 +78,7 @@ export const ImageNodeView: React.FC<ImageNodeViewProps> = ({
           <View style={styles.errorContainer}>
             <Text style={styles.errorText}>{error}</Text>
             {__DEV__ && (
-              <Text style={styles.debugText}>
-                URL: {imageUrl || "No URL"}
-              </Text>
+              <Text style={styles.debugText}>URL: {imageUrl || "No URL"}</Text>
             )}
           </View>
         )}
@@ -90,7 +93,7 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   title: {
-    fontSize: 18,
+    fontSize: 24,
     fontWeight: "bold",
     marginBottom: 8,
     color: theme.colors.text,
