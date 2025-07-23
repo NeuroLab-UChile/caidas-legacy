@@ -32,6 +32,7 @@
     "expo-font": "~13.3.1",
     "expo-haptics": "~14.1.4",
     "expo-image-picker": "~16.1.4",
+    "expo-intent-launcher": "~12.1.5",
     "expo-linking": "~7.1.5",
     "expo-media-library": "~17.1.7",
     "expo-router": "~5.1.1",
@@ -46,14 +47,14 @@
     "react-native": "0.79.4",
     "react-native-gesture-handler": "~2.24.0",
     "react-native-gradle-plugin": "^0.71.19",
+    "react-native-image-zoom-viewer": "^3.0.1",
     "react-native-reanimated": "^3.17.4",
     "react-native-safe-area-context": "5.4.0",
     "react-native-screens": "~4.11.1",
     "react-native-vector-icons": "^10.2.0",
     "react-native-video": "^6.9.1",
     "react-native-web": "^0.20.0",
-    "react-native-webview": "13.13.5",
-    "expo-intent-launcher": "~12.1.5"
+    "react-native-webview": "13.13.5"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

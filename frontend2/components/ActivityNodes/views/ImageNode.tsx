@@ -10,7 +10,8 @@ import {
 import { theme } from "@/src/theme";
 import { TextWithHyperlinks } from "@/components/ui/TextWithHyperlinks";
 import React from "react";
-import { Modal, Pressable, TouchableOpacity, ScrollView } from "react-native";
+import { Modal, Pressable, TouchableOpacity } from "react-native";
+import ImageViewer from 'react-native-image-zoom-viewer';
 
 interface ImageNodeViewProps {
   data: {
@@ -74,27 +75,16 @@ export const ImageNodeView: React.FC<ImageNodeViewProps> = ({
         >
           <Text style={{ color: "#fff", fontSize: 24 }}>✕</Text>
         </TouchableOpacity>
-        <ScrollView
-          style={{ flex: 1 }}
-          contentContainerStyle={{
-            flex: 1,
-            justifyContent: "center",
-            alignItems: "center",
-          }}
-          maximumZoomScale={4}
-          minimumZoomScale={1}
-          centerContent={true}
-          bouncesZoom={true}
-        >
-          <Image
-            source={{ uri: imageUrl }}
-            style={{
-              width: Dimensions.get("window").width,
-              height: Dimensions.get("window").width * 0.5625,
-              resizeMode: "contain",
-            }}
-          />
-        </ScrollView>
+        <ImageViewer
+          imageUrls={[{ url: imageUrl }]}
+          enableSwipeDown={true}
+          onSwipeDown={handleCloseModal}
+          backgroundColor="rgba(0,0,0,0)"
+          renderIndicator={() => null}
+          renderHeader={() => null}
+          renderFooter={() => null}
+          saveToLocalByLongPress={false}
+        />
       </View>
     </Modal>
   );
