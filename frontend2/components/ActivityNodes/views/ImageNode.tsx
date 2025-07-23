@@ -9,6 +9,8 @@ import {
 } from "react-native";
 import { theme } from "@/src/theme";
 import { TextWithHyperlinks } from "@/components/ui/TextWithHyperlinks";
+import React from "react";
+import { Modal, Pressable, TouchableOpacity, ScrollView } from "react-native";
 
 interface ImageNodeViewProps {
   data: {
@@ -35,8 +37,72 @@ export const ImageNodeView: React.FC<ImageNodeViewProps> = ({
     <TextWithHyperlinks>{data.description}</TextWithHyperlinks>
   ) : null;
 
+  const [modalVisible, setModalVisible] = useState(false);
+
+  const handleImagePress = () => {
+    console.warn("Image pressed");
+    if (imageUrl) {
+      console.log("Opening image in modal:", imageUrl);
+      setModalVisible(true);
+    }
+  };
+
+  const handleCloseModal = () => {
+    setModalVisible(false);
+  };
+
+  const EnlargedImageModal = () => (
+    <Modal
+      visible={modalVisible}
+      transparent={true}
+      animationType="fade"
+      onRequestClose={handleCloseModal}
+    >
+      <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.95)" }}>
+        <TouchableOpacity
+          style={{
+            position: "absolute",
+            top: 40,
+            right: 24,
+            zIndex: 2,
+            backgroundColor: "rgba(0,0,0,0.5)",
+            borderRadius: 20,
+            padding: 8,
+          }}
+          onPress={handleCloseModal}
+          accessibilityLabel="Cerrar imagen ampliada"
+        >
+          <Text style={{ color: "#fff", fontSize: 24 }}>✕</Text>
+        </TouchableOpacity>
+        <ScrollView
+          style={{ flex: 1 }}
+          contentContainerStyle={{
+            flex: 1,
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+          maximumZoomScale={4}
+          minimumZoomScale={1}
+          centerContent={true}
+          bouncesZoom={true}
+        >
+          <Image
+            source={{ uri: imageUrl }}
+            style={{
+              width: Dimensions.get("window").width,
+              height: Dimensions.get("window").width * 0.5625,
+              resizeMode: "contain",
+            }}
+          />
+        </ScrollView>
+      </View>
+    </Modal>
+  );
+
   return (
     <View style={styles.container}>
+      <EnlargedImageModal />
+
       <Text style={styles.title}>{data.title}</Text>
       {/* {data.description && (
         <Text style={styles.description}>{data.description}</Text>
@@ -45,22 +111,24 @@ export const ImageNodeView: React.FC<ImageNodeViewProps> = ({
 
       <View style={styles.imageContainer}>
         {imageUrl ? (
-          <Image
-            source={{ uri: imageUrl }}
-            style={styles.image}
-            onLoadStart={() => {
-              setIsLoading(true);
-              setError(null);
-            }}
-            onLoad={() => {
-              setIsLoading(false);
-            }}
-            onError={() => {
-              setError("No se pudo cargar la imagen");
-              setIsLoading(false);
-            }}
-            resizeMode="contain"
-          />
+          <TouchableOpacity onPress={handleImagePress} style={styles.image}>
+            <Image
+              source={{ uri: imageUrl }}
+              style={{ width: "100%", height: "100%" }}
+              onLoadStart={() => {
+                setIsLoading(true);
+                setError(null);
+              }}
+              onLoad={() => {
+                setIsLoading(false);
+              }}
+              onError={() => {
+                setError("No se pudo cargar la imagen");
+                setIsLoading(false);
+              }}
+              resizeMode="contain"
+            />
+          </TouchableOpacity>
         ) : (
           <View style={styles.placeholderContainer}>
             <Text style={styles.placeholderText}>Sin imagen disponible</Text>
