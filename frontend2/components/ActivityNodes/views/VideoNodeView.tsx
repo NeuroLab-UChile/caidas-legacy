@@ -56,17 +56,17 @@ export const VideoNodeView: React.FC<VideoNodeViewProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
+    padding: 7,
   },
   videoCard: {
     backgroundColor: theme.colors.card,
     borderRadius: 24,
-    padding: 20,
+    padding: 5,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 12,
     elevation: 4,
-    minHeight: 240,
+    // minHeight: 240,
   },
 });

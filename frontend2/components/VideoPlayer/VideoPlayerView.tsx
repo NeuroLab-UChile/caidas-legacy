@@ -50,7 +50,7 @@ export const VideoPlayerView: React.FC<VideoPlayerViewProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
+    padding: 5,
   },
   title: {
     fontSize: 16,
