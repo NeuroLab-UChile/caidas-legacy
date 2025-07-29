@@ -1,5 +1,10 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
+from django.contrib.auth.forms import (
+    AdminPasswordChangeForm,
+    AdminUserCreationForm,
+    UserChangeForm,
+)
 from django.contrib.auth.models import User
 import os
 from django.conf import settings
@@ -39,7 +44,7 @@ class PermissionSelectWidget(forms.SelectMultiple):
         return context
 
 
-class CustomUserForm(forms.ModelForm):
+class CustomUserForm(UserChangeForm): #forms.ModelForm):
     user_permissions = forms.ModelMultipleChoiceField(
         queryset=Permission.objects.all(),
         widget=PermissionSelectWidget,
@@ -51,9 +56,10 @@ class CustomUserForm(forms.ModelForm):
         model = User
         fields = (
             "username",
+            "email",
+            "password",
             "first_name",
             "last_name",
-            "email",
             "is_staff",
             "is_superuser",
             "groups",
@@ -101,8 +107,8 @@ class CustomUserAdmin(UserAdmin):
 
     # Actualizar fieldsets para el formulario de edición - usando la configuración estándar de Django
     fieldsets = (
-        (None, {"fields": ("username",)}),
-        ("Información Personal", {"fields": ("first_name", "last_name", "email")}),
+        (None, {"fields": ("username", "email", "password")}),
+        ("Información Personal", {"fields": ("first_name", "last_name")}),
         (
             "Permisos",
             {
