@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   Alert,
   Dimensions,
+  Linking,
 } from "react-native";
 
 import { ImageUploader } from "../../components/ImageUploader";
@@ -318,6 +319,44 @@ export default function ProfileScreen() {
               </View>
             </View>
           </View>
+
+          <View
+            style={[
+              styles.infoCard,
+              { backgroundColor: theme.colors.card, marginBottom: 20 },
+            ]}
+          >
+            <View style={styles.cardHeader}>
+              <Ionicons
+                name="help-circle-outline"
+                size={24}
+                color={theme.colors.text}
+              />
+              <Text style={[styles.cardTitle, { color: theme.colors.text }]}>
+                Ayuda
+              </Text>
+            </View>
+            <Text style={[styles.value, { color: theme.colors.text }]}>
+              Si tiene inconvenientes con la aplicación, comuníquese por{" "}
+              <Text
+                style={{ color: "blue" }}
+                onPress={() => Linking.openURL("tel:+56912345678")}
+              >
+                llamada
+              </Text>{" "}
+              o{" "}
+              <Text
+                style={{ color: "blue" }}
+                onPress={() => Linking.openURL("https://wa.me/56912345678")}
+              >
+                WhatsApp
+              </Text>
+              , de lunes a viernes entre 8:00 y 17:00hrs, al siguiente número:{" "}
+              <Text style={{ textDecorationLine: "underline" }}>
+                +56 9 1234 5678
+              </Text>
+            </Text>
+          </View>
         </View>
       </View>
 
@@ -341,7 +380,7 @@ const styles = StyleSheet.create({
     top: 0,
   },
   profileContent: {
-    flex: 1,
+    // flex: 1,
     paddingTop: 20,
     paddingBottom: 10,
   },
