@@ -333,27 +333,45 @@ export default function ProfileScreen() {
                 color={theme.colors.text}
               />
               <Text style={[styles.cardTitle, { color: theme.colors.text }]}>
-                Ayuda
+                Ayuda y Soporte
               </Text>
             </View>
             <Text style={[styles.value, { color: theme.colors.text }]}>
               Si tiene inconvenientes con la aplicación, comuníquese por{" "}
               <Text
                 style={{ color: "blue" }}
-                onPress={() => Linking.openURL("tel:+56912345678")}
+                onPress={() => Linking.openURL("tel:+56977547545")}
               >
                 llamada
               </Text>{" "}
               o{" "}
               <Text
                 style={{ color: "blue" }}
-                onPress={() => Linking.openURL("https://wa.me/56912345678")}
+                onPress={() => Linking.openURL("https://wa.me/56977547545")}
               >
                 WhatsApp
               </Text>
-              , de lunes a viernes entre 8:00 y 17:00hrs, al siguiente número:{" "}
-              <Text style={{ textDecorationLine: "underline" }}>
-                +56 9 1234 5678
+              , de lunes a viernes entre 8:00 y 17:00 hrs., al siguiente número:{" "}
+              <Text
+                style={{ textDecorationLine: "underline" }}
+                onPress={() => Linking.openURL("https://wa.me/56977547545")}
+              >
+                +56 9 7754 7545
+              </Text>
+            </Text>
+
+            <View style={{ height: 15 }} />
+
+            <Text style={[styles.value, { color: theme.colors.text }]}>
+              En caso de no obtener respuesta oportuna, o tener una emergencia
+              relacionada al estudio, comuníquese al correo:{" "}
+              <Text
+                style={{ textDecorationLine: "underline", color: "blue" }}
+                onPress={() =>
+                  Linking.openURL("mailto:fondef.caidas@gmail.com")
+                }
+              >
+                fondef.caidas@gmail.com
               </Text>
             </Text>
           </View>
