@@ -132,7 +132,7 @@ export default function EventsScreen() {
       <TouchableOpacity style={styles.eventCard} activeOpacity={0.7}>
         <Text style={styles.eventTitle}>{item.title || "Sin título"}</Text>
 
-        <Text style={styles.eventDescription} numberOfLines={2}>
+        <Text style={styles.eventDescription} numberOfLines={10}>
           {item.description || "Sin descripción"}
         </Text>
 
@@ -140,7 +140,7 @@ export default function EventsScreen() {
           <View style={styles.dateContainer}>
             <IconSymbol name="calendar" size={16} color={theme.colors.text} />
             <Text style={styles.dateText}>
-              {format(new Date(item.date), "d 'de' MMMM, yyyy", { locale: es })}
+              {format(new Date(item.date), "d 'de' MMMM 'de' yyyy, 'a las' HH:mm 'hrs.'", { locale: es })}
             </Text>
           </View>
         </View>

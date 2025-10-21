@@ -231,13 +231,23 @@ const RememberScreen = () => {
             </View>
           ) : (
             <View style={styles.instructionContainer}>
-              <IconSymbol
+              {/* <IconSymbol
                 name={isExpanded ? "chevron-up" : "chevron-down"}
                 size={40}
                 color={theme.colors.text}
-              />
+              /> */}
               <Text
-                style={[styles.instructionText, { color: theme.colors.text }]}
+                style={[
+                  styles.instructionText,
+                  {
+                    color: theme.colors.text,
+                    borderColor: theme.colors.text,
+                    borderWidth: 1,
+                    paddingHorizontal: 12,
+                    paddingVertical: 4,
+                    borderRadius: 12,
+                  },
+                ]}
               >
                 {isExpanded ? "MOSTRAR MENOS" : "VER MÁS"}
               </Text>
@@ -258,6 +268,21 @@ const RememberScreen = () => {
 
   const scrollToTop = () => {
     flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
+  };
+
+  const renderHeader = () => {
+    return (
+      <View style={styles.instructionContainer}>
+        {/* <IconSymbol name="chevron-down" size={40} color={theme.colors.text} /> */}
+        <Text style={[styles.instructionText, { color: theme.colors.text }]}>
+          Deslice para ir viendo las recomendaciones.
+        </Text>
+        <Text style={[styles.instructionText, { color: theme.colors.text }]}>
+          Haga click en "Ver Más" para ampliar la información de cada
+          recomendación.
+        </Text>
+      </View>
+    );
   };
 
   const renderFooter = () => {
@@ -340,7 +365,9 @@ const RememberScreen = () => {
         onRefresh={handleRefresh}
         // onEndReached={() => hasMoreData && handleLoadMore()}
         onEndReachedThreshold={0.5}
+        ListHeaderComponent={renderHeader}
         ListFooterComponent={renderFooter}
+        persistentScrollbar={true}
       />
     </View>
   );

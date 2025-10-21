@@ -568,10 +568,12 @@ const EvaluateScreen = () => {
       <View style={styles.completedContainer}>
         <TouchableOpacity
           style={styles.backButton}
-          onPress={() => router.push("/(tabs)/action")}
+          // onPress={() => router.push("/(tabs)/action")}
+          // onPress={() => router.back()}
+          onPress={() => router.push("/(tabs)/category-detail")}
         >
           <Ionicons name="chevron-back" size={24} color={theme.colors.text} />
-          <Text style={styles.backButtonText}>Volver al inicio</Text>
+          <Text style={styles.backButtonText}>Volver a selector</Text>
         </TouchableOpacity>
 
         <View style={styles.resultCard}>
@@ -651,12 +653,21 @@ const EvaluateScreen = () => {
         <View>
           <TouchableOpacity
             style={styles.backButton}
-            onPress={() => router.push("/(tabs)/action")}
+            // onPress={() => router.push("/(tabs)/action")}
+            // onPress={() => router.back()}
+            onPress={() => router.push("/(tabs)/category-detail")}
           >
             <Ionicons name="chevron-back" size={24} color={theme.colors.text} />
-            <Text style={styles.backButtonText}>Volver al inicio</Text>
+            <Text style={styles.backButtonText}>Volver a selector</Text>
           </TouchableOpacity>
           <ProfessionalEvaluation />
+
+          <TouchableOpacity
+            style={styles.newEvaluationButton}
+            onPress={() => router.push("/training")}
+          >
+            <Text style={styles.newEvaluationButtonText}>Ir al Contenido</Text>
+          </TouchableOpacity>
         </View>
       );
     }

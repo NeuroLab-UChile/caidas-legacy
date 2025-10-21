@@ -415,7 +415,9 @@ const TrainingScreen = () => {
     if (view) {
       setView(null);
     } else {
-      router.push("/(tabs)/action");
+      // router.push("/(tabs)/action");
+      // router.back();
+      router.push("/(tabs)/category-detail");
     }
   };
 
@@ -431,7 +433,7 @@ const TrainingScreen = () => {
       <TouchableOpacity style={styles.backButton} onPress={handleBack}>
         <Ionicons name="chevron-back" size={24} color={theme.colors.text} />
         <Text style={styles.backButtonText}>
-          {view ? "Volver" : "Volver al inicio"}
+          {view ? "Volver" : "Volver a selector"}
         </Text>
       </TouchableOpacity>
 

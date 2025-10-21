@@ -75,12 +75,14 @@ export default function CategoryDetailScreen() {
         >
           <Ionicons name="school-outline" size={24} color={theme.colors.text} />
           <Text style={[styles.actionButtonText, { color: theme.colors.text }]}>
-            Ir a Entrenamiento
+            {/* Ir a Entrenamiento */}
+            Ir a Contenido
           </Text>
         </TouchableOpacity>
       </View>
 
-      <View style={styles.statusContainer}>
+      {/* <View style={styles.statusContainer}> */}
+      <View>
         <Text style={[styles.statusTitle, { color: theme.colors.text }]}>
           Estado de la Evaluación
         </Text>

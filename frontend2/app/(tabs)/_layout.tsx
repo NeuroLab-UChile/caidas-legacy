@@ -74,19 +74,19 @@ const leftMenuItems: MenuItem[] = [
     title: "RECORDAR",
     icon: "calendar",
   },
-  {
-    name: "evaluate",
-    title: "EVALUAR",
-    icon: "checkbox",
-  },
+  // {
+  //   name: "evaluate",
+  //   title: "EVALUAR",
+  //   icon: "checkbox",
+  // },
 ];
 
 const rightMenuItems: MenuItem[] = [
-  {
-    name: "training",
-    title: "ENTRENAR",
-    icon: "walk",
-  },
+  // {
+  //   name: "training",
+  //   title: "ENTRENAR",
+  //   icon: "walk",
+  // },
   {
     name: "profile",
     title: "MIS DATOS",
@@ -101,6 +101,17 @@ const hiddenItems: MenuItem[] = [
   //   customIcon: require("@/assets/images/logo_color.png"),
   //   icon: undefined,
   // },
+  {
+    name: "evaluate",
+    title: "EVALUAR",
+    icon: "checkbox",
+  },
+  {
+    name: "training",
+    // title: "ENTRENAR",
+    title: "CONTENIDO",
+    icon: "walk",
+  },
   {
     name: "category-detail",
     title: "Detalle de Categoría",
@@ -475,11 +486,11 @@ export default function TabLayout() {
                 title: item.title,
                 headerTitle: item.title,
                 // "Hack" to generate spacing and maintain the navigation items
-                ...(idx < 2 && {
+                ...(idx < 4 && {
                   // tabBarButton: () => null,
                   href: null, // Hide from tab bar
                 }),
-                ...(idx >= 2 && {
+                ...(idx >= 4 && {
                   tabBarButton: () => null,
                   // href: null, // Hide from tab bar
                 }),
@@ -521,10 +532,11 @@ export default function TabLayout() {
               { color: theme.colors.background },
             ]}
           >
-            WE-TRAIN
+            INICIO
           </Text>
         </View>
       </TouchableOpacity>
+
       <WelcomeAlert
         visible={isAlertVisible}
         title={alertInfo.title}
