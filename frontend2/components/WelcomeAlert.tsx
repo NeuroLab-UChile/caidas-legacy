@@ -53,7 +53,8 @@ export const WelcomeAlert: React.FC<WelcomeAlertProps> = ({
               style={styles.button}
               onPress={onPostpone}
             >
-              <Text style={styles.buttonText}>Posponer 1 semana</Text>
+              {/* <Text style={styles.buttonText}>Posponer 1 semana</Text> */}
+              <Text style={styles.buttonText}>Volver a recordar en una semana</Text>
             </TouchableOpacity>
           )}
 
@@ -122,5 +123,6 @@ const styles = StyleSheet.create({
     color: theme.colors.text,
     fontSize: 20,
     fontWeight: "600",
+    textAlign: "center",
   },
 });

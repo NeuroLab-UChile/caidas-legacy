@@ -141,6 +141,10 @@ export default function TabLayout() {
   });
   const [isAlertVisible, setIsAlertVisible] = useState(false);
   const [initialAlertShown, setInitialAlertShown] = useState(false); // Para que se muestre solo una vez
+  const [remindersShown, setRemindersShown] = useState<{
+    [key: number]: boolean;
+  }>({}); // Para controlar recordatorios mostrados
+  const [showReminderAgain, setShowReminderAgain] = useState(false);
 
   useEffect(() => {
     // La lógica se ejecuta solo si hay un usuario y la alerta inicial no se ha mostrado
@@ -151,8 +155,9 @@ export default function TabLayout() {
           // 1. OBTENEMOS LAS CITAS/EVENTOS
           const appointmentsResponse = await apiService.events.getAll();
           const allEvents = (appointmentsResponse?.data as Event[]) || [];
+          console.log("All events:", allEvents);
 
-          // 2. BUSCAMOS LA PRÓXIMA CITA FUTURA PENDIENTE
+          // 2. BUSCAMOS LA PRÓXIMA CITA FUTURA PENDIENTE o CONFIRMADA (no completada ni cancelada)
           const now = new Date();
           now.setHours(0, 0, 0, 0);
 
@@ -161,9 +166,11 @@ export default function TabLayout() {
           const postponedEventsString = await AsyncStorage.getItem(
             "postponedEvents"
           );
+          // console.log("Postponed events string:", postponedEventsString);
           const postponedEvents = postponedEventsString
             ? JSON.parse(postponedEventsString)
             : {};
+          console.log("Parsed postponed events:", postponedEvents);
           // Check if we need to remove any postponed events that are older than 1 week
           const oneWeekAgo = new Date();
           // TEST -1 minute
@@ -193,12 +200,20 @@ export default function TabLayout() {
             .map((event) => ({ ...event, parsedDate: new Date(event.date) }))
             .filter(
               (event) =>
-                event.status !== "completed" &&
-                event.status !== "cancelled" &&
+                // Exclude COMPLETED and CANCELLED events
+                event.status !== "COMPLETED" &&
+                event.status !== "CANCELLED" &&
                 !postponedEvents[event.id] && // Exclude postponed events
-                event.parsedDate >= now
+                event.parsedDate >= now && // Only future events
+                // And only if they are within the next two weeks (14 days)
+                event.parsedDate <=
+                  new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000) &&
+                // And not already shown in this session
+                !remindersShown[event.id]
             )
             .sort((a, b) => a.parsedDate.getTime() - b.parsedDate.getTime());
+
+          console.log("Upcoming events after filtering:", upcomingEvents);
 
           const nextEvent =
             upcomingEvents.length > 0 ? upcomingEvents[0] : null;
@@ -212,6 +227,12 @@ export default function TabLayout() {
 
           // 3. LÓGICA PRINCIPAL: Si hay un próximo evento, lo mostramos.
           if (nextEvent) {
+            setRemindersShown((prev) => ({
+              ...prev,
+              [nextEvent.id]: true,
+            }));
+            // Keep showing reminders if there are, or end with a recommendation text
+            setShowReminderAgain(true); // So we can show again on next load
             finalTitle = "¡Recordatorio de Próximo Evento!";
             showOnPostpone = true; // Hacemos visible el botón de posponer
             eventId = nextEvent.id;
@@ -225,7 +246,16 @@ export default function TabLayout() {
               "es-ES",
               dateOptions
             );
-            finalMessage = `Recuerda tu próximo evento: "${nextEvent.title}" el día ${formattedDate}.\n\nDescripción: ${nextEvent.description}`;
+            finalMessage = `Recuerda tu próximo evento: "${
+              nextEvent.title
+            }" el día ${formattedDate}, a las ${nextEvent.parsedDate.toLocaleTimeString(
+              "es-ES",
+              {
+                hour: "numeric",
+                minute: "numeric",
+                hour12: false,
+              }
+            )}.\n\nDescripción: ${nextEvent.description}`;
           }
           // 4. LÓGICA DE RESPALDO: Si no hay eventos, buscamos una recomendación aleatoria.
           else {
@@ -543,6 +573,10 @@ export default function TabLayout() {
         message={alertInfo.message}
         showOnPostpone={!!alertInfo.showOnPostpone}
         onPostpone={async () => {
+          if (showReminderAgain) {
+            setShowReminderAgain(false);
+            setInitialAlertShown(false);
+          }
           setIsAlertVisible(false);
           console.log("Alerta pospuesta por 1 semana");
           // Store id and timestamp in AsyncStorage
@@ -565,7 +599,13 @@ export default function TabLayout() {
             "El recordatorio ha sido pospuesto por 1 semana. Puedes volver a revisarlo en la sección de Eventos."
           );
         }}
-        onClose={() => setIsAlertVisible(false)}
+        onClose={() => {
+          if (showReminderAgain) {
+            setShowReminderAgain(false);
+            setInitialAlertShown(false);
+          }
+          setIsAlertVisible(false);
+        }}
       />
     </View>
   );

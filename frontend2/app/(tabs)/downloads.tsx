@@ -82,7 +82,8 @@ export default function DownloadsScreen() {
         <View style={styles.statusContainer}>
           <IconSymbol
             name={
-              item.downloaded ? "checkmark-circle-outline" : "radio-button-off"
+              // item.downloaded ? "checkmark-circle-outline" : "radio-button-off"
+              item.downloaded ? "checkmark-circle-outline" : "warning-outline"
             }
             size={20}
             color={
@@ -91,8 +92,8 @@ export default function DownloadsScreen() {
           />
         </View>
       </View>
-      <Text style={[styles.cell, { flex: 0.8 }]}>{item.content.title}</Text>
-      <Text style={[styles.cell, { flex: 1 }]}>{item.content.description}</Text>
+      <Text style={[styles.cell, { flex: 1.2 }]}>{item.content.title}</Text>
+      {/* <Text style={[styles.cell, { flex: 1 }]}>{item.content.description}</Text> */}
       {/* Downloads button download-outline*/}
       <TouchableOpacity
         style={[
@@ -217,8 +218,8 @@ export default function DownloadsScreen() {
               color={"black"}
             />
           </View>
-          <Text style={[styles.cell_header, { flex: 0.8 }]}>Título</Text>
-          <Text style={[styles.cell_header, { flex: 1 }]}>Descripción</Text>
+          <Text style={[styles.cell_header, { flex: 1.2 }]}>Título</Text>
+          {/* <Text style={[styles.cell_header, { flex: 1 }]}>Descripción</Text> */}
           <Text style={[styles.cell_header, { flex: 0.8 }]}>Descarga</Text>
         </View>
       </View>

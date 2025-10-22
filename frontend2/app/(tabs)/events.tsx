@@ -26,8 +26,7 @@ interface Event {
   description: string;
   date: string;
   category: string;
-  status: "pending" | "completed" | "cancelled";
-  priority: "high" | "medium" | "low";
+  status: "PENDING" | "CONFIRMED" | "COMPLETED" | "CANCELLED";
 }
 
 const { width } = Dimensions.get("window");
@@ -70,19 +69,6 @@ export default function EventsScreen() {
     fetchEvents();
   };
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case "high":
-        return theme.colors.error;
-      case "medium":
-        return theme.colors.warning;
-      case "low":
-        return theme.colors.success;
-      default:
-        return theme.colors.text;
-    }
-  };
-
   const getStatusIcon = (status: string) => {
     switch (status) {
       case "COMPLETED":
@@ -121,8 +107,11 @@ export default function EventsScreen() {
     { id: "CANCELLED", label: "Cancelados" },
   ];
 
-  const filteredEvents = events.filter((event) =>
-    selectedFilter === "all" ? true : event.status === selectedFilter
+  const filteredEvents = events.filter(
+    (event) =>
+      // selectedFilter === "all" ? true : event.status === selectedFilter
+      // For now, show only PENDING and CONFIRMED events, and the COMPLETED and CANCELLED will be hidden altogether
+      event.status === "PENDING" || event.status === "CONFIRMED"
   );
 
   const renderEvent = ({ item }: { item: Event }) => {
@@ -140,7 +129,11 @@ export default function EventsScreen() {
           <View style={styles.dateContainer}>
             <IconSymbol name="calendar" size={16} color={theme.colors.text} />
             <Text style={styles.dateText}>
-              {format(new Date(item.date), "d 'de' MMMM 'de' yyyy, 'a las' HH:mm 'hrs.'", { locale: es })}
+              {format(
+                new Date(item.date),
+                "d 'de' MMMM 'de' yyyy, 'a las' HH:mm 'hrs.'",
+                { locale: es }
+              )}
             </Text>
           </View>
         </View>
@@ -184,15 +177,8 @@ export default function EventsScreen() {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" />
-      {/* <ScrollView
-        // Padding and margin 0
-        contentContainerStyle={{ padding: 0, margin: 0 }}
-        // style={{ flex: 1 }}
-        refreshControl={
-          <RefreshControl refreshing={loading} onRefresh={reloadEvents} />
-        }
-      > */}
-      <View style={styles.filtersContainer}>
+
+      {/* <View style={styles.filtersContainer}>
         <FlatList
           horizontal
           data={filters}
@@ -218,8 +204,7 @@ export default function EventsScreen() {
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.filtersContent}
         />
-      </View>
-      {/* </ScrollView> */}
+      </View> */}
 
       <FlatList
         style={styles.listContainer}
@@ -320,21 +305,6 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 12,
-  },
-  priorityBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  priorityDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginRight: 6,
-  },
-  priorityText: {
-    fontSize: 12,
-    color: theme.colors.text,
-    opacity: 0.7,
   },
   eventTitle: {
     fontSize: 18,
