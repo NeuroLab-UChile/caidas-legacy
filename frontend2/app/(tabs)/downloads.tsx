@@ -107,7 +107,8 @@ export default function DownloadsScreen() {
             item.content.id
           );
           // Set downloaded to true if response was successful
-          if (response.status === 201 && !item.downloaded) {
+          if (response.status === 201) {
+            // && !item.downloaded) {
             item.downloaded = true;
             setDownloads((prev) =>
               prev.map((d) => (d.id === item.id ? item : d))
@@ -175,7 +176,8 @@ export default function DownloadsScreen() {
           style={styles.openButton}
           onPress={openDownloadsFolder}
         >
-          <IconSymbol name={"folder-open"} size={25} color={"black"} />
+          {/* <IconSymbol name={"folder-open"} size={25} color={"black"} /> */}
+          <IconSymbol name={"download-outline"} size={25} color={"black"} />
         </TouchableOpacity>
         <FlatList
           horizontal
