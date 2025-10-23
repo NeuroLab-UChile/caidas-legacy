@@ -475,9 +475,11 @@ const TrainingScreen = () => {
             <View style={styles.iconContainer}>
               <Ionicons name="fitness" size={32} color="#2196F3" />
             </View>
-            <Text style={styles.optionTitle}>Entrenamiento</Text>
+            {/* <Text style={styles.optionTitle}>Entrenamiento</Text> */}
+            <Text style={styles.optionTitle}>Contenido</Text>
             <Text style={styles.optionDescription}>
-              Comienza tu rutina de ejercicios paso a paso
+              {/* Comienza tu rutina de ejercicios paso a paso */}
+              Profundiza en contenido que te ayudará a cuidar mejor de ti
             </Text>
           </TouchableOpacity>
         </View>
@@ -487,7 +489,8 @@ const TrainingScreen = () => {
         <>
           {!selectedCategory?.training_form?.training_nodes ? (
             <View style={styles.errorContainer}>
-              <Text>No hay nodos de entrenamiento configurados</Text>
+              {/* <Text>No hay nodos de entrenamiento configurados</Text> */}
+              <Text>No hay contenido configurado</Text>
             </View>
           ) : selectedCategory.training_form.training_nodes.length === 0 ? (
             <View style={styles.completedContainer}>
@@ -496,10 +499,12 @@ const TrainingScreen = () => {
                   <Ionicons name="fitness-outline" size={80} color="#9CA3AF" />
                 </View>
                 <Text style={styles.completedTitle}>
-                  Sin Entrenamiento Disponible
+                  {/* Sin Entrenamiento Disponible */}
+                  Sin Contenido Disponible
                 </Text>
                 <Text style={styles.completedDescription}>
-                  No hay ejercicios configurados para esta categoría.
+                  {/* No hay ejercicios configurados para esta categoría. */}
+                  No hay contenido configurado para esta categoría.
                 </Text>
 
                 <TouchableOpacity
@@ -518,11 +523,12 @@ const TrainingScreen = () => {
                   <Ionicons name="checkmark-circle" size={80} color="#4CAF50" />
                 </View>
                 <Text style={styles.completedTitle}>
-                  ¡Entrenamiento Completado!
+                  {/* ¡Entrenamiento Completado! */}
+                  ¡Contenido Completado!
                 </Text>
                 <Text style={styles.completedDescription}>
-                  Has finalizado todos los ejercicios. ¿Deseas realizarlos
-                  nuevamente?
+                  {/* Has finalizado todos los ejercicios. ¿Deseas realizarlos nuevamente? */}
+                  Has finalizado todo el contenido. ¿Deseas repasarlo nuevamente?
                 </Text>
 
                 <View style={styles.completedButtons}>
@@ -532,7 +538,8 @@ const TrainingScreen = () => {
                   >
                     <Ionicons name="refresh" size={24} color="white" />
                     <Text style={styles.buttonText}>
-                      Reiniciar Entrenamiento
+                      {/* Reiniciar Entrenamiento */}
+                      Reiniciar Contenido
                     </Text>
                   </TouchableOpacity>
 
