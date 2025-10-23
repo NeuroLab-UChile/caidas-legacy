@@ -12,6 +12,7 @@ import {
   RefreshControl,
   Linking,
   Platform,
+  PermissionsAndroid,
 } from "react-native";
 import { router } from "expo-router";
 import { theme } from "@/src/theme";
@@ -22,6 +23,7 @@ import { apiService } from "../services/apiService";
 import { useFocusEffect } from "@react-navigation/native";
 import { useCallback } from "react";
 import * as IntentLauncher from "expo-intent-launcher";
+import RNFetchBlob from "react-native-blob-util";
 
 interface Download {
   id: number;
@@ -117,9 +119,14 @@ export default function DownloadsScreen() {
             console.error("Error registering download:", response);
             return;
           }
-          // For now just open the URL in a browser to be downloaded
           console.log(`Downloading: ${item.content.file}`);
-          Linking.openURL(item.content.file);
+          // // For now just open the URL in a browser to be downloaded
+          // Linking.openURL(item.content.file);
+          await downloadFile(
+            item.content.file,
+            item.content.title.replace(/\s+/g, "_"),
+            item.content.file.split(".").pop() || "png"
+          );
         }}
       >
         <IconSymbol name="download-outline" size={30} color={"black"} />
@@ -149,6 +156,60 @@ export default function DownloadsScreen() {
     }
   };
 
+  // Example usage:
+  // downloadFile('https://example.com/document.pdf', 'MyDocument', 'pdf');
+  const downloadFile = async (
+    fileUrl: string,
+    fileName: string,
+    fileExtension: string
+  ) => {
+    try {
+      // Request permission for Android < 11
+      if (Platform.OS === "android" && Platform.Version < 30) {
+        const granted = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
+          {
+            title: "Permiso de Almacenamiento",
+            message:
+              "La aplicación necesita acceso a su almacenamiento para descargar archivos.",
+            buttonNeutral: "Preguntar más tarde",
+            buttonNegative: "Cancelar",
+            buttonPositive: "OK",
+          }
+        );
+        if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
+          console.log("Storage permission denied", granted);
+          return;
+        }
+      }
+
+      const { config, fs } = RNFetchBlob;
+      const downloadsDir = fs.dirs.DownloadDir; // Path to the Android Downloads folder
+
+      const options = {
+        // fileCache: true,
+        addAndroidDownloads: {
+          useDownloadManager: true,
+          notification: true,
+          path: `${downloadsDir}/${fileName}.${fileExtension}`,
+          description: "Descargando archivo...",
+          mediaScannable: true,
+        },
+      };
+
+      config(options)
+        .fetch("GET", fileUrl)
+        .then((res) => {
+          console.log("File downloaded to:", res.path());
+        })
+        .catch((err) => {
+          console.log("Download error:", err);
+        });
+    } catch (error) {
+      console.error("Error requesting permission or downloading:", error);
+    }
+  };
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -173,13 +234,15 @@ export default function DownloadsScreen() {
       <StatusBar barStyle="light-content" />
       <View style={styles.filtersContainer}>
         <TouchableOpacity
-          style={styles.openButton}
+          style={[styles.filterButton, styles.filterButtonActive]}
           onPress={openDownloadsFolder}
         >
           {/* <IconSymbol name={"folder-open"} size={25} color={"black"} /> */}
-          <IconSymbol name={"download-outline"} size={25} color={"black"} />
+          {/* <IconSymbol name={"download-outline"} size={25} color={"black"} /> */}
+          <Text>Ver descargas</Text>
         </TouchableOpacity>
-        <FlatList
+
+        {/* <FlatList
           horizontal
           data={filters}
           showsHorizontalScrollIndicator={false}
@@ -203,7 +266,7 @@ export default function DownloadsScreen() {
           )}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.filtersContent}
-        />
+        /> */}
       </View>
 
       {/* Table header */}

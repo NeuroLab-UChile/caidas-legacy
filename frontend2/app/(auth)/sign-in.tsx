@@ -7,7 +7,9 @@ import {
   StyleSheet,
   ActivityIndicator,
   Alert,
+  Platform,
 } from "react-native";
+import * as IntentLauncher from "expo-intent-launcher";
 import CheckBox from "expo-checkbox"; // https://docs.expo.dev/versions/latest/sdk/checkbox/
 import Constants from "expo-constants";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -121,6 +123,14 @@ export default function SignIn() {
       { text: "Aceptar", onPress: () => setAcceptTerms(true) },
       { text: "Cancelar", onPress: () => setAcceptTerms(false) },
     ]);
+  };
+
+  const openDownloadsFolder = () => {
+    if (Platform.OS === "android") {
+      IntentLauncher.startActivityAsync("android.intent.action.VIEW_DOWNLOADS");
+    } else {
+      alert("Esta función solo está disponible en Android por ahora");
+    }
   };
 
   return (
@@ -239,6 +249,15 @@ export default function SignIn() {
       <Text style={styles.serverStatus}>
         Servidor: {isLoading ? "Conectando..." : "Listo"}
       </Text>
+
+      {/* Ver contenido descargable sin conexión */}
+      <Pressable
+        style={({ pressed }) => [styles.buttonDownloads]}
+        onPress={() => openDownloadsFolder()}
+        disabled={isLoading}
+      >
+        <Text style={styles.buttonText}>Ver contenido descargado</Text>
+      </Pressable>
     </View>
   );
 }
@@ -271,6 +290,15 @@ const styles = StyleSheet.create({
   },
   button: {
     backgroundColor: theme.colors.primary,
+    padding: theme.spacing.md,
+    borderRadius: theme.components.button.variants.primary.borderRadius,
+    alignItems: "center",
+    marginTop: theme.spacing.md,
+    borderWidth: theme.components.button.variants.primary.borderWidth,
+    borderColor: theme.components.button.variants.primary.borderColor,
+  },
+  buttonDownloads: {
+    backgroundColor: theme.colors.card,
     padding: theme.spacing.md,
     borderRadius: theme.components.button.variants.primary.borderRadius,
     alignItems: "center",
