@@ -19,6 +19,7 @@ import { theme } from "@/src/theme";
 import { useAuth } from "../contexts/auth";
 import { apiService } from "@/app/services/apiService";
 import { termsAndConditions } from "@/constants/terms_and_conditions"; // Importar términos y condiciones
+import { RFValue } from "react-native-responsive-fontsize";
 
 export default function SignIn() {
   const [username, setUsername] = useState("");
@@ -176,11 +177,13 @@ export default function SignIn() {
             height: "100%",
             // justifyContent: "center",
             // alignItems: "center",
-            padding: 8,
+            padding: RFValue(4),
           }}
           disabled={isLoading}
         >
-          <Text style={{ fontSize: 28 }}>{showPassword ? "🙈" : "👁️"}</Text>
+          <Text style={{ fontSize: RFValue(28) }}>
+            {showPassword ? "🙈" : "👁️"}
+          </Text>
         </Pressable>
       </View>
 
@@ -341,7 +344,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 40,
     right: 20,
-    fontSize: 12,
+    fontSize: theme.typography.sizes.caption,
     color: theme.colors.text + "80",
   },
 });

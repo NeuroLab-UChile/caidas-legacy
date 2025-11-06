@@ -46,10 +46,6 @@ export default function DownloadsScreen() {
   const [error, setError] = useState<string | null>(null);
   const [selectedFilter, setSelectedFilter] = useState<string>("all");
 
-  // useEffect(() => {
-  //   //
-  // }, []);
-
   useFocusEffect(
     useCallback(() => {
       fetchDownloads(); // Refetch downloads when screen is focused
@@ -84,7 +80,6 @@ export default function DownloadsScreen() {
         <View style={styles.statusContainer}>
           <IconSymbol
             name={
-              // item.downloaded ? "checkmark-circle-outline" : "radio-button-off"
               item.downloaded ? "checkmark-circle-outline" : "warning-outline"
             }
             size={20}
@@ -94,9 +89,11 @@ export default function DownloadsScreen() {
           />
         </View>
       </View>
-      <Text style={[styles.cell, { flex: 1.2 }]}>{item.content.title}</Text>
-      {/* <Text style={[styles.cell, { flex: 1 }]}>{item.content.description}</Text> */}
-      {/* Downloads button download-outline*/}
+      <Text style={[styles.cell, styles.cellText, { flex: 1.2 }]}>
+        {item.content.title}
+      </Text>
+
+      {/* Downloads button */}
       <TouchableOpacity
         style={[
           styles.cell,
@@ -105,10 +102,12 @@ export default function DownloadsScreen() {
         onPress={async () => {
           apiService.activityLog.trackAction(`download ${item.id}`); // Record action
           // Send to API
+
           const response = await apiService.downloads.registerDownload(
             item.content.id
           );
           // Set downloaded to true if response was successful
+
           if (response.status === 201) {
             // && !item.downloaded) {
             item.downloaded = true;
@@ -119,6 +118,7 @@ export default function DownloadsScreen() {
             console.error("Error registering download:", response);
             return;
           }
+
           console.log(`Downloading: ${item.content.file}`);
           // // For now just open the URL in a browser to be downloaded
           // Linking.openURL(item.content.file);
@@ -129,7 +129,11 @@ export default function DownloadsScreen() {
           );
         }}
       >
-        <IconSymbol name="download-outline" size={30} color={"black"} />
+        <IconSymbol
+          name="download-outline"
+          size={30}
+          color={theme.colors.text}
+        />
       </TouchableOpacity>
     </View>
   );
@@ -232,14 +236,13 @@ export default function DownloadsScreen() {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" />
+
       <View style={styles.filtersContainer}>
         <TouchableOpacity
           style={[styles.filterButton, styles.filterButtonActive]}
           onPress={openDownloadsFolder}
         >
-          {/* <IconSymbol name={"folder-open"} size={25} color={"black"} /> */}
-          {/* <IconSymbol name={"download-outline"} size={25} color={"black"} /> */}
-          <Text>Ver descargas</Text>
+          <Text style={styles.filterTextActive}>Ver descargas</Text>
         </TouchableOpacity>
 
         {/* <FlatList
@@ -280,12 +283,15 @@ export default function DownloadsScreen() {
             <IconSymbol
               name={"checkmark-circle-outline"}
               size={20}
-              color={"black"}
+              color={theme.colors.text}
             />
           </View>
-          <Text style={[styles.cell_header, { flex: 1.2 }]}>Título</Text>
-          {/* <Text style={[styles.cell_header, { flex: 1 }]}>Descripción</Text> */}
-          <Text style={[styles.cell_header, { flex: 0.8 }]}>Descarga</Text>
+          <Text style={[styles.cell_header, styles.headerText, { flex: 1.2 }]}>
+            Título
+          </Text>
+          <Text style={[styles.cell_header, styles.headerText, { flex: 0.8 }]}>
+            Descarga
+          </Text>
         </View>
       </View>
 
@@ -314,11 +320,13 @@ export default function DownloadsScreen() {
   );
 }
 
+// ---------- STYLES ----------
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: theme.colors.background,
   },
+
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -329,26 +337,16 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 20,
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: theme.typography.sizes.headline1,
     fontWeight: "bold",
     color: theme.colors.text,
   },
-  openButton: {
-    width: 50,
-    height: 50,
-    borderRadius: 22,
-    backgroundColor: theme.colors.primary,
-    justifyContent: "center",
-    alignItems: "center",
-  },
+
   filtersContainer: {
     marginTop: SPACING,
     marginBottom: SPACING / 2,
     paddingHorizontal: SPACING,
     flexDirection: "row",
-  },
-  filtersContent: {
-    paddingHorizontal: SPACING,
   },
   filterButton: {
     paddingHorizontal: 10,
@@ -366,54 +364,22 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.primary,
   },
   filterText: {
+    fontSize: theme.typography.sizes.body2,
     color: theme.colors.text,
     fontWeight: "500",
   },
   filterTextActive: {
+    fontSize: theme.typography.sizes.body2,
     color: theme.colors.text,
     fontWeight: "600",
   },
+
   listContainer: {
-    // padding: SPACING,
     paddingLeft: SPACING,
     paddingRight: SPACING,
     paddingBottom: SPACING * 2,
   },
-  priorityBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  priorityDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginRight: 6,
-  },
-  priorityText: {
-    fontSize: 12,
-    color: theme.colors.text,
-    opacity: 0.7,
-  },
-  dateContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  dateText: {
-    fontSize: 12,
-    color: theme.colors.text,
-    marginLeft: 4,
-  },
-  categoryBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    backgroundColor: theme.colors.primary,
-    borderRadius: 12,
-  },
-  categoryText: {
-    fontSize: 12,
-    color: theme.colors.text,
-    fontWeight: "500",
-  },
+
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
@@ -426,7 +392,7 @@ const styles = StyleSheet.create({
     padding: SPACING * 2,
   },
   errorText: {
-    fontSize: 16,
+    fontSize: theme.typography.sizes.body1,
     color: theme.colors.error,
     textAlign: "center",
     marginBottom: 16,
@@ -438,9 +404,11 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   retryText: {
+    fontSize: theme.typography.sizes.body2,
     color: theme.colors.text,
     fontWeight: "600",
   },
+
   emptyContainer: {
     flex: 1,
     justifyContent: "center",
@@ -448,39 +416,40 @@ const styles = StyleSheet.create({
     paddingVertical: SPACING * 4,
   },
   emptyText: {
-    fontSize: 16,
+    fontSize: theme.typography.sizes.body1,
     color: theme.colors.text,
     opacity: 0.7,
     marginTop: SPACING,
   },
+
   statusContainer: {
     justifyContent: "center",
     alignItems: "center",
   },
   statusText: {
-    fontSize: 14,
+    fontSize: theme.typography.sizes.body2,
     color: theme.colors.text,
     marginLeft: 4,
   },
-  table: {
-    // borderWidth: 1,
-    // borderColor: "lightgray",
-  },
+
+  table: {},
   table_header: {
     flexDirection: "row",
-    // backgroundColor: "#f0f0f0",
-    // padding: 10,
     marginBottom: 2,
+  },
+  headerText: {
+    fontSize: theme.typography.sizes.subtitle,
+    fontWeight: "600",
+    color: theme.colors.text,
   },
   cell_header: {
     flex: 1,
     paddingVertical: 12,
     paddingHorizontal: 8,
     borderWidth: 1,
-    borderColor: "black",
+    borderColor: theme.colors.border,
     justifyContent: "center",
     textAlign: "center",
-    fontWeight: "bold",
   },
   row: {
     flexDirection: "row",
@@ -493,5 +462,10 @@ const styles = StyleSheet.create({
     borderColor: "lightgray",
     justifyContent: "center",
     textAlign: "center",
+  },
+  cellText: {
+    fontSize: theme.typography.sizes.body2,
+    color: theme.colors.text,
+    opacity: 0.9,
   },
 });

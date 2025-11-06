@@ -90,7 +90,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   description: {
-    fontSize: 18,
+    fontSize: theme.typography.sizes.subtitle,
     color: theme.colors.text,
     marginBottom: 24,
     textAlign: "center",
@@ -107,7 +107,7 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: "white",
-    fontSize: 16,
+    fontSize: theme.typography.sizes.body1,
     fontWeight: "600",
   },
 });

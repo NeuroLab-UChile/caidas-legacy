@@ -204,14 +204,14 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   title: {
-    fontSize: 28,
+    fontSize: theme.typography.sizes.display3,
     fontWeight: "bold",
     textAlign: "center",
     marginBottom: 8,
     color: theme.colors.text,
   },
   subtitle: {
-    fontSize: 18,
+    fontSize: theme.typography.sizes.subtitle,
     color: "black", //theme.colors.textSecondary,
     textAlign: "center",
   },
@@ -237,13 +237,13 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   cardHeaderText: {
-    fontSize: 18,
+    fontSize: theme.typography.sizes.subtitle,
     fontWeight: "600",
     marginLeft: 8,
     color: theme.colors.text,
   },
   professionalInfo: {
-    fontSize: 16,
+    fontSize: theme.typography.sizes.body1,
     color: theme.colors.text,
     marginBottom: 4,
   },
@@ -254,17 +254,17 @@ const styles = StyleSheet.create({
     color: theme.colors.textSecondary,
   },
   dateText: {
-    fontSize: 14,
+    fontSize: theme.typography.sizes.body2,
     color: theme.colors.textTertiary,
     marginTop: 4,
   },
   diagnosisText: {
-    fontSize: 16,
+    fontSize: theme.typography.sizes.body1,
     color: theme.colors.text,
     lineHeight: 24,
   },
   observationsText: {
-    fontSize: 16,
+    fontSize: theme.typography.sizes.body1,
     color: theme.colors.text,
     fontStyle: "italic",
     lineHeight: 24,
@@ -277,7 +277,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   colorText: {
-    fontSize: 14,
+    fontSize: theme.typography.sizes.body2,
     color: theme.colors.textSecondary,
   },
   colorSquare: {
@@ -293,7 +293,7 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   messageText: {
-    fontSize: 16,
+    fontSize: theme.typography.sizes.body1,
     color: theme.colors.textSecondary,
     textAlign: "center",
     lineHeight: 24,

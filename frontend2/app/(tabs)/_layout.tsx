@@ -450,7 +450,7 @@ export default function TabLayout() {
               height: BOTTOM_TAB_HEIGHT,
             },
             tabBarLabelStyle: {
-              fontSize: 9,
+              fontSize: theme.typography.sizes.small,
               fontWeight: "600",
               marginTop: 4,
               color: theme.colors.background,
@@ -628,7 +628,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: theme.typography.sizes.subtitle,
     fontWeight: "600",
     flex: 1,
     textAlign: "center",
@@ -655,7 +655,7 @@ const styles = StyleSheet.create({
     marginRight: 4,
   },
   logoutText: {
-    fontSize: 16,
+    fontSize: theme.typography.sizes.body1,
     fontWeight: "600",
   },
   iconContainer: {
@@ -705,13 +705,13 @@ const styles = StyleSheet.create({
     height: 40,
   },
   middleButtonText: {
-    fontSize: 9,
+    fontSize: theme.typography.sizes.small,
     fontWeight: "bold",
     letterSpacing: 0.5,
     marginTop: 10,
   },
   tabBarLabel: {
-    fontSize: 9,
+    fontSize: theme.typography.sizes.small,
     fontWeight: "600",
     color: theme.colors.background,
     marginTop: 4,

@@ -242,7 +242,7 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 20,
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: theme.typography.sizes.headline1,
     fontWeight: "bold",
     color: theme.colors.text,
   },
@@ -275,10 +275,12 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.primary,
   },
   filterText: {
+    fontSize: theme.typography.sizes.body2,
     color: theme.colors.text,
     fontWeight: "500",
   },
   filterTextActive: {
+    fontSize: theme.typography.sizes.body2,
     color: theme.colors.text,
     fontWeight: "600",
   },
@@ -307,13 +309,13 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   eventTitle: {
-    fontSize: 18,
+    fontSize: theme.typography.sizes.subtitle,
     fontWeight: "600",
     color: theme.colors.text,
     marginBottom: 8,
   },
   eventDescription: {
-    fontSize: 14,
+    fontSize: theme.typography.sizes.body2,
     color: theme.colors.text,
     opacity: 0.8,
     marginBottom: 12,
@@ -328,7 +330,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   dateText: {
-    fontSize: 12,
+    fontSize: theme.typography.sizes.caption,
     color: theme.colors.text,
     marginLeft: 4,
   },
@@ -339,7 +341,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   categoryText: {
-    fontSize: 12,
+    fontSize: theme.typography.sizes.caption,
     color: theme.colors.text,
     fontWeight: "500",
   },
@@ -355,7 +357,7 @@ const styles = StyleSheet.create({
     padding: SPACING * 2,
   },
   errorText: {
-    fontSize: 16,
+    fontSize: theme.typography.sizes.body1,
     color: theme.colors.error,
     textAlign: "center",
     marginBottom: 16,
@@ -367,6 +369,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   retryText: {
+    fontSize: theme.typography.sizes.body2,
     color: theme.colors.text,
     fontWeight: "600",
   },
@@ -377,7 +380,7 @@ const styles = StyleSheet.create({
     paddingVertical: SPACING * 4,
   },
   emptyText: {
-    fontSize: 16,
+    fontSize: theme.typography.sizes.body1,
     color: theme.colors.text,
     opacity: 0.7,
     marginTop: SPACING,
@@ -388,7 +391,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   statusText: {
-    fontSize: 14,
+    fontSize: theme.typography.sizes.body2,
     color: theme.colors.text,
     marginLeft: 4,
   },

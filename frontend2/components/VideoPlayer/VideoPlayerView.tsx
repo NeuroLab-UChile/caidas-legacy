@@ -53,7 +53,7 @@ const styles = StyleSheet.create({
     padding: 5,
   },
   title: {
-    fontSize: 16,
+    fontSize: theme.typography.sizes.body1,
     fontWeight: "500",
     marginBottom: 16,
     color: theme.colors.text,

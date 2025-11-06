@@ -137,11 +137,11 @@ const RememberScreen = () => {
 
     // Determinar el tamaño de fuente basado en la longitud del texto
     const getFontSize = (text: string) => {
-      if (text.length > 300) return 20; // Textos muy largos
-      if (text.length > 200) return 24; // Textos largos
-      if (text.length > 100) return 28; // Textos medianos
-      if (text.length > 50) return 32; // Textos cortos
-      return 36; // Textos muy cortos
+      if (text.length > 300) return theme.typography.sizes.title; // Textos muy largos
+      if (text.length > 200) return theme.typography.sizes.headline1; // Textos largos
+      if (text.length > 100) return theme.typography.sizes.display3; // Textos medianos
+      if (text.length > 50) return theme.typography.sizes.display2; // Textos cortos
+      return theme.typography.sizes.display1; // Textos muy cortos
     };
 
     return (
@@ -396,7 +396,7 @@ const styles = StyleSheet.create({
     lineHeight: 40,
   },
   categoryText: {
-    fontSize: 20,
+    fontSize: theme.typography.sizes.title,
     fontFamily: "System",
     fontWeight: "600",
     marginBottom: 32,
@@ -408,7 +408,7 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   instructionText: {
-    fontSize: 20,
+    fontSize: theme.typography.sizes.title,
     textAlign: "center",
     fontFamily: "System",
     fontWeight: "600",
@@ -422,13 +422,13 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   explanationText: {
-    fontSize: 24,
+    fontSize: theme.typography.sizes.headline1,
     fontFamily: "System",
     lineHeight: 36,
     fontWeight: "500",
   },
   practicalText: {
-    fontSize: 24,
+    fontSize: theme.typography.sizes.headline1,
     fontFamily: "System",
     lineHeight: 36,
     marginTop: 16,
@@ -442,12 +442,12 @@ const styles = StyleSheet.create({
   },
   errorText: {
     textAlign: "center",
-    fontSize: 24,
+    fontSize: theme.typography.sizes.headline1,
     fontFamily: "System",
     lineHeight: 32,
   },
   keywordsText: {
-    fontSize: 20,
+    fontSize: theme.typography.sizes.title,
     fontFamily: "System",
     lineHeight: 28,
     marginTop: 16,
@@ -455,7 +455,7 @@ const styles = StyleSheet.create({
     fontStyle: "italic",
   },
   sourceText: {
-    fontSize: 16,
+    fontSize: theme.typography.sizes.body1,
     fontFamily: "System",
     lineHeight: 24,
     marginTop: 16,
@@ -471,7 +471,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   endText: {
-    fontSize: 16,
+    fontSize: theme.typography.sizes.body1,
     textAlign: "center",
     marginBottom: 16,
     fontFamily: "System",
@@ -485,7 +485,7 @@ const styles = StyleSheet.create({
   },
   backToTopText: {
     marginLeft: 8,
-    fontSize: 16,
+    fontSize: theme.typography.sizes.body1,
     fontFamily: "System",
     fontWeight: "600",
   },
@@ -506,7 +506,7 @@ const styles = StyleSheet.create({
     marginBottom: 50,
   },
   loadMoreText: {
-    fontSize: 16,
+    fontSize: theme.typography.sizes.title,
     fontFamily: "System",
     fontWeight: "600",
   },

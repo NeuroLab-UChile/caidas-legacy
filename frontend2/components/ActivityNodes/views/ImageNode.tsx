@@ -11,7 +11,7 @@ import { theme } from "@/src/theme";
 import { TextWithHyperlinks } from "@/components/ui/TextWithHyperlinks";
 import React from "react";
 import { Modal, Pressable, TouchableOpacity } from "react-native";
-import ImageViewer from 'react-native-image-zoom-viewer';
+import ImageViewer from "react-native-image-zoom-viewer";
 
 interface ImageNodeViewProps {
   data: {
@@ -73,16 +73,23 @@ export const ImageNodeView: React.FC<ImageNodeViewProps> = ({
           onPress={handleCloseModal}
           accessibilityLabel="Cerrar imagen ampliada"
         >
-          <Text style={{ color: "#fff", fontSize: 24 }}>✕</Text>
+          <Text
+            style={{
+              color: "#fff",
+              fontSize: theme.typography.sizes.headline1,
+            }}
+          >
+            ✕
+          </Text>
         </TouchableOpacity>
         <ImageViewer
           imageUrls={[{ url: imageUrl }]}
           enableSwipeDown={true}
           onSwipeDown={handleCloseModal}
           backgroundColor="rgba(0,0,0,0)"
-          renderIndicator={() => null}
-          renderHeader={() => null}
-          renderFooter={() => null}
+          renderIndicator={() => <></>}
+          renderHeader={() => <></>}
+          renderFooter={() => <></>}
           saveToLocalByLongPress={false}
         />
       </View>
@@ -151,14 +158,14 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   title: {
-    fontSize: 24,
+    fontSize: theme.typography.sizes.headline1,
     fontWeight: "bold",
     marginBottom: 8,
     color: theme.colors.text,
     textAlign: "center",
   },
   description: {
-    fontSize: 14,
+    fontSize: theme.typography.sizes.body2,
     color: theme.colors.textSecondary,
     marginBottom: 16,
     textAlign: "center",
@@ -185,7 +192,7 @@ const styles = StyleSheet.create({
   },
   placeholderText: {
     color: theme.colors.textSecondary,
-    fontSize: 16,
+    fontSize: theme.typography.sizes.body1,
   },
   loadingOverlay: {
     ...StyleSheet.absoluteFillObject,
@@ -207,12 +214,12 @@ const styles = StyleSheet.create({
   errorText: {
     color: theme.colors.error,
     textAlign: "center",
-    fontSize: 16,
+    fontSize: theme.typography.sizes.body1,
     marginBottom: 8,
   },
   debugText: {
     color: theme.colors.text,
-    fontSize: 12,
+    fontSize: theme.typography.sizes.caption,
     textAlign: "center",
   },
 });

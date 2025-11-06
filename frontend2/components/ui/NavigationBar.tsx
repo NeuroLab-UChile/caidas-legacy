@@ -87,12 +87,12 @@ const styles = StyleSheet.create({
   },
   backButtonText: {
     marginLeft: 4,
-    fontSize: 16,
+    fontSize: theme.typography.sizes.body1,
     color: theme.colors.text,
     fontWeight: '600',
   },
   progressText: {
-    fontSize: 14,
+    fontSize: theme.typography.sizes.body2,
     color: theme.colors.textSecondary,
   },
   nextButton: {
@@ -112,7 +112,7 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   nextButtonText: {
-    fontSize: 16,
+    fontSize: theme.typography.sizes.body1,
     fontWeight: '600',
     marginRight: 8,
   },

@@ -120,7 +120,7 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   title: {
-    fontSize: 28,
+    fontSize: theme.typography.sizes.display3,
     fontWeight: "bold",
     marginBottom: 16,
     textAlign: "center",
@@ -139,7 +139,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   description: {
-    fontSize: 16,
+    fontSize: theme.typography.sizes.body1,
     lineHeight: 24,
   },
   actionsContainer: {
@@ -166,8 +166,9 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   actionButtonText: {
-    fontSize: 16,
+    fontSize: theme.typography.sizes.body1,
     fontWeight: "600",
+    textAlign: "center",
   },
   statusContainer: {
     backgroundColor: theme.colors.card,
@@ -183,12 +184,12 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   statusTitle: {
-    fontSize: 20,
+    fontSize: theme.typography.sizes.title,
     fontWeight: "600",
     marginBottom: 8,
   },
   statusText: {
-    fontSize: 16,
+    fontSize: theme.typography.sizes.body1,
     marginBottom: 16,
   },
   recommendationsContainer: {
@@ -198,16 +199,16 @@ const styles = StyleSheet.create({
     paddingTop: 16,
   },
   recommendationsTitle: {
-    fontSize: 18,
+    fontSize: theme.typography.sizes.subtitle,
     fontWeight: "600",
     marginBottom: 8,
   },
   recommendationsText: {
-    fontSize: 16,
+    fontSize: theme.typography.sizes.body1,
     lineHeight: 24,
   },
   errorText: {
-    fontSize: 16,
+    fontSize: theme.typography.sizes.body1,
     textAlign: "center",
     marginTop: 20,
   },

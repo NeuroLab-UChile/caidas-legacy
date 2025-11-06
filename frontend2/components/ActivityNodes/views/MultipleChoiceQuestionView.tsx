@@ -185,14 +185,14 @@ const styles = StyleSheet.create({
     minHeight: "100%",
   },
   questionText: {
-    fontSize: 20,
+    fontSize: theme.typography.sizes.title,
     fontWeight: "600",
     color: theme.colors.text,
     marginBottom: 16,
     lineHeight: 28,
   },
   description: {
-    fontSize: 16,
+    fontSize: theme.typography.sizes.body1,
     color: theme.colors.text,
     opacity: 0.8,
     marginBottom: 24,
@@ -233,7 +233,7 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   optionText: {
-    fontSize: 16,
+    fontSize: theme.typography.sizes.body1,
     color: "#000000",
     flex: 1,
     lineHeight: 24,
@@ -243,14 +243,14 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   selectionCount: {
-    fontSize: 14,
+    fontSize: theme.typography.sizes.body2,
     color: theme.colors.text,
     opacity: 0.7,
     textAlign: "center",
     marginTop: 16,
   },
   errorText: {
-    fontSize: 14,
+    fontSize: theme.typography.sizes.body2,
     color: theme.colors.error || "#dc2626",
     textAlign: "center",
     marginTop: 8,

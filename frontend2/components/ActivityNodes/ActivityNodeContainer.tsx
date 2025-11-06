@@ -93,7 +93,7 @@ const styles = StyleSheet.create({
     borderColor: "transparent",
   },
   text: {
-    fontSize: 17,
+    fontSize: theme.typography.sizes.body1,
     color: "#000",
     fontWeight: "600",
   },

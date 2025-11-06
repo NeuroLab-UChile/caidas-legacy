@@ -62,7 +62,7 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   question: {
-    fontSize: 18,
+    fontSize: theme.typography.sizes.subtitle,
     color: theme.colors.text,
     marginBottom: 24,
   },
@@ -73,7 +73,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   valueText: {
-    fontSize: 24,
+    fontSize: theme.typography.sizes.headline1,
     color: theme.colors.text,
     textAlign: "center",
     marginBottom: 16,
@@ -87,7 +87,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   labelText: {
-    fontSize: 14,
+    fontSize: theme.typography.sizes.body2,
     color: theme.colors.text,
     opacity: 0.7,
   },

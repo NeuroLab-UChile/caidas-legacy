@@ -6,6 +6,7 @@ import {
   View,
   ActivityIndicator,
 } from "react-native";
+import { theme } from "@/src/theme";
 
 // Botón reutilizable con estilos y propiedades personalizables
 export const Button = ({ title, onPress, style = {}, icon }: any) => (
@@ -32,7 +33,7 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: "#fff",
-    fontSize: 16,
+    fontSize: theme.typography.sizes.body1,
     fontWeight: "600",
   },
   icon: {

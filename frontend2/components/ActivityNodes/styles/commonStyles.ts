@@ -8,7 +8,7 @@ export const commonStyles = StyleSheet.create({
     backgroundColor: theme.colors.background,
   },
   text: {
-    fontSize: 17,
+    fontSize: theme.typography.sizes.body1,
     color: "#000",
     marginBottom: 16,
   },
@@ -31,7 +31,7 @@ export const commonStyles = StyleSheet.create({
     borderColor: "#000",
   },
   btnText: {
-    fontSize: 17,
+    fontSize: theme.typography.sizes.body1,
     color: "#000",
     fontWeight: "600",
   },

@@ -89,11 +89,11 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   statusLabel: {
-    fontSize: 16,
+    fontSize: theme.typography.sizes.body1,
     color: theme.colors.textSecondary,
   },
   statusText: {
-    fontSize: 16,
+    fontSize: theme.typography.sizes.body1,
     fontWeight: "600",
     color: theme.colors.text,
   },
@@ -101,13 +101,13 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   recommendationsTitle: {
-    fontSize: 16,
+    fontSize: theme.typography.sizes.body1,
     fontWeight: "600",
     color: theme.colors.text,
     marginBottom: 8,
   },
   recommendationsText: {
-    fontSize: 14,
+    fontSize: theme.typography.sizes.body2,
     color: theme.colors.text,
     lineHeight: 20,
   },
@@ -118,7 +118,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   updateInfoText: {
-    fontSize: 12,
+    fontSize: theme.typography.sizes.caption,
     color: theme.colors.textSecondary,
     marginBottom: 4,
   },

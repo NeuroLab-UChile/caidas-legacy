@@ -595,13 +595,13 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   optionTitle: {
-    fontSize: 18,
+    fontSize: theme.typography.sizes.subtitle,
     fontWeight: "700",
     color: "#1F2937",
     marginBottom: 8,
   },
   optionDescription: {
-    fontSize: 14,
+    fontSize: theme.typography.sizes.body2,
     color: "#6B7280",
     lineHeight: 20,
   },
@@ -632,7 +632,7 @@ const styles = StyleSheet.create({
     borderBottomColor: "#E5E7EB",
   },
   recommendationsTitle: {
-    fontSize: 18,
+    fontSize: theme.typography.sizes.subtitle,
     fontWeight: "700",
     color: "#1F2937",
     marginLeft: 12,
@@ -649,7 +649,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   recommendationSectionTitle: {
-    fontSize: 16,
+    fontSize: theme.typography.sizes.body1,
     fontWeight: "600",
     color: "#374151",
     marginBottom: 12,
@@ -670,7 +670,7 @@ const styles = StyleSheet.create({
     alignSelf: "center",
   },
   recommendationsText: {
-    fontSize: 16,
+    fontSize: theme.typography.sizes.body1,
     color: "#374151",
     lineHeight: 24,
     textAlign: "center",
@@ -706,14 +706,14 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   completedTitle: {
-    fontSize: 24,
+    fontSize: theme.typography.sizes.headline1,
     fontWeight: "700",
     color: "#1F2937",
     marginBottom: 12,
     textAlign: "center",
   },
   completedDescription: {
-    fontSize: 16,
+    fontSize: theme.typography.sizes.body1,
     color: "#6B7280",
     textAlign: "center",
     marginBottom: 32,
@@ -742,7 +742,7 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: "white",
-    fontSize: 16,
+    fontSize: theme.typography.sizes.body1,
     fontWeight: "600",
     marginLeft: 8,
   },
@@ -757,7 +757,7 @@ const styles = StyleSheet.create({
   },
   backToMenuText: {
     color: "#4B5563",
-    fontSize: 16,
+    fontSize: theme.typography.sizes.body1,
     fontWeight: "600",
     marginLeft: 8,
   },
@@ -766,7 +766,7 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   emptyStateText: {
-    fontSize: 16,
+    fontSize: theme.typography.sizes.body1,
     color: "#9CA3AF",
     marginTop: 8,
     textAlign: "center",
@@ -779,7 +779,7 @@ const styles = StyleSheet.create({
   },
   backButtonText: {
     marginLeft: 8,
-    fontSize: 16,
+    fontSize: theme.typography.sizes.body1,
     color: theme.colors.text,
     fontFamily: "System",
     fontWeight: "600",
@@ -800,18 +800,18 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   statusText: {
-    fontSize: 14,
+    fontSize: theme.typography.sizes.body2,
     color: "#6B7280",
   },
   recommendationText: {
-    fontSize: 16,
+    fontSize: theme.typography.sizes.body1,
     color: "#374151",
     lineHeight: 24,
     marginTop: 8,
     flexWrap: "wrap",
   },
   updatedAtText: {
-    fontSize: 12,
+    fontSize: theme.typography.sizes.caption,
     color: "#9CA3AF",
     fontStyle: "italic",
   },
@@ -827,21 +827,21 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   professionalName: {
-    fontSize: 14,
+    fontSize: theme.typography.sizes.body2,
     fontWeight: "500",
     color: "#374151",
     marginLeft: 8,
     flex: 1,
   },
   professionalRole: {
-    fontSize: 13,
+    fontSize: theme.typography.sizes.body2,
     color: "#4B5563",
     marginTop: 4,
     marginLeft: 24,
     fontStyle: "italic",
   },
   dateText: {
-    fontSize: 12,
+    fontSize: theme.typography.sizes.caption,
     color: "#9CA3AF",
     marginTop: 8,
     marginLeft: 24,
@@ -874,7 +874,7 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 8,
     color: "#666",
-    fontSize: 14,
+    fontSize: theme.typography.sizes.body2,
   },
   errorContainer: {
     padding: 20,
@@ -883,7 +883,7 @@ const styles = StyleSheet.create({
   },
   errorText: {
     color: "red",
-    fontSize: 16,
+    fontSize: theme.typography.sizes.body1,
   },
   retryText: {
     color: "white",
@@ -902,7 +902,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0,0,0,0.3)",
   },
   playButtonText: {
-    fontSize: 40,
+    fontSize: theme.typography.sizes.display1,
   },
   videoWrapper: {
     position: "relative",

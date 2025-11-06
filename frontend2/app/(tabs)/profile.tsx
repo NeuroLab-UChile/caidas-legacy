@@ -453,12 +453,12 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   username: {
-    fontSize: 24,
+    fontSize: theme.typography.sizes.headline1,
     fontWeight: "bold",
     marginBottom: 5,
   },
   email: {
-    fontSize: 16,
+    fontSize: theme.typography.sizes.body1,
     opacity: 0.7,
     marginBottom: 20,
   },
@@ -484,7 +484,7 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   cardTitle: {
-    fontSize: 18,
+    fontSize: theme.typography.sizes.subtitle,
     fontWeight: "600",
     marginLeft: 10,
   },
@@ -500,11 +500,11 @@ const styles = StyleSheet.create({
     borderBottomColor: "rgba(0,0,0,0.05)",
   },
   label: {
-    fontSize: 16,
+    fontSize: theme.typography.sizes.body1,
     opacity: 0.8,
   },
   value: {
-    fontSize: 16,
+    fontSize: theme.typography.sizes.body1,
     fontWeight: "500",
   },
   loadingOverlay: {

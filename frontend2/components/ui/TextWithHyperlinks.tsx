@@ -9,8 +9,8 @@ type TextWithHyperlinksProps = {
 
 export const TextWithHyperlinks: React.FC<TextWithHyperlinksProps> = ({
   children,
-  style = { fontSize: 16, color: "black" },
-  linkStyle = { fontSize: 16, color: "blue", textDecorationLine: "underline" },
+  style = { fontSize: theme.typography.sizes.body1, color: "black" },
+  linkStyle = { fontSize: theme.typography.sizes.body1, color: "blue", textDecorationLine: "underline" },
 }) => {
   const regex = /\[(.*?)\]\((.*?)\)/g;
   const elements: React.ReactNode[] = [];

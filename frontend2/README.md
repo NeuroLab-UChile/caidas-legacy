@@ -16,8 +16,8 @@ npm install
 npm start
 # O
 npx expo start
-# O por USB
-npx expo run:android
+# O por USB o emulador
+npx expo run:android -d
 ```
 
 3. Build the app

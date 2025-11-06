@@ -27,7 +27,7 @@ const styles = StyleSheet.create({
   },
   text: {
     color: theme.colors.background,
-    fontSize: 14,
+    fontSize: theme.typography.sizes.body2,
     fontWeight: '600',
   },
   current: {

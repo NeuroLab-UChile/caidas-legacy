@@ -1,5 +1,6 @@
 import { Text, View } from "react-native";
 import { TextWithHyperlinks } from "@/components/ui/TextWithHyperlinks";
+import { theme } from "@/src/theme";
 
 interface TextNodeViewProps {
   data: any;
@@ -13,7 +14,7 @@ export const TextNodeView: React.FC<TextNodeViewProps> = ({ data }) => {
     <View>
       <Text
         style={{
-          fontSize: 24,
+          fontSize: theme.typography.sizes.headline1,
           fontWeight: "bold",
           marginBottom: 8,
           textAlign: "center",

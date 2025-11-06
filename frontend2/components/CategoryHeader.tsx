@@ -23,13 +23,13 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   label: {
-    fontSize: 14,
+    fontSize: theme.typography.sizes.body2,
     color: theme.colors.textSecondary,
     marginBottom: 4,
     textAlign: "center",
   },
   title: {
-    fontSize: 18,
+    fontSize: theme.typography.sizes.subtitle,
     fontWeight: "600",
     color: theme.colors.text,
     textAlign: "center",

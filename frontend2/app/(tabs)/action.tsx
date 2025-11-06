@@ -251,7 +251,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   headerTitle: {
-    fontSize: 28,
+    fontSize: theme.typography.sizes.display3,
     fontWeight: "bold",
     color: theme.colors.background,
     textTransform: "uppercase",
@@ -274,14 +274,14 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
   },
   actionTitle: {
-    fontSize: 22,
+    fontSize: theme.typography.sizes.headline2,
     fontWeight: "bold",
     color: theme.colors.text,
     marginTop: SPACING,
     textAlign: "center",
   },
   actionSubtitle: {
-    fontSize: 16,
+    fontSize: theme.typography.sizes.body1,
     color: theme.colors.textSecondary,
     marginTop: 4,
     textAlign: "center",
@@ -329,7 +329,7 @@ const styles = StyleSheet.create({
     backgroundColor: "transparent", // Evitar fondo blanco
   },
   categoryCardTitle: {
-    fontSize: 14,
+    fontSize: theme.typography.sizes.body2,
     fontWeight: "600",
     color: theme.colors.text,
     textAlign: "center",
@@ -373,7 +373,7 @@ const styles = StyleSheet.create({
   },
   selectedBannerText: {
     flex: 1,
-    fontSize: 16,
+    fontSize: theme.typography.sizes.body1,
     fontWeight: "600",
     color: theme.colors.text,
   },
@@ -389,7 +389,7 @@ const styles = StyleSheet.create({
     padding: SPACING * 2,
   },
   errorText: {
-    fontSize: 16,
+    fontSize: theme.typography.sizes.body1,
     color: theme.colors.error,
     textAlign: "center",
     marginBottom: 16,

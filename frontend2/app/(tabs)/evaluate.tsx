@@ -633,7 +633,7 @@ const EvaluateScreen = () => {
                 textDecorationLine: "underline",
                 textAlign: "center",
                 color: theme.colors.textSecondary,
-                fontSize: 16,
+                fontSize: theme.typography.sizes.body1,
                 fontWeight: "500",
               }}
             >
@@ -751,7 +751,7 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   statusText: {
-    fontSize: 24,
+    fontSize: theme.typography.sizes.headline1,
     fontWeight: "600",
     color: theme.colors.text,
   },
@@ -759,13 +759,13 @@ const styles = StyleSheet.create({
     marginTop: 24,
   },
   recommendationsTitle: {
-    fontSize: 16,
+    fontSize: theme.typography.sizes.body1,
     fontWeight: "600",
     color: theme.colors.textSecondary,
     marginBottom: 12,
   },
   recommendationsText: {
-    fontSize: 16,
+    fontSize: theme.typography.sizes.body1,
     color: theme.colors.text,
     lineHeight: 24,
   },
@@ -786,11 +786,11 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   metadataLabel: {
-    fontSize: 14,
+    fontSize: theme.typography.sizes.body2,
     color: theme.colors.textSecondary,
   },
   metadataValue: {
-    fontSize: 14,
+    fontSize: theme.typography.sizes.body2,
     color: theme.colors.text,
     fontWeight: "500",
   },
@@ -814,7 +814,7 @@ const styles = StyleSheet.create({
   },
   newEvaluationButtonText: {
     color: theme.colors.text,
-    fontSize: 16,
+    fontSize: theme.typography.sizes.body1,
     fontWeight: "600",
   },
   startButton: {
@@ -827,7 +827,7 @@ const styles = StyleSheet.create({
   },
   startButtonText: {
     color: theme.colors.background,
-    fontSize: 16,
+    fontSize: theme.typography.sizes.body1,
     fontWeight: "600",
   },
   backButton: {
@@ -837,7 +837,7 @@ const styles = StyleSheet.create({
   },
   backButtonText: {
     marginLeft: 8,
-    fontSize: 16,
+    fontSize: theme.typography.sizes.body1,
     color: theme.colors.text,
   },
   noEvaluationContainer: {
@@ -853,14 +853,14 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   noEvaluationText: {
-    fontSize: 18,
+    fontSize: theme.typography.sizes.subtitle,
     color: theme.colors.textSecondary,
     textAlign: "center",
     marginTop: 16,
     marginBottom: 8,
   },
   startText: {
-    fontSize: 18,
+    fontSize: theme.typography.sizes.subtitle,
     color: theme.colors.text,
     textAlign: "center",
     marginVertical: 16,
@@ -877,21 +877,21 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   welcomeTitle: {
-    fontSize: 28,
+    fontSize: theme.typography.sizes.display3,
     fontWeight: "700",
     color: theme.colors.text,
     marginBottom: 8,
     textAlign: "center",
   },
   welcomeSubtitle: {
-    fontSize: 20,
+    fontSize: theme.typography.sizes.title,
     fontWeight: "600",
     color: theme.colors.text,
     marginBottom: 16,
     textAlign: "center",
   },
   welcomeDescription: {
-    fontSize: 16,
+    fontSize: theme.typography.sizes.body1,
     color: theme.colors.text,
     marginBottom: 12,
   },
@@ -899,13 +899,13 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   bulletPoint: {
-    fontSize: 16,
+    fontSize: theme.typography.sizes.body1,
     color: theme.colors.text,
     marginBottom: 8,
     lineHeight: 24,
   },
   noteText: {
-    fontSize: 14,
+    fontSize: theme.typography.sizes.body2,
     color: theme.colors.textSecondary,
     fontStyle: "italic",
     marginBottom: 24,

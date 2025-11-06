@@ -93,7 +93,7 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   title: {
-    fontSize: 28,
+    fontSize: theme.typography.sizes.display3,
     fontWeight: "bold",
     color: theme.colors.text,
     marginBottom: 16,
@@ -105,7 +105,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   message: {
-    fontSize: 22,
+    fontSize: theme.typography.sizes.headline2,
     color: theme.colors.text,
     textAlign: "center",
     lineHeight: 34,
@@ -121,7 +121,7 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: theme.colors.text,
-    fontSize: 20,
+    fontSize: theme.typography.sizes.title,
     fontWeight: "600",
     textAlign: "center",
   },

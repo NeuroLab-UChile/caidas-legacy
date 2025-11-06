@@ -47,12 +47,12 @@ const styles = StyleSheet.create({
   },
   headerText: {
     color: theme.colors.text,
-    fontSize: 20,
+    fontSize: theme.typography.sizes.title,
     fontWeight: "bold",
   },
   exitButton: {
     color: theme.colors.text,
-    fontSize: 16,
+    fontSize: theme.typography.sizes.body1,
   },
   content: {
     flex: 1,
@@ -61,14 +61,14 @@ const styles = StyleSheet.create({
     padding: 24,
   },
   title: {
-    fontSize: 22,
+    fontSize: theme.typography.sizes.headline2,
     fontWeight: "600",
     color: theme.colors.text,
     marginBottom: 12,
     textAlign: "center",
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: theme.typography.sizes.body1,
     color: theme.colors.textSecondary,
     textAlign: "center",
     marginBottom: 24,
@@ -81,7 +81,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   buttonText: {
-    fontSize: 16,
+    fontSize: theme.typography.sizes.body1,
     color: theme.colors.text,
     fontWeight: "bold",
   },
