@@ -572,7 +572,7 @@ const EvaluateScreen = () => {
           // onPress={() => router.back()}
           onPress={() => router.push("/(tabs)/category-detail")}
         >
-          <Ionicons name="chevron-back" size={24} color={theme.colors.text} />
+          <Ionicons name="chevron-back" size={theme.typography.sizes.headline1} color={theme.colors.text} />
           <Text style={styles.backButtonText}>Volver a selector</Text>
         </TouchableOpacity>
 
@@ -657,7 +657,7 @@ const EvaluateScreen = () => {
             // onPress={() => router.back()}
             onPress={() => router.push("/(tabs)/category-detail")}
           >
-            <Ionicons name="chevron-back" size={24} color={theme.colors.text} />
+            <Ionicons name="chevron-back" size={theme.typography.sizes.headline1} color={theme.colors.text} />
             <Text style={styles.backButtonText}>Volver a selector</Text>
           </TouchableOpacity>
           <ProfessionalEvaluation />
@@ -767,7 +767,7 @@ const styles = StyleSheet.create({
   recommendationsText: {
     fontSize: theme.typography.sizes.body1,
     color: theme.colors.text,
-    lineHeight: 24,
+    lineHeight: theme.typography.sizes.subtitle,
   },
   separator: {
     height: 1,
@@ -902,7 +902,7 @@ const styles = StyleSheet.create({
     fontSize: theme.typography.sizes.body1,
     color: theme.colors.text,
     marginBottom: 8,
-    lineHeight: 24,
+    lineHeight: theme.typography.sizes.subtitle,
   },
   noteText: {
     fontSize: theme.typography.sizes.body2,

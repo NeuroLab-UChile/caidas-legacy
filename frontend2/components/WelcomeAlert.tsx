@@ -54,7 +54,9 @@ export const WelcomeAlert: React.FC<WelcomeAlertProps> = ({
               onPress={onPostpone}
             >
               {/* <Text style={styles.buttonText}>Posponer 1 semana</Text> */}
-              <Text style={styles.buttonText}>Volver a recordar en una semana</Text>
+              <Text style={styles.buttonText}>
+                Volver a recordar en una semana
+              </Text>
             </TouchableOpacity>
           )}
 
@@ -108,7 +110,7 @@ const styles = StyleSheet.create({
     fontSize: theme.typography.sizes.headline2,
     color: theme.colors.text,
     textAlign: "center",
-    lineHeight: 34,
+    lineHeight: theme.typography.sizes.headline2,
   },
   button: {
     backgroundColor: theme.colors.primary,

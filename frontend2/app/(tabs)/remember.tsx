@@ -306,7 +306,11 @@ const RememberScreen = () => {
             style={styles.backToTopButton}
             onPress={scrollToTop}
           >
-            <IconSymbol name="chevron-up" size={24} color={theme.colors.text} />
+            <IconSymbol
+              name="chevron-up"
+              size={theme.typography.sizes.headline1}
+              color={theme.colors.text}
+            />
             <Text style={[styles.backToTopText, { color: theme.colors.text }]}>
               Volver arriba
             </Text>
@@ -393,14 +397,14 @@ const styles = StyleSheet.create({
     fontFamily: "System",
     fontWeight: "bold",
     marginBottom: 24,
-    lineHeight: 40,
+    lineHeight: theme.typography.sizes.display3,
   },
   categoryText: {
     fontSize: theme.typography.sizes.title,
     fontFamily: "System",
     fontWeight: "600",
     marginBottom: 32,
-    lineHeight: 28,
+    lineHeight: theme.typography.sizes.title,
   },
   instructionContainer: {
     alignItems: "center",
@@ -413,7 +417,7 @@ const styles = StyleSheet.create({
     fontFamily: "System",
     fontWeight: "600",
     marginTop: 12,
-    lineHeight: 28,
+    lineHeight: theme.typography.sizes.title,
   },
   explanationContainer: {
     marginTop: 24,
@@ -424,13 +428,13 @@ const styles = StyleSheet.create({
   explanationText: {
     fontSize: theme.typography.sizes.headline1,
     fontFamily: "System",
-    lineHeight: 36,
+    lineHeight: theme.typography.sizes.headline1,
     fontWeight: "500",
   },
   practicalText: {
     fontSize: theme.typography.sizes.headline1,
     fontFamily: "System",
-    lineHeight: 36,
+    lineHeight: theme.typography.sizes.headline1,
     marginTop: 16,
     fontWeight: "500",
   },
@@ -444,12 +448,12 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontSize: theme.typography.sizes.headline1,
     fontFamily: "System",
-    lineHeight: 32,
+    lineHeight: theme.typography.sizes.headline1,
   },
   keywordsText: {
     fontSize: theme.typography.sizes.title,
     fontFamily: "System",
-    lineHeight: 28,
+    lineHeight: theme.typography.sizes.title,
     marginTop: 16,
     fontWeight: "500",
     fontStyle: "italic",
@@ -457,7 +461,7 @@ const styles = StyleSheet.create({
   sourceText: {
     fontSize: theme.typography.sizes.body1,
     fontFamily: "System",
-    lineHeight: 24,
+    lineHeight: theme.typography.sizes.subtitle,
     marginTop: 16,
     fontWeight: "400",
     opacity: 0.8,

@@ -78,7 +78,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: theme.colors.text,
     marginBottom: 24,
-    lineHeight: 28,
+    lineHeight: theme.typography.sizes.title,
   },
   optionButton: {
     padding: 16,

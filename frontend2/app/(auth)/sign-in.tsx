@@ -149,10 +149,10 @@ export default function SignIn() {
       ) : null}
 
       <TextInput
+        style={styles.input}
         placeholder="Usuario"
         value={username}
         onChangeText={handleChangeUsername}
-        style={styles.input}
         placeholderTextColor={theme.colors.text + "80"}
         autoCapitalize="none"
         editable={!isLoading}
@@ -160,11 +160,11 @@ export default function SignIn() {
 
       <View style={{ position: "relative" }}>
         <TextInput
+          style={styles.input}
           placeholder="Contraseña"
           value={password}
           onChangeText={handleChangePassword}
           secureTextEntry={!showPassword}
-          style={styles.input}
           placeholderTextColor={theme.colors.text + "80"}
           autoCapitalize="none"
           editable={!isLoading}
@@ -200,7 +200,7 @@ export default function SignIn() {
           disabled={isLoading}
           color={"black"}
         />
-        <Text style={{ color: "black", marginLeft: 8 }}>Recordarme</Text>
+        <Text style={styles.checkBoxText}>Recordarme</Text>
       </View>
 
       {/* Link a popup y checkbox de Aceptar términos y condiciones */}
@@ -217,7 +217,7 @@ export default function SignIn() {
           disabled={isLoading}
           color={"black"}
         />
-        <Text style={{ color: "black", marginLeft: 8 }}>
+        <Text style={styles.checkBoxText}>
           Acepto los{" "}
           {/* términos y condiciones debe ser un link que active un popup */}
           <Text
@@ -280,7 +280,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   input: {
-    height: 50,
+    height: theme.typography.sizes.textInput,
     borderWidth: theme.components.button.variants.primary.borderWidth,
     borderColor: theme.components.button.variants.primary.borderColor,
     borderRadius: theme.components.button.variants.primary.borderRadius,
@@ -290,6 +290,11 @@ const styles = StyleSheet.create({
     fontFamily: theme.typography.fonts.primary.regular,
     color: theme.colors.text,
     backgroundColor: theme.colors.card,
+  },
+  checkBoxText: {
+    color: "black",
+    marginLeft: 8,
+    fontSize: theme.typography.sizes.body2,
   },
   button: {
     backgroundColor: theme.colors.primary,

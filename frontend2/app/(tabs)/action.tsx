@@ -73,13 +73,25 @@ export default function ActionScreen() {
     try {
       // Si no hay URL, mostrar icono por defecto
       if (!iconUrl) {
-        return <IconSymbol name="folder" size={24} color={theme.colors.text} />;
+        return (
+          <IconSymbol
+            name="folder"
+            size={theme.typography.sizes.headline1}
+            color={theme.colors.text}
+          />
+        );
       }
 
       // Validar que la URL sea string y tenga formato correcto
       if (typeof iconUrl !== "string") {
         console.warn("Invalid icon URL type:", typeof iconUrl);
-        return <IconSymbol name="folder" size={24} color={theme.colors.text} />;
+        return (
+          <IconSymbol
+            name="folder"
+            size={theme.typography.sizes.headline1}
+            color={theme.colors.text}
+          />
+        );
       }
 
       // Manejar URLs absolutas
@@ -114,10 +126,22 @@ export default function ActionScreen() {
 
       // Si no coincide con ningún formato válido, mostrar icono por defecto
       console.warn("Unsupported icon URL format:", iconUrl);
-      return <IconSymbol name="folder" size={24} color={theme.colors.text} />;
+      return (
+        <IconSymbol
+          name="folder"
+          size={theme.typography.sizes.headline1}
+          color={theme.colors.text}
+        />
+      );
     } catch (error) {
       console.error("Error rendering icon:", error);
-      return <IconSymbol name="folder" size={24} color={theme.colors.text} />;
+      return (
+        <IconSymbol
+          name="folder"
+          size={theme.typography.sizes.headline1}
+          color={theme.colors.text}
+        />
+      );
     }
   };
 
@@ -134,7 +158,11 @@ export default function ActionScreen() {
           {item.icon ? (
             renderIcon(item.icon)
           ) : (
-            <IconSymbol name="folder" size={24} color={theme.colors.text} />
+            <IconSymbol
+              name="folder"
+              size={theme.typography.sizes.headline1}
+              color={theme.colors.text}
+            />
           )}
         </View>
         <Text style={styles.categoryCardTitle}>{item.name || ""}</Text>
@@ -161,7 +189,11 @@ export default function ActionScreen() {
             style={styles.actionCard}
             onPress={() => router.push("/(tabs)/events")}
           >
-            <IconSymbol name="calendar" size={32} color={theme.colors.text} />
+            <IconSymbol
+              name="calendar"
+              size={theme.typography.sizes.display3}
+              color={theme.colors.text}
+            />
             <Text style={styles.actionTitle}>Eventos</Text>
             {/* <Text style={styles.actionSubtitle}>Ver próximos eventos</Text> */}
           </TouchableOpacity>
@@ -172,33 +204,11 @@ export default function ActionScreen() {
           >
             <IconSymbol
               name="cloud-download"
-              size={32}
+              size={theme.typography.sizes.display3}
               color={theme.colors.text}
             />
             <Text style={styles.actionTitle}>Contenido Descargable</Text>
           </TouchableOpacity>
-
-          {/* <TouchableOpacity
-            style={styles.actionCard}
-            onPress={() => setIsCategoriesExpanded(!isCategoriesExpanded)}
-          >
-            <IconSymbol name="folder" size={32} color={theme.colors.text} />
-            <Text style={styles.actionTitle}>Categorías</Text>
-            <Text style={styles.actionSubtitle}>
-              Explorar o Elegir categorías
-            </Text>
-            <View style={styles.expandIconContainer}>
-              <IconSymbol
-                name="chevron-down"
-                size={24}
-                color={theme.colors.text}
-                style={[
-                  styles.expandIcon,
-                  isCategoriesExpanded && styles.expandIconRotated,
-                ]}
-              />
-            </View>
-          </TouchableOpacity> */}
 
           <Text style={styles.actionTitle}>Categorías</Text>
 
@@ -222,7 +232,11 @@ export default function ActionScreen() {
               {selectedCategory.icon ? (
                 renderIcon(selectedCategory.icon)
               ) : (
-                <IconSymbol name="folder" size={24} color={theme.colors.text} />
+                <IconSymbol
+                  name="folder"
+                  size={theme.typography.sizes.headline1}
+                  color={theme.colors.text}
+                />
               )}
             </View>
             <Text style={styles.selectedBannerText}>
@@ -315,8 +329,8 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.primary,
   },
   iconContainer: {
-    width: 56,
-    height: 56,
+    width: theme.typography.sizes.buttonSize,
+    height: theme.typography.sizes.buttonSize,
     borderRadius: 28,
     backgroundColor: theme.colors.background,
     justifyContent: "center",

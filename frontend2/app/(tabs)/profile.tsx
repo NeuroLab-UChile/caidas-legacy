@@ -222,7 +222,11 @@ export default function ProfileScreen() {
                   }
                 />
                 <View style={styles.editButton}>
-                  <Ionicons name="pencil" size={16} color="black" />
+                  <Ionicons
+                    name="pencil"
+                    size={theme.typography.sizes.body1}
+                    color="black"
+                  />
                 </View>
               </>
             ) : (
@@ -256,7 +260,7 @@ export default function ProfileScreen() {
             <View style={styles.cardHeader}>
               <Ionicons
                 name="person-outline"
-                size={24}
+                size={theme.typography.sizes.headline1}
                 color={theme.colors.text}
               />
               <Text style={[styles.cardTitle, { color: theme.colors.text }]}>
@@ -291,7 +295,7 @@ export default function ProfileScreen() {
             <View style={styles.cardHeader}>
               <Ionicons
                 name="call-outline"
-                size={24}
+                size={theme.typography.sizes.headline1}
                 color={theme.colors.text}
               />
               <Text style={[styles.cardTitle, { color: theme.colors.text }]}>
@@ -329,7 +333,7 @@ export default function ProfileScreen() {
             <View style={styles.cardHeader}>
               <Ionicons
                 name="help-circle-outline"
-                size={24}
+                size={theme.typography.sizes.headline1}
                 color={theme.colors.text}
               />
               <Text style={[styles.cardTitle, { color: theme.colors.text }]}>
@@ -407,8 +411,8 @@ const styles = StyleSheet.create({
     marginBottom: 30,
   },
   imageContainer: {
-    width: 120,
-    height: 120,
+    width: theme.typography.sizes.imageThumbnail,
+    height: theme.typography.sizes.imageThumbnail,
     marginBottom: 15,
     shadowColor: "#000",
     shadowOffset: {

@@ -58,7 +58,7 @@ export default function CategoryDetailScreen() {
         >
           <Ionicons
             name="clipboard-outline"
-            size={24}
+            size={theme.typography.sizes.headline1}
             color={theme.colors.text}
           />
           <Text style={[styles.actionButtonText, { color: theme.colors.text }]}>
@@ -73,7 +73,11 @@ export default function CategoryDetailScreen() {
           ]}
           onPress={() => router.push("/training")}
         >
-          <Ionicons name="school-outline" size={24} color={theme.colors.text} />
+          <Ionicons
+            name="school-outline"
+            size={theme.typography.sizes.headline1}
+            color={theme.colors.text}
+          />
           <Text style={[styles.actionButtonText, { color: theme.colors.text }]}>
             {/* Ir a Entrenamiento */}
             Ir a Contenido
@@ -140,7 +144,7 @@ const styles = StyleSheet.create({
   },
   description: {
     fontSize: theme.typography.sizes.body1,
-    lineHeight: 24,
+    lineHeight: theme.typography.sizes.subtitle,
   },
   actionsContainer: {
     flexDirection: "row",
@@ -205,7 +209,7 @@ const styles = StyleSheet.create({
   },
   recommendationsText: {
     fontSize: theme.typography.sizes.body1,
-    lineHeight: 24,
+    lineHeight: theme.typography.sizes.subtitle,
   },
   errorText: {
     fontSize: theme.typography.sizes.body1,

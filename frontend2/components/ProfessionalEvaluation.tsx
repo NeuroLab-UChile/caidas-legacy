@@ -34,7 +34,7 @@ export const ProfessionalEvaluation = () => {
               >
                 <Ionicons
                   name="medical"
-                  size={32}
+                  size={theme.typography.sizes.headline1}
                   color={theme.colors.textSecondary}
                 />
               </View>
@@ -100,7 +100,7 @@ export const ProfessionalEvaluation = () => {
               <Ionicons
                 // name="checkmark-circle"
                 name={mapIconColor(recommendations?.status?.color!)}
-                size={32}
+                size={theme.typography.sizes.display3}
                 color={theme.colors.text}
               />
             </View>
@@ -114,7 +114,11 @@ export const ProfessionalEvaluation = () => {
           {professional && (
             <View style={getCardStyle(0)}>
               <View style={styles.cardHeader}>
-                <Ionicons name="person" size={20} color={theme.colors.text} />
+                <Ionicons
+                  name="person"
+                  size={theme.typography.sizes.body1}
+                  color={theme.colors.text}
+                />
                 <Text style={styles.cardHeaderText}>
                   Información del Profesional
                 </Text>
@@ -137,7 +141,11 @@ export const ProfessionalEvaluation = () => {
           {diagnosis && (
             <View style={getCardStyle(1)}>
               <View style={styles.cardHeader}>
-                <Ionicons name="medical" size={20} color={theme.colors.text} />
+                <Ionicons
+                  name="medical"
+                  size={theme.typography.sizes.body1}
+                  color={theme.colors.text}
+                />
                 <Text style={styles.cardHeaderText}>Diagnóstico</Text>
               </View>
               <Text style={styles.diagnosisText}>{diagnosis}</Text>
@@ -150,7 +158,7 @@ export const ProfessionalEvaluation = () => {
               <View style={styles.cardHeader}>
                 <Ionicons
                   name="clipboard"
-                  size={20}
+                  size={theme.typography.sizes.body1}
                   color={theme.colors.text}
                 />
                 <Text style={styles.cardHeaderText}>Observaciones</Text>
@@ -195,9 +203,9 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   iconContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: theme.typography.sizes.buttonSize,
+    height: theme.typography.sizes.buttonSize,
+    borderRadius: theme.typography.sizes.buttonSize / 2,
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 16,
@@ -261,13 +269,13 @@ const styles = StyleSheet.create({
   diagnosisText: {
     fontSize: theme.typography.sizes.body1,
     color: theme.colors.text,
-    lineHeight: 24,
+    lineHeight: theme.typography.sizes.subtitle,
   },
   observationsText: {
     fontSize: theme.typography.sizes.body1,
     color: theme.colors.text,
     fontStyle: "italic",
-    lineHeight: 24,
+    lineHeight: theme.typography.sizes.subtitle,
   },
   colorIndicator: {
     flexDirection: "row",
@@ -296,6 +304,6 @@ const styles = StyleSheet.create({
     fontSize: theme.typography.sizes.body1,
     color: theme.colors.textSecondary,
     textAlign: "center",
-    lineHeight: 24,
+    lineHeight: theme.typography.sizes.subtitle,
   },
 });

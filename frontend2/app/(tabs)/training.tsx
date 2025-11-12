@@ -345,7 +345,11 @@ const TrainingScreen = () => {
         <View style={styles.recommendationsCard}>
           <View style={styles.recommendationsHeader}>
             <View style={styles.iconContainer}>
-              <Ionicons name="medical" size={32} color="#4CAF50" />
+              <Ionicons
+                name="medical"
+                size={theme.typography.sizes.headline1}
+                color="#4CAF50"
+              />
             </View>
             <Text style={styles.recommendationsTitle}>
               Recomendaciones Médicas
@@ -355,7 +359,11 @@ const TrainingScreen = () => {
           {professional?.name && (
             <View style={styles.professionalContainer}>
               <View style={styles.professionalHeader}>
-                <Ionicons name="person" size={20} color="#4B5563" />
+                <Ionicons
+                  name="person"
+                  size={theme.typography.sizes.body1}
+                  color="#4B5563"
+                />
                 <Text style={styles.professionalName}>{professional.name}</Text>
               </View>
               {professional.role && (
@@ -403,7 +411,11 @@ const TrainingScreen = () => {
             style={styles.backButton}
             onPress={() => setView(null)}
           >
-            <Ionicons name="arrow-back" size={24} color="white" />
+            <Ionicons
+              name="arrow-back"
+              size={theme.typography.sizes.headline1}
+              color="white"
+            />
             <Text style={styles.backButtonText}>Volver al Menú</Text>
           </TouchableOpacity>
         </View>
@@ -431,7 +443,11 @@ const TrainingScreen = () => {
       />
 
       <TouchableOpacity style={styles.backButton} onPress={handleBack}>
-        <Ionicons name="chevron-back" size={24} color={theme.colors.text} />
+        <Ionicons
+          name="chevron-back"
+          size={theme.typography.sizes.headline1}
+          color={theme.colors.text}
+        />
         <Text style={styles.backButtonText}>
           {view ? "Volver" : "Volver a selector"}
         </Text>
@@ -451,7 +467,11 @@ const TrainingScreen = () => {
               }}
             >
               <View style={styles.iconContainer}>
-                <Ionicons name="medical" size={32} color="#4CAF50" />
+                <Ionicons
+                  name="medical"
+                  size={theme.typography.sizes.headline1}
+                  color="#4CAF50"
+                />
               </View>
               <Text style={styles.optionTitle}>
                 Recomendaciones Personalizadas
@@ -473,7 +493,11 @@ const TrainingScreen = () => {
             }}
           >
             <View style={styles.iconContainer}>
-              <Ionicons name="fitness" size={32} color="#2196F3" />
+              <Ionicons
+                name="fitness"
+                size={theme.typography.sizes.headline1}
+                color="#2196F3"
+              />
             </View>
             {/* <Text style={styles.optionTitle}>Entrenamiento</Text> */}
             <Text style={styles.optionTitle}>Contenido</Text>
@@ -511,7 +535,11 @@ const TrainingScreen = () => {
                   style={styles.backToMenuButton}
                   onPress={() => setView(null)}
                 >
-                  <Ionicons name="arrow-back" size={24} color="#4B5563" />
+                  <Ionicons
+                    name="arrow-back"
+                    size={theme.typography.sizes.headline1}
+                    color="#4B5563"
+                  />
                   <Text style={styles.backToMenuText}>Volver al Menú</Text>
                 </TouchableOpacity>
               </View>
@@ -528,7 +556,8 @@ const TrainingScreen = () => {
                 </Text>
                 <Text style={styles.completedDescription}>
                   {/* Has finalizado todos los ejercicios. ¿Deseas realizarlos nuevamente? */}
-                  Has finalizado todo el contenido. ¿Deseas repasarlo nuevamente?
+                  Has finalizado todo el contenido. ¿Deseas repasarlo
+                  nuevamente?
                 </Text>
 
                 <View style={styles.completedButtons}>
@@ -536,7 +565,11 @@ const TrainingScreen = () => {
                     style={styles.restartButton}
                     onPress={handleRestart}
                   >
-                    <Ionicons name="refresh" size={24} color="white" />
+                    <Ionicons
+                      name="refresh"
+                      size={theme.typography.sizes.headline1}
+                      color="white"
+                    />
                     <Text style={styles.buttonText}>
                       {/* Reiniciar Entrenamiento */}
                       Reiniciar Contenido
@@ -547,7 +580,11 @@ const TrainingScreen = () => {
                     style={styles.backToMenuButton}
                     onPress={() => setView(null)}
                   >
-                    <Ionicons name="arrow-back" size={24} color="#4B5563" />
+                    <Ionicons
+                      name="arrow-back"
+                      size={theme.typography.sizes.headline1}
+                      color="#4B5563"
+                    />
                     <Text style={styles.backToMenuText}>Volver al Menú</Text>
                   </TouchableOpacity>
                 </View>
@@ -586,9 +623,9 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   iconContainer: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: theme.typography.sizes.display1,
+    height: theme.typography.sizes.display1,
+    borderRadius: theme.typography.sizes.display1 / 2,
     backgroundColor: "#F5F6F8",
     justifyContent: "center",
     alignItems: "center",
@@ -603,7 +640,7 @@ const styles = StyleSheet.create({
   optionDescription: {
     fontSize: theme.typography.sizes.body2,
     color: "#6B7280",
-    lineHeight: 20,
+    lineHeight: theme.typography.sizes.body2,
   },
   recommendationsContainer: {
     flex: 1,
@@ -672,7 +709,7 @@ const styles = StyleSheet.create({
   recommendationsText: {
     fontSize: theme.typography.sizes.body1,
     color: "#374151",
-    lineHeight: 24,
+    lineHeight: theme.typography.sizes.subtitle,
     textAlign: "center",
     fontStyle: "italic",
   },
@@ -717,7 +754,7 @@ const styles = StyleSheet.create({
     color: "#6B7280",
     textAlign: "center",
     marginBottom: 32,
-    lineHeight: 24,
+    lineHeight: theme.typography.sizes.subtitle,
   },
   completedButtons: {
     width: "100%",
@@ -806,7 +843,7 @@ const styles = StyleSheet.create({
   recommendationText: {
     fontSize: theme.typography.sizes.body1,
     color: "#374151",
-    lineHeight: 24,
+    lineHeight: theme.typography.sizes.subtitle,
     marginTop: 8,
     flexWrap: "wrap",
   },

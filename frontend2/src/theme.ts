@@ -51,6 +51,10 @@ const typography = {
     },
   },
   sizes: {
+    imageThumbnail: RFValue(90),
+    // iconCircle: RFValue(60),
+    buttonSize: RFValue(55),
+    textInput: RFValue(50),
     display1: RFValue(36),
     display2: RFValue(32),
     display3: RFValue(28),

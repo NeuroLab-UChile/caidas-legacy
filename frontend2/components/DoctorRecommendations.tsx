@@ -109,7 +109,7 @@ const styles = StyleSheet.create({
   recommendationsText: {
     fontSize: theme.typography.sizes.body2,
     color: theme.colors.text,
-    lineHeight: 20,
+    lineHeight: theme.typography.sizes.body2,
   },
   updateInfo: {
     marginTop: 16,

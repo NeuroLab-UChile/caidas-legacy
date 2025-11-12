@@ -82,7 +82,7 @@ export default function DownloadsScreen() {
             name={
               item.downloaded ? "checkmark-circle-outline" : "warning-outline"
             }
-            size={20}
+            size={theme.typography.sizes.body1}
             color={
               item.downloaded ? theme.colors.success : theme.colors.warning
             }
@@ -131,7 +131,7 @@ export default function DownloadsScreen() {
       >
         <IconSymbol
           name="download-outline"
-          size={30}
+          size={theme.typography.sizes.headline1}
           color={theme.colors.text}
         />
       </TouchableOpacity>
@@ -282,7 +282,7 @@ export default function DownloadsScreen() {
           >
             <IconSymbol
               name={"checkmark-circle-outline"}
-              size={20}
+              size={theme.typography.sizes.body1}
               color={theme.colors.text}
             />
           </View>

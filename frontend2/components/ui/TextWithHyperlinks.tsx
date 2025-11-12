@@ -1,5 +1,6 @@
 import React from "react";
 import { Text, StyleProp, TextStyle, Linking } from "react-native";
+import { theme } from "@/src/theme";
 
 type TextWithHyperlinksProps = {
   children: string;

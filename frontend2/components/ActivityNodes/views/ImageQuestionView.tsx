@@ -1,14 +1,21 @@
-import { useState , useEffect} from "react";
-import { View, Text, StyleSheet, TouchableOpacity, Image, Platform } from "react-native";
+import { useState, useEffect } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Image,
+  Platform,
+} from "react-native";
 import { ScrollView } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { theme } from "@/src/theme";
 import React from "react";
-import { useImagePicker } from '@/hooks/useImagePicker';
+import { useImagePicker } from "@/hooks/useImagePicker";
 
 interface ImageQuestionResponse {
   answer: string[];
-  type: 'IMAGE_QUESTION';
+  type: "IMAGE_QUESTION";
 }
 
 interface ImageQuestionProps {
@@ -29,7 +36,7 @@ export function ImageQuestionView({ data, setResponse }: ImageQuestionProps) {
   // oneffect data clean selectedimages
   useEffect(() => {
     setSelectedImages([]);
-    setResponse({ answer: [], type: 'IMAGE_QUESTION' });
+    setResponse({ answer: [], type: "IMAGE_QUESTION" });
   }, [data]);
 
   const handleSelectImage = async () => {
@@ -38,9 +45,9 @@ export function ImageQuestionView({ data, setResponse }: ImageQuestionProps) {
       if (base64Image) {
         const newImages = [...selectedImages, base64Image];
         setSelectedImages(newImages);
-        setResponse({ 
+        setResponse({
           answer: newImages,
-          type: 'IMAGE_QUESTION'
+          type: "IMAGE_QUESTION",
         });
       }
     } catch (error) {
@@ -55,9 +62,9 @@ export function ImageQuestionView({ data, setResponse }: ImageQuestionProps) {
       if (base64Image) {
         const newImages = [...selectedImages, base64Image];
         setSelectedImages(newImages);
-        setResponse({ 
+        setResponse({
           answer: newImages,
-          type: 'IMAGE_QUESTION'
+          type: "IMAGE_QUESTION",
         });
       }
     } catch (error) {
@@ -69,14 +76,14 @@ export function ImageQuestionView({ data, setResponse }: ImageQuestionProps) {
   const handleRemoveImage = (index: number) => {
     const newImages = selectedImages.filter((_, i) => i !== index);
     setSelectedImages(newImages);
-    setResponse({ answer: newImages, type: 'IMAGE_QUESTION' });
+    setResponse({ answer: newImages, type: "IMAGE_QUESTION" });
   };
 
   React.useEffect(() => {
-    setResponse({ answer: [], type: 'IMAGE_QUESTION' });
+    setResponse({ answer: [], type: "IMAGE_QUESTION" });
   }, []);
 
-  const imageUrl = data.image 
+  const imageUrl = data.image;
 
   if (!data) {
     console.error("Missing required data in ImageQuestionView");
@@ -109,7 +116,7 @@ export function ImageQuestionView({ data, setResponse }: ImageQuestionProps) {
             >
               <Ionicons
                 name="close-circle"
-                size={24}
+                size={theme.typography.sizes.headline1}
                 color={theme.colors.error}
               />
             </TouchableOpacity>
@@ -134,7 +141,7 @@ export function ImageQuestionView({ data, setResponse }: ImageQuestionProps) {
             <View style={theme.components.node.optionContent}>
               <Ionicons
                 name={option.icon as any}
-                size={24}
+                size={theme.typography.sizes.headline1}
                 color={theme.colors.text}
               />
               <Text style={theme.components.node.optionText}>
@@ -157,7 +164,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: theme.colors.text,
     marginBottom: 24,
-    lineHeight: 28,
+    lineHeight: theme.typography.sizes.title,
   },
   optionsContainer: {
     gap: 12,
@@ -201,7 +208,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   questionImage: {
-    width: '100%',
+    width: "100%",
     height: 200,
     marginVertical: 12,
     borderRadius: 8,

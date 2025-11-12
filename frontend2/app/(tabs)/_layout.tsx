@@ -23,7 +23,7 @@ import { ScrollLayout } from "@/components/ScrollLayout";
 import { Ionicons } from "@expo/vector-icons";
 
 const BOTTOM_TAB_HEIGHT = 83;
-const MIDDLE_BUTTON_SIZE = 76;
+const MIDDLE_BUTTON_SIZE = theme.typography.sizes.buttonSize;
 const { width } = Dimensions.get("window");
 const SCREEN_WIDTH = width * 0.95;
 
@@ -367,7 +367,7 @@ export default function TabLayout() {
                       >
                         <Ionicons
                           name="chevron-back"
-                          size={24}
+                          size={theme.typography.sizes.headline1}
                           color={theme.colors.background}
                         />
                       </TouchableOpacity>
@@ -422,7 +422,7 @@ export default function TabLayout() {
                       <View style={styles.logoutContent}>
                         <IconSymbol
                           name="power"
-                          size={18}
+                          size={theme.typography.sizes.subtitle}
                           color={theme.colors.background}
                           style={styles.logoutIcon}
                         />
@@ -471,7 +471,7 @@ export default function TabLayout() {
                   {item.icon && (
                     <Ionicons
                       name={item.icon}
-                      size={24}
+                      size={theme.typography.sizes.headline1}
                       color={
                         focused
                           ? theme.colors.background
@@ -649,7 +649,7 @@ const styles = StyleSheet.create({
   logoutContent: {
     flexDirection: "row",
     alignItems: "center",
-    height: 24,
+    height: theme.typography.sizes.headline1,
   },
   logoutIcon: {
     marginRight: 4,
@@ -701,8 +701,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   middleButtonLogo: {
-    width: 40,
-    height: 40,
+    width: theme.typography.sizes.display2,
+    height: theme.typography.sizes.display2,
   },
   middleButtonText: {
     fontSize: theme.typography.sizes.small,

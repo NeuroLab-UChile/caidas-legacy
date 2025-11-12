@@ -47,13 +47,15 @@ const OptionButton = memo(
       activeOpacity={0.7}
       accessibilityRole="checkbox"
       accessibilityState={{ checked: isSelected }}
-      accessibilityLabel={`${option.text}, ${isSelected ? "seleccionado" : "no seleccionado"}`}
+      accessibilityLabel={`${option.text}, ${
+        isSelected ? "seleccionado" : "no seleccionado"
+      }`}
       accessibilityHint="Toca para seleccionar o deseleccionar esta opción"
     >
       <View style={styles.optionContent}>
         <Ionicons
           name={isSelected ? "checkbox" : "square-outline"}
-          size={24}
+          size={theme.typography.sizes.headline1}
           color={isSelected ? theme.colors.primary : theme.colors.text}
           style={styles.checkbox}
         />
@@ -65,7 +67,7 @@ const OptionButton = memo(
         </Text>
       </View>
     </TouchableOpacity>
-  ),
+  )
 );
 
 OptionButton.displayName = "OptionButton";
@@ -102,19 +104,19 @@ export function MultipleChoiceQuestionView({
         }
 
         setResponse(
-          newSelection.length > 0 ? { selectedOptions: newSelection } : null,
+          newSelection.length > 0 ? { selectedOptions: newSelection } : null
         );
         return newSelection;
       });
     },
-    [maxSelections, setResponse],
+    [maxSelections, setResponse]
   );
 
   const formattedOptions: Option[] = data.options.map(
     (option: string, index: number) => ({
       id: index,
       text: option,
-    }),
+    })
   );
 
   return (
@@ -189,14 +191,14 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: theme.colors.text,
     marginBottom: 16,
-    lineHeight: 28,
+    lineHeight: theme.typography.sizes.title,
   },
   description: {
     fontSize: theme.typography.sizes.body1,
     color: theme.colors.text,
     opacity: 0.8,
     marginBottom: 24,
-    lineHeight: 22,
+    lineHeight: theme.typography.sizes.body1,
   },
   optionsContainer: {
     gap: 12,
@@ -236,7 +238,7 @@ const styles = StyleSheet.create({
     fontSize: theme.typography.sizes.body1,
     color: "#000000",
     flex: 1,
-    lineHeight: 24,
+    lineHeight: theme.typography.sizes.subtitle,
   },
   selectedOptionText: {
     color: theme.colors.text,

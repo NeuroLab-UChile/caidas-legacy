@@ -127,7 +127,11 @@ export default function EventsScreen() {
 
         <View style={styles.eventFooter}>
           <View style={styles.dateContainer}>
-            <IconSymbol name="calendar" size={16} color={theme.colors.text} />
+            <IconSymbol
+              name="calendar"
+              size={theme.typography.sizes.body1}
+              color={theme.colors.text}
+            />
             <Text style={styles.dateText}>
               {format(
                 new Date(item.date),
@@ -142,7 +146,7 @@ export default function EventsScreen() {
         <View style={styles.statusContainer}>
           <IconSymbol
             name={getStatusIcon(item.status)}
-            size={16}
+            size={theme.typography.sizes.body1}
             color={getStatusColor(item.status)}
           />
           <Text style={styles.statusText}>
