@@ -76,7 +76,7 @@ const styles = StyleSheet.create({
     fontSize: theme.typography.sizes.headline1,
     color: theme.colors.text,
     textAlign: "center",
-    marginBottom: 16,
+    marginBottom: theme.typography.sizes.body2,
   },
   slider: {
     width: "100%",

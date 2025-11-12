@@ -190,8 +190,8 @@ const styles = StyleSheet.create({
     fontSize: theme.typography.sizes.title,
     fontWeight: "600",
     color: theme.colors.text,
-    marginBottom: 16,
-    lineHeight: theme.typography.sizes.title,
+    marginBottom: theme.typography.sizes.body2,
+    lineHeight: theme.typography.sizes.headline2,
   },
   description: {
     fontSize: theme.typography.sizes.body1,

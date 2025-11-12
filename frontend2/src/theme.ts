@@ -396,7 +396,7 @@ export const theme = {
       question: {
         fontSize: RFValue(18),
         color: "#000000",
-        marginBottom: 16,
+        marginBottom: typography.sizes.small,
       },
       optionsContainer: {
         gap: 8,
@@ -434,6 +434,7 @@ export const theme = {
         padding: 12,
         color: "#000000",
         backgroundColor: "#FFFFFF",
+        fontSize: RFValue(16),
       },
     },
 
@@ -447,8 +448,8 @@ export const theme = {
         fontSize: typography.sizes.title,
         fontWeight: "600",
         color: palette.accent,
-        marginBottom: 24,
-        lineHeight: 28,
+        marginBottom: typography.sizes.body1,
+        lineHeight: typography.sizes.headline2,
       },
       optionButton: {
         backgroundColor: palette.background,
@@ -456,7 +457,7 @@ export const theme = {
         padding: 16,
         borderWidth: 2,
         borderColor: palette.grey[300],
-        marginBottom: 12,
+        marginBottom: typography.sizes.small,
         shadowColor: "#000",
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
@@ -477,7 +478,7 @@ export const theme = {
         fontSize: RFValue(16),
         color: palette.accent,
         flex: 1,
-        lineHeight: 24,
+        lineHeight: typography.sizes.body1,
       },
       selectedOptionText: {
         color: palette.accent,

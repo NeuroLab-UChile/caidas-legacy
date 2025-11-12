@@ -87,7 +87,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 16,
+    marginBottom: theme.typography.sizes.body2,
   },
   backButton: {
     flexDirection: "row",

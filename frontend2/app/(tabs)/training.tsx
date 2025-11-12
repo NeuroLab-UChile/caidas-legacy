@@ -629,7 +629,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#F5F6F8",
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 16,
+    marginBottom: theme.typography.sizes.body2,
   },
   optionTitle: {
     fontSize: theme.typography.sizes.subtitle,
@@ -703,7 +703,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 16,
+    marginBottom: theme.typography.sizes.body2,
     alignSelf: "center",
   },
   recommendationsText: {
@@ -812,7 +812,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     padding: 12,
-    marginBottom: 16,
+    marginBottom: theme.typography.sizes.body2,
   },
   backButtonText: {
     marginLeft: 8,
@@ -824,7 +824,7 @@ const styles = StyleSheet.create({
   statusContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 16,
+    marginBottom: theme.typography.sizes.body2,
     backgroundColor: "white",
     padding: 12,
     borderRadius: 8,
@@ -856,7 +856,7 @@ const styles = StyleSheet.create({
     backgroundColor: "white",
     padding: 12,
     borderRadius: 8,
-    marginBottom: 16,
+    marginBottom: theme.typography.sizes.body2,
   },
   professionalHeader: {
     flexDirection: "row",

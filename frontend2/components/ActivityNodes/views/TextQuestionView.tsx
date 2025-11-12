@@ -52,7 +52,7 @@ const styles = StyleSheet.create({
   question: {
     fontSize: theme.typography.sizes.subtitle,
     color: theme.colors.text,
-    marginBottom: 16,
+    marginBottom: theme.typography.sizes.body2,
   },
   input: {
     borderWidth: 1,

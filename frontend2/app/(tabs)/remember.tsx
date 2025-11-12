@@ -477,7 +477,7 @@ const styles = StyleSheet.create({
   endText: {
     fontSize: theme.typography.sizes.body1,
     textAlign: "center",
-    marginBottom: 16,
+    marginBottom: theme.typography.sizes.body2,
     fontFamily: "System",
   },
   backToTopButton: {

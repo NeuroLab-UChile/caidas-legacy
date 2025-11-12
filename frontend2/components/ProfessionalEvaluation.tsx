@@ -208,7 +208,7 @@ const styles = StyleSheet.create({
     borderRadius: theme.typography.sizes.buttonSize / 2,
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 16,
+    marginBottom: theme.typography.sizes.body2,
     borderWidth: 1,
   },
   title: {

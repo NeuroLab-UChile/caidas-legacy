@@ -364,7 +364,7 @@ const styles = StyleSheet.create({
     fontSize: theme.typography.sizes.body1,
     color: theme.colors.error,
     textAlign: "center",
-    marginBottom: 16,
+    marginBottom: theme.typography.sizes.body2,
   },
   retryButton: {
     paddingHorizontal: 24,

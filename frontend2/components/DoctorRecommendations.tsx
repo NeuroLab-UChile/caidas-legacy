@@ -76,7 +76,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 16,
+    marginBottom: theme.typography.sizes.body2,
   },
   statusContainer: {
     flexDirection: "row",

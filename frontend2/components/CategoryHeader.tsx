@@ -20,7 +20,7 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.card,
     padding: 12,
     borderRadius: 8,
-    marginBottom: 16,
+    marginBottom: theme.typography.sizes.body2,
   },
   label: {
     fontSize: theme.typography.sizes.body2,

@@ -126,7 +126,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: theme.typography.sizes.display3,
     fontWeight: "bold",
-    marginBottom: 16,
+    marginBottom: theme.typography.sizes.body2,
     textAlign: "center",
   },
   descriptionContainer: {
@@ -194,7 +194,7 @@ const styles = StyleSheet.create({
   },
   statusText: {
     fontSize: theme.typography.sizes.body1,
-    marginBottom: 16,
+    marginBottom: theme.typography.sizes.body2,
   },
   recommendationsContainer: {
     marginTop: 16,

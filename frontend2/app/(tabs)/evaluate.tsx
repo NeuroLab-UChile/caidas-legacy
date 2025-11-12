@@ -887,7 +887,7 @@ const styles = StyleSheet.create({
     fontSize: theme.typography.sizes.title,
     fontWeight: "600",
     color: theme.colors.text,
-    marginBottom: 16,
+    marginBottom: theme.typography.sizes.body2,
     textAlign: "center",
   },
   welcomeDescription: {

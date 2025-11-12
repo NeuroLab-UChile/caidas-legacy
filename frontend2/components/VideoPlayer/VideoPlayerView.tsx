@@ -55,7 +55,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: theme.typography.sizes.body1,
     fontWeight: "500",
-    marginBottom: 16,
+    marginBottom: theme.typography.sizes.body2,
     color: theme.colors.text,
   },
   videoContainer: {

@@ -87,7 +87,7 @@ const styles = StyleSheet.create({
     width: "100%",
     height: 200,
     borderRadius: 8,
-    marginBottom: 16,
+    marginBottom: theme.typography.sizes.body2,
   },
   description: {
     fontSize: theme.typography.sizes.subtitle,

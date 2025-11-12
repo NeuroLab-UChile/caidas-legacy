@@ -167,7 +167,7 @@ const styles = StyleSheet.create({
   description: {
     fontSize: theme.typography.sizes.body2,
     color: theme.colors.textSecondary,
-    marginBottom: 16,
+    marginBottom: theme.typography.sizes.body2,
     textAlign: "center",
   },
   imageContainer: {

@@ -24,7 +24,7 @@ export const VideoNodeView: React.FC<VideoNodeViewProps> = ({
 
   return (
     <View style={styles.container}>
-      <View style={{ marginBottom: 16 }}>
+      <View style={{ marginBottom: theme.typography.sizes.body2 }}>
         <Text
           style={{
             fontSize: theme.typography.sizes.headline1,
@@ -38,7 +38,7 @@ export const VideoNodeView: React.FC<VideoNodeViewProps> = ({
       </View>
 
       {/* <Text
-        style={{ color: theme.colors.text, marginBottom: 16, fontSize: theme.typography.sizes.body1 }}
+        style={{ color: theme.colors.text, marginBottom: theme.typography.sizes.body2, fontSize: theme.typography.sizes.body1 }}
       >
         {data.description}
       </Text> */}

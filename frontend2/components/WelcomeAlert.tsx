@@ -98,7 +98,7 @@ const styles = StyleSheet.create({
     fontSize: theme.typography.sizes.display3,
     fontWeight: "bold",
     color: theme.colors.text,
-    marginBottom: 16,
+    marginBottom: theme.typography.sizes.body2,
     textAlign: "center",
   },
   messageScrollView: {
