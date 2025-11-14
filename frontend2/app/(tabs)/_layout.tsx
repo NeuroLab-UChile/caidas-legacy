@@ -21,6 +21,10 @@ import { theme } from "@/src/theme";
 import authService from "../services/authService";
 import { ScrollLayout } from "@/components/ScrollLayout";
 import { Ionicons } from "@expo/vector-icons";
+import CustomisableAlert, {
+  showAlert,
+  closeAlert,
+} from "react-native-customisable-alert";
 
 const BOTTOM_TAB_HEIGHT = 83;
 const MIDDLE_BUTTON_SIZE = theme.typography.sizes.buttonSize;
@@ -311,6 +315,26 @@ export default function TabLayout() {
   return (
     <View style={styles.container}>
       <ScrollLayout>
+        <CustomisableAlert
+          dismissable
+          titleStyle={{
+            fontSize: theme.typography.sizes.headline1,
+            fontWeight: "bold",
+          }}
+          textStyle={{
+            fontSize: theme.typography.sizes.body1,
+          }}
+          btnLabelStyle={{
+            color: "white",
+            paddingHorizontal: 10,
+            textAlign: "center",
+            fontSize: theme.typography.sizes.body1,
+          }}
+          btnRightStyle={{
+            backgroundColor: "red",
+          }}
+        />
+
         <Tabs
           screenOptions={({ route }: { route: any }) => ({
             tabBarActiveTintColor: theme.colors.background,
@@ -384,35 +408,58 @@ export default function TabLayout() {
 
                     <TouchableOpacity
                       onPress={() => {
-                        Alert.alert(
-                          "Cerrar Sesión",
-                          "¿Estás seguro que deseas salir?",
-                          [
-                            { text: "Cancelar", style: "cancel" },
-                            {
-                              text: "Salir",
-                              style: "destructive",
-                              onPress: async () => {
-                                try {
-                                  await apiService.activityLog.trackAction(
-                                    "logout"
-                                  ); // Record action - ensure it occurs before logout
-                                  await authService.logout();
-                                  router.replace("/sign-in");
-                                } catch (error) {
-                                  console.error(
-                                    "Error al cerrar sesión:",
-                                    error
-                                  );
-                                  Alert.alert(
-                                    "Error",
-                                    "No se pudo cerrar la sesión"
-                                  );
-                                }
-                              },
-                            },
-                          ]
-                        );
+                        // Alert.alert(
+                        //   "Cerrar Sesión",
+                        //   "¿Estás seguro que deseas salir?",
+                        //   [
+                        //     { text: "Cancelar", style: "cancel" },
+                        //     {
+                        //       text: "Salir",
+                        //       style: "destructive",
+                        //       onPress: async () => {
+                        //         try {
+                        //           await apiService.activityLog.trackAction(
+                        //             "logout"
+                        //           ); // Record action - ensure it occurs before logout
+                        //           await authService.logout();
+                        //           router.replace("/sign-in");
+                        //         } catch (error) {
+                        //           console.error(
+                        //             "Error al cerrar sesión:",
+                        //             error
+                        //           );
+                        //           Alert.alert(
+                        //             "Error",
+                        //             "No se pudo cerrar la sesión"
+                        //           );
+                        //         }
+                        //       },
+                        //     },
+                        //   ]
+                        // );
+                        showAlert({
+                          title: "Cerrar Sesión",
+                          message: "¿Estás seguro que deseas salir?",
+                          leftBtnLabel: "Cancelar",
+                          btnLabel: "Salir",
+                          alertType: "warning",
+                          onPress: async () => {
+                            try {
+                              await apiService.activityLog.trackAction(
+                                "logout"
+                              ); // Record action - ensure it occurs before logout
+                              await authService.logout();
+                              router.replace("/sign-in");
+                            } catch (error) {
+                              console.error("Error al cerrar sesión:", error);
+                              Alert.alert(
+                                "Error",
+                                "No se pudo cerrar la sesión"
+                              );
+                            }
+                            closeAlert();
+                          },
+                        });
                       }}
                       style={[
                         styles.logoutButton,

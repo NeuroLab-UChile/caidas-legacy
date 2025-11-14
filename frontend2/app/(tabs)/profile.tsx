@@ -10,6 +10,8 @@ import {
   Alert,
   Dimensions,
   Linking,
+  Button,
+  TextInput,
 } from "react-native";
 
 import { ImageUploader } from "../../components/ImageUploader";
@@ -21,6 +23,10 @@ import * as FileSystem from "expo-file-system";
 import { useImagePicker } from "../../hooks/useImagePicker";
 import { useFocusEffect } from "@react-navigation/native";
 import { useCallback } from "react";
+import CustomisableAlert, {
+  showAlert,
+  closeAlert,
+} from "react-native-customisable-alert";
 
 const { width } = Dimensions.get("window");
 
@@ -92,89 +98,314 @@ export default function ProfileScreen() {
   };
 
   const handleImageOptions = () => {
-    Alert.alert(
-      "Opciones",
-      "¿Qué deseas hacer con la imagen?",
-      [
-        {
-          text: "Cambiar",
-          onPress: () => {
-            showImageSourceOptions();
-          },
-        },
-        {
-          text: "Eliminar",
-          onPress: async () => {
-            try {
-              setIsLoading(true);
-              const response = await apiService.user.deleteProfileImage();
-              setUser(response.data);
-            } catch (error) {
-              console.error("Error al eliminar la imagen:", error);
-              Alert.alert("Error", "No se pudo eliminar la imagen");
-            } finally {
-              setIsLoading(false);
-            }
-          },
-        },
-        {
-          text: "Cancelar",
-          style: "cancel",
-        },
-      ],
-      { cancelable: false }
-    );
+    // Alert.alert(
+    //   "Opciones",
+    //   "¿Qué deseas hacer con la imagen?",
+    //   [
+    //     {
+    //       text: "Cambiar",
+    //       onPress: () => {
+    //         showImageSourceOptions();
+    //       },
+    //     },
+    //     {
+    //       text: "Eliminar",
+    //       onPress: async () => {
+    //         try {
+    //           setIsLoading(true);
+    //           const response = await apiService.user.deleteProfileImage();
+    //           setUser(response.data);
+    //         } catch (error) {
+    //           console.error("Error al eliminar la imagen:", error);
+    //           Alert.alert("Error", "No se pudo eliminar la imagen");
+    //         } finally {
+    //           setIsLoading(false);
+    //         }
+    //       },
+    //     },
+    //     {
+    //       text: "Cancelar",
+    //       style: "cancel",
+    //     },
+    //   ],
+    //   { cancelable: false }
+    // );
+
+    showAlert({
+      title: "Qué deseas hacer con la imagen?",
+      message: "",
+      alertType: "custom",
+      customAlert: (
+        <View style={{ backgroundColor: "white", padding: 20, width: "85%" }}>
+          <Text
+            style={{
+              textAlign: "center",
+              fontSize: theme.typography.sizes.headline1,
+              fontWeight: "bold",
+              marginBottom: 20,
+              // color: "white",
+            }}
+          >
+            Qué deseas hacer con la imagen?
+          </Text>
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-evenly",
+              marginTop: 30,
+            }}
+          >
+            <TouchableOpacity
+              onPress={showImageSourceOptions}
+              style={{
+                backgroundColor: "orange",
+                paddingVertical: 10,
+                paddingHorizontal: 25,
+                borderRadius: 8,
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: theme.typography.sizes.body1,
+                  color: "white",
+                  fontWeight: "bold",
+                }}
+              >
+                Cambiar
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={async () => {
+                try {
+                  setIsLoading(true);
+                  const response = await apiService.user.deleteProfileImage();
+                  setUser(response.data);
+                } catch (error) {
+                  console.error("Error al eliminar la imagen:", error);
+                  Alert.alert("Error", "No se pudo eliminar la imagen");
+                } finally {
+                  setIsLoading(false);
+                }
+                closeAlert();
+              }}
+              style={{
+                backgroundColor: "red",
+                paddingVertical: 10,
+                paddingHorizontal: 25,
+                borderRadius: 8,
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: theme.typography.sizes.body1,
+                  color: "white",
+                  fontWeight: "bold",
+                }}
+              >
+                Eliminar
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => closeAlert()}
+              style={{
+                backgroundColor: theme.colors.border,
+                paddingVertical: 10,
+                paddingHorizontal: 25,
+                borderRadius: 8,
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: theme.typography.sizes.body1,
+                  color: theme.colors.text,
+                  fontWeight: "bold",
+                }}
+              >
+                Cancelar
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      ),
+    });
   };
 
   const showImageSourceOptions = () => {
-    Alert.alert("Seleccionar foto", "¿De dónde quieres seleccionar la foto?", [
-      {
-        text: "Cámara",
-        onPress: async () => {
-          const { status } = await ImagePicker.requestCameraPermissionsAsync();
-          if (status !== "granted") {
-            Alert.alert("Se necesita permiso para acceder a la cámara");
-            return;
-          }
+    //   Alert.alert("Seleccionar foto", "¿De dónde quieres seleccionar la foto?", [
+    //     {
+    //       text: "Cámara",
+    //       onPress: async () => {
+    //         const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    //         if (status !== "granted") {
+    //           Alert.alert("Se necesita permiso para acceder a la cámara");
+    //           return;
+    //         }
 
-          const result = await ImagePicker.launchCameraAsync({
-            // allowsEditing: true,
-            // aspect: [1, 1],
-            quality: 1,
-          });
+    //         const result = await ImagePicker.launchCameraAsync({
+    //           // allowsEditing: true,
+    //           // aspect: [1, 1],
+    //           quality: 1,
+    //         });
 
-          if (!result.canceled && result.assets[0].uri) {
-            handleImageSelected(result.assets[0].uri);
-          }
-        },
-      },
-      {
-        text: "Galería",
-        onPress: async () => {
-          const { status } =
-            await ImagePicker.requestMediaLibraryPermissionsAsync();
-          if (status !== "granted") {
-            Alert.alert("Se necesita permiso para acceder a la galería");
-            return;
-          }
+    //         if (!result.canceled && result.assets[0].uri) {
+    //           handleImageSelected(result.assets[0].uri);
+    //         }
+    //       },
+    //     },
+    //     {
+    //       text: "Galería",
+    //       onPress: async () => {
+    //         const { status } =
+    //           await ImagePicker.requestMediaLibraryPermissionsAsync();
+    //         if (status !== "granted") {
+    //           Alert.alert("Se necesita permiso para acceder a la galería");
+    //           return;
+    //         }
 
-          const result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ImagePicker.MediaTypeOptions.Images,
-            // allowsEditing: true,
-            // aspect: [1, 1],
-            quality: 1,
-          });
+    //         const result = await ImagePicker.launchImageLibraryAsync({
+    //           mediaTypes: ImagePicker.MediaTypeOptions.Images,
+    //           // allowsEditing: true,
+    //           // aspect: [1, 1],
+    //           quality: 1,
+    //         });
 
-          if (!result.canceled && result.assets[0].uri) {
-            handleImageSelected(result.assets[0].uri);
-          }
-        },
-      },
-      {
-        text: "Cancelar",
-        style: "cancel",
-      },
-    ]);
+    //         if (!result.canceled && result.assets[0].uri) {
+    //           handleImageSelected(result.assets[0].uri);
+    //         }
+    //       },
+    //     },
+    //     {
+    //       text: "Cancelar",
+    //       style: "cancel",
+    //     },
+    //   ]);
+
+    showAlert({
+      title: "Seleccionar foto",
+      message: "",
+      alertType: "custom",
+      customAlert: (
+        <View style={{ backgroundColor: "white", padding: 20, width: "85%" }}>
+          <Text
+            style={{
+              textAlign: "center",
+              fontSize: theme.typography.sizes.headline1,
+              fontWeight: "bold",
+              marginBottom: 20,
+              // color: "white",
+            }}
+          >
+            De dónde quieres seleccionar la foto?
+          </Text>
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-evenly",
+              marginTop: 30,
+            }}
+          >
+            <TouchableOpacity
+              onPress={async () => {
+                const { status } =
+                  await ImagePicker.requestCameraPermissionsAsync();
+                if (status !== "granted") {
+                  Alert.alert("Se necesita permiso para acceder a la cámara");
+                  return;
+                }
+
+                const result = await ImagePicker.launchCameraAsync({
+                  // allowsEditing: true,
+                  // aspect: [1, 1],
+                  quality: 1,
+                });
+
+                if (!result.canceled && result.assets[0].uri) {
+                  handleImageSelected(result.assets[0].uri);
+                }
+                closeAlert();
+              }}
+              style={{
+                backgroundColor: "orange",
+                paddingVertical: 10,
+                paddingHorizontal: 25,
+                borderRadius: 8,
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: theme.typography.sizes.body1,
+                  color: "white",
+                  fontWeight: "bold",
+                }}
+              >
+                Cámara
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={async () => {
+                const { status } =
+                  await ImagePicker.requestMediaLibraryPermissionsAsync();
+                if (status !== "granted") {
+                  Alert.alert("Se necesita permiso para acceder a la galería");
+                  return;
+                }
+
+                const result = await ImagePicker.launchImageLibraryAsync({
+                  mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                  // allowsEditing: true,
+                  // aspect: [1, 1],
+                  quality: 1,
+                });
+
+                if (!result.canceled && result.assets[0].uri) {
+                  handleImageSelected(result.assets[0].uri);
+                }
+                closeAlert();
+              }}
+              style={{
+                backgroundColor: "orange",
+                paddingVertical: 10,
+                paddingHorizontal: 25,
+                borderRadius: 8,
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: theme.typography.sizes.body1,
+                  color: "white",
+                  fontWeight: "bold",
+                }}
+              >
+                Galería
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => closeAlert()}
+              style={{
+                backgroundColor: theme.colors.border,
+                paddingVertical: 10,
+                paddingHorizontal: 25,
+                borderRadius: 8,
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: theme.typography.sizes.body1,
+                  color: theme.colors.text,
+                  fontWeight: "bold",
+                }}
+              >
+                Cancelar
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      ),
+    });
   };
 
   if (isInitialLoading) {
@@ -190,6 +421,23 @@ export default function ProfileScreen() {
       style={[styles.container, { backgroundColor: theme.colors.background }]}
       contentContainerStyle={styles.profileContent}
     >
+      <CustomisableAlert
+        dismissable
+        titleStyle={{
+          fontSize: theme.typography.sizes.headline1,
+          fontWeight: "bold",
+        }}
+        textStyle={{
+          fontSize: theme.typography.sizes.body1,
+        }}
+        btnLabelStyle={{
+          color: "white",
+          paddingHorizontal: 10,
+          textAlign: "center",
+          fontSize: theme.typography.sizes.body1,
+        }}
+      />
+
       <View
         style={[
           styles.headerBackground,

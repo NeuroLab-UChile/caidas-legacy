@@ -8,6 +8,8 @@ import {
   ActivityIndicator,
   Alert,
   Platform,
+  TouchableOpacity,
+  ScrollView,
 } from "react-native";
 import * as IntentLauncher from "expo-intent-launcher";
 import CheckBox from "expo-checkbox"; // https://docs.expo.dev/versions/latest/sdk/checkbox/
@@ -20,6 +22,10 @@ import { useAuth } from "../contexts/auth";
 import { apiService } from "@/app/services/apiService";
 import { termsAndConditions } from "@/constants/terms_and_conditions"; // Importar términos y condiciones
 import { RFValue } from "react-native-responsive-fontsize";
+import CustomisableAlert, {
+  showAlert,
+  closeAlert,
+} from "react-native-customisable-alert";
 
 export default function SignIn() {
   const [username, setUsername] = useState("");
@@ -95,17 +101,33 @@ export default function SignIn() {
         // Redirigir a la pantalla de acción
         router.replace("/(tabs)/action/");
       } else {
+        // Alert.alert(
+        //   "Error",
+        //   "No se pudo conectar al servidor. Verifica tu conexión."
+        // );
+        showAlert({
+          title: "Error",
+          btnLabel: "OK",
+          message:
+            "Error en login. Revise sus credenciales y su conexión a internet.",
+        });
         setError(
-          "Error en login, revise sus credenciales y su conexión a internet."
+          "Error en login. Revise sus credenciales y su conexión a internet."
         );
       }
     } catch (error) {
       console.error("Error en login:", error);
       setError("Error al iniciar sesión. Intenta nuevamente.");
-      Alert.alert(
-        "Error",
-        "No se pudo conectar al servidor. Verifica tu conexión."
-      );
+      // Alert.alert(
+      //   "Error",
+      //   "No se pudo conectar al servidor. Verifica tu conexión."
+      // );
+      showAlert({
+        title: "Error",
+        btnLabel: "OK",
+        message:
+          "Error en login. Revise sus credenciales y su conexión a internet.",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -120,10 +142,113 @@ export default function SignIn() {
   };
 
   const showTermsPopup = () => {
-    Alert.alert("Términos y Condiciones", termsAndConditions, [
-      { text: "Aceptar", onPress: () => setAcceptTerms(true) },
-      { text: "Cancelar", onPress: () => setAcceptTerms(false) },
-    ]);
+    // Alert.alert("Términos y Condiciones", termsAndConditions, [
+    //   { text: "Aceptar", onPress: () => setAcceptTerms(true) },
+    //   { text: "Cancelar", onPress: () => setAcceptTerms(false) },
+    // ]);
+
+    showAlert({
+      title: "Términos y Condiciones",
+      message: termsAndConditions,
+      // leftBtnLabel: "Cancelar",
+      // btnLabel: "Aceptar",
+      // alertType: "warning",
+      // customIcon: "none",
+      // onPress: () => setAcceptTerms(true),
+      onDismiss: () => setAcceptTerms(false),
+      alertType: "custom",
+      customAlert: (
+        <View
+          style={{
+            backgroundColor: "white",
+            padding: 20,
+            width: "85%",
+            height: "80%",
+            borderRadius: 10,
+            // alignItems: "center",
+            // justifyContent: "center",
+            flexDirection: "column",
+          }}
+        >
+          <Text
+            style={{
+              textAlign: "center",
+              fontSize: theme.typography.sizes.headline1,
+              fontWeight: "bold",
+              marginBottom: 20,
+              // color: "white",
+            }}
+          >
+            Términos y Condiciones
+          </Text>
+          <ScrollView style={{ marginBottom: 20 }} persistentScrollbar={true}>
+            <Text
+              style={{
+                fontSize: theme.typography.sizes.body2,
+                color: theme.colors.text,
+                marginBottom: 20,
+              }}
+            >
+              {termsAndConditions}
+            </Text>
+
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-evenly",
+                marginTop: 30,
+              }}
+            >
+              <TouchableOpacity
+                onPress={() => {
+                  setAcceptTerms(true);
+                  closeAlert();
+                }}
+                style={{
+                  backgroundColor: "green",
+                  paddingVertical: 10,
+                  paddingHorizontal: 25,
+                  borderRadius: 8,
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: theme.typography.sizes.body1,
+                    color: "white",
+                    fontWeight: "bold",
+                  }}
+                >
+                  Aceptar
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={() => {
+                  setAcceptTerms(false);
+                  closeAlert();
+                }}
+                style={{
+                  backgroundColor: "red",
+                  paddingVertical: 10,
+                  paddingHorizontal: 25,
+                  borderRadius: 8,
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: theme.typography.sizes.body1,
+                    color: "white",
+                    fontWeight: "bold",
+                  }}
+                >
+                  Cancelar
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </ScrollView>
+        </View>
+      ),
+    });
   };
 
   const openDownloadsFolder = () => {
@@ -136,6 +261,23 @@ export default function SignIn() {
 
   return (
     <View style={styles.container}>
+      <CustomisableAlert
+        dismissable
+        titleStyle={{
+          fontSize: theme.typography.sizes.headline1,
+          fontWeight: "bold",
+        }}
+        textStyle={{
+          fontSize: theme.typography.sizes.body1,
+        }}
+        btnLabelStyle={{
+          color: "white",
+          paddingHorizontal: 10,
+          textAlign: "center",
+          fontSize: theme.typography.sizes.body1,
+        }}
+      />
+
       <Text style={styles.versionText}>
         Versión: {Constants.expoConfig?.version || "1.0.0"}
         {__DEV__ ? " (Debug)" : " (Release)"}
@@ -249,9 +391,9 @@ export default function SignIn() {
         )}
       </Pressable>
 
-      <Text style={styles.serverStatus}>
+      {/* <Text style={styles.serverStatus}>
         Servidor: {isLoading ? "Conectando..." : "Listo"}
-      </Text>
+      </Text> */}
 
       {/* Ver contenido descargable sin conexión */}
       <Pressable
@@ -333,6 +475,7 @@ const styles = StyleSheet.create({
     marginBottom: theme.spacing.md,
     textAlign: "center",
     fontFamily: theme.typography.fonts.primary.regular,
+    fontSize: theme.typography.sizes.small,
   },
   buttonDisabled: {
     opacity: 0.5,
