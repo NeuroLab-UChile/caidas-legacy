@@ -452,10 +452,16 @@ export default function TabLayout() {
                               router.replace("/sign-in");
                             } catch (error) {
                               console.error("Error al cerrar sesión:", error);
-                              Alert.alert(
-                                "Error",
-                                "No se pudo cerrar la sesión"
-                              );
+                              // Alert.alert(
+                              //   "Error",
+                              //   "No se pudo cerrar la sesión"
+                              // );
+                              showAlert({
+                                title: "Error",
+                                btnLabel: "OK",
+                                message: "No se pudo cerrar la sesión",
+                                alertType: "error",
+                              });
                             }
                             closeAlert();
                           },
@@ -641,10 +647,17 @@ export default function TabLayout() {
           );
           console.log("Postponed events:", postponedEvents);
           // Show confirmation alert
-          Alert.alert(
-            "Recordatorio pospuesto",
-            "El recordatorio ha sido pospuesto por 1 semana. Puedes volver a revisarlo en la sección de Eventos."
-          );
+          // Alert.alert(
+          //   "Recordatorio pospuesto",
+          //   "El recordatorio ha sido pospuesto por 1 semana. Puedes volver a revisarlo en la sección de Eventos."
+          // );
+          showAlert({
+            title: "Recordatorio pospuesto",
+            btnLabel: "OK",
+            message:
+              "El recordatorio ha sido pospuesto por 1 semana. Puedes volver a revisarlo en la sección de Eventos.",
+            alertType: "success",
+          });
         }}
         onClose={() => {
           if (showReminderAgain) {

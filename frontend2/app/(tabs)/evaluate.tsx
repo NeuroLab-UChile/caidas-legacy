@@ -32,6 +32,10 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { useFocusEffect } from "@react-navigation/native";
 import { useCallback } from "react";
+import CustomisableAlert, {
+  showAlert,
+  closeAlert,
+} from "react-native-customisable-alert";
 
 interface NodeResponse {
   nodeId: number;
@@ -226,53 +230,94 @@ const EvaluateScreen = () => {
     const nodes = selectedCategory?.evaluation_form?.question_nodes || [];
 
     if (nodes.length === 0) {
-      Alert.alert("Error", "No hay preguntas disponibles para esta evaluación");
+      // Alert.alert("Error", "No hay preguntas disponibles para esta evaluación");
+      showAlert({
+        title: "Error",
+        btnLabel: "OK",
+        message: "No hay preguntas disponibles para esta evaluación",
+        alertType: "error",
+      });
       return;
     }
 
-    Alert.alert(
-      "Repetir Evaluación",
-      // Antes era "quedará guardada", pero eso no está implementado
-      "¿Estás seguro de que deseas repetir la evaluación?\n" +
+    // Alert.alert(
+    //   "Repetir Evaluación",
+    //   // Antes era "quedará guardada", pero eso no está implementado
+    //   "¿Estás seguro de que deseas repetir la evaluación?\n" +
+    //     "La evaluación anterior se eliminará y no se podrá recuperar.\n" +
+    //     "El cuestionario debe repetirse solo en estos casos:\n" +
+    //     "  - Si se respondió incorrectamente.\n" +
+    //     "  - Si ha habido cambios en el hogar.\n" +
+    //     "  - Si el profesional lo indica.",
+    //   [
+    //     {
+    //       text: "Cancelar",
+    //       style: "cancel",
+    //     },
+    //     {
+    //       text: "Iniciar",
+    //       style: "default",
+    //       onPress: async () => {
+    //         setEvaluationState({
+    //           currentNodeId: nodes[0]?.id || null,
+    //           responses: [],
+    //           completed: false,
+    //           history: [],
+    //           evaluationResult: {
+    //             initial_node_id: nodes[0]?.id || null,
+    //             nodes: nodes,
+    //           },
+    //         });
+
+    //         // Resetear el historial
+    //         setHistory([]);
+    //         if (selectedCategory?.id) {
+    //           apiService.activityLog.trackAction(
+    //             `start_evaluation ${selectedCategory.id}`
+    //           ); // Record action
+    //           await apiService.evaluations.clearAndStartNew(
+    //             selectedCategory.id
+    //           );
+    //         }
+    //       },
+    //     },
+    //   ]
+    // );
+
+    showAlert({
+      title: "Repetir Evaluación",
+      message:
+        "¿Estás seguro de que deseas repetir la evaluación?\n" +
         "La evaluación anterior se eliminará y no se podrá recuperar.\n" +
         "El cuestionario debe repetirse solo en estos casos:\n" +
         "  - Si se respondió incorrectamente.\n" +
         "  - Si ha habido cambios en el hogar.\n" +
         "  - Si el profesional lo indica.",
-      [
-        {
-          text: "Cancelar",
-          style: "cancel",
-        },
-        {
-          text: "Iniciar",
-          style: "default",
-          onPress: async () => {
-            setEvaluationState({
-              currentNodeId: nodes[0]?.id || null,
-              responses: [],
-              completed: false,
-              history: [],
-              evaluationResult: {
-                initial_node_id: nodes[0]?.id || null,
-                nodes: nodes,
-              },
-            });
-
-            // Resetear el historial
-            setHistory([]);
-            if (selectedCategory?.id) {
-              apiService.activityLog.trackAction(
-                `start_evaluation ${selectedCategory.id}`
-              ); // Record action
-              await apiService.evaluations.clearAndStartNew(
-                selectedCategory.id
-              );
-            }
+      alertType: "warning",
+      leftBtnLabel: "Cancelar",
+      btnLabel: "Iniciar",
+      onPress: async () => {
+        closeAlert();
+        setEvaluationState({
+          currentNodeId: nodes[0]?.id || null,
+          responses: [],
+          completed: false,
+          history: [],
+          evaluationResult: {
+            initial_node_id: nodes[0]?.id || null,
+            nodes: nodes,
           },
-        },
-      ]
-    );
+        });
+        // Resetear el historial
+        setHistory([]);
+        if (selectedCategory?.id) {
+          apiService.activityLog.trackAction(
+            `start_evaluation ${selectedCategory.id}`
+          ); // Record action
+          await apiService.evaluations.clearAndStartNew(selectedCategory.id);
+        }
+      },
+    });
   };
 
   const getNextNodeId = (currentNodeId: number): number | null => {
@@ -355,20 +400,34 @@ const EvaluateScreen = () => {
 
   const handleNavigateBack = () => {
     // Solo para el botón de Salir
-    Alert.alert(
-      "",
-      selectedCategory?.evaluation_type?.type === "PROFESSIONAL"
-        ? "¿Finalizar evaluación?"
-        : "¿Finalizar entrenamiento?",
-      [
-        { text: "Cancelar", style: "cancel" },
-        {
-          text: "Finalizar",
-          style: "destructive",
-          onPress: () => router.push("/(tabs)/action"),
-        },
-      ]
-    );
+    // Alert.alert(
+    //   "",
+    //   selectedCategory?.evaluation_type?.type === "PROFESSIONAL"
+    //     ? "¿Finalizar evaluación?"
+    //     : "¿Finalizar entrenamiento?",
+    //   [
+    //     { text: "Cancelar", style: "cancel" },
+    //     {
+    //       text: "Finalizar",
+    //       style: "destructive",
+    //       onPress: () => router.push("/(tabs)/action"),
+    //     },
+    //   ]
+    // );
+    showAlert({
+      title: "Salir",
+      message:
+        selectedCategory?.evaluation_type?.type === "PROFESSIONAL"
+          ? "¿Finalizar entrenamiento?"
+          : "¿Finalizar evaluación?",
+      leftBtnLabel: "Cancelar",
+      btnLabel: "Finalizar",
+      alertType: "warning",
+      onPress: () => {
+        closeAlert();
+        router.push("/(tabs)/action");
+      },
+    });
   };
 
   const handleNavigateBefore = () => {
@@ -407,7 +466,7 @@ const EvaluateScreen = () => {
       const isCompleted = !nextNodeId || newResponses.length === nodes.length;
 
       if (isCompleted && selectedCategory?.id) {
-        setLoading(true);
+        // setLoading(true);
         try {
           const formData = new FormData();
 
@@ -440,26 +499,45 @@ const EvaluateScreen = () => {
             selectedCategory.id,
             formData
           );
-          await fetchCategories();
-
-          setEvaluationState({
-            currentNodeId: null,
-            responses: newResponses,
-            completed: true,
-            history: [],
-            evaluationResult: {
-              initial_node_id: null,
-              nodes: selectedCategory?.evaluation_form?.question_nodes || [],
-            },
-          });
+          // await fetchCategories();
+          console.log("Respuestas guardadas correctamente");
 
           apiService.activityLog.trackAction(
             `completed_evaluation ${selectedCategory.id}`
           ); // Record action
-          Alert.alert("Éxito", "Evaluación guardada correctamente");
+
+          // Alert.alert("Éxito", "Evaluación guardada correctamente");
+          showAlert({
+            title: "Exito",
+            btnLabel: "OK",
+            message: "Evaluación guardada correctamente.",
+            alertType: "success",
+            onPress: async () => {
+              // closeAlert();
+              console.log("Alert ok, refreshing categories...");
+              setEvaluationState({
+                currentNodeId: null,
+                responses: newResponses,
+                completed: true,
+                history: [],
+                evaluationResult: {
+                  initial_node_id: null,
+                  nodes:
+                    selectedCategory?.evaluation_form?.question_nodes || [],
+                },
+              });
+              await fetchCategories();
+            },
+          });
         } catch (error) {
           console.error("Error saving responses:", error);
-          Alert.alert("Error", "No se pudo guardar la evaluación");
+          // Alert.alert("Error", "No se pudo guardar la evaluación");
+          showAlert({
+            title: "Error",
+            btnLabel: "OK",
+            message: "No se pudo guardar la evaluación.",
+            alertType: "error",
+          });
         } finally {
           setLoading(false);
         }
@@ -473,7 +551,13 @@ const EvaluateScreen = () => {
       }
     } catch (error) {
       console.error("Error en handleNodeResponse:", error);
-      Alert.alert("Error", `No se pudo procesar la respuesta: ${error}`);
+      // Alert.alert("Error", `No se pudo procesar la respuesta: ${error}`);
+      showAlert({
+        title: "Error",
+        btnLabel: "OK",
+        message: `No se pudo procesar la respuesta: ${error}`,
+        alertType: "error",
+      });
     }
   };
 
@@ -572,7 +656,11 @@ const EvaluateScreen = () => {
           // onPress={() => router.back()}
           onPress={() => router.push("/(tabs)/category-detail")}
         >
-          <Ionicons name="chevron-back" size={theme.typography.sizes.headline1} color={theme.colors.text} />
+          <Ionicons
+            name="chevron-back"
+            size={theme.typography.sizes.headline1}
+            color={theme.colors.text}
+          />
           <Text style={styles.backButtonText}>Volver a selector</Text>
         </TouchableOpacity>
 
@@ -657,7 +745,11 @@ const EvaluateScreen = () => {
             // onPress={() => router.back()}
             onPress={() => router.push("/(tabs)/category-detail")}
           >
-            <Ionicons name="chevron-back" size={theme.typography.sizes.headline1} color={theme.colors.text} />
+            <Ionicons
+              name="chevron-back"
+              size={theme.typography.sizes.headline1}
+              color={theme.colors.text}
+            />
             <Text style={styles.backButtonText}>Volver a selector</Text>
           </TouchableOpacity>
           <ProfessionalEvaluation />
@@ -671,6 +763,12 @@ const EvaluateScreen = () => {
         </View>
       );
     }
+
+    // console.log(
+    //   "Rendering Evaluation. State:",
+    //   evaluationState.currentNodeId,
+    //   evaluationState.completed
+    // );
 
     if (!evaluationState.currentNodeId || evaluationState.completed) {
       return renderCompletedEvaluation();
@@ -693,6 +791,22 @@ const EvaluateScreen = () => {
 
   return (
     <View style={styles.container}>
+      <CustomisableAlert
+        dismissable
+        titleStyle={{
+          fontSize: theme.typography.sizes.headline1,
+          fontWeight: "bold",
+        }}
+        textStyle={{
+          fontSize: theme.typography.sizes.body1,
+        }}
+        btnLabelStyle={{
+          color: "white",
+          paddingHorizontal: 10,
+          textAlign: "center",
+          fontSize: theme.typography.sizes.body1,
+        }}
+      />
       <ScrollView
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}

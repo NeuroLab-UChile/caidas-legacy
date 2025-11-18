@@ -88,10 +88,16 @@ export default function ProfileScreen() {
       await loadProfile();
     } catch (error) {
       console.error("Error al subir la imagen:", error);
-      Alert.alert(
-        "Error",
-        "No se pudo subir la imagen. Por favor, intenta de nuevo."
-      );
+      // Alert.alert(
+      //   "Error",
+      //   "No se pudo subir la imagen. Por favor, intenta de nuevo."
+      // );
+      showAlert({
+        title: "Error",
+        btnLabel: "OK",
+        message: "No se pudo subir la imagen. Por favor, intenta de nuevo.",
+        alertType: "error",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -183,7 +189,13 @@ export default function ProfileScreen() {
                   setUser(response.data);
                 } catch (error) {
                   console.error("Error al eliminar la imagen:", error);
-                  Alert.alert("Error", "No se pudo eliminar la imagen");
+                  // Alert.alert("Error", "No se pudo eliminar la imagen");
+                  showAlert({
+                    title: "Error",
+                    btnLabel: "OK",
+                    message: "No se pudo eliminar la imagen",
+                    alertType: "error",
+                  });
                 } finally {
                   setIsLoading(false);
                 }
@@ -311,7 +323,13 @@ export default function ProfileScreen() {
                 const { status } =
                   await ImagePicker.requestCameraPermissionsAsync();
                 if (status !== "granted") {
-                  Alert.alert("Se necesita permiso para acceder a la cámara");
+                  // Alert.alert("Se necesita permiso para acceder a la cámara");
+                  showAlert({
+                    title: "Error",
+                    btnLabel: "OK",
+                    message: "Se necesita permiso para acceder a la cámara",
+                    alertType: "error",
+                  });
                   return;
                 }
 
@@ -349,7 +367,13 @@ export default function ProfileScreen() {
                 const { status } =
                   await ImagePicker.requestMediaLibraryPermissionsAsync();
                 if (status !== "granted") {
-                  Alert.alert("Se necesita permiso para acceder a la galería");
+                  // Alert.alert("Se necesita permiso para acceder a la galería");
+                  showAlert({
+                    title: "Error",
+                    btnLabel: "OK",
+                    message: "Se necesita permiso para acceder a la galería",
+                    alertType: "error",
+                  });
                   return;
                 }
 

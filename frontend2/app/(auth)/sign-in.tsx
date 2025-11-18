@@ -150,10 +150,6 @@ export default function SignIn() {
     showAlert({
       title: "Términos y Condiciones",
       message: termsAndConditions,
-      // leftBtnLabel: "Cancelar",
-      // btnLabel: "Aceptar",
-      // alertType: "warning",
-      // customIcon: "none",
       // onPress: () => setAcceptTerms(true),
       onDismiss: () => setAcceptTerms(false),
       alertType: "custom",
