@@ -11,6 +11,8 @@ import apiService from "../services/apiService";
 import { theme } from "@/src/theme";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { ScrollView } from "react-native-gesture-handler";
+import { useFocusEffect } from "@react-navigation/native";
+import { useCallback } from "react";
 
 interface TextRecommendation {
   id: number;
@@ -40,6 +42,12 @@ const RememberScreen = () => {
   const [page, setPage] = useState(1);
   const flatListRef = React.useRef<FlatList>(null);
 
+  useFocusEffect(
+    useCallback(() => {
+      apiService.activityLog.trackAction("screen recomendaciones"); // Record action
+    }, [])
+  );
+
   useEffect(() => {
     fetchRecommendations();
   }, []);
@@ -59,8 +67,11 @@ const RememberScreen = () => {
         setPage(1);
         setHasMoreData(true);
       } else {
-        setRecommendations((prev) => [...prev, ...response.data.recommendations]);
-        setPage(prev => prev + 1);
+        setRecommendations((prev) => [
+          ...prev,
+          ...response.data.recommendations,
+        ]);
+        setPage((prev) => prev + 1);
       }
     } catch (err) {
       console.error("Error fetching recommendations:", err);
@@ -78,7 +89,8 @@ const RememberScreen = () => {
 
   const handleLoadMore = () => {
     if (!loading) {
-      fetchRecommendations();
+      apiService.activityLog.trackAction("load_more_recommendations"); // Record action
+      fetchRecommendations(true);
     }
   };
 
@@ -90,13 +102,16 @@ const RememberScreen = () => {
         const newClickCount = clickCount + 1;
         setClickCount(newClickCount);
 
+        apiService.activityLog.trackAction(`click_recommendation ${id}`); // Record action
         const response = await apiService.recommendations.registerClick(id);
 
-        if (newClickCount >= 5) {
-          console.log("Reached 5 clicks, fetching new recommendations");
-          handleRefresh();
-          setClickCount(0);
-        } else if (response.data && response.data.more_recommendations) {
+        // [JV] remove this 5 click refesh for now
+        // if (newClickCount >= 5) {
+        //   console.log("Reached 5 clicks, fetching new recommendations");
+        //   handleRefresh();
+        //   setClickCount(0);
+        // } else
+        if (response.data && response.data.more_recommendations) {
           setRecommendations(response.data.more_recommendations);
         }
       }
@@ -122,11 +137,11 @@ const RememberScreen = () => {
 
     // Determinar el tamaño de fuente basado en la longitud del texto
     const getFontSize = (text: string) => {
-      if (text.length > 300) return 20; // Textos muy largos
-      if (text.length > 200) return 24; // Textos largos
-      if (text.length > 100) return 28; // Textos medianos
-      if (text.length > 50) return 32; // Textos cortos
-      return 36; // Textos muy cortos
+      if (text.length > 300) return theme.typography.sizes.title; // Textos muy largos
+      if (text.length > 200) return theme.typography.sizes.headline1; // Textos largos
+      if (text.length > 100) return theme.typography.sizes.display3; // Textos medianos
+      if (text.length > 50) return theme.typography.sizes.display2; // Textos cortos
+      return theme.typography.sizes.display1; // Textos muy cortos
     };
 
     return (
@@ -152,7 +167,7 @@ const RememberScreen = () => {
               {capitalizeFirstLetter(item.data)}
             </Text>
 
-            <Text
+            {/* <Text
               style={[
                 styles.categoryText,
                 {
@@ -161,11 +176,11 @@ const RememberScreen = () => {
                 },
               ]}
             >
-              //{capitalizeFirstLetter(item.category)}/
+              {capitalizeFirstLetter(item.category)}/
               {item.sub_category !== "nan"
                 ? capitalizeFirstLetter(item.sub_category)
                 : ""}
-            </Text>
+            </Text> */}
           </View>
 
           {isExpanded ? (
@@ -188,7 +203,7 @@ const RememberScreen = () => {
                   </Text>
                 )}
 
-              {item.practic_data && item.practic_data !== "nan" && (
+              {/* {item.practic_data && item.practic_data !== "nan" && (
                 <Text
                   style={[
                     styles.practicalText,
@@ -198,31 +213,41 @@ const RememberScreen = () => {
                 >
                   {"\n"}Práctica: {item.practic_data}
                 </Text>
-              )}
+              )} */}
 
-              {item.keywords && item.keywords !== "nan" && (
+              {/* {item.keywords && item.keywords !== "nan" && (
                 <Text
                   style={[styles.keywordsText, { color: theme.colors.text }]}
                 >
                   {"\n"}Palabras clave: {item.keywords}
                 </Text>
-              )}
+              )} */}
 
-              {item.quote_link && item.quote_link !== "nan" && (
+              {/* {item.quote_link && item.quote_link !== "nan" && (
                 <Text style={[styles.sourceText, { color: theme.colors.text }]}>
                   {"\n"}Fuente: {item.quote_link}
                 </Text>
-              )}
+              )} */}
             </View>
           ) : (
             <View style={styles.instructionContainer}>
-              <IconSymbol
-                name={isExpanded ? "chevron.up" : "chevron.down"}
+              {/* <IconSymbol
+                name={isExpanded ? "chevron-up" : "chevron-down"}
                 size={40}
                 color={theme.colors.text}
-              />
+              /> */}
               <Text
-                style={[styles.instructionText, { color: theme.colors.text }]}
+                style={[
+                  styles.instructionText,
+                  {
+                    color: theme.colors.text,
+                    borderColor: theme.colors.text,
+                    borderWidth: 1,
+                    paddingHorizontal: 12,
+                    paddingVertical: 4,
+                    borderRadius: 12,
+                  },
+                ]}
               >
                 {isExpanded ? "MOSTRAR MENOS" : "VER MÁS"}
               </Text>
@@ -243,6 +268,21 @@ const RememberScreen = () => {
 
   const scrollToTop = () => {
     flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
+  };
+
+  const renderHeader = () => {
+    return (
+      <View style={styles.instructionContainer}>
+        {/* <IconSymbol name="chevron-down" size={40} color={theme.colors.text} /> */}
+        <Text style={[styles.instructionText, { color: theme.colors.text }]}>
+          Deslice para ir viendo las recomendaciones.
+        </Text>
+        <Text style={[styles.instructionText, { color: theme.colors.text }]}>
+          Haga click en "Ver Más" para ampliar la información de cada
+          recomendación.
+        </Text>
+      </View>
+    );
   };
 
   const renderFooter = () => {
@@ -267,8 +307,8 @@ const RememberScreen = () => {
             onPress={scrollToTop}
           >
             <IconSymbol
-              name="chevron.up"
-              size={24}
+              name="chevron-up"
+              size={theme.typography.sizes.headline1}
               color={theme.colors.text}
             />
             <Text style={[styles.backToTopText, { color: theme.colors.text }]}>
@@ -276,6 +316,18 @@ const RememberScreen = () => {
             </Text>
           </TouchableOpacity>
         </View>
+      );
+    } else {
+      // Retorna un botón para obtener más recomendaciones
+      return (
+        <TouchableOpacity
+          style={styles.loadMoreButton}
+          onPress={handleLoadMore}
+        >
+          <Text style={[styles.loadMoreText, { color: theme.colors.text }]}>
+            Cargar más
+          </Text>
+        </TouchableOpacity>
       );
     }
 
@@ -315,9 +367,11 @@ const RememberScreen = () => {
         style={{ backgroundColor: theme.colors.primary }}
         refreshing={refreshing}
         onRefresh={handleRefresh}
-        onEndReached={() => hasMoreData && handleLoadMore()}
+        // onEndReached={() => hasMoreData && handleLoadMore()}
         onEndReachedThreshold={0.5}
+        ListHeaderComponent={renderHeader}
         ListFooterComponent={renderFooter}
+        persistentScrollbar={true}
       />
     </View>
   );
@@ -343,14 +397,14 @@ const styles = StyleSheet.create({
     fontFamily: "System",
     fontWeight: "bold",
     marginBottom: 24,
-    lineHeight: 40,
+    lineHeight: theme.typography.sizes.display3,
   },
   categoryText: {
-    fontSize: 20,
+    fontSize: theme.typography.sizes.title,
     fontFamily: "System",
     fontWeight: "600",
     marginBottom: 32,
-    lineHeight: 28,
+    lineHeight: theme.typography.sizes.title,
   },
   instructionContainer: {
     alignItems: "center",
@@ -358,12 +412,12 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   instructionText: {
-    fontSize: 20,
+    fontSize: theme.typography.sizes.title,
     textAlign: "center",
     fontFamily: "System",
     fontWeight: "600",
     marginTop: 12,
-    lineHeight: 28,
+    lineHeight: theme.typography.sizes.title,
   },
   explanationContainer: {
     marginTop: 24,
@@ -372,15 +426,15 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   explanationText: {
-    fontSize: 24,
+    fontSize: theme.typography.sizes.headline1,
     fontFamily: "System",
-    lineHeight: 36,
+    lineHeight: theme.typography.sizes.headline1,
     fontWeight: "500",
   },
   practicalText: {
-    fontSize: 24,
+    fontSize: theme.typography.sizes.headline1,
     fontFamily: "System",
-    lineHeight: 36,
+    lineHeight: theme.typography.sizes.headline1,
     marginTop: 16,
     fontWeight: "500",
   },
@@ -392,22 +446,22 @@ const styles = StyleSheet.create({
   },
   errorText: {
     textAlign: "center",
-    fontSize: 24,
+    fontSize: theme.typography.sizes.headline1,
     fontFamily: "System",
-    lineHeight: 32,
+    lineHeight: theme.typography.sizes.headline1,
   },
   keywordsText: {
-    fontSize: 20,
+    fontSize: theme.typography.sizes.title,
     fontFamily: "System",
-    lineHeight: 28,
+    lineHeight: theme.typography.sizes.title,
     marginTop: 16,
     fontWeight: "500",
     fontStyle: "italic",
   },
   sourceText: {
-    fontSize: 16,
+    fontSize: theme.typography.sizes.body1,
     fontFamily: "System",
-    lineHeight: 24,
+    lineHeight: theme.typography.sizes.subtitle,
     marginTop: 16,
     fontWeight: "400",
     opacity: 0.8,
@@ -417,27 +471,48 @@ const styles = StyleSheet.create({
   },
   endContainer: {
     padding: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   endText: {
-    fontSize: 16,
-    textAlign: 'center',
-    marginBottom: 16,
+    fontSize: theme.typography.sizes.body1,
+    textAlign: "center",
+    marginBottom: theme.typography.sizes.body2,
     fontFamily: "System",
   },
   backToTopButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     padding: 12,
     borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: "rgba(255,255,255,0.1)",
   },
   backToTopText: {
     marginLeft: 8,
-    fontSize: 16,
+    fontSize: theme.typography.sizes.body1,
     fontFamily: "System",
-    fontWeight: '600',
+    fontWeight: "600",
+  },
+  loadMoreButton: {
+    padding: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(255,255,255,0.1)",
+    borderRadius: 20,
+    marginVertical: 16,
+    borderWidth: 2,
+    borderColor: theme.colors.text,
+    // marginHorizontal: 50,
+    // width: 200,
+    // Align center and small width
+    width: "80%",
+    alignSelf: "center",
+    marginBottom: 50,
+  },
+  loadMoreText: {
+    fontSize: theme.typography.sizes.title,
+    fontFamily: "System",
+    fontWeight: "600",
   },
 });
 

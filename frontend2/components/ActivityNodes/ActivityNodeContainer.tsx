@@ -18,18 +18,23 @@ import { ActivityNodeViews, ActivityNodeType } from "./index";
 import { ResultNodeView } from "./views/ResultNodeView";
 import { VideoNodeView } from "./views/VideoNodeView";
 import { ImageNodeView } from "./views/ImageNode";
-import { router } from 'expo-router';
-import { StepIndicator } from '../ui/StepIndicator';
-import { NavigationBar } from '../ui/NavigationBar';
-import { TextNodeView } from './views/TextNodeView';
-import { SingleChoiceQuestionView } from './views/SingleChoiceQuestionView';
-import { MultipleChoiceQuestionView } from './views/MultipleChoiceQuestionView';
-import { TextQuestionView } from './views/TextQuestionView';
-import { ScaleQuestionView } from './views/ScaleQuestionView';
-import { ImageQuestionView } from './views/ImageQuestionView';
-import { WeeklyRecipeNodeView } from './views/WeeklyRecipeNodeView';
-import { CategoryDescriptionView } from './views/CategoryDescriptionView';
+import { router } from "expo-router";
+import { StepIndicator } from "../ui/StepIndicator";
+import { NavigationBar } from "../ui/NavigationBar";
+import { TextNodeView } from "./views/TextNodeView";
+import { SingleChoiceQuestionView } from "./views/SingleChoiceQuestionView";
+import { MultipleChoiceQuestionView } from "./views/MultipleChoiceQuestionView";
+import { TextQuestionView } from "./views/TextQuestionView";
+import { ScaleQuestionView } from "./views/ScaleQuestionView";
+import { ImageQuestionView } from "./views/ImageQuestionView";
+import { WeeklyRecipeNodeView } from "./views/WeeklyRecipeNodeView";
+import { CategoryDescriptionView } from "./views/CategoryDescriptionView";
 import { commonStyles } from "./styles/commonStyles";
+import { apiService } from "@/app/services/apiService";
+import CustomisableAlert, {
+  showAlert,
+  closeAlert,
+} from "react-native-customisable-alert";
 
 interface ActivityNodeContainerProps {
   type: ActivityNodeType;
@@ -48,6 +53,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: theme.colors.background,
+    marginBottom: 40,
   },
   content: {
     flex: 1,
@@ -91,7 +97,7 @@ const styles = StyleSheet.create({
     borderColor: "transparent",
   },
   text: {
-    fontSize: 17,
+    fontSize: theme.typography.sizes.body1,
     color: "#000",
     fontWeight: "600",
   },
@@ -112,8 +118,46 @@ export const ActivityNodeContainer: React.FC<ActivityNodeContainerProps> = ({
   const [currentResponse, setCurrentResponse] = useState<any>(null);
 
   const handleNext = (response?: any) => {
+    console.log("Handling next step with response:", currentResponse);
+    apiService.activityLog.trackAction(
+      `node_next ${categoryId} ${currentQuestionIndex + 1}/${totalQuestions}`
+    );
+
+    // Mostrar Toast de que la imagen se guardo correctamente
+    if (type === "IMAGE_QUESTION") {
+      const nimages = currentResponse?.answer.length;
+      if (nimages == 1) {
+        // Alert.alert("", "Imagen guardada correctamente");
+        showAlert({
+          title: "Éxito",
+          btnLabel: "OK",
+          message: "Imagen guardada correctamente",
+          alertType: "success",
+        });
+      } else if (nimages > 1) {
+        // Alert.alert("", "Imágenes guardadas correctamente");
+        showAlert({
+          title: "Éxito",
+          btnLabel: "OK",
+          message: "Imágenes guardadas correctamente",
+          alertType: "success",
+        });
+      } else {
+        // Alert.alert("", "No se seleccionaron imágenes");
+        showAlert({
+          title: "Precaución",
+          btnLabel: "OK",
+          message: "No se seleccionaron imágenes.\nPuede volver y seleccionarlas.",
+          alertType: "error",
+        });
+      }
+    }
+
     if (onNext) {
-      onNext(response || currentResponse);
+      // onNext(response || currentResponse); // [JV] This seems to be the critical bug
+      onNext(currentResponse);
+      // Clean currentResponse
+      setCurrentResponse(null);
     }
   };
 
@@ -153,18 +197,40 @@ export const ActivityNodeContainer: React.FC<ActivityNodeContainerProps> = ({
   };
 
   const getButtonText = () => {
+    console.log("Current type:", type);
+    // console.log("Current response:", currentResponse);
     switch (type) {
       case "RESULT_NODE":
         return "Finalizar";
       case "WEEKLY_RECIPE_NODE":
         return "Continuar";
       default:
+        if (currentQuestionIndex === totalQuestions - 1) {
+          return "Finalizar";
+        }
         return "Siguiente";
     }
   };
 
   return (
     <View style={styles.container}>
+      <CustomisableAlert
+        dismissable
+        titleStyle={{
+          fontSize: theme.typography.sizes.headline1,
+          fontWeight: "bold",
+        }}
+        textStyle={{
+          fontSize: theme.typography.sizes.body1,
+        }}
+        btnLabelStyle={{
+          color: "white",
+          paddingHorizontal: 10,
+          textAlign: "center",
+          fontSize: theme.typography.sizes.body1,
+        }}
+      />
+
       <View style={[styles.row, styles.header]}>
         <TouchableOpacity onPress={onBack}>
           <Text style={styles.text}>Salir</Text>

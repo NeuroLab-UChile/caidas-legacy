@@ -27,9 +27,15 @@ import { useAuth } from "../contexts/auth";
 import { UserProfile } from "../services/apiService";
 import { ProfessionalEvaluation } from "@/components/ProfessionalEvaluation";
 import React from "react";
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from "@expo/vector-icons";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { useFocusEffect } from "@react-navigation/native";
+import { useCallback } from "react";
+import CustomisableAlert, {
+  showAlert,
+  closeAlert,
+} from "react-native-customisable-alert";
 
 interface NodeResponse {
   nodeId: number;
@@ -171,10 +177,20 @@ const EvaluateScreen = () => {
     initializeEvaluationState(selectedCategory)
   );
 
-  const status = selectedCategory?.recommendations?.status as Status | undefined;
+  const status = selectedCategory?.recommendations?.status as
+    | Status
+    | undefined;
 
   const nodes = selectedCategory?.evaluation_form?.question_nodes || [];
-  const currentQuestionIndex = nodes.findIndex(node => node.id === evaluationState.currentNodeId);
+  const currentQuestionIndex = nodes.findIndex(
+    (node) => node.id === evaluationState.currentNodeId
+  );
+
+  useFocusEffect(
+    useCallback(() => {
+      apiService.activityLog.trackAction("screen evaluar"); // Record action
+    }, [])
+  );
 
   useEffect(() => {
     const refreshData = async () => {
@@ -214,44 +230,94 @@ const EvaluateScreen = () => {
     const nodes = selectedCategory?.evaluation_form?.question_nodes || [];
 
     if (nodes.length === 0) {
-      Alert.alert("Error", "No hay preguntas disponibles para esta evaluación");
+      // Alert.alert("Error", "No hay preguntas disponibles para esta evaluación");
+      showAlert({
+        title: "Error",
+        btnLabel: "OK",
+        message: "No hay preguntas disponibles para esta evaluación",
+        alertType: "error",
+      });
       return;
     }
 
-    Alert.alert(
-      "Iniciar Nueva Evaluación",
-      "¿Estás seguro de que deseas iniciar una nueva evaluación? La evaluación anterior quedará guardada.",
-      [
-        {
-          text: "Cancelar",
-          style: "cancel",
-        },
-        {
-          text: "Iniciar",
-          style: "default",
-          onPress: async () => {
-            setEvaluationState({
-              currentNodeId: nodes[0]?.id || null,
-              responses: [],
-              completed: false,
-              history: [],
-              evaluationResult: {
-                initial_node_id: nodes[0]?.id || null,
-                nodes: nodes,
-              },
-            });
+    // Alert.alert(
+    //   "Repetir Evaluación",
+    //   // Antes era "quedará guardada", pero eso no está implementado
+    //   "¿Estás seguro de que deseas repetir la evaluación?\n" +
+    //     "La evaluación anterior se eliminará y no se podrá recuperar.\n" +
+    //     "El cuestionario debe repetirse solo en estos casos:\n" +
+    //     "  - Si se respondió incorrectamente.\n" +
+    //     "  - Si ha habido cambios en el hogar.\n" +
+    //     "  - Si el profesional lo indica.",
+    //   [
+    //     {
+    //       text: "Cancelar",
+    //       style: "cancel",
+    //     },
+    //     {
+    //       text: "Iniciar",
+    //       style: "default",
+    //       onPress: async () => {
+    //         setEvaluationState({
+    //           currentNodeId: nodes[0]?.id || null,
+    //           responses: [],
+    //           completed: false,
+    //           history: [],
+    //           evaluationResult: {
+    //             initial_node_id: nodes[0]?.id || null,
+    //             nodes: nodes,
+    //           },
+    //         });
 
-            // Resetear el historial
-            setHistory([]);
-            if (selectedCategory?.id) {
-              await apiService.evaluations.clearAndStartNew(
-                selectedCategory.id,
-              );
-            }
+    //         // Resetear el historial
+    //         setHistory([]);
+    //         if (selectedCategory?.id) {
+    //           apiService.activityLog.trackAction(
+    //             `start_evaluation ${selectedCategory.id}`
+    //           ); // Record action
+    //           await apiService.evaluations.clearAndStartNew(
+    //             selectedCategory.id
+    //           );
+    //         }
+    //       },
+    //     },
+    //   ]
+    // );
+
+    showAlert({
+      title: "Repetir Evaluación",
+      message:
+        "¿Estás seguro de que deseas repetir la evaluación?\n" +
+        "La evaluación anterior se eliminará y no se podrá recuperar.\n" +
+        "El cuestionario debe repetirse solo en estos casos:\n" +
+        "  - Si se respondió incorrectamente.\n" +
+        "  - Si ha habido cambios en el hogar.\n" +
+        "  - Si el profesional lo indica.",
+      alertType: "warning",
+      leftBtnLabel: "Cancelar",
+      btnLabel: "Iniciar",
+      onPress: async () => {
+        closeAlert();
+        setEvaluationState({
+          currentNodeId: nodes[0]?.id || null,
+          responses: [],
+          completed: false,
+          history: [],
+          evaluationResult: {
+            initial_node_id: nodes[0]?.id || null,
+            nodes: nodes,
           },
-        },
-      ],
-    );
+        });
+        // Resetear el historial
+        setHistory([]);
+        if (selectedCategory?.id) {
+          apiService.activityLog.trackAction(
+            `start_evaluation ${selectedCategory.id}`
+          ); // Record action
+          await apiService.evaluations.clearAndStartNew(selectedCategory.id);
+        }
+      },
+    });
   };
 
   const getNextNodeId = (currentNodeId: number): number | null => {
@@ -324,6 +390,8 @@ const EvaluateScreen = () => {
       return { ...baseResponse, answer: response };
     }
 
+    // console.log("DEBUG", typeof response);
+
     return {
       ...baseResponse,
       answer: formatter(response),
@@ -332,20 +400,34 @@ const EvaluateScreen = () => {
 
   const handleNavigateBack = () => {
     // Solo para el botón de Salir
-    Alert.alert(
-      "",
-      selectedCategory?.evaluation_type?.type === "PROFESSIONAL"
-        ? "¿Finalizar evaluación?"
-        : "¿Finalizar entrenamiento?",
-      [
-        { text: "Cancelar", style: "cancel" },
-        {
-          text: "Finalizar",
-          style: "destructive",
-          onPress: () => router.push("/(tabs)/action"),
-        },
-      ],
-    );
+    // Alert.alert(
+    //   "",
+    //   selectedCategory?.evaluation_type?.type === "PROFESSIONAL"
+    //     ? "¿Finalizar evaluación?"
+    //     : "¿Finalizar entrenamiento?",
+    //   [
+    //     { text: "Cancelar", style: "cancel" },
+    //     {
+    //       text: "Finalizar",
+    //       style: "destructive",
+    //       onPress: () => router.push("/(tabs)/action"),
+    //     },
+    //   ]
+    // );
+    showAlert({
+      title: "Salir",
+      message:
+        selectedCategory?.evaluation_type?.type === "PROFESSIONAL"
+          ? "¿Finalizar entrenamiento?"
+          : "¿Finalizar evaluación?",
+      leftBtnLabel: "Cancelar",
+      btnLabel: "Finalizar",
+      alertType: "warning",
+      onPress: () => {
+        closeAlert();
+        router.push("/(tabs)/action");
+      },
+    });
   };
 
   const handleNavigateBefore = () => {
@@ -360,7 +442,7 @@ const EvaluateScreen = () => {
           currentNodeId: previousNode.id,
           // Mantener las respuestas existentes
           responses: prev.responses.filter(
-            (r) => r.nodeId !== prev.currentNodeId,
+            (r) => r.nodeId !== prev.currentNodeId
           ),
         }));
       }
@@ -384,18 +466,15 @@ const EvaluateScreen = () => {
       const isCompleted = !nextNodeId || newResponses.length === nodes.length;
 
       if (isCompleted && selectedCategory?.id) {
-        setLoading(true);
+        // setLoading(true);
         try {
           const formData = new FormData();
 
           // Convertir las respuestas al formato esperado por el API
-          const responsesObj = newResponses.reduce(
-            (acc, curr) => {
-              acc[curr.nodeId] = curr.response;
-              return acc;
-            },
-            {} as Record<string, any>,
-          );
+          const responsesObj = newResponses.reduce((acc, curr) => {
+            acc[curr.nodeId] = curr.response;
+            return acc;
+          }, {} as Record<string, any>);
 
           formData.append("responses", JSON.stringify(responsesObj));
 
@@ -411,32 +490,54 @@ const EvaluateScreen = () => {
                     type: "image/jpeg",
                     name: imageName,
                   } as any);
-                },
+                }
               );
             }
           });
 
           await apiService.categories.saveResponses(
             selectedCategory.id,
-            formData,
+            formData
           );
-          await fetchCategories();
+          // await fetchCategories();
+          console.log("Respuestas guardadas correctamente");
 
-          setEvaluationState({
-            currentNodeId: null,
-            responses: newResponses,
-            completed: true,
-            history: [],
-            evaluationResult: {
-              initial_node_id: null,
-              nodes: selectedCategory?.evaluation_form?.question_nodes || [],
+          apiService.activityLog.trackAction(
+            `completed_evaluation ${selectedCategory.id}`
+          ); // Record action
+
+          // Alert.alert("Éxito", "Evaluación guardada correctamente");
+          showAlert({
+            title: "Exito",
+            btnLabel: "OK",
+            message: "Evaluación guardada correctamente.",
+            alertType: "success",
+            onPress: async () => {
+              // closeAlert();
+              console.log("Alert ok, refreshing categories...");
+              setEvaluationState({
+                currentNodeId: null,
+                responses: newResponses,
+                completed: true,
+                history: [],
+                evaluationResult: {
+                  initial_node_id: null,
+                  nodes:
+                    selectedCategory?.evaluation_form?.question_nodes || [],
+                },
+              });
+              await fetchCategories();
             },
           });
-
-          Alert.alert("Éxito", "Evaluación guardada correctamente");
         } catch (error) {
           console.error("Error saving responses:", error);
-          Alert.alert("Error", "No se pudo guardar la evaluación");
+          // Alert.alert("Error", "No se pudo guardar la evaluación");
+          showAlert({
+            title: "Error",
+            btnLabel: "OK",
+            message: "No se pudo guardar la evaluación.",
+            alertType: "error",
+          });
         } finally {
           setLoading(false);
         }
@@ -450,7 +551,13 @@ const EvaluateScreen = () => {
       }
     } catch (error) {
       console.error("Error en handleNodeResponse:", error);
-      Alert.alert("Error", `No se pudo procesar la respuesta: ${error}`);
+      // Alert.alert("Error", `No se pudo procesar la respuesta: ${error}`);
+      showAlert({
+        title: "Error",
+        btnLabel: "OK",
+        message: `No se pudo procesar la respuesta: ${error}`,
+        alertType: "error",
+      });
     }
   };
 
@@ -545,10 +652,16 @@ const EvaluateScreen = () => {
       <View style={styles.completedContainer}>
         <TouchableOpacity
           style={styles.backButton}
-          onPress={() => router.push("/(tabs)/action")}
+          // onPress={() => router.push("/(tabs)/action")}
+          // onPress={() => router.back()}
+          onPress={() => router.push("/(tabs)/category-detail")}
         >
-          <Ionicons name="chevron-back" size={24} color={theme.colors.text} />
-          <Text style={styles.backButtonText}>Volver al inicio</Text>
+          <Ionicons
+            name="chevron-back"
+            size={theme.typography.sizes.headline1}
+            color={theme.colors.text}
+          />
+          <Text style={styles.backButtonText}>Volver a selector</Text>
         </TouchableOpacity>
 
         <View style={styles.resultCard}>
@@ -560,7 +673,8 @@ const EvaluateScreen = () => {
               ]}
             />
             <Text style={[styles.statusText, { color: theme.colors.text }]}>
-              {status?.text || "Poco Riesgoso"}
+              {/* {status?.text || "Poco Riesgoso"} */}
+              {status?.text || "Sin evaluación"}
             </Text>
           </View>
 
@@ -570,7 +684,9 @@ const EvaluateScreen = () => {
             </Text>
             <Text style={styles.recommendationsText}>
               {selectedCategory?.recommendations?.text ||
-                "Su hogar presenta medidas previas de mitigación de riesgos. Reevalúe áreas clave para mantener la seguridad."}
+                // "Su hogar presenta medidas previas de mitigación de riesgos. Reevalúe áreas clave para mantener la seguridad."
+                // "No hay recomendaciones disponibles, consulte con su tratante."
+                "¡Muchas gracias por sus respuestas! En los próximos días recibirá recomendaciones personalizadas de un profesional de la salud de nuestro equipo. Manténgase revisando esta sección."}
             </Text>
           </View>
 
@@ -591,10 +707,25 @@ const EvaluateScreen = () => {
 
           <TouchableOpacity
             style={styles.newEvaluationButton}
-            onPress={handleStartNewEvaluation}
+            onPress={() => router.push("/training")}
           >
-            <Text style={styles.newEvaluationButtonText}>
-              Iniciar Nueva Evaluación
+            <Text style={styles.newEvaluationButtonText}>Ir al Contenido</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={handleStartNewEvaluation}
+            style={{ alignSelf: "center", marginTop: 24 }}
+          >
+            <Text
+              style={{
+                textDecorationLine: "underline",
+                textAlign: "center",
+                color: theme.colors.textSecondary,
+                fontSize: theme.typography.sizes.body1,
+                fontWeight: "500",
+              }}
+            >
+              ¿Respondiste incorrectamente? Repetir evaluación
             </Text>
           </TouchableOpacity>
         </View>
@@ -610,15 +741,34 @@ const EvaluateScreen = () => {
         <View>
           <TouchableOpacity
             style={styles.backButton}
-            onPress={() => router.push("/(tabs)/action")}
+            // onPress={() => router.push("/(tabs)/action")}
+            // onPress={() => router.back()}
+            onPress={() => router.push("/(tabs)/category-detail")}
           >
-            <Ionicons name="chevron-back" size={24} color={theme.colors.text} />
-            <Text style={styles.backButtonText}>Volver al inicio</Text>
+            <Ionicons
+              name="chevron-back"
+              size={theme.typography.sizes.headline1}
+              color={theme.colors.text}
+            />
+            <Text style={styles.backButtonText}>Volver a selector</Text>
           </TouchableOpacity>
           <ProfessionalEvaluation />
+
+          <TouchableOpacity
+            style={styles.newEvaluationButton}
+            onPress={() => router.push("/training")}
+          >
+            <Text style={styles.newEvaluationButtonText}>Ir al Contenido</Text>
+          </TouchableOpacity>
         </View>
       );
     }
+
+    // console.log(
+    //   "Rendering Evaluation. State:",
+    //   evaluationState.currentNodeId,
+    //   evaluationState.completed
+    // );
 
     if (!evaluationState.currentNodeId || evaluationState.completed) {
       return renderCompletedEvaluation();
@@ -641,6 +791,22 @@ const EvaluateScreen = () => {
 
   return (
     <View style={styles.container}>
+      <CustomisableAlert
+        dismissable
+        titleStyle={{
+          fontSize: theme.typography.sizes.headline1,
+          fontWeight: "bold",
+        }}
+        textStyle={{
+          fontSize: theme.typography.sizes.body1,
+        }}
+        btnLabelStyle={{
+          color: "white",
+          paddingHorizontal: 10,
+          textAlign: "center",
+          fontSize: theme.typography.sizes.body1,
+        }}
+      />
       <ScrollView
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
@@ -688,8 +854,8 @@ const styles = StyleSheet.create({
     }),
   },
   statusContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 24,
   },
   statusIndicator: {
@@ -699,23 +865,23 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   statusText: {
-    fontSize: 24,
-    fontWeight: '600',
+    fontSize: theme.typography.sizes.headline1,
+    fontWeight: "600",
     color: theme.colors.text,
   },
   recommendationsContainer: {
     marginTop: 24,
   },
   recommendationsTitle: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: theme.typography.sizes.body1,
+    fontWeight: "600",
     color: theme.colors.textSecondary,
     marginBottom: 12,
   },
   recommendationsText: {
-    fontSize: 16,
+    fontSize: theme.typography.sizes.body1,
     color: theme.colors.text,
-    lineHeight: 24,
+    lineHeight: theme.typography.sizes.subtitle,
   },
   separator: {
     height: 1,
@@ -728,25 +894,25 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   metadataRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 8,
   },
   metadataLabel: {
-    fontSize: 14,
+    fontSize: theme.typography.sizes.body2,
     color: theme.colors.textSecondary,
   },
   metadataValue: {
-    fontSize: 14,
+    fontSize: theme.typography.sizes.body2,
     color: theme.colors.text,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   newEvaluationButton: {
     backgroundColor: theme.colors.primary,
     borderRadius: 16,
     padding: 16,
-    alignItems: 'center',
+    alignItems: "center",
     marginTop: 24,
     ...Platform.select({
       ios: {
@@ -762,30 +928,30 @@ const styles = StyleSheet.create({
   },
   newEvaluationButtonText: {
     color: theme.colors.text,
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: theme.typography.sizes.body1,
+    fontWeight: "600",
   },
   startButton: {
     backgroundColor: theme.colors.primary,
     paddingVertical: 12,
     paddingHorizontal: 24,
     borderRadius: 8,
-    alignItems: 'center',
+    alignItems: "center",
     marginTop: 16,
   },
   startButtonText: {
     color: theme.colors.background,
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: theme.typography.sizes.body1,
+    fontWeight: "600",
   },
   backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingVertical: 12,
   },
   backButtonText: {
     marginLeft: 8,
-    fontSize: 16,
+    fontSize: theme.typography.sizes.body1,
     color: theme.colors.text,
   },
   noEvaluationContainer: {
@@ -801,16 +967,16 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   noEvaluationText: {
-    fontSize: 18,
+    fontSize: theme.typography.sizes.subtitle,
     color: theme.colors.textSecondary,
     textAlign: "center",
     marginTop: 16,
     marginBottom: 8,
   },
   startText: {
-    fontSize: 18,
+    fontSize: theme.typography.sizes.subtitle,
     color: theme.colors.text,
-    textAlign: 'center',
+    textAlign: "center",
     marginVertical: 16,
   },
   welcomeContainer: {
@@ -825,21 +991,21 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   welcomeTitle: {
-    fontSize: 28,
+    fontSize: theme.typography.sizes.display3,
     fontWeight: "700",
     color: theme.colors.text,
     marginBottom: 8,
     textAlign: "center",
   },
   welcomeSubtitle: {
-    fontSize: 20,
+    fontSize: theme.typography.sizes.title,
     fontWeight: "600",
     color: theme.colors.text,
-    marginBottom: 16,
+    marginBottom: theme.typography.sizes.body2,
     textAlign: "center",
   },
   welcomeDescription: {
-    fontSize: 16,
+    fontSize: theme.typography.sizes.body1,
     color: theme.colors.text,
     marginBottom: 12,
   },
@@ -847,13 +1013,13 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   bulletPoint: {
-    fontSize: 16,
+    fontSize: theme.typography.sizes.body1,
     color: theme.colors.text,
     marginBottom: 8,
-    lineHeight: 24,
+    lineHeight: theme.typography.sizes.subtitle,
   },
   noteText: {
-    fontSize: 14,
+    fontSize: theme.typography.sizes.body2,
     color: theme.colors.textSecondary,
     fontStyle: "italic",
     marginBottom: 24,

@@ -9,6 +9,9 @@ import {
   TouchableOpacity,
   Alert,
   Dimensions,
+  Linking,
+  Button,
+  TextInput,
 } from "react-native";
 
 import { ImageUploader } from "../../components/ImageUploader";
@@ -16,8 +19,14 @@ import { Ionicons } from "@expo/vector-icons";
 import apiService from "../services/apiService";
 import { theme } from "../../src/theme";
 import * as ImagePicker from "expo-image-picker";
-import * as FileSystem from 'expo-file-system';
-import { useImagePicker } from '../../hooks/useImagePicker';
+import * as FileSystem from "expo-file-system";
+import { useImagePicker } from "../../hooks/useImagePicker";
+import { useFocusEffect } from "@react-navigation/native";
+import { useCallback } from "react";
+import CustomisableAlert, {
+  showAlert,
+  closeAlert,
+} from "react-native-customisable-alert";
 
 const { width } = Dimensions.get("window");
 
@@ -39,6 +48,12 @@ export default function ProfileScreen() {
     }
   };
 
+  useFocusEffect(
+    useCallback(() => {
+      apiService.activityLog.trackAction("screen perfil"); // Record action
+    }, [])
+  );
+
   useEffect(() => {
     loadProfile();
   }, []);
@@ -53,9 +68,9 @@ export default function ProfileScreen() {
       console.log("Imagen convertida a base64");
 
       const response = await apiService.user.uploadProfileImage({
-        image: base64Image
+        image: base64Image,
       });
-      
+
       console.log("Respuesta de subida:", response.data);
 
       if (response.data?.profile?.profile_image) {
@@ -73,99 +88,348 @@ export default function ProfileScreen() {
       await loadProfile();
     } catch (error) {
       console.error("Error al subir la imagen:", error);
-      Alert.alert(
-        "Error",
-        "No se pudo subir la imagen. Por favor, intenta de nuevo."
-      );
+      // Alert.alert(
+      //   "Error",
+      //   "No se pudo subir la imagen. Por favor, intenta de nuevo."
+      // );
+      showAlert({
+        title: "Error",
+        btnLabel: "OK",
+        message: "No se pudo subir la imagen. Por favor, intenta de nuevo.",
+        alertType: "error",
+      });
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleImageOptions = () => {
-    Alert.alert(
-      "Opciones",
-      "¿Qué deseas hacer con la imagen?",
-      [
-        {
-          text: "Cambiar",
-          onPress: () => {
-            showImageSourceOptions();
-          },
-        },
-        {
-          text: "Eliminar",
-          onPress: async () => {
-            try {
-              setIsLoading(true);
-              const response = await apiService.user.deleteProfileImage();
-              setUser(response.data);
-            } catch (error) {
-              console.error("Error al eliminar la imagen:", error);
-              Alert.alert("Error", "No se pudo eliminar la imagen");
-            } finally {
-              setIsLoading(false);
-            }
-          },
-        },
-        {
-          text: "Cancelar",
-          style: "cancel",
-        },
-      ],
-      { cancelable: false }
-    );
+    // Alert.alert(
+    //   "Opciones",
+    //   "¿Qué deseas hacer con la imagen?",
+    //   [
+    //     {
+    //       text: "Cambiar",
+    //       onPress: () => {
+    //         showImageSourceOptions();
+    //       },
+    //     },
+    //     {
+    //       text: "Eliminar",
+    //       onPress: async () => {
+    //         try {
+    //           setIsLoading(true);
+    //           const response = await apiService.user.deleteProfileImage();
+    //           setUser(response.data);
+    //         } catch (error) {
+    //           console.error("Error al eliminar la imagen:", error);
+    //           Alert.alert("Error", "No se pudo eliminar la imagen");
+    //         } finally {
+    //           setIsLoading(false);
+    //         }
+    //       },
+    //     },
+    //     {
+    //       text: "Cancelar",
+    //       style: "cancel",
+    //     },
+    //   ],
+    //   { cancelable: false }
+    // );
+
+    showAlert({
+      title: "Qué deseas hacer con la imagen?",
+      message: "",
+      alertType: "custom",
+      customAlert: (
+        <View style={{ backgroundColor: "white", padding: 20, width: "85%" }}>
+          <Text
+            style={{
+              textAlign: "center",
+              fontSize: theme.typography.sizes.headline1,
+              fontWeight: "bold",
+              marginBottom: 20,
+              // color: "white",
+            }}
+          >
+            Qué deseas hacer con la imagen?
+          </Text>
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-evenly",
+              marginTop: 30,
+            }}
+          >
+            <TouchableOpacity
+              onPress={showImageSourceOptions}
+              style={{
+                backgroundColor: "orange",
+                paddingVertical: 10,
+                paddingHorizontal: 25,
+                borderRadius: 8,
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: theme.typography.sizes.body1,
+                  color: "white",
+                  fontWeight: "bold",
+                }}
+              >
+                Cambiar
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={async () => {
+                try {
+                  setIsLoading(true);
+                  const response = await apiService.user.deleteProfileImage();
+                  setUser(response.data);
+                } catch (error) {
+                  console.error("Error al eliminar la imagen:", error);
+                  // Alert.alert("Error", "No se pudo eliminar la imagen");
+                  showAlert({
+                    title: "Error",
+                    btnLabel: "OK",
+                    message: "No se pudo eliminar la imagen",
+                    alertType: "error",
+                  });
+                } finally {
+                  setIsLoading(false);
+                }
+                closeAlert();
+              }}
+              style={{
+                backgroundColor: "red",
+                paddingVertical: 10,
+                paddingHorizontal: 25,
+                borderRadius: 8,
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: theme.typography.sizes.body1,
+                  color: "white",
+                  fontWeight: "bold",
+                }}
+              >
+                Eliminar
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => closeAlert()}
+              style={{
+                backgroundColor: theme.colors.border,
+                paddingVertical: 10,
+                paddingHorizontal: 25,
+                borderRadius: 8,
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: theme.typography.sizes.body1,
+                  color: theme.colors.text,
+                  fontWeight: "bold",
+                }}
+              >
+                Cancelar
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      ),
+    });
   };
 
   const showImageSourceOptions = () => {
-    Alert.alert("Seleccionar foto", "¿De dónde quieres seleccionar la foto?", [
-      {
-        text: "Cámara",
-        onPress: async () => {
-          const { status } = await ImagePicker.requestCameraPermissionsAsync();
-          if (status !== "granted") {
-            Alert.alert("Se necesita permiso para acceder a la cámara");
-            return;
-          }
+    //   Alert.alert("Seleccionar foto", "¿De dónde quieres seleccionar la foto?", [
+    //     {
+    //       text: "Cámara",
+    //       onPress: async () => {
+    //         const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    //         if (status !== "granted") {
+    //           Alert.alert("Se necesita permiso para acceder a la cámara");
+    //           return;
+    //         }
 
-          const result = await ImagePicker.launchCameraAsync({
-            allowsEditing: true,
-            aspect: [1, 1],
-            quality: 1,
-          });
+    //         const result = await ImagePicker.launchCameraAsync({
+    //           // allowsEditing: true,
+    //           // aspect: [1, 1],
+    //           quality: 1,
+    //         });
 
-          if (!result.canceled && result.assets[0].uri) {
-            handleImageSelected(result.assets[0].uri);
-          }
-        },
-      },
-      {
-        text: "Galería",
-        onPress: async () => {
-          const { status } =
-            await ImagePicker.requestMediaLibraryPermissionsAsync();
-          if (status !== "granted") {
-            Alert.alert("Se necesita permiso para acceder a la galería");
-            return;
-          }
+    //         if (!result.canceled && result.assets[0].uri) {
+    //           handleImageSelected(result.assets[0].uri);
+    //         }
+    //       },
+    //     },
+    //     {
+    //       text: "Galería",
+    //       onPress: async () => {
+    //         const { status } =
+    //           await ImagePicker.requestMediaLibraryPermissionsAsync();
+    //         if (status !== "granted") {
+    //           Alert.alert("Se necesita permiso para acceder a la galería");
+    //           return;
+    //         }
 
-          const result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ImagePicker.MediaTypeOptions.Images,
-            allowsEditing: true,
-            aspect: [1, 1],
-            quality: 1,
-          });
+    //         const result = await ImagePicker.launchImageLibraryAsync({
+    //           mediaTypes: ImagePicker.MediaTypeOptions.Images,
+    //           // allowsEditing: true,
+    //           // aspect: [1, 1],
+    //           quality: 1,
+    //         });
 
-          if (!result.canceled && result.assets[0].uri) {
-            handleImageSelected(result.assets[0].uri);
-          }
-        },
-      },
-      {
-        text: "Cancelar",
-        style: "cancel",
-      },
-    ]);
+    //         if (!result.canceled && result.assets[0].uri) {
+    //           handleImageSelected(result.assets[0].uri);
+    //         }
+    //       },
+    //     },
+    //     {
+    //       text: "Cancelar",
+    //       style: "cancel",
+    //     },
+    //   ]);
+
+    showAlert({
+      title: "Seleccionar foto",
+      message: "",
+      alertType: "custom",
+      customAlert: (
+        <View style={{ backgroundColor: "white", padding: 20, width: "85%" }}>
+          <Text
+            style={{
+              textAlign: "center",
+              fontSize: theme.typography.sizes.headline1,
+              fontWeight: "bold",
+              marginBottom: 20,
+              // color: "white",
+            }}
+          >
+            De dónde quieres seleccionar la foto?
+          </Text>
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-evenly",
+              marginTop: 30,
+            }}
+          >
+            <TouchableOpacity
+              onPress={async () => {
+                const { status } =
+                  await ImagePicker.requestCameraPermissionsAsync();
+                if (status !== "granted") {
+                  // Alert.alert("Se necesita permiso para acceder a la cámara");
+                  showAlert({
+                    title: "Error",
+                    btnLabel: "OK",
+                    message: "Se necesita permiso para acceder a la cámara",
+                    alertType: "error",
+                  });
+                  return;
+                }
+
+                const result = await ImagePicker.launchCameraAsync({
+                  // allowsEditing: true,
+                  // aspect: [1, 1],
+                  quality: 1,
+                });
+
+                if (!result.canceled && result.assets[0].uri) {
+                  handleImageSelected(result.assets[0].uri);
+                }
+                closeAlert();
+              }}
+              style={{
+                backgroundColor: "orange",
+                paddingVertical: 10,
+                paddingHorizontal: 25,
+                borderRadius: 8,
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: theme.typography.sizes.body1,
+                  color: "white",
+                  fontWeight: "bold",
+                }}
+              >
+                Cámara
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={async () => {
+                const { status } =
+                  await ImagePicker.requestMediaLibraryPermissionsAsync();
+                if (status !== "granted") {
+                  // Alert.alert("Se necesita permiso para acceder a la galería");
+                  showAlert({
+                    title: "Error",
+                    btnLabel: "OK",
+                    message: "Se necesita permiso para acceder a la galería",
+                    alertType: "error",
+                  });
+                  return;
+                }
+
+                const result = await ImagePicker.launchImageLibraryAsync({
+                  mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                  // allowsEditing: true,
+                  // aspect: [1, 1],
+                  quality: 1,
+                });
+
+                if (!result.canceled && result.assets[0].uri) {
+                  handleImageSelected(result.assets[0].uri);
+                }
+                closeAlert();
+              }}
+              style={{
+                backgroundColor: "orange",
+                paddingVertical: 10,
+                paddingHorizontal: 25,
+                borderRadius: 8,
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: theme.typography.sizes.body1,
+                  color: "white",
+                  fontWeight: "bold",
+                }}
+              >
+                Galería
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => closeAlert()}
+              style={{
+                backgroundColor: theme.colors.border,
+                paddingVertical: 10,
+                paddingHorizontal: 25,
+                borderRadius: 8,
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: theme.typography.sizes.body1,
+                  color: theme.colors.text,
+                  fontWeight: "bold",
+                }}
+              >
+                Cancelar
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      ),
+    });
   };
 
   if (isInitialLoading) {
@@ -181,6 +445,23 @@ export default function ProfileScreen() {
       style={[styles.container, { backgroundColor: theme.colors.background }]}
       contentContainerStyle={styles.profileContent}
     >
+      <CustomisableAlert
+        dismissable
+        titleStyle={{
+          fontSize: theme.typography.sizes.headline1,
+          fontWeight: "bold",
+        }}
+        textStyle={{
+          fontSize: theme.typography.sizes.body1,
+        }}
+        btnLabelStyle={{
+          color: "white",
+          paddingHorizontal: 10,
+          textAlign: "center",
+          fontSize: theme.typography.sizes.body1,
+        }}
+      />
+
       <View
         style={[
           styles.headerBackground,
@@ -192,7 +473,11 @@ export default function ProfileScreen() {
         <View style={styles.profileImageSection}>
           <TouchableOpacity
             style={styles.imageContainer}
-            onPress={user?.profile?.profile_image ? handleImageOptions : showImageSourceOptions}
+            onPress={
+              user?.profile?.profile_image
+                ? handleImageOptions
+                : showImageSourceOptions
+            }
             activeOpacity={0.7}
           >
             {user?.profile?.profile_image ? (
@@ -201,13 +486,19 @@ export default function ProfileScreen() {
                   key={user?.profile?.profile_image}
                   source={{
                     uri: user?.profile?.profile_image,
-                    cache: 'reload',
+                    cache: "reload",
                   }}
                   style={styles.existingImage}
-                  onError={(e) => console.log('Error loading image:', e.nativeEvent.error)}
+                  onError={(e) =>
+                    console.log("Error loading image:", e.nativeEvent.error)
+                  }
                 />
                 <View style={styles.editButton}>
-                  <Ionicons name="pencil" size={16} color="black" />
+                  <Ionicons
+                    name="pencil"
+                    size={theme.typography.sizes.body1}
+                    color="black"
+                  />
                 </View>
               </>
             ) : (
@@ -217,9 +508,9 @@ export default function ProfileScreen() {
                   { backgroundColor: theme.colors.border },
                 ]}
               >
-                <Ionicons 
-                  name="person-circle-outline" 
-                  size={60} 
+                <Ionicons
+                  name="person-circle-outline"
+                  size={60}
                   color={theme.colors.text}
                 />
               </View>
@@ -241,7 +532,7 @@ export default function ProfileScreen() {
             <View style={styles.cardHeader}>
               <Ionicons
                 name="person-outline"
-                size={24}
+                size={theme.typography.sizes.headline1}
                 color={theme.colors.text}
               />
               <Text style={[styles.cardTitle, { color: theme.colors.text }]}>
@@ -276,7 +567,7 @@ export default function ProfileScreen() {
             <View style={styles.cardHeader}>
               <Ionicons
                 name="call-outline"
-                size={24}
+                size={theme.typography.sizes.headline1}
                 color={theme.colors.text}
               />
               <Text style={[styles.cardTitle, { color: theme.colors.text }]}>
@@ -304,6 +595,62 @@ export default function ProfileScreen() {
               </View>
             </View>
           </View>
+
+          <View
+            style={[
+              styles.infoCard,
+              { backgroundColor: theme.colors.card, marginBottom: 20 },
+            ]}
+          >
+            <View style={styles.cardHeader}>
+              <Ionicons
+                name="help-circle-outline"
+                size={theme.typography.sizes.headline1}
+                color={theme.colors.text}
+              />
+              <Text style={[styles.cardTitle, { color: theme.colors.text }]}>
+                Ayuda y Soporte
+              </Text>
+            </View>
+            <Text style={[styles.value, { color: theme.colors.text }]}>
+              Si tiene inconvenientes con la aplicación, comuníquese por{" "}
+              <Text
+                style={{ color: "blue" }}
+                onPress={() => Linking.openURL("tel:+56977547545")}
+              >
+                llamada
+              </Text>{" "}
+              o{" "}
+              <Text
+                style={{ color: "blue" }}
+                onPress={() => Linking.openURL("https://wa.me/56977547545")}
+              >
+                WhatsApp
+              </Text>
+              , de lunes a viernes entre 8:00 y 17:00 hrs., al siguiente número:{" "}
+              <Text
+                style={{ textDecorationLine: "underline" }}
+                onPress={() => Linking.openURL("https://wa.me/56977547545")}
+              >
+                +56 9 7754 7545
+              </Text>
+            </Text>
+
+            <View style={{ height: 15 }} />
+
+            <Text style={[styles.value, { color: theme.colors.text }]}>
+              En caso de no obtener respuesta oportuna, o tener una emergencia
+              relacionada al estudio, comuníquese al correo:{" "}
+              <Text
+                style={{ textDecorationLine: "underline", color: "blue" }}
+                onPress={() =>
+                  Linking.openURL("mailto:fondef.caidas@gmail.com")
+                }
+              >
+                fondef.caidas@gmail.com
+              </Text>
+            </Text>
+          </View>
         </View>
       </View>
 
@@ -327,16 +674,17 @@ const styles = StyleSheet.create({
     top: 0,
   },
   profileContent: {
-    flex: 1,
+    // flex: 1,
     paddingTop: 20,
+    paddingBottom: 10,
   },
   profileImageSection: {
     alignItems: "center",
     marginBottom: 30,
   },
   imageContainer: {
-    width: 120,
-    height: 120,
+    width: theme.typography.sizes.imageThumbnail,
+    height: theme.typography.sizes.imageThumbnail,
     marginBottom: 15,
     shadowColor: "#000",
     shadowOffset: {
@@ -381,12 +729,12 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   username: {
-    fontSize: 24,
+    fontSize: theme.typography.sizes.headline1,
     fontWeight: "bold",
     marginBottom: 5,
   },
   email: {
-    fontSize: 16,
+    fontSize: theme.typography.sizes.body1,
     opacity: 0.7,
     marginBottom: 20,
   },
@@ -412,7 +760,7 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   cardTitle: {
-    fontSize: 18,
+    fontSize: theme.typography.sizes.subtitle,
     fontWeight: "600",
     marginLeft: 10,
   },
@@ -428,11 +776,11 @@ const styles = StyleSheet.create({
     borderBottomColor: "rgba(0,0,0,0.05)",
   },
   label: {
-    fontSize: 16,
+    fontSize: theme.typography.sizes.body1,
     opacity: 0.8,
   },
   value: {
-    fontSize: 16,
+    fontSize: theme.typography.sizes.body1,
     fontWeight: "500",
   },
   loadingOverlay: {

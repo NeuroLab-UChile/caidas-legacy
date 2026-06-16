@@ -1,7 +1,7 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { theme } from '@/src/theme';
+import React from "react";
+import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { theme } from "@/src/theme";
 
 interface NavigationBarProps {
   onBack?: () => void;
@@ -11,7 +11,7 @@ interface NavigationBarProps {
   totalSteps?: number;
   nextText?: string;
   backText?: string;
-  type?: 'training' | 'evaluation';
+  type?: "training" | "evaluation";
 }
 
 export const NavigationBar: React.FC<NavigationBarProps> = ({
@@ -20,22 +20,23 @@ export const NavigationBar: React.FC<NavigationBarProps> = ({
   nextDisabled = false,
   currentStep,
   totalSteps,
-  nextText = 'Siguiente',
-  backText = 'Volver',
-  type = 'training'
+  nextText = "Siguiente",
+  backText = "Volver",
+  type = "training",
 }) => {
   return (
     <View style={styles.container}>
       {/* Header con botón de volver y progreso */}
       <View style={styles.header}>
-        <TouchableOpacity 
-          style={styles.backButton} 
-          onPress={onBack}
-        >
-          <Ionicons name="chevron-back" size={24} color={theme.colors.text} />
+        <TouchableOpacity style={styles.backButton} onPress={onBack}>
+          <Ionicons
+            name="chevron-back"
+            size={theme.typography.sizes.headline1}
+            color={theme.colors.text}
+          />
           <Text style={styles.backButtonText}>{backText}</Text>
         </TouchableOpacity>
-        
+
         {currentStep !== undefined && totalSteps !== undefined && (
           <Text style={styles.progressText}>
             Paso {currentStep} de {totalSteps}
@@ -48,21 +49,29 @@ export const NavigationBar: React.FC<NavigationBarProps> = ({
         <TouchableOpacity
           style={[
             styles.nextButton,
-            nextDisabled ? styles.nextButtonDisabled : styles.nextButtonEnabled
+            nextDisabled ? styles.nextButtonDisabled : styles.nextButtonEnabled,
           ]}
           onPress={onNext}
           disabled={nextDisabled}
         >
-          <Text style={[
-            styles.nextButtonText,
-            nextDisabled ? styles.nextButtonTextDisabled : styles.nextButtonTextEnabled
-          ]}>
+          <Text
+            style={[
+              styles.nextButtonText,
+              nextDisabled
+                ? styles.nextButtonTextDisabled
+                : styles.nextButtonTextEnabled,
+            ]}
+          >
             {nextText}
           </Text>
-          <Ionicons 
-            name="chevron-forward" 
-            size={24} 
-            color={nextDisabled ? theme.colors.textSecondary : theme.colors.background} 
+          <Ionicons
+            name="chevron-forward"
+            size={theme.typography.sizes.headline1}
+            color={
+              nextDisabled
+                ? theme.colors.textSecondary
+                : theme.colors.background
+            }
           />
         </TouchableOpacity>
       )}
@@ -75,30 +84,30 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: theme.typography.sizes.body2,
   },
   backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     padding: 8,
   },
   backButtonText: {
     marginLeft: 4,
-    fontSize: 16,
+    fontSize: theme.typography.sizes.body1,
     color: theme.colors.text,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   progressText: {
-    fontSize: 14,
+    fontSize: theme.typography.sizes.body2,
     color: theme.colors.textSecondary,
   },
   nextButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     padding: 16,
     borderRadius: 12,
     marginTop: 16,
@@ -112,8 +121,8 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   nextButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: theme.typography.sizes.body1,
+    fontWeight: "600",
     marginRight: 8,
   },
   nextButtonTextEnabled: {
@@ -122,4 +131,4 @@ const styles = StyleSheet.create({
   nextButtonTextDisabled: {
     color: theme.colors.textSecondary,
   },
-}); 
+});

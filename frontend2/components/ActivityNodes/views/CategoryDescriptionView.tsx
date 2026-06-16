@@ -1,10 +1,18 @@
 import React from "react";
-import { View, Text, Image, StyleSheet, TouchableOpacity } from "react-native";
-
+import {
+  View,
+  Text,
+  Image,
+  StyleSheet,
+  TouchableOpacity,
+  Linking,
+} from "react-native";
 import { theme } from "@/src/theme";
+import { TextWithHyperlinks } from "@/components/ui/TextWithHyperlinks";
 
 interface CategoryDescriptionProps {
   data: {
+    title: string;
     description: string;
     image?: string;
     first_button_text?: string;
@@ -17,6 +25,10 @@ export function CategoryDescriptionView({
   data,
   onNext,
 }: CategoryDescriptionProps) {
+  const description = (
+    <TextWithHyperlinks>{data.description}</TextWithHyperlinks>
+  );
+
   return (
     <View style={styles.container}>
       {data.image && (
@@ -27,9 +39,20 @@ export function CategoryDescriptionView({
         />
       )}
 
-      <Text style={[styles.description, { color: theme.colors.text }]}>
-        {data.description}
+      {/* title */}
+      <Text
+        style={[
+          styles.description,
+          { color: theme.colors.text, fontWeight: "bold" },
+        ]}
+      >
+        {data.title}
       </Text>
+
+      {/* <Text style={[styles.description, { color: theme.colors.text }]}>
+        {data.description}
+      </Text> */}
+      {description}
 
       <View style={styles.buttonContainer}>
         {data.first_button_text && (
@@ -64,10 +87,10 @@ const styles = StyleSheet.create({
     width: "100%",
     height: 200,
     borderRadius: 8,
-    marginBottom: 16,
+    marginBottom: theme.typography.sizes.body2,
   },
   description: {
-    fontSize: 18,
+    fontSize: theme.typography.sizes.subtitle,
     color: theme.colors.text,
     marginBottom: 24,
     textAlign: "center",
@@ -84,7 +107,7 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: "white",
-    fontSize: 16,
+    fontSize: theme.typography.sizes.body1,
     fontWeight: "600",
   },
 });

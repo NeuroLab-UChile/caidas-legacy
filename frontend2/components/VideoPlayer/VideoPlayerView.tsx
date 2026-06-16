@@ -1,6 +1,11 @@
+// Important note: this Video player doesn't support high resolution videos.
+// If it's failing, reduce the video resolution with:
+// ffmpeg -i input.mp4 -c:v libx264 -profile:v main -preset fast -crf 23 -vf scale=-2:1080 output.mp4
+
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { VideoView, useVideoPlayer } from "expo-video";
+import { useEventListener } from "expo";
 import { theme } from "@/src/theme";
 
 interface VideoPlayerViewProps {
@@ -8,8 +13,8 @@ interface VideoPlayerViewProps {
   description?: string;
 }
 
-export const VideoPlayerView: React.FC<VideoPlayerViewProps> = ({ 
-  url, 
+export const VideoPlayerView: React.FC<VideoPlayerViewProps> = ({
+  url,
   description,
 }) => {
   const player = useVideoPlayer(url, (player) => {
@@ -18,9 +23,17 @@ export const VideoPlayerView: React.FC<VideoPlayerViewProps> = ({
     player.muted = false;
   });
 
+  useEventListener(player, "statusChange", ({ status, error }) => {
+    console.log("Player status changed: ", status);
+    if (error) {
+      console.error("Player error: ", error);
+    }
+  });
+
   return (
     <View style={styles.container}>
-      {description && <Text style={styles.title}>{description}</Text>}
+      {/* This text was repeated with an external card */}
+      {/* {description && <Text style={styles.title}>{description}</Text>} */}
 
       <View style={styles.videoContainer}>
         <VideoView
@@ -37,12 +50,12 @@ export const VideoPlayerView: React.FC<VideoPlayerViewProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
+    padding: 5,
   },
   title: {
-    fontSize: 16,
+    fontSize: theme.typography.sizes.body1,
     fontWeight: "500",
-    marginBottom: 16,
+    marginBottom: theme.typography.sizes.body2,
     color: theme.colors.text,
   },
   videoContainer: {

@@ -8,6 +8,8 @@ import {
   ActivityIndicator,
   Dimensions,
   StatusBar,
+  ScrollView,
+  RefreshControl,
 } from "react-native";
 import { router } from "expo-router";
 import { theme } from "@/src/theme";
@@ -15,6 +17,8 @@ import { IconSymbol } from "@/components/ui/IconSymbol";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { apiService } from "../services/apiService";
+import { useFocusEffect } from "@react-navigation/native";
+import { useCallback } from "react";
 
 interface Event {
   id: number;
@@ -22,8 +26,7 @@ interface Event {
   description: string;
   date: string;
   category: string;
-  status: "pending" | "completed" | "cancelled";
-  priority: "high" | "medium" | "low";
+  status: "PENDING" | "CONFIRMED" | "COMPLETED" | "CANCELLED";
 }
 
 const { width } = Dimensions.get("window");
@@ -36,15 +39,22 @@ export default function EventsScreen() {
   const [selectedFilter, setSelectedFilter] = useState<string>("all");
 
   useEffect(() => {
-    fetchEvents();
+    // fetchEvents(); // --> Moved to useFocusEffect to refetch every time the screen is focused
   }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchEvents(); // Refetch events when screen is focused
+      apiService.activityLog.trackAction("screen eventos"); // Record action
+    }, [])
+  );
 
   const fetchEvents = async () => {
     try {
       setLoading(true);
       // Aquí iría tu llamada a la API
       const response = await apiService.events.getAll();
-      console.log(response, "elisa eventos");
+      // console.log(response, "elisa eventos");
       setEvents(response.data);
     } catch (error) {
       console.error("Error fetching events:", error);
@@ -54,39 +64,54 @@ export default function EventsScreen() {
     }
   };
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case "high":
-        return theme.colors.error;
-      case "medium":
-        return theme.colors.warning;
-      case "low":
-        return theme.colors.success;
-      default:
-        return theme.colors.text;
-    }
+  const reloadEvents = () => {
+    apiService.activityLog.trackAction("reload eventos"); // Record action
+    fetchEvents();
   };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case "completed":
-        return "checkmark.circle";
-      case "cancelled":
-        return "xmark.circle";
+      case "COMPLETED":
+        return "checkmark-circle";
+      case "CANCELLED":
+        return "close-circle-sharp";
+      case "CONFIRMED":
+        return "checkmark-circle-outline";
+      case "PENDING":
+        return "time-outline";
       default:
-        return "clock";
+        return "time-outline"; // fallback to a valid IconName
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "COMPLETED":
+        return "green";
+      case "CANCELLED":
+        return "red";
+      case "CONFIRMED":
+        return "blue";
+      case "PENDING":
+        return "orange";
+      default:
+        return "gray";
     }
   };
 
   const filters = [
     { id: "all", label: "Todos" },
-    { id: "pending", label: "Pendientes" },
-    { id: "completed", label: "Completados" },
-    { id: "cancelled", label: "Cancelados" },
+    { id: "PENDING", label: "Pendientes" },
+    { id: "CONFIRMED", label: "Confirmados" },
+    { id: "COMPLETED", label: "Completados" },
+    { id: "CANCELLED", label: "Cancelados" },
   ];
 
-  const filteredEvents = events.filter((event) =>
-    selectedFilter === "all" ? true : event.status === selectedFilter
+  const filteredEvents = events.filter(
+    (event) =>
+      // selectedFilter === "all" ? true : event.status === selectedFilter
+      // For now, show only PENDING and CONFIRMED events, and the COMPLETED and CANCELLED will be hidden altogether
+      event.status === "PENDING" || event.status === "CONFIRMED"
   );
 
   const renderEvent = ({ item }: { item: Event }) => {
@@ -96,17 +121,39 @@ export default function EventsScreen() {
       <TouchableOpacity style={styles.eventCard} activeOpacity={0.7}>
         <Text style={styles.eventTitle}>{item.title || "Sin título"}</Text>
 
-        <Text style={styles.eventDescription} numberOfLines={2}>
+        <Text style={styles.eventDescription} numberOfLines={10}>
           {item.description || "Sin descripción"}
         </Text>
 
         <View style={styles.eventFooter}>
           <View style={styles.dateContainer}>
-            <IconSymbol name="calendar" size={16} color={theme.colors.text} />
+            <IconSymbol
+              name="calendar"
+              size={theme.typography.sizes.body1}
+              color={theme.colors.text}
+            />
             <Text style={styles.dateText}>
-              {format(new Date(item.date), "d 'de' MMMM, yyyy", { locale: es })}
+              {format(
+                new Date(item.date),
+                "d 'de' MMMM 'de' yyyy, 'a las' HH:mm 'hrs.'",
+                { locale: es }
+              )}
             </Text>
           </View>
+        </View>
+
+        {/* Status */}
+        <View style={styles.statusContainer}>
+          <IconSymbol
+            name={getStatusIcon(item.status)}
+            size={theme.typography.sizes.body1}
+            color={getStatusColor(item.status)}
+          />
+          <Text style={styles.statusText}>
+            {filters
+              .find((f) => f.id.toLowerCase() === item.status.toLowerCase())
+              ?.label.slice(0, -1) || item.status}
+          </Text>
         </View>
       </TouchableOpacity>
     );
@@ -124,7 +171,7 @@ export default function EventsScreen() {
     return (
       <View style={styles.errorContainer}>
         <Text style={styles.errorText}>{error}</Text>
-        <TouchableOpacity style={styles.retryButton} onPress={fetchEvents}>
+        <TouchableOpacity style={styles.retryButton} onPress={reloadEvents}>
           <Text style={styles.retryText}>Reintentar</Text>
         </TouchableOpacity>
       </View>
@@ -135,7 +182,7 @@ export default function EventsScreen() {
     <View style={styles.container}>
       <StatusBar barStyle="light-content" />
 
-      <View style={styles.filtersContainer}>
+      {/* <View style={styles.filtersContainer}>
         <FlatList
           horizontal
           data={filters}
@@ -161,9 +208,13 @@ export default function EventsScreen() {
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.filtersContent}
         />
-      </View>
+      </View> */}
 
       <FlatList
+        style={styles.listContainer}
+        refreshControl={
+          <RefreshControl refreshing={loading} onRefresh={reloadEvents} />
+        }
         data={filteredEvents || []}
         renderItem={renderEvent}
         keyExtractor={(item) => item.id.toString()}
@@ -195,7 +246,7 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 20,
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: theme.typography.sizes.headline1,
     fontWeight: "bold",
     color: theme.colors.text,
   },
@@ -209,6 +260,7 @@ const styles = StyleSheet.create({
   },
   filtersContainer: {
     marginTop: SPACING,
+    marginBottom: SPACING / 2,
   },
   filtersContent: {
     paddingHorizontal: SPACING,
@@ -227,16 +279,21 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.primary,
   },
   filterText: {
+    fontSize: theme.typography.sizes.body2,
     color: theme.colors.text,
     fontWeight: "500",
   },
   filterTextActive: {
+    fontSize: theme.typography.sizes.body2,
     color: theme.colors.text,
     fontWeight: "600",
   },
   listContainer: {
-    padding: SPACING,
-    paddingBottom: SPACING * 4,
+    // padding: SPACING,
+    // paddingBottom: SPACING * 4,
+    marginTop: SPACING / 4,
+    paddingLeft: SPACING,
+    paddingRight: SPACING,
   },
   eventCard: {
     backgroundColor: theme.colors.background,
@@ -255,29 +312,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 12,
   },
-  priorityBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  priorityDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginRight: 6,
-  },
-  priorityText: {
-    fontSize: 12,
-    color: theme.colors.text,
-    opacity: 0.7,
-  },
   eventTitle: {
-    fontSize: 18,
+    fontSize: theme.typography.sizes.subtitle,
     fontWeight: "600",
     color: theme.colors.text,
     marginBottom: 8,
   },
   eventDescription: {
-    fontSize: 14,
+    fontSize: theme.typography.sizes.body2,
     color: theme.colors.text,
     opacity: 0.8,
     marginBottom: 12,
@@ -292,7 +334,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   dateText: {
-    fontSize: 12,
+    fontSize: theme.typography.sizes.caption,
     color: theme.colors.text,
     marginLeft: 4,
   },
@@ -303,7 +345,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   categoryText: {
-    fontSize: 12,
+    fontSize: theme.typography.sizes.caption,
     color: theme.colors.text,
     fontWeight: "500",
   },
@@ -319,10 +361,10 @@ const styles = StyleSheet.create({
     padding: SPACING * 2,
   },
   errorText: {
-    fontSize: 16,
+    fontSize: theme.typography.sizes.body1,
     color: theme.colors.error,
     textAlign: "center",
-    marginBottom: 16,
+    marginBottom: theme.typography.sizes.body2,
   },
   retryButton: {
     paddingHorizontal: 24,
@@ -331,6 +373,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   retryText: {
+    fontSize: theme.typography.sizes.body2,
     color: theme.colors.text,
     fontWeight: "600",
   },
@@ -341,9 +384,19 @@ const styles = StyleSheet.create({
     paddingVertical: SPACING * 4,
   },
   emptyText: {
-    fontSize: 16,
+    fontSize: theme.typography.sizes.body1,
     color: theme.colors.text,
     opacity: 0.7,
     marginTop: SPACING,
+  },
+  statusContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 8,
+  },
+  statusText: {
+    fontSize: theme.typography.sizes.body2,
+    color: theme.colors.text,
+    marginLeft: 4,
   },
 });

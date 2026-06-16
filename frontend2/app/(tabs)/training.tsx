@@ -15,8 +15,8 @@ import { CategoryHeader } from "@/components/CategoryHeader";
 import { useRouter } from "expo-router";
 import ActivityNodeContainer from "@/components/ActivityNodes/ActivityNodeContainer";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { Ionicons as ExpoIonicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { Ionicons as ExpoIonicons } from "@expo/vector-icons";
+import { router } from "expo-router";
 
 import { ActivityNodeType } from "@/components/ActivityNodes";
 import EmptyState from "../containers/EmptyState";
@@ -27,6 +27,8 @@ import { useEventListener } from "expo";
 import * as FileSystem from "expo-file-system";
 import { theme } from "@/src/theme";
 import { VideoPlayerView } from "@/components/VideoPlayer";
+import { useFocusEffect } from "@react-navigation/native";
+import { apiService } from "@/app/services/apiService";
 
 type TrainingState = {
   currentNodeId: number | null;
@@ -42,6 +44,12 @@ const TrainingScreen = () => {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [view, setView] = useState<"training" | "recommendations" | null>(null);
+
+  useFocusEffect(
+    useCallback(() => {
+      apiService.activityLog.trackAction("screen entrenar"); // Record action
+    }, [])
+  );
 
   const [trainingState, setTrainingState] = useState<TrainingState>(() => {
     const nodes = selectedCategory?.training_form?.training_nodes || [];
@@ -72,7 +80,7 @@ const TrainingScreen = () => {
   const [history, setHistory] = useState<number[]>([]);
   const nodes = selectedCategory?.training_form?.training_nodes || [];
   const currentQuestionIndex = nodes.findIndex(
-    (node) => node.id === trainingState.currentNodeId,
+    (node) => node.id === trainingState.currentNodeId
   );
 
   useEffect(() => {
@@ -131,7 +139,7 @@ const TrainingScreen = () => {
       const nodes = selectedCategory.training_form.training_nodes;
       console.log(
         "Actualizando trainingState por cambio en selectedCategory:",
-        nodes,
+        nodes
       );
 
       setTrainingState({
@@ -161,7 +169,7 @@ const TrainingScreen = () => {
     (nodeId: number | null) => {
       const node =
         selectedCategory?.training_form?.training_nodes.find(
-          (node) => node.id === nodeId,
+          (node) => node.id === nodeId
         ) || null;
 
       console.log("Getting current node:", {
@@ -171,13 +179,13 @@ const TrainingScreen = () => {
           (n) => ({
             id: n.id,
             type: n.type,
-          }),
+          })
         ),
       });
 
       return node;
     },
-    [selectedCategory],
+    [selectedCategory]
   );
 
   const handleNext = useCallback(
@@ -195,7 +203,7 @@ const TrainingScreen = () => {
         // Encontrar el índice del nodo actual
         const currentIndex =
           selectedCategory?.training_form?.training_nodes.findIndex(
-            (node) => node.id === prev.currentNodeId,
+            (node) => node.id === prev.currentNodeId
           );
 
         // Obtener el siguiente nodo
@@ -220,7 +228,7 @@ const TrainingScreen = () => {
         }
       });
     },
-    [selectedCategory, getCurrentNode],
+    [selectedCategory, getCurrentNode]
   );
 
   const handleNodeResponse = (nodeId: number, response: any) => {
@@ -284,7 +292,7 @@ const TrainingScreen = () => {
         const downloadResumable = FileSystem.createDownloadResumable(
           remoteUrl,
           localUri,
-          {},
+          {}
         );
 
         try {
@@ -337,7 +345,11 @@ const TrainingScreen = () => {
         <View style={styles.recommendationsCard}>
           <View style={styles.recommendationsHeader}>
             <View style={styles.iconContainer}>
-              <Ionicons name="medical" size={32} color="#4CAF50" />
+              <Ionicons
+                name="medical"
+                size={theme.typography.sizes.headline1}
+                color="#4CAF50"
+              />
             </View>
             <Text style={styles.recommendationsTitle}>
               Recomendaciones Médicas
@@ -347,7 +359,11 @@ const TrainingScreen = () => {
           {professional?.name && (
             <View style={styles.professionalContainer}>
               <View style={styles.professionalHeader}>
-                <Ionicons name="person" size={20} color="#4B5563" />
+                <Ionicons
+                  name="person"
+                  size={theme.typography.sizes.body1}
+                  color="#4B5563"
+                />
                 <Text style={styles.professionalName}>{professional.name}</Text>
               </View>
               {professional.role && (
@@ -395,7 +411,11 @@ const TrainingScreen = () => {
             style={styles.backButton}
             onPress={() => setView(null)}
           >
-            <Ionicons name="arrow-back" size={24} color="white" />
+            <Ionicons
+              name="arrow-back"
+              size={theme.typography.sizes.headline1}
+              color="white"
+            />
             <Text style={styles.backButtonText}>Volver al Menú</Text>
           </TouchableOpacity>
         </View>
@@ -407,7 +427,9 @@ const TrainingScreen = () => {
     if (view) {
       setView(null);
     } else {
-      router.push("/(tabs)/action");
+      // router.push("/(tabs)/action");
+      // router.back();
+      router.push("/(tabs)/category-detail");
     }
   };
 
@@ -421,9 +443,13 @@ const TrainingScreen = () => {
       />
 
       <TouchableOpacity style={styles.backButton} onPress={handleBack}>
-        <Ionicons name="chevron-back" size={24} color={theme.colors.text} />
+        <Ionicons
+          name="chevron-back"
+          size={theme.typography.sizes.headline1}
+          color={theme.colors.text}
+        />
         <Text style={styles.backButtonText}>
-          {view ? "Volver" : "Volver al inicio"}
+          {view ? "Volver" : "Volver a selector"}
         </Text>
       </TouchableOpacity>
 
@@ -434,11 +460,18 @@ const TrainingScreen = () => {
               style={styles.optionCard}
               onPress={() => {
                 console.log("Abriendo recomendaciones");
+                apiService.activityLog.trackAction(
+                  `open_recommendations ${selectedCategory.id}`
+                ); // Record action
                 setView("recommendations");
               }}
             >
               <View style={styles.iconContainer}>
-                <Ionicons name="medical" size={32} color="#4CAF50" />
+                <Ionicons
+                  name="medical"
+                  size={theme.typography.sizes.headline1}
+                  color="#4CAF50"
+                />
               </View>
               <Text style={styles.optionTitle}>
                 Recomendaciones Personalizadas
@@ -452,14 +485,25 @@ const TrainingScreen = () => {
 
           <TouchableOpacity
             style={styles.optionCard}
-            onPress={() => setView("training")}
+            onPress={() => {
+              apiService.activityLog.trackAction(
+                `open_training ${selectedCategory.id}`
+              ); // Record action
+              setView("training");
+            }}
           >
             <View style={styles.iconContainer}>
-              <Ionicons name="fitness" size={32} color="#2196F3" />
+              <Ionicons
+                name="fitness"
+                size={theme.typography.sizes.headline1}
+                color="#2196F3"
+              />
             </View>
-            <Text style={styles.optionTitle}>Entrenamiento</Text>
+            {/* <Text style={styles.optionTitle}>Entrenamiento</Text> */}
+            <Text style={styles.optionTitle}>Contenido</Text>
             <Text style={styles.optionDescription}>
-              Comienza tu rutina de ejercicios paso a paso
+              {/* Comienza tu rutina de ejercicios paso a paso */}
+              Profundiza en contenido que te ayudará a cuidar mejor de ti
             </Text>
           </TouchableOpacity>
         </View>
@@ -469,7 +513,8 @@ const TrainingScreen = () => {
         <>
           {!selectedCategory?.training_form?.training_nodes ? (
             <View style={styles.errorContainer}>
-              <Text>No hay nodos de entrenamiento configurados</Text>
+              {/* <Text>No hay nodos de entrenamiento configurados</Text> */}
+              <Text>No hay contenido configurado</Text>
             </View>
           ) : selectedCategory.training_form.training_nodes.length === 0 ? (
             <View style={styles.completedContainer}>
@@ -478,17 +523,23 @@ const TrainingScreen = () => {
                   <Ionicons name="fitness-outline" size={80} color="#9CA3AF" />
                 </View>
                 <Text style={styles.completedTitle}>
-                  Sin Entrenamiento Disponible
+                  {/* Sin Entrenamiento Disponible */}
+                  Sin Contenido Disponible
                 </Text>
                 <Text style={styles.completedDescription}>
-                  No hay ejercicios configurados para esta categoría.
+                  {/* No hay ejercicios configurados para esta categoría. */}
+                  No hay contenido configurado para esta categoría.
                 </Text>
 
                 <TouchableOpacity
                   style={styles.backToMenuButton}
                   onPress={() => setView(null)}
                 >
-                  <Ionicons name="arrow-back" size={24} color="#4B5563" />
+                  <Ionicons
+                    name="arrow-back"
+                    size={theme.typography.sizes.headline1}
+                    color="#4B5563"
+                  />
                   <Text style={styles.backToMenuText}>Volver al Menú</Text>
                 </TouchableOpacity>
               </View>
@@ -500,10 +551,12 @@ const TrainingScreen = () => {
                   <Ionicons name="checkmark-circle" size={80} color="#4CAF50" />
                 </View>
                 <Text style={styles.completedTitle}>
-                  ¡Entrenamiento Completado!
+                  {/* ¡Entrenamiento Completado! */}
+                  ¡Contenido Completado!
                 </Text>
                 <Text style={styles.completedDescription}>
-                  Has finalizado todos los ejercicios. ¿Deseas realizarlos
+                  {/* Has finalizado todos los ejercicios. ¿Deseas realizarlos nuevamente? */}
+                  Has finalizado todo el contenido. ¿Deseas repasarlo
                   nuevamente?
                 </Text>
 
@@ -512,9 +565,14 @@ const TrainingScreen = () => {
                     style={styles.restartButton}
                     onPress={handleRestart}
                   >
-                    <Ionicons name="refresh" size={24} color="white" />
+                    <Ionicons
+                      name="refresh"
+                      size={theme.typography.sizes.headline1}
+                      color="white"
+                    />
                     <Text style={styles.buttonText}>
-                      Reiniciar Entrenamiento
+                      {/* Reiniciar Entrenamiento */}
+                      Reiniciar Contenido
                     </Text>
                   </TouchableOpacity>
 
@@ -522,7 +580,11 @@ const TrainingScreen = () => {
                     style={styles.backToMenuButton}
                     onPress={() => setView(null)}
                   >
-                    <Ionicons name="arrow-back" size={24} color="#4B5563" />
+                    <Ionicons
+                      name="arrow-back"
+                      size={theme.typography.sizes.headline1}
+                      color="#4B5563"
+                    />
                     <Text style={styles.backToMenuText}>Volver al Menú</Text>
                   </TouchableOpacity>
                 </View>
@@ -561,27 +623,28 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   iconContainer: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: theme.typography.sizes.display1,
+    height: theme.typography.sizes.display1,
+    borderRadius: theme.typography.sizes.display1 / 2,
     backgroundColor: "#F5F6F8",
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 16,
+    marginBottom: theme.typography.sizes.body2,
   },
   optionTitle: {
-    fontSize: 18,
+    fontSize: theme.typography.sizes.subtitle,
     fontWeight: "700",
     color: "#1F2937",
     marginBottom: 8,
   },
   optionDescription: {
-    fontSize: 14,
+    fontSize: theme.typography.sizes.body2,
     color: "#6B7280",
-    lineHeight: 20,
+    lineHeight: theme.typography.sizes.body2,
   },
   recommendationsContainer: {
     flex: 1,
+    marginBottom: 40,
   },
   recommendationsCard: {
     backgroundColor: "white",
@@ -606,7 +669,7 @@ const styles = StyleSheet.create({
     borderBottomColor: "#E5E7EB",
   },
   recommendationsTitle: {
-    fontSize: 18,
+    fontSize: theme.typography.sizes.subtitle,
     fontWeight: "700",
     color: "#1F2937",
     marginLeft: 12,
@@ -623,7 +686,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   recommendationSectionTitle: {
-    fontSize: 16,
+    fontSize: theme.typography.sizes.body1,
     fontWeight: "600",
     color: "#374151",
     marginBottom: 12,
@@ -640,13 +703,13 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 16,
+    marginBottom: theme.typography.sizes.body2,
     alignSelf: "center",
   },
   recommendationsText: {
-    fontSize: 16,
+    fontSize: theme.typography.sizes.body1,
     color: "#374151",
-    lineHeight: 24,
+    lineHeight: theme.typography.sizes.subtitle,
     textAlign: "center",
     fontStyle: "italic",
   },
@@ -654,6 +717,7 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 16,
     backgroundColor: "#F5F6F8",
+    marginBottom: 40,
   },
   completedCard: {
     backgroundColor: "white",
@@ -679,18 +743,18 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   completedTitle: {
-    fontSize: 24,
+    fontSize: theme.typography.sizes.headline1,
     fontWeight: "700",
     color: "#1F2937",
     marginBottom: 12,
     textAlign: "center",
   },
   completedDescription: {
-    fontSize: 16,
+    fontSize: theme.typography.sizes.body1,
     color: "#6B7280",
     textAlign: "center",
     marginBottom: 32,
-    lineHeight: 24,
+    lineHeight: theme.typography.sizes.subtitle,
   },
   completedButtons: {
     width: "100%",
@@ -715,7 +779,7 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: "white",
-    fontSize: 16,
+    fontSize: theme.typography.sizes.body1,
     fontWeight: "600",
     marginLeft: 8,
   },
@@ -730,7 +794,7 @@ const styles = StyleSheet.create({
   },
   backToMenuText: {
     color: "#4B5563",
-    fontSize: 16,
+    fontSize: theme.typography.sizes.body1,
     fontWeight: "600",
     marginLeft: 8,
   },
@@ -739,28 +803,28 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   emptyStateText: {
-    fontSize: 16,
+    fontSize: theme.typography.sizes.body1,
     color: "#9CA3AF",
     marginTop: 8,
     textAlign: "center",
   },
   backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     padding: 12,
-    marginBottom: 16,
+    marginBottom: theme.typography.sizes.body2,
   },
   backButtonText: {
     marginLeft: 8,
-    fontSize: 16,
+    fontSize: theme.typography.sizes.body1,
     color: theme.colors.text,
     fontFamily: "System",
-    fontWeight: '600',
+    fontWeight: "600",
   },
   statusContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 16,
+    marginBottom: theme.typography.sizes.body2,
     backgroundColor: "white",
     padding: 12,
     borderRadius: 8,
@@ -773,18 +837,18 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   statusText: {
-    fontSize: 14,
+    fontSize: theme.typography.sizes.body2,
     color: "#6B7280",
   },
   recommendationText: {
-    fontSize: 16,
+    fontSize: theme.typography.sizes.body1,
     color: "#374151",
-    lineHeight: 24,
+    lineHeight: theme.typography.sizes.subtitle,
     marginTop: 8,
     flexWrap: "wrap",
   },
   updatedAtText: {
-    fontSize: 12,
+    fontSize: theme.typography.sizes.caption,
     color: "#9CA3AF",
     fontStyle: "italic",
   },
@@ -792,7 +856,7 @@ const styles = StyleSheet.create({
     backgroundColor: "white",
     padding: 12,
     borderRadius: 8,
-    marginBottom: 16,
+    marginBottom: theme.typography.sizes.body2,
   },
   professionalHeader: {
     flexDirection: "row",
@@ -800,21 +864,21 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   professionalName: {
-    fontSize: 14,
+    fontSize: theme.typography.sizes.body2,
     fontWeight: "500",
     color: "#374151",
     marginLeft: 8,
     flex: 1,
   },
   professionalRole: {
-    fontSize: 13,
+    fontSize: theme.typography.sizes.body2,
     color: "#4B5563",
     marginTop: 4,
     marginLeft: 24,
     fontStyle: "italic",
   },
   dateText: {
-    fontSize: 12,
+    fontSize: theme.typography.sizes.caption,
     color: "#9CA3AF",
     marginTop: 8,
     marginLeft: 24,
@@ -847,16 +911,16 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 8,
     color: "#666",
-    fontSize: 14,
+    fontSize: theme.typography.sizes.body2,
   },
   errorContainer: {
     padding: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   errorText: {
-    color: 'red',
-    fontSize: 16,
+    color: "red",
+    fontSize: theme.typography.sizes.body1,
   },
   retryText: {
     color: "white",
@@ -875,7 +939,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0,0,0,0.3)",
   },
   playButtonText: {
-    fontSize: 40,
+    fontSize: theme.typography.sizes.display1,
   },
   videoWrapper: {
     position: "relative",

@@ -85,6 +85,7 @@ export interface TrainingNode {
  * Representa una categoría de evaluación.
  */
 export interface Category {
+  professional_recommendations: any;
   description: string;
   evaluation_form: EvaluationForm;
   evaluation_type: {

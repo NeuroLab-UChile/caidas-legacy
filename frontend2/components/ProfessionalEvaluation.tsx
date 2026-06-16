@@ -34,7 +34,7 @@ export const ProfessionalEvaluation = () => {
               >
                 <Ionicons
                   name="medical"
-                  size={32}
+                  size={theme.typography.sizes.headline1}
                   color={theme.colors.textSecondary}
                 />
               </View>
@@ -43,10 +43,11 @@ export const ProfessionalEvaluation = () => {
                 Aún no tienes una evaluación profesional
               </Text>
             </View>
-            
+
             <View style={[styles.card, styles.messageCard]}>
               <Text style={styles.messageText}>
-                Para obtener una evaluación profesional, agenda una cita con tu profesional de salud.
+                Para obtener una evaluación profesional, agenda una cita con tu
+                profesional de salud.
               </Text>
             </View>
           </View>
@@ -68,8 +69,24 @@ export const ProfessionalEvaluation = () => {
     },
   ];
 
+  const mapIconColor = (color: string) => {
+    console.log("Mapping color:", color);
+    switch (color) {
+      case "#008000":
+        return "checkmark-circle" as keyof typeof Ionicons.glyphMap;
+      case "#FFFF00":
+        return "warning" as keyof typeof Ionicons.glyphMap;
+      case "#FF0000":
+        return "close-circle" as keyof typeof Ionicons.glyphMap;
+      case "#808080":
+        return "ban" as keyof typeof Ionicons.glyphMap;
+      default:
+        return "help-circle" as keyof typeof Ionicons.glyphMap;
+    }
+  };
+
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: `${statusColor}99` }]}>
       <View style={[styles.gradientBackground]}>
         <View style={styles.content}>
           {/* Header */}
@@ -81,8 +98,9 @@ export const ProfessionalEvaluation = () => {
               ]}
             >
               <Ionicons
-                name="checkmark-circle"
-                size={32}
+                // name="checkmark-circle"
+                name={mapIconColor(recommendations?.status?.color!)}
+                size={theme.typography.sizes.display3}
                 color={theme.colors.text}
               />
             </View>
@@ -96,7 +114,11 @@ export const ProfessionalEvaluation = () => {
           {professional && (
             <View style={getCardStyle(0)}>
               <View style={styles.cardHeader}>
-                <Ionicons name="person" size={20} color={theme.colors.text} />
+                <Ionicons
+                  name="person"
+                  size={theme.typography.sizes.body1}
+                  color={theme.colors.text}
+                />
                 <Text style={styles.cardHeaderText}>
                   Información del Profesional
                 </Text>
@@ -119,7 +141,11 @@ export const ProfessionalEvaluation = () => {
           {diagnosis && (
             <View style={getCardStyle(1)}>
               <View style={styles.cardHeader}>
-                <Ionicons name="medical" size={20} color={theme.colors.text} />
+                <Ionicons
+                  name="medical"
+                  size={theme.typography.sizes.body1}
+                  color={theme.colors.text}
+                />
                 <Text style={styles.cardHeaderText}>Diagnóstico</Text>
               </View>
               <Text style={styles.diagnosisText}>{diagnosis}</Text>
@@ -132,7 +158,7 @@ export const ProfessionalEvaluation = () => {
               <View style={styles.cardHeader}>
                 <Ionicons
                   name="clipboard"
-                  size={20}
+                  size={theme.typography.sizes.body1}
                   color={theme.colors.text}
                 />
                 <Text style={styles.cardHeaderText}>Observaciones</Text>
@@ -142,7 +168,7 @@ export const ProfessionalEvaluation = () => {
           )}
 
           {/* Color Indicator */}
-          {recommendations?.status?.color && (
+          {/* {recommendations?.status?.color && (
             <View style={styles.colorIndicator}>
               <Text style={styles.colorText}>
                 Color de recomendación profesional:
@@ -151,7 +177,7 @@ export const ProfessionalEvaluation = () => {
                 style={[styles.colorSquare, { backgroundColor: statusColor }]}
               />
             </View>
-          )}
+          )} */}
         </View>
       </View>
     </View>
@@ -177,23 +203,24 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   iconContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: theme.typography.sizes.buttonSize,
+    height: theme.typography.sizes.buttonSize,
+    borderRadius: theme.typography.sizes.buttonSize / 2,
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 16,
+    marginBottom: theme.typography.sizes.body2,
+    borderWidth: 1,
   },
   title: {
-    fontSize: 28,
+    fontSize: theme.typography.sizes.display3,
     fontWeight: "bold",
     textAlign: "center",
     marginBottom: 8,
     color: theme.colors.text,
   },
   subtitle: {
-    fontSize: 18,
-    color: theme.colors.textSecondary,
+    fontSize: theme.typography.sizes.subtitle,
+    color: "black", //theme.colors.textSecondary,
     textAlign: "center",
   },
   card: {
@@ -218,13 +245,13 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   cardHeaderText: {
-    fontSize: 18,
+    fontSize: theme.typography.sizes.subtitle,
     fontWeight: "600",
     marginLeft: 8,
     color: theme.colors.text,
   },
   professionalInfo: {
-    fontSize: 16,
+    fontSize: theme.typography.sizes.body1,
     color: theme.colors.text,
     marginBottom: 4,
   },
@@ -235,20 +262,20 @@ const styles = StyleSheet.create({
     color: theme.colors.textSecondary,
   },
   dateText: {
-    fontSize: 14,
+    fontSize: theme.typography.sizes.body2,
     color: theme.colors.textTertiary,
     marginTop: 4,
   },
   diagnosisText: {
-    fontSize: 16,
+    fontSize: theme.typography.sizes.body1,
     color: theme.colors.text,
-    lineHeight: 24,
+    lineHeight: theme.typography.sizes.subtitle,
   },
   observationsText: {
-    fontSize: 16,
+    fontSize: theme.typography.sizes.body1,
     color: theme.colors.text,
     fontStyle: "italic",
-    lineHeight: 24,
+    lineHeight: theme.typography.sizes.subtitle,
   },
   colorIndicator: {
     flexDirection: "row",
@@ -258,7 +285,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   colorText: {
-    fontSize: 14,
+    fontSize: theme.typography.sizes.body2,
     color: theme.colors.textSecondary,
   },
   colorSquare: {
@@ -270,13 +297,13 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.card,
     padding: 20,
     borderRadius: 16,
-    alignItems: 'center',
+    alignItems: "center",
     marginTop: 16,
   },
   messageText: {
-    fontSize: 16,
+    fontSize: theme.typography.sizes.body1,
     color: theme.colors.textSecondary,
-    textAlign: 'center',
-    lineHeight: 24,
+    textAlign: "center",
+    lineHeight: theme.typography.sizes.subtitle,
   },
 });

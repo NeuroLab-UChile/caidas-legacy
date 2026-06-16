@@ -15,19 +15,33 @@ import { theme } from "@/src/theme";
 import { Category } from "../types/category";
 import { router } from "expo-router";
 import { IconSymbol } from "@/components/ui/IconSymbol";
+import { useFocusEffect } from "@react-navigation/native";
+import { useCallback } from "react";
+import { apiService } from "@/app/services/apiService";
 
 const { width } = Dimensions.get("window");
-const SPACING = 16;
+const SPACING = 8; // 16;
 const COLUMNS = 2;
 const CARD_WIDTH = (width - SPACING * (COLUMNS + 1)) / COLUMNS;
 
 export default function ActionScreen() {
   const { categories, selectedCategory, setSelectedCategory, loading, error } =
     useCategories();
-  const [isCategoriesExpanded, setIsCategoriesExpanded] = useState(false);
+  // const [isCategoriesExpanded, setIsCategoriesExpanded] = useState(false);
+  const isCategoriesExpanded = true; // Mantener expandido por defecto
+
+  useFocusEffect(
+    useCallback(() => {
+      apiService.activityLog.trackAction("screen home"); // Record action
+    }, [])
+  );
 
   const handleCategoryPress = (category: Category) => {
+    // console.log("Categoría seleccionada:", category.name);
     setSelectedCategory(category);
+    // Definir nombre en minusculas y reemplazar espacios por guiones bajos
+    const categoryName = category.name.toLowerCase().replace(/\s+/g, "_");
+    apiService.activityLog.trackAction(`category_selected ${categoryName}`); // Record action
     router.push("/(tabs)/category-detail");
   };
 
@@ -59,52 +73,75 @@ export default function ActionScreen() {
     try {
       // Si no hay URL, mostrar icono por defecto
       if (!iconUrl) {
-        return <IconSymbol name="folder" size={24} color={theme.colors.text} />;
+        return (
+          <IconSymbol
+            name="folder"
+            size={theme.typography.sizes.headline1}
+            color={theme.colors.text}
+          />
+        );
       }
 
       // Validar que la URL sea string y tenga formato correcto
-      if (typeof iconUrl !== 'string') {
-        console.warn('Invalid icon URL type:', typeof iconUrl);
-        return <IconSymbol name="folder" size={24} color={theme.colors.text} />;
+      if (typeof iconUrl !== "string") {
+        console.warn("Invalid icon URL type:", typeof iconUrl);
+        return (
+          <IconSymbol
+            name="folder"
+            size={theme.typography.sizes.headline1}
+            color={theme.colors.text}
+          />
+        );
       }
 
       // Manejar URLs absolutas
-      if (iconUrl.startsWith('http')) {
+      if (iconUrl.startsWith("http")) {
         return (
           <Image
             source={{ uri: iconUrl }}
             style={styles.iconImage}
             resizeMode="contain"
-            defaultSource={require('@/assets/images/default-icon.png')}
+            defaultSource={require("@/assets/images/default-icon.png")}
             onError={(error) => {
-              console.warn('Error loading image:', error.nativeEvent.error);
+              console.warn("Error loading image:", error.nativeEvent.error);
             }}
           />
         );
       }
 
       // Para URLs relativas o base64, asegurarse de que sean válidas
-      if (iconUrl.startsWith('data:image/') || iconUrl.startsWith('/media/')) {
+      if (iconUrl.startsWith("data:image/") || iconUrl.startsWith("/media/")) {
         return (
           <Image
             source={{ uri: iconUrl }}
             style={styles.iconImage}
             resizeMode="contain"
-            defaultSource={require('@/assets/images/default-icon.png')}
+            defaultSource={require("@/assets/images/default-icon.png")}
             onError={(error) => {
-              console.warn('Error loading image:', error.nativeEvent.error);
+              console.warn("Error loading image:", error.nativeEvent.error);
             }}
           />
         );
       }
 
       // Si no coincide con ningún formato válido, mostrar icono por defecto
-      console.warn('Unsupported icon URL format:', iconUrl);
-      return <IconSymbol name="folder" size={24} color={theme.colors.text} />;
-
+      console.warn("Unsupported icon URL format:", iconUrl);
+      return (
+        <IconSymbol
+          name="folder"
+          size={theme.typography.sizes.headline1}
+          color={theme.colors.text}
+        />
+      );
     } catch (error) {
-      console.error('Error rendering icon:', error);
-      return <IconSymbol name="folder" size={24} color={theme.colors.text} />;
+      console.error("Error rendering icon:", error);
+      return (
+        <IconSymbol
+          name="folder"
+          size={theme.typography.sizes.headline1}
+          color={theme.colors.text}
+        />
+      );
     }
   };
 
@@ -121,7 +158,11 @@ export default function ActionScreen() {
           {item.icon ? (
             renderIcon(item.icon)
           ) : (
-            <IconSymbol name="folder" size={24} color={theme.colors.text} />
+            <IconSymbol
+              name="folder"
+              size={theme.typography.sizes.headline1}
+              color={theme.colors.text}
+            />
           )}
         </View>
         <Text style={styles.categoryCardTitle}>{item.name || ""}</Text>
@@ -148,32 +189,28 @@ export default function ActionScreen() {
             style={styles.actionCard}
             onPress={() => router.push("/(tabs)/events")}
           >
-            <IconSymbol name="calendar" size={32} color={theme.colors.text} />
+            <IconSymbol
+              name="calendar"
+              size={theme.typography.sizes.display3}
+              color={theme.colors.text}
+            />
             <Text style={styles.actionTitle}>Eventos</Text>
-            <Text style={styles.actionSubtitle}>Ver próximos eventos</Text>
+            {/* <Text style={styles.actionSubtitle}>Ver próximos eventos</Text> */}
           </TouchableOpacity>
 
           <TouchableOpacity
             style={styles.actionCard}
-            onPress={() => setIsCategoriesExpanded(!isCategoriesExpanded)}
+            onPress={() => router.push("/(tabs)/downloads")}
           >
-            <IconSymbol name="folder" size={32} color={theme.colors.text} />
-            <Text style={styles.actionTitle}>Categorías</Text>
-            <Text style={styles.actionSubtitle}>
-              Explorar o Elegir categorías
-            </Text>
-            <View style={styles.expandIconContainer}>
-              <IconSymbol
-                name="chevron.down"
-                size={24}
-                color={theme.colors.text}
-                style={[
-                  styles.expandIcon,
-                  isCategoriesExpanded && styles.expandIconRotated,
-                ]}
-              />
-            </View>
+            <IconSymbol
+              name="cloud-download"
+              size={theme.typography.sizes.display3}
+              color={theme.colors.text}
+            />
+            <Text style={styles.actionTitle}>Contenido Descargable</Text>
           </TouchableOpacity>
+
+          <Text style={styles.actionTitle}>Categorías</Text>
 
           {isCategoriesExpanded && (
             <View style={styles.expandedCategories}>
@@ -195,7 +232,11 @@ export default function ActionScreen() {
               {selectedCategory.icon ? (
                 renderIcon(selectedCategory.icon)
               ) : (
-                <IconSymbol name="folder" size={24} color={theme.colors.text} />
+                <IconSymbol
+                  name="folder"
+                  size={theme.typography.sizes.headline1}
+                  color={theme.colors.text}
+                />
               )}
             </View>
             <Text style={styles.selectedBannerText}>
@@ -224,7 +265,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   headerTitle: {
-    fontSize: 28,
+    fontSize: theme.typography.sizes.display3,
     fontWeight: "bold",
     color: theme.colors.background,
     textTransform: "uppercase",
@@ -237,7 +278,7 @@ const styles = StyleSheet.create({
   actionCard: {
     backgroundColor: theme.colors.card,
     borderRadius: 16,
-    padding: SPACING * 2,
+    padding: SPACING, // * 2,
     alignItems: "center",
     justifyContent: "center",
     elevation: 4,
@@ -247,13 +288,14 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
   },
   actionTitle: {
-    fontSize: 22,
+    fontSize: theme.typography.sizes.headline2,
     fontWeight: "bold",
     color: theme.colors.text,
     marginTop: SPACING,
+    textAlign: "center",
   },
   actionSubtitle: {
-    fontSize: 16,
+    fontSize: theme.typography.sizes.body1,
     color: theme.colors.textSecondary,
     marginTop: 4,
     textAlign: "center",
@@ -287,8 +329,8 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.primary,
   },
   iconContainer: {
-    width: 56,
-    height: 56,
+    width: theme.typography.sizes.buttonSize,
+    height: theme.typography.sizes.buttonSize,
     borderRadius: 28,
     backgroundColor: theme.colors.background,
     justifyContent: "center",
@@ -298,10 +340,10 @@ const styles = StyleSheet.create({
   iconImage: {
     width: "90%",
     height: "90%",
-    backgroundColor: 'transparent', // Evitar fondo blanco
+    backgroundColor: "transparent", // Evitar fondo blanco
   },
   categoryCardTitle: {
-    fontSize: 14,
+    fontSize: theme.typography.sizes.body2,
     fontWeight: "600",
     color: theme.colors.text,
     textAlign: "center",
@@ -325,6 +367,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     margin: SPACING,
     padding: SPACING,
+    marginBottom: SPACING * 5,
     backgroundColor: theme.colors.card,
     borderRadius: 12,
     elevation: 3,
@@ -344,7 +387,7 @@ const styles = StyleSheet.create({
   },
   selectedBannerText: {
     flex: 1,
-    fontSize: 16,
+    fontSize: theme.typography.sizes.body1,
     fontWeight: "600",
     color: theme.colors.text,
   },
@@ -360,10 +403,10 @@ const styles = StyleSheet.create({
     padding: SPACING * 2,
   },
   errorText: {
-    fontSize: 16,
+    fontSize: theme.typography.sizes.body1,
     color: theme.colors.error,
     textAlign: "center",
-    marginBottom: 16,
+    marginBottom: theme.typography.sizes.body2,
   },
   retryButton: {
     paddingHorizontal: 24,

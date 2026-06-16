@@ -1,35 +1,36 @@
-import { DefaultTheme } from '@react-navigation/native';
+import { DefaultTheme } from "@react-navigation/native";
+import { RFValue } from "react-native-responsive-fontsize";
 
 // Paleta de colores base
 const palette = {
-  primary: '#F2FF2A',      // Amarillo brillante
-  primaryDark: '#B8C000',  // Amarillo más oscuro para mejor contraste
-  secondary: '#FFD700',    // Dorado
-  background: '#FFFFFF',   // Blanco
-  surface: '#FFFFFF',      // Blanco para superficies
-  accent: '#000000',      // Negro
-  error: '#FF3B30',       // Rojo para errores
-  warning: '#FF9500',     // Naranja para advertencias
-  success: '#34C759',     // Verde para éxito
-  info: '#007AFF',        // Azul para información
+  primary: "#F2FF2A", // Amarillo brillante
+  primaryDark: "#B8C000", // Amarillo más oscuro para mejor contraste
+  secondary: "#FFD700", // Dorado
+  background: "#FFFFFF", // Blanco
+  surface: "#FFFFFF", // Blanco para superficies
+  accent: "#000000", // Negro
+  error: "#FF3B30", // Rojo para errores
+  warning: "#FF9500", // Naranja para advertencias
+  success: "#34C759", // Verde para éxito
+  info: "#007AFF", // Azul para información
 
   // Variaciones de grises
   grey: {
-    100: '#F5F5F5',
-    200: '#EEEEEE',
-    300: '#E0E0E0',
-    400: '#BDBDBD',
-    500: '#9E9E9E',
-    600: '#757575',
-    700: '#616161',
-    800: '#424242',
-    900: '#212121',
+    100: "#F5F5F5",
+    200: "#EEEEEE",
+    300: "#E0E0E0",
+    400: "#BDBDBD",
+    500: "#9E9E9E",
+    600: "#757575",
+    700: "#616161",
+    800: "#424242",
+    900: "#212121",
   },
 
   // Variaciones de transparencia
   alpha: {
-    light: 'rgba(255, 255, 255, 0.7)',
-    dark: 'rgba(0, 0, 0, 0.7)',
+    light: "rgba(255, 255, 255, 0.7)",
+    dark: "rgba(0, 0, 0, 0.7)",
   },
 } as const;
 
@@ -37,30 +38,34 @@ const palette = {
 const typography = {
   fonts: {
     primary: {
-      light: 'Roboto-Light',
-      regular: 'Roboto-Regular',
-      medium: 'Roboto-Medium',
-      bold: 'Roboto-Bold',
-      black: 'Roboto-Black',
+      light: "Roboto-Light",
+      regular: "Roboto-Regular",
+      medium: "Roboto-Medium",
+      bold: "Roboto-Bold",
+      black: "Roboto-Black",
     },
     secondary: {
-      regular: 'RobotoMono-Regular',
-      medium: 'RobotoMono-Medium',
-      bold: 'RobotoMono-Bold',
+      regular: "RobotoMono-Regular",
+      medium: "RobotoMono-Medium",
+      bold: "RobotoMono-Bold",
     },
   },
   sizes: {
-    display1: 36,
-    display2: 32,
-    display3: 28,
-    headline1: 24,
-    headline2: 22,
-    title: 20,
-    subtitle: 18,
-    body1: 16,
-    body2: 14,
-    caption: 12,
-    small: 10,
+    imageThumbnail: RFValue(90),
+    // iconCircle: RFValue(60),
+    buttonSize: RFValue(55),
+    textInput: RFValue(50),
+    display1: RFValue(36),
+    display2: RFValue(32),
+    display3: RFValue(28),
+    headline1: RFValue(24),
+    headline2: RFValue(22),
+    title: RFValue(20),
+    subtitle: RFValue(18),
+    body1: RFValue(16),
+    body2: RFValue(14),
+    caption: RFValue(12),
+    small: RFValue(10),
   },
   lineHeights: {
     tight: 1.2,
@@ -70,112 +75,112 @@ const typography = {
   // Estilos de texto predefinidos
   styles: {
     display1: {
-      fontFamily: 'Roboto-Bold',
-      fontSize: 36,
+      fontFamily: "Roboto-Bold",
+      fontSize: RFValue(36),
       lineHeight: 1.2,
       letterSpacing: -0.5,
     },
     display2: {
-      fontFamily: 'Roboto-Bold',
-      fontSize: 32,
+      fontFamily: "Roboto-Bold",
+      fontSize: RFValue(32),
       lineHeight: 1.2,
       letterSpacing: -0.5,
     },
     display3: {
-      fontFamily: 'Roboto-Bold',
-      fontSize: 28,
+      fontFamily: "Roboto-Bold",
+      fontSize: RFValue(28),
       lineHeight: 1.2,
     },
     headline1: {
-      fontFamily: 'Roboto-Bold',
-      fontSize: 24,
+      fontFamily: "Roboto-Bold",
+      fontSize: RFValue(24),
       lineHeight: 1.3,
     },
     headline2: {
-      fontFamily: 'Roboto-Medium',
-      fontSize: 22,
+      fontFamily: "Roboto-Medium",
+      fontSize: RFValue(22),
       lineHeight: 1.35,
     },
     title1: {
-      fontFamily: 'Roboto-Medium',
-      fontSize: 20,
+      fontFamily: "Roboto-Medium",
+      fontSize: RFValue(20),
       lineHeight: 1.4,
     },
     title2: {
-      fontFamily: 'Roboto-Medium',
-      fontSize: 18,
+      fontFamily: "Roboto-Medium",
+      fontSize: RFValue(18),
       lineHeight: 1.4,
     },
     subtitle1: {
-      fontFamily: 'Roboto-Medium',
-      fontSize: 16,
+      fontFamily: "Roboto-Medium",
+      fontSize: RFValue(16),
       lineHeight: 1.5,
       letterSpacing: 0.15,
     },
     subtitle2: {
-      fontFamily: 'Roboto-Medium',
-      fontSize: 14,
+      fontFamily: "Roboto-Medium",
+      fontSize: RFValue(14),
       lineHeight: 1.5,
       letterSpacing: 0.1,
     },
     body1: {
-      fontFamily: 'Roboto-Regular',
-      fontSize: 16,
+      fontFamily: "Roboto-Regular",
+      fontSize: RFValue(16),
       lineHeight: 1.5,
       letterSpacing: 0.5,
     },
     body2: {
-      fontFamily: 'Roboto-Regular',
-      fontSize: 14,
+      fontFamily: "Roboto-Regular",
+      fontSize: RFValue(14),
       lineHeight: 1.5,
       letterSpacing: 0.25,
     },
     button: {
-      fontFamily: 'Roboto-Medium',
-      fontSize: 14,
+      fontFamily: "Roboto-Medium",
+      fontSize: RFValue(14),
       lineHeight: 1.75,
       letterSpacing: 0.4,
-      textTransform: 'uppercase',
+      textTransform: "uppercase",
     },
     caption: {
-      fontFamily: 'Roboto-Regular',
-      fontSize: 12,
+      fontFamily: "Roboto-Regular",
+      fontSize: RFValue(12),
       lineHeight: 1.66,
       letterSpacing: 0.4,
     },
     overline: {
-      fontFamily: 'Roboto-Medium',
-      fontSize: 10,
+      fontFamily: "Roboto-Medium",
+      fontSize: RFValue(10),
       lineHeight: 1.6,
       letterSpacing: 1.5,
-      textTransform: 'uppercase',
+      textTransform: "uppercase",
     },
     // Variantes adicionales
     mono: {
-      fontFamily: 'RobotoMono-Regular',
-      fontSize: 14,
+      fontFamily: "RobotoMono-Regular",
+      fontSize: RFValue(14),
       lineHeight: 1.5,
     },
     monoBold: {
-      fontFamily: 'RobotoMono-Bold',
-      fontSize: 14,
+      fontFamily: "RobotoMono-Bold",
+      fontSize: RFValue(14),
       lineHeight: 1.5,
     },
     link: {
-      fontFamily: 'Roboto-Medium',
-      fontSize: 16,
+      fontFamily: "Roboto-Medium",
+      fontSize: RFValue(16),
       lineHeight: 1.5,
-      textDecorationLine: 'underline',
+      textDecorationLine: "underline",
     },
     error: {
-      fontFamily: 'Roboto-Regular',
-      fontSize: 12,
+      fontFamily: "Roboto-Regular",
+      fontSize: RFValue(12),
       lineHeight: 1.66,
       color: palette.error,
     },
     success: {
-      fontFamily: 'Roboto-Regular',
-      fontSize: 12,
+      fontFamily: "Roboto-Regular",
+      fontSize: RFValue(12),
       lineHeight: 1.66,
       color: palette.success,
     },
@@ -220,19 +225,19 @@ export const theme = {
       ...typography.styles,
       button: {
         ...typography.styles.button,
-        color: '#000000',  // Negro para texto de botones
+        color: "#000000", // Negro para texto de botones
       },
       body1: {
         ...typography.styles.body1,
-        color: '#000000',  // Negro para texto principal
+        color: "#000000", // Negro para texto principal
       },
       body2: {
         ...typography.styles.body2,
-        color: '#000000',  // Negro para texto secundario
+        color: "#000000", // Negro para texto secundario
       },
       caption: {
         ...typography.styles.caption,
-        color: '#000000',  // Negro para texto pequeño
+        color: "#000000", // Negro para texto pequeño
       },
     },
   },
@@ -269,10 +274,10 @@ export const theme = {
       leavingScreen: 195,
     },
     easing: {
-      easeInOut: 'cubic-bezier(0.4, 0, 0.2, 1)',
-      easeOut: 'cubic-bezier(0.0, 0, 0.2, 1)',
-      easeIn: 'cubic-bezier(0.4, 0, 1, 1)',
-      sharp: 'cubic-bezier(0.4, 0, 0.6, 1)',
+      easeInOut: "cubic-bezier(0.4, 0, 0.2, 1)",
+      easeOut: "cubic-bezier(0.0, 0, 0.2, 1)",
+      easeIn: "cubic-bezier(0.4, 0, 1, 1)",
+      sharp: "cubic-bezier(0.4, 0, 0.6, 1)",
     },
   },
 
@@ -297,7 +302,7 @@ export const theme = {
           borderColor: palette.accent,
         },
         text: {
-          backgroundColor: 'transparent',
+          backgroundColor: "transparent",
           textColor: palette.accent,
         },
       },
@@ -385,13 +390,13 @@ export const theme = {
     activityNode: {
       container: {
         flex: 1,
-        backgroundColor: '#FFFFFF',
+        backgroundColor: "#FFFFFF",
         padding: 16,
       },
       question: {
-        fontSize: 18,
-        color: '#000000',
-        marginBottom: 16,
+        fontSize: RFValue(18),
+        color: "#000000",
+        marginBottom: typography.sizes.small,
       },
       optionsContainer: {
         gap: 8,
@@ -400,35 +405,36 @@ export const theme = {
         padding: 16,
         borderRadius: 8,
         borderWidth: 1,
-        borderColor: '#E0E0E0',
+        borderColor: "#E0E0E0",
       },
       optionSelected: {
-        backgroundColor: '#E8F0FE',
-        borderColor: '#4285F4',
+        backgroundColor: "#E8F0FE",
+        borderColor: "#4285F4",
       },
       optionText: {
-        fontSize: 16,
-        color: '#000000',
+        fontSize: RFValue(16),
+        color: "#000000",
       },
       button: {
-        backgroundColor: '#4285F4',
+        backgroundColor: "#4285F4",
         padding: 16,
         borderRadius: 8,
-        alignItems: 'center',
+        alignItems: "center",
         marginTop: 16,
       },
       buttonText: {
-        color: '#FFFFFF',
-        fontSize: 16,
-        fontWeight: '600',
+        color: "#FFFFFF",
+        fontSize: RFValue(16),
+        fontWeight: "600",
       },
       input: {
         borderWidth: 1,
-        borderColor: '#E0E0E0',
+        borderColor: "#E0E0E0",
         borderRadius: 8,
         padding: 12,
-        color: '#000000',
-        backgroundColor: '#FFFFFF',
+        color: "#000000",
+        backgroundColor: "#FFFFFF",
+        fontSize: RFValue(16),
       },
     },
 
@@ -439,11 +445,11 @@ export const theme = {
         padding: 20,
       },
       question: {
-        fontSize: 20,
+        fontSize: typography.sizes.title,
         fontWeight: "600",
         color: palette.accent,
-        marginBottom: 24,
-        lineHeight: 28,
+        marginBottom: typography.sizes.body1,
+        lineHeight: typography.sizes.headline2,
       },
       optionButton: {
         backgroundColor: palette.background,
@@ -451,7 +457,7 @@ export const theme = {
         padding: 16,
         borderWidth: 2,
         borderColor: palette.grey[300],
-        marginBottom: 12,
+        marginBottom: typography.sizes.small,
         shadowColor: "#000",
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
@@ -469,21 +475,19 @@ export const theme = {
         gap: 12,
       },
       optionText: {
-        fontSize: 16,
+        fontSize: RFValue(16),
         color: palette.accent,
         flex: 1,
-        lineHeight: 24,
+        lineHeight: typography.sizes.body1,
       },
       selectedOptionText: {
         color: palette.accent,
         fontWeight: "500",
-
       },
 
       radioButtonSelected: {
         backgroundColor: palette.background,
         borderColor: palette.background,
-
       },
       radioButtonInner: {
         width: 12,
@@ -506,20 +510,19 @@ export const theme = {
     emptyState: {
       container: {
         flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
+        justifyContent: "center",
+        alignItems: "center",
         padding: spacing.xl,
       },
       title: {
         marginBottom: spacing.md,
-        textAlign: 'center',
+        textAlign: "center",
       },
       text: {
-        textAlign: 'center',
+        textAlign: "center",
         marginBottom: spacing.xl,
         color: palette.grey[600], // textSecondary
       },
-
     },
 
     stepIndicator: {
@@ -530,12 +533,12 @@ export const theme = {
       text: {
         color: palette.grey[800],
         fontSize: typography.sizes.body2,
-        fontWeight: '600',
+        fontWeight: "600",
       },
       current: {
         color: palette.accent,
-        fontWeight: '700',
-      }
+        fontWeight: "700",
+      },
     },
   },
 } as const;
@@ -546,7 +549,8 @@ export type Theme = typeof theme;
 // Utilidades de tema
 export const getSpacing = (value: keyof typeof spacing) => spacing[value];
 export const getColor = (value: keyof typeof palette) => palette[value];
-export const getFontSize = (value: keyof typeof typography.sizes) => typography.sizes[value];
+export const getFontSize = (value: keyof typeof typography.sizes) =>
+  typography.sizes[value];
 
 // Componente de texto predefinido
 export const TextPresets = {

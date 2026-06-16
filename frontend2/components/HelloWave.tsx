@@ -7,7 +7,7 @@ import Animated, {
   withRepeat,
   withSequence,
 } from 'react-native-reanimated';
-
+import { theme } from '@/src/theme';
 import { ThemedText } from '@/components/ThemedText';
 
 export function HelloWave() {
@@ -33,7 +33,7 @@ export function HelloWave() {
 
 const styles = StyleSheet.create({
   text: {
-    fontSize: 28,
+    fontSize: theme.typography.sizes.display3,
     lineHeight: 32,
     marginTop: -6,
   },

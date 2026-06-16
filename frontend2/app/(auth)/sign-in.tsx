@@ -1,20 +1,83 @@
-import { useState } from "react";
-import { View, TextInput, Pressable, Text, StyleSheet, ActivityIndicator, Alert } from "react-native";
-import Constants from 'expo-constants';
+import { useState, useEffect } from "react";
+import {
+  View,
+  TextInput,
+  Pressable,
+  Text,
+  StyleSheet,
+  ActivityIndicator,
+  Alert,
+  Platform,
+  TouchableOpacity,
+  ScrollView,
+} from "react-native";
+import * as IntentLauncher from "expo-intent-launcher";
+import CheckBox from "expo-checkbox"; // https://docs.expo.dev/versions/latest/sdk/checkbox/
+import Constants from "expo-constants";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { router } from "expo-router";
 import { theme } from "@/src/theme";
 import { useAuth } from "../contexts/auth";
+import { apiService } from "@/app/services/apiService";
+import { termsAndConditions } from "@/constants/terms_and_conditions"; // Importar términos y condiciones
+import { RFValue } from "react-native-responsive-fontsize";
+import CustomisableAlert, {
+  showAlert,
+  closeAlert,
+} from "react-native-customisable-alert";
 
 export default function SignIn() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [autoLoginMessage, setAutoLoginMessage] = useState("");
+  const [acceptTerms, setAcceptTerms] = useState(false);
   const { signIn } = useAuth();
 
-  const handleLogin = async () => {
-    if (!username || !password) {
+  // Detectar si hay usuario y contraseña guardados en el dispositivo e iniciar sesión automáticamente
+  const autoLogin = async () => {
+    const storedUsername = await AsyncStorage.getItem("username");
+    const storedPassword = await AsyncStorage.getItem("password");
+
+    if (storedUsername && storedPassword) {
+      console.log("Iniciando sesión automáticamente con:", storedUsername);
+      setUsername(storedUsername);
+      setPassword(storedPassword);
+      setRememberMe(true);
+      setAcceptTerms(true); // Aceptar términos automáticamente si hay credenciales guardadas
+
+      // Mostrar mensaje de auto-login y esperar 1 segundo antes de iniciar sesión
+      setAutoLoginMessage("Iniciando sesión automáticamente...");
+      setTimeout(() => {
+        handleLogin(storedUsername, storedPassword, true);
+      }, 2000); // Esperar para iniciar sesión automáticamente
+    }
+  };
+
+  // Llamar a autoLogin al montar el componente
+  useEffect(() => {
+    autoLogin();
+  }, []);
+
+  const handleLogin = async (
+    _username: string = "",
+    _password: string = "",
+    forcedAcceptTerms: boolean = false
+  ) => {
+    if (!acceptTerms && !forcedAcceptTerms) {
+      setError("Debes aceptar los términos y condiciones para continuar.");
+      return;
+    }
+
+    // Si no se pasan username y password, usar los del estado
+    if (!_username) _username = username;
+    if (!_password) _password = password;
+    // Validar que se hayan ingresado usuario y contraseña
+    if (!_username || !_password) {
       setError("Por favor ingresa usuario y contraseña");
       return;
     }
@@ -22,23 +85,49 @@ export default function SignIn() {
     try {
       setIsLoading(true);
       setError("");
-      console.log('Intentando login con:', username);
-      
-      const success = await signIn(username, password);
-      
+      console.log("Intentando login con:", _username);
+
+      const success = await signIn(_username, _password);
+
       if (success) {
-        console.log('Login exitoso, redirigiendo...');
+        console.log("Login exitoso, redirigiendo...");
+        // Guardar usuario y contraseña si rememberMe es true
+        if (rememberMe) {
+          await AsyncStorage.setItem("username", _username);
+          await AsyncStorage.setItem("password", _password);
+          console.log("Credenciales guardadas");
+        }
+        await apiService.activityLog.trackAction("login", 2); // Record action
+        // Redirigir a la pantalla de acción
         router.replace("/(tabs)/action/");
       } else {
-        setError("Credenciales incorrectas");
+        // Alert.alert(
+        //   "Error",
+        //   "No se pudo conectar al servidor. Verifica tu conexión."
+        // );
+        showAlert({
+          title: "Error",
+          btnLabel: "OK",
+          message:
+            "Error en login. Revise sus credenciales y su conexión a internet.",
+        });
+        setError(
+          "Error en login. Revise sus credenciales y su conexión a internet."
+        );
       }
     } catch (error) {
-      console.error('Error en login:', error);
+      console.error("Error en login:", error);
       setError("Error al iniciar sesión. Intenta nuevamente.");
-      Alert.alert(
-        "Error",
-        "No se pudo conectar al servidor. Verifica tu conexión."
-      );
+      // Alert.alert(
+      //   "Error",
+      //   "No se pudo conectar al servidor. Verifica tu conexión."
+      // );
+      showAlert({
+        title: "Error",
+        btnLabel: "OK",
+        message:
+          "Error en login. Revise sus credenciales y su conexión a internet.",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -52,45 +141,243 @@ export default function SignIn() {
     setPassword(text.toLowerCase());
   };
 
+  const showTermsPopup = () => {
+    // Alert.alert("Términos y Condiciones", termsAndConditions, [
+    //   { text: "Aceptar", onPress: () => setAcceptTerms(true) },
+    //   { text: "Cancelar", onPress: () => setAcceptTerms(false) },
+    // ]);
+
+    showAlert({
+      title: "Términos y Condiciones",
+      message: termsAndConditions,
+      // onPress: () => setAcceptTerms(true),
+      onDismiss: () => setAcceptTerms(false),
+      alertType: "custom",
+      customAlert: (
+        <View
+          style={{
+            backgroundColor: "white",
+            padding: 20,
+            width: "85%",
+            height: "80%",
+            borderRadius: 10,
+            // alignItems: "center",
+            // justifyContent: "center",
+            flexDirection: "column",
+          }}
+        >
+          <Text
+            style={{
+              textAlign: "center",
+              fontSize: theme.typography.sizes.headline1,
+              fontWeight: "bold",
+              marginBottom: 20,
+              // color: "white",
+            }}
+          >
+            Términos y Condiciones
+          </Text>
+          <ScrollView style={{ marginBottom: 20 }} persistentScrollbar={true}>
+            <Text
+              style={{
+                fontSize: theme.typography.sizes.body2,
+                color: theme.colors.text,
+                marginBottom: 20,
+              }}
+            >
+              {termsAndConditions}
+            </Text>
+
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-evenly",
+                marginTop: 30,
+              }}
+            >
+              <TouchableOpacity
+                onPress={() => {
+                  setAcceptTerms(true);
+                  closeAlert();
+                }}
+                style={{
+                  backgroundColor: "green",
+                  paddingVertical: 10,
+                  paddingHorizontal: 25,
+                  borderRadius: 8,
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: theme.typography.sizes.body1,
+                    color: "white",
+                    fontWeight: "bold",
+                  }}
+                >
+                  Aceptar
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={() => {
+                  setAcceptTerms(false);
+                  closeAlert();
+                }}
+                style={{
+                  backgroundColor: "red",
+                  paddingVertical: 10,
+                  paddingHorizontal: 25,
+                  borderRadius: 8,
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: theme.typography.sizes.body1,
+                    color: "white",
+                    fontWeight: "bold",
+                  }}
+                >
+                  Cancelar
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </ScrollView>
+        </View>
+      ),
+    });
+  };
+
+  const openDownloadsFolder = () => {
+    if (Platform.OS === "android") {
+      IntentLauncher.startActivityAsync("android.intent.action.VIEW_DOWNLOADS");
+    } else {
+      alert("Esta función solo está disponible en Android por ahora");
+    }
+  };
+
   return (
     <View style={styles.container}>
+      <CustomisableAlert
+        dismissable
+        titleStyle={{
+          fontSize: theme.typography.sizes.headline1,
+          fontWeight: "bold",
+        }}
+        textStyle={{
+          fontSize: theme.typography.sizes.body1,
+        }}
+        btnLabelStyle={{
+          color: "white",
+          paddingHorizontal: 10,
+          textAlign: "center",
+          fontSize: theme.typography.sizes.body1,
+        }}
+      />
+
       <Text style={styles.versionText}>
-        Versión: {Constants.expoConfig?.version || '1.0.0'}
-        {__DEV__ ? ' (Debug)' : ' (Release)'}
+        Versión: {Constants.expoConfig?.version || "1.0.0"}
+        {__DEV__ ? " (Debug)" : " (Release)"}
       </Text>
 
       <Text style={styles.title}>Iniciar Sesión</Text>
 
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
+      {autoLoginMessage ? (
+        <Text style={styles.autoLoginMessage}>{autoLoginMessage}</Text>
+      ) : null}
 
       <TextInput
+        style={styles.input}
         placeholder="Usuario"
         value={username}
         onChangeText={handleChangeUsername}
-        style={styles.input}
         placeholderTextColor={theme.colors.text + "80"}
         autoCapitalize="none"
         editable={!isLoading}
       />
 
-      <TextInput
-        placeholder="Contraseña"
-        value={password}
-        onChangeText={handleChangePassword}
-        secureTextEntry
-        style={styles.input}
-        placeholderTextColor={theme.colors.text + "80"}
-        autoCapitalize="none"
-        editable={!isLoading}
-      />
+      <View style={{ position: "relative" }}>
+        <TextInput
+          style={styles.input}
+          placeholder="Contraseña"
+          value={password}
+          onChangeText={handleChangePassword}
+          secureTextEntry={!showPassword}
+          placeholderTextColor={theme.colors.text + "80"}
+          autoCapitalize="none"
+          editable={!isLoading}
+        />
+        <Pressable
+          onPress={() => setShowPassword((prev) => !prev)}
+          style={{
+            position: "absolute",
+            right: 16,
+            height: "100%",
+            // justifyContent: "center",
+            // alignItems: "center",
+            padding: RFValue(4),
+          }}
+          disabled={isLoading}
+        >
+          <Text style={{ fontSize: RFValue(28) }}>
+            {showPassword ? "🙈" : "👁️"}
+          </Text>
+        </Pressable>
+      </View>
+
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          marginBottom: theme.spacing.md,
+        }}
+      >
+        <CheckBox
+          value={rememberMe}
+          onValueChange={setRememberMe}
+          disabled={isLoading}
+          color={"black"}
+        />
+        <Text style={styles.checkBoxText}>Recordarme</Text>
+      </View>
+
+      {/* Link a popup y checkbox de Aceptar términos y condiciones */}
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          marginBottom: theme.spacing.md,
+        }}
+      >
+        <CheckBox
+          value={acceptTerms}
+          onValueChange={setAcceptTerms}
+          disabled={isLoading}
+          color={"black"}
+        />
+        <Text style={styles.checkBoxText}>
+          Acepto los{" "}
+          {/* términos y condiciones debe ser un link que active un popup */}
+          <Text
+            style={{
+              color: "blue",
+              fontWeight: "bold",
+              textDecorationLine: "underline",
+            }}
+            onPress={showTermsPopup}
+          >
+            términos y condiciones
+          </Text>
+        </Text>
+      </View>
 
       <Pressable
         style={({ pressed }) => [
           styles.button,
           pressed && styles.buttonPressed,
-          isLoading && styles.buttonDisabled
+          (!acceptTerms || isLoading) && styles.buttonDisabled,
         ]}
-        onPress={handleLogin}
+        onPress={() => handleLogin()}
         disabled={isLoading}
       >
         {isLoading ? (
@@ -100,9 +387,18 @@ export default function SignIn() {
         )}
       </Pressable>
 
-      <Text style={styles.serverStatus}>
-        Servidor: {isLoading ? 'Conectando...' : 'Listo'}
-      </Text>
+      {/* <Text style={styles.serverStatus}>
+        Servidor: {isLoading ? "Conectando..." : "Listo"}
+      </Text> */}
+
+      {/* Ver contenido descargable sin conexión */}
+      <Pressable
+        style={({ pressed }) => [styles.buttonDownloads]}
+        onPress={() => openDownloadsFolder()}
+        disabled={isLoading}
+      >
+        <Text style={styles.buttonText}>Ver contenido descargado</Text>
+      </Pressable>
     </View>
   );
 }
@@ -122,7 +418,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   input: {
-    height: 50,
+    height: theme.typography.sizes.textInput,
     borderWidth: theme.components.button.variants.primary.borderWidth,
     borderColor: theme.components.button.variants.primary.borderColor,
     borderRadius: theme.components.button.variants.primary.borderRadius,
@@ -133,8 +429,22 @@ const styles = StyleSheet.create({
     color: theme.colors.text,
     backgroundColor: theme.colors.card,
   },
+  checkBoxText: {
+    color: "black",
+    marginLeft: 8,
+    fontSize: theme.typography.sizes.body2,
+  },
   button: {
     backgroundColor: theme.colors.primary,
+    padding: theme.spacing.md,
+    borderRadius: theme.components.button.variants.primary.borderRadius,
+    alignItems: "center",
+    marginTop: theme.spacing.md,
+    borderWidth: theme.components.button.variants.primary.borderWidth,
+    borderColor: theme.components.button.variants.primary.borderColor,
+  },
+  buttonDownloads: {
+    backgroundColor: theme.colors.card,
     padding: theme.spacing.md,
     borderRadius: theme.components.button.variants.primary.borderRadius,
     alignItems: "center",
@@ -151,25 +461,34 @@ const styles = StyleSheet.create({
     fontFamily: theme.typography.fonts.primary.bold,
   },
   errorText: {
-    color: 'red',
+    color: "red",
     marginBottom: theme.spacing.md,
-    textAlign: 'center',
+    textAlign: "center",
     fontFamily: theme.typography.fonts.primary.regular,
+  },
+  autoLoginMessage: {
+    color: "green",
+    marginBottom: theme.spacing.md,
+    textAlign: "center",
+    fontFamily: theme.typography.fonts.primary.regular,
+    fontSize: theme.typography.sizes.small,
   },
   buttonDisabled: {
     opacity: 0.5,
+    backgroundColor: theme.colors.disabled,
+    borderColor: theme.colors.disabled,
   },
   serverStatus: {
     marginTop: theme.spacing.xl,
-    textAlign: 'center',
-    color: theme.colors.text + '80',
+    textAlign: "center",
+    color: theme.colors.text + "80",
     fontSize: theme.typography.sizes.caption,
   },
   versionText: {
-    position: 'absolute',
+    position: "absolute",
     top: 40,
     right: 20,
-    fontSize: 12,
-    color: theme.colors.text + '80',
+    fontSize: theme.typography.sizes.caption,
+    color: theme.colors.text + "80",
   },
 });

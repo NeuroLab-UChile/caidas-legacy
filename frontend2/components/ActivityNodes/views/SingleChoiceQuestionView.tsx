@@ -74,11 +74,11 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   question: {
-    fontSize: 20,
+    fontSize: theme.typography.sizes.title,
     fontWeight: "600",
     color: theme.colors.text,
     marginBottom: 24,
-    lineHeight: 28,
+    lineHeight: theme.typography.sizes.title,
   },
   optionButton: {
     padding: 16,
@@ -98,7 +98,7 @@ const styles = StyleSheet.create({
   },
 
   optionText: {
-    fontSize: 16,
+    fontSize: theme.typography.sizes.body1,
     color: theme.colors.text,
   },
   selectedOptionText: {

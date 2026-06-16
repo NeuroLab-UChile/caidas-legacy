@@ -1,13 +1,13 @@
 {
   "expo": {
-    "name": "frontend2",
-    "slug": "frontend2",
+    "name": "We Train",
+    "slug": "caidas-we-flow",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/images/logo_color.png",
     "userInterfaceStyle": "light",
     "splash": {
-      "image": "./assets/icon.png",
+      "image": "./assets/images/logo_color.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -20,11 +20,11 @@
       "infoPlist": {
         "NSPhotoLibraryUsageDescription": "La aplicación necesita acceso a tus fotos para subir imágenes de perfil."
       },
-      "bundleIdentifier": "com.anonymous.frontend2"
+      "bundleIdentifier": "com.cica.wetrain"
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/icon.png",
+        "foregroundImage": "./assets/images/logo_color.png",
         "backgroundColor": "#ffffff"
       },
       "permissions": [
@@ -33,13 +33,12 @@
         "android.permission.WRITE_EXTERNAL_STORAGE",
         "android.permission.MEDIA_LIBRARY",
         "android.permission.RECORD_AUDIO",
-                "android.permission.INTERNET"
-
+        "android.permission.INTERNET"
       ],
-      "package": "com.anonymous.frontend2"
+      "package": "com.cica.wetrain"
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/images/logo_color.png"
     },
     "plugins": [
       "expo-router",
@@ -56,9 +55,11 @@
           "supportsBackgroundPlayback": false,
           "supportsPictureInPicture": false
         }
-      ]
+      ],
+      "expo-font",
+      "expo-web-browser"
     ],
-    "scheme": "frontend2",
+    "scheme": "wetrain",
     "developmentClient": {
       "silentLaunch": true
     },
@@ -69,9 +70,13 @@
         "origin": false
       },
       "eas": {
-        "projectId": "ef29226d-8b91-41b0-a6e9-fdc541659041"
+        "projectId": "a7f19b89-500b-4ffd-b403-17764f59ce07"
       }
     },
-    "platforms": ["android"]
+    "platforms": [
+      "android",
+      "web"
+    ],
+    "owner": "juanovenegas"
   }
 }

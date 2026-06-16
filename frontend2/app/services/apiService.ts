@@ -1,9 +1,9 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { API_URL } from '@/constants';
-import authService from './authService';
-import { Category } from '../types/category';
-import { Platform } from 'react-native';
-import * as FileSystem from 'expo-file-system';
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { API_URL } from "@/constants";
+import authService from "./authService";
+import { Category } from "../types/category";
+import { Platform } from "react-native";
+import * as FileSystem from "expo-file-system";
 
 // Types
 interface ApiResponse<T> {
@@ -26,7 +26,7 @@ export interface UserProfile {
 }
 
 interface ImageQuestionResponse {
-  type: 'IMAGE_QUESTION';
+  type: "IMAGE_QUESTION";
   answer: string[];
 }
 
@@ -93,7 +93,7 @@ export class ApiClient {
         atob(base64)
           .split("")
           .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
-          .join(""),
+          .join("")
       );
       return JSON.parse(jsonPayload);
     } catch (error) {
@@ -120,7 +120,7 @@ export class ApiClient {
       ) {
         const isValid = await this.validateAndRefreshToken();
         if (!isValid) {
-          await authService.logout();
+          await authService.logout(false); // No olvidar el usuario en este logout de error
           throw new Error("Session expired");
         }
         this.lastTokenValidation = Date.now();
@@ -159,7 +159,7 @@ export class ApiClient {
       }
 
       // Si no se pudo recuperar la sesión, hacer logout
-      await authService.logout();
+      await authService.logout(false); // No olvidar el usuario en este logout de error
       throw new Error("Session expired");
     }
 
@@ -176,7 +176,9 @@ export class ApiClient {
   }
 
   private getUrl(endpoint: string, usePrevcadPrefix: boolean = true): string {
-    return `${this.baseUrl}${usePrevcadPrefix ? this.prevcadPrefix : ""}${endpoint}`;
+    return `${this.baseUrl}${
+      usePrevcadPrefix ? this.prevcadPrefix : ""
+    }${endpoint}`;
   }
 
   // Health Categories
@@ -192,7 +194,7 @@ export class ApiClient {
 
     saveResponses: async (
       categoryId: number,
-      formData: FormData,
+      formData: FormData
     ): Promise<ApiResponse<any>> => {
       try {
         const response = await fetch(
@@ -201,7 +203,7 @@ export class ApiClient {
             method: "POST",
             body: formData,
             headers: await this.getHeaders(true),
-          },
+          }
         );
 
         if (!response.ok) {
@@ -233,6 +235,7 @@ export class ApiClient {
     },
 
     getById: async (id: number): Promise<ApiResponse<Category>> => {
+      console.log("Fetching category by ID:", id);
       const response = await fetch(this.getUrl(`/health_categories/${id}`), {
         headers: await this.getHeaders(true),
       });
@@ -240,16 +243,16 @@ export class ApiClient {
     },
 
     deleteRecommendation: async (
-      categoryId: number,
+      categoryId: number
     ): Promise<ApiResponse<any>> => {
       const response = await fetch(
         this.getUrl(
-          `/admin/healthcategory/${categoryId}/delete-recommendation/`,
+          `/admin/healthcategory/${categoryId}/delete-recommendation/`
         ),
         {
           method: "DELETE",
           headers: await this.getHeaders(),
-        },
+        }
       );
       return this.handleResponse(response);
     },
@@ -291,7 +294,7 @@ export class ApiClient {
     },
 
     updateProfile: async (
-      data: Partial<UserProfile>,
+      data: Partial<UserProfile>
     ): Promise<ApiResponse<UserProfile>> => {
       const response = await fetch(this.getUrl("/user/profile"), {
         method: "PUT",
@@ -342,7 +345,7 @@ export class ApiClient {
       }
     },
     registerClick: async (
-      recommendationId: number,
+      recommendationId: number
     ): Promise<ApiResponse<any>> => {
       const response = await fetch(
         this.getUrl(`/text_recommendations/${recommendationId}/register_click`),
@@ -353,7 +356,7 @@ export class ApiClient {
             Accept: "application/json",
             "Content-Type": "application/json",
           },
-        },
+        }
       );
 
       if (!response.ok) {
@@ -383,7 +386,7 @@ export class ApiClient {
   public evaluations = {
     saveResponses: async (
       categoryId: number,
-      responses: ResponseData,
+      responses: ResponseData
     ): Promise<ApiResponse<any>> => {
       try {
         // Enviar las respuestas directamente sin procesamiento
@@ -396,7 +399,7 @@ export class ApiClient {
               "Content-Type": "application/json",
             },
             body: JSON.stringify(responses), // Enviar responses directamente
-          },
+          }
         );
 
         if (!response.ok) {
@@ -419,7 +422,7 @@ export class ApiClient {
           {
             method: "POST",
             headers: await this.getHeaders(),
-          },
+          }
         );
 
         if (!response.ok) {
@@ -433,7 +436,114 @@ export class ApiClient {
       }
     },
   };
+
+  public activityLog = {
+    logActivity: async (
+      date: string,
+      actions: Record<string, string>
+    ): Promise<ApiResponse<any>> => {
+      try {
+        const response = await fetch(this.getUrl("/app_activity_log"), {
+          method: "POST",
+          headers: {
+            ...(await this.getHeaders()),
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ date, actions }),
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error("Error registrando actividad:", {
+            status: response.status,
+            statusText: response.statusText,
+            body: errorText,
+          });
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        return {
+          data,
+          status: response.status,
+          message: data.message,
+        };
+      } catch (error) {
+        console.error("Error en logActivity:", error);
+        throw error;
+      }
+    },
+    // This fixes UTC date issues
+    getLocalDateAndTimeStrings: (date: Date = new Date()): [string, string] => {
+      // Pad single digits with leading zero
+      const pad = (n: number) => String(n).padStart(2, "0");
+      // Get local date parts
+      const year = date.getFullYear();
+      const month = pad(date.getMonth() + 1); // Months are 0-based
+      const day = pad(date.getDate());
+      const hour = pad(date.getHours());
+      const minute = pad(date.getMinutes());
+      const second = pad(date.getSeconds());
+
+      const dateStr = `${year}-${month}-${day}`;
+      const timeStr = `${hour}:${minute}:${second}`;
+      return [dateStr, timeStr];
+    },
+    trackAction: async (
+      tag: string,
+      offset_seconds: number = 0
+    ): Promise<ApiResponse<any>> => {
+      try {
+        const now = new Date(new Date().getTime() - offset_seconds * 1000);
+        // const date = now.toISOString().split("T")[0]; // yyyy-mm-dd  // <-- this produces error (next day offset) when over 20:00 Chile time
+        // const time = now.toTimeString().split(" ")[0]; // HH:MM:SS
+        const [date, time] = this.activityLog.getLocalDateAndTimeStrings(now);
+        console.log("[Tracking action]", `${date} ${time}`, "-", tag);
+        return await apiService.activityLog.logActivity(date, {
+          [time]: tag,
+        });
+      } catch (error) {
+        console.error("Error al trackear acción:", error);
+        throw error;
+      }
+    },
+  };
+
+  public downloads = {
+    downloadableContentList: async (): Promise<ApiResponse<any>> => {
+      try {
+        const response = await fetch(this.getUrl("/downloads"), {
+          headers: await this.getHeaders(),
+        });
+        return this.handleResponse(response);
+      } catch (error) {
+        console.error("Error fetching downloadable content list:", error);
+        throw error;
+      }
+    },
+    registerDownload: async (content: number): Promise<ApiResponse<any>> => {
+      try {
+        const response = await fetch(this.getUrl("/downloads"), {
+          method: "POST",
+          headers: {
+            ...(await this.getHeaders()),
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ content, downloaded: true }),
+        });
+
+        if (!response.ok) {
+          throw new Error("Error registering download");
+        }
+
+        return this.handleResponse(response);
+      } catch (error) {
+        console.error("Error in registerDownload:", error);
+        throw error;
+      }
+    },
+  };
 }
 
 export const apiService = new ApiClient();
-export default apiService; 
+export default apiService;

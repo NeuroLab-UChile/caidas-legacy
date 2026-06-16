@@ -16,8 +16,8 @@ export function TextQuestionView({ data, setResponse }: TextQuestionProps) {
   const [answer, setAnswer] = useState("");
 
   useEffect(() => {
-    setAnswer("No hay respuesta");
-    setResponse({ answer: "No hay respuesta" });
+    setAnswer("");
+    setResponse({ answer: "" });
   }, [data.id, data.question]);
 
   const handleTextChange = (text: string) => {
@@ -36,7 +36,7 @@ export function TextQuestionView({ data, setResponse }: TextQuestionProps) {
         value={answer}
         onChangeText={handleTextChange}
         placeholder="Escribe tu respuesta aquí"
-        placeholderTextColor={theme.colors.text}
+        placeholderTextColor={theme.colors.text + "50"}
         multiline
         key={data.id || data.question}
       />
@@ -50,9 +50,9 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.background,
   },
   question: {
-    fontSize: 18,
+    fontSize: theme.typography.sizes.subtitle,
     color: theme.colors.text,
-    marginBottom: 16,
+    marginBottom: theme.typography.sizes.body2,
   },
   input: {
     borderWidth: 1,
@@ -71,7 +71,7 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: "white",
-    fontSize: 16,
+    fontSize: theme.typography.sizes.body1,
     fontWeight: "600",
   },
 });

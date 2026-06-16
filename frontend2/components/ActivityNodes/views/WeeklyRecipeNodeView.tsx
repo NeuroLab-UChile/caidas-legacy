@@ -1,6 +1,6 @@
-
 import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { theme } from "@/src/theme";
+import { TextWithHyperlinks } from "@/components/ui/TextWithHyperlinks";
 
 interface MealInfo {
   meal?: string;
@@ -61,6 +61,10 @@ export const WeeklyRecipeNodeView: React.FC<RecipeNodeViewProps> = ({
   const isExercisePlan =
     Object.values(data.weekly_plan)[0]?.MORNING?.activity !== undefined;
 
+  const description = (
+    <TextWithHyperlinks>{data.description}</TextWithHyperlinks>
+  );
+
   const renderScheduleItem = (scheduleInfo: MealInfo, scheduleType: string) => {
     if (!scheduleInfo) return null;
 
@@ -111,7 +115,8 @@ export const WeeklyRecipeNodeView: React.FC<RecipeNodeViewProps> = ({
   return (
     <ScrollView style={styles.container}>
       <Text style={styles.title}>{data.title}</Text>
-      <Text style={styles.description}>{data.description}</Text>
+      {/* <Text style={styles.description}>{data.description}</Text> */}
+      {description}
 
       {Object.entries(data.weekly_plan).map(([day, schedule], index) => (
         <View key={`day-${index}-${day}`} style={styles.dayContainer}>
@@ -136,16 +141,16 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.background,
   },
   title: {
-    fontSize: 24,
+    fontSize: theme.typography.sizes.headline1,
     fontWeight: "bold",
     color: theme.colors.text,
     marginBottom: 8,
     textAlign: "center",
   },
   description: {
-    fontSize: 14,
+    fontSize: theme.typography.sizes.body2,
     color: theme.colors.textSecondary,
-    marginBottom: 16,
+    marginBottom: theme.typography.sizes.body2,
     textAlign: "center",
   },
   dayContainer: {
@@ -160,7 +165,7 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   dayTitle: {
-    fontSize: 18,
+    fontSize: theme.typography.sizes.subtitle,
     fontWeight: "bold",
     color: theme.colors.text,
     marginBottom: 12,
@@ -179,18 +184,18 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scheduleType: {
-    fontSize: 16,
+    fontSize: theme.typography.sizes.body1,
     fontWeight: "bold",
     color: theme.colors.text,
     marginBottom: 4,
   },
   mealText: {
-    fontSize: 14,
+    fontSize: theme.typography.sizes.body2,
     color: theme.colors.textSecondary,
     marginBottom: 4,
   },
   activityText: {
-    fontSize: 14,
+    fontSize: theme.typography.sizes.body2,
     color: theme.colors.textSecondary,
     marginBottom: 4,
     fontWeight: "500",
@@ -200,7 +205,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   durationText: {
-    fontSize: 12,
+    fontSize: theme.typography.sizes.caption,
     color: theme.colors.text,
     backgroundColor: theme.colors.primary,
     padding: 4,
@@ -208,7 +213,7 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   intensityText: {
-    fontSize: 12,
+    fontSize: theme.typography.sizes.caption,
     color: theme.colors.text,
     backgroundColor: theme.colors.primary,
     padding: 4,
@@ -216,7 +221,7 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   proteinsText: {
-    fontSize: 12,
+    fontSize: theme.typography.sizes.caption,
     color: theme.colors.text,
     backgroundColor: theme.colors.primary,
     padding: 4,
@@ -225,7 +230,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   notesText: {
-    fontSize: 12,
+    fontSize: theme.typography.sizes.caption,
     color: theme.colors.textSecondary,
     fontStyle: "italic",
     marginTop: 4,

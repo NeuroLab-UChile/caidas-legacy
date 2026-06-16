@@ -58,7 +58,7 @@ export default function CategoryDetailScreen() {
         >
           <Ionicons
             name="clipboard-outline"
-            size={24}
+            size={theme.typography.sizes.headline1}
             color={theme.colors.text}
           />
           <Text style={[styles.actionButtonText, { color: theme.colors.text }]}>
@@ -73,14 +73,20 @@ export default function CategoryDetailScreen() {
           ]}
           onPress={() => router.push("/training")}
         >
-          <Ionicons name="school-outline" size={24} color={theme.colors.text} />
+          <Ionicons
+            name="school-outline"
+            size={theme.typography.sizes.headline1}
+            color={theme.colors.text}
+          />
           <Text style={[styles.actionButtonText, { color: theme.colors.text }]}>
-            Ir a Entrenamiento
+            {/* Ir a Entrenamiento */}
+            Ir a Contenido
           </Text>
         </TouchableOpacity>
       </View>
 
-      <View style={styles.statusContainer}>
+      {/* <View style={styles.statusContainer}> */}
+      <View>
         <Text style={[styles.statusTitle, { color: theme.colors.text }]}>
           Estado de la Evaluación
         </Text>
@@ -118,9 +124,9 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   title: {
-    fontSize: 28,
+    fontSize: theme.typography.sizes.display3,
     fontWeight: "bold",
-    marginBottom: 16,
+    marginBottom: theme.typography.sizes.body2,
     textAlign: "center",
   },
   descriptionContainer: {
@@ -137,8 +143,8 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   description: {
-    fontSize: 16,
-    lineHeight: 24,
+    fontSize: theme.typography.sizes.body1,
+    lineHeight: theme.typography.sizes.subtitle,
   },
   actionsContainer: {
     flexDirection: "row",
@@ -164,8 +170,9 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   actionButtonText: {
-    fontSize: 16,
+    fontSize: theme.typography.sizes.body1,
     fontWeight: "600",
+    textAlign: "center",
   },
   statusContainer: {
     backgroundColor: theme.colors.card,
@@ -181,13 +188,13 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   statusTitle: {
-    fontSize: 20,
+    fontSize: theme.typography.sizes.title,
     fontWeight: "600",
     marginBottom: 8,
   },
   statusText: {
-    fontSize: 16,
-    marginBottom: 16,
+    fontSize: theme.typography.sizes.body1,
+    marginBottom: theme.typography.sizes.body2,
   },
   recommendationsContainer: {
     marginTop: 16,
@@ -196,16 +203,16 @@ const styles = StyleSheet.create({
     paddingTop: 16,
   },
   recommendationsTitle: {
-    fontSize: 18,
+    fontSize: theme.typography.sizes.subtitle,
     fontWeight: "600",
     marginBottom: 8,
   },
   recommendationsText: {
-    fontSize: 16,
-    lineHeight: 24,
+    fontSize: theme.typography.sizes.body1,
+    lineHeight: theme.typography.sizes.subtitle,
   },
   errorText: {
-    fontSize: 16,
+    fontSize: theme.typography.sizes.body1,
     textAlign: "center",
     marginTop: 20,
   },

@@ -1,4 +1,4 @@
-package com.anonymous.frontend2
+package com.cica.wetrain
 import expo.modules.splashscreen.SplashScreenManager
 
 import android.os.Build
